@@ -101,6 +101,20 @@ namespace MEDDotNet
             }
         }
 
+        public static bool TryField(string key, out MedField field)
+        {
+            foreach (MedField f in Enum.GetValues(typeof(MedField)))
+            {
+                if (Key(f) == key)
+                {
+                    field = f;
+                    return true;
+                }
+            }
+            field = MedField.Tag;
+            return false;
+        }
+
         public static bool UsedBy(string app, MedField field)
         {
             if (app == MedApps.Conduit)
@@ -115,7 +129,7 @@ namespace MEDDotNet
                     || field == MedField.Flange;
             if (app == MedApps.Fitting)
                 return field == MedField.Tag || field == MedField.Size || field == MedField.Code
-                    || field == MedField.Alternate || field == MedField.Depth || field == MedField.Distance
+                    || field == MedField.Alternate || field == MedField.Depth
                     || field == MedField.Flange;
             if (app == MedApps.Equip)
                 return field == MedField.Tag || field == MedField.Code;
@@ -251,26 +265,15 @@ namespace MEDDotNet
             rb.Add(new TypedValue(1002, "{"));
             foreach (MedRecord rec in items)
             {
-                List<string> order = new List<string>();
-                foreach (string k in rec.KeyOrder)
-                {
-                    if (rec.Values.ContainsKey(k) && !order.Contains(k))
-                        order.Add(k);
-                }
                 foreach (string k in MedKeys.WriteOrder)
                 {
-                    if (rec.Values.ContainsKey(k) && !order.Contains(k))
-                        order.Add(k);
-                }
-                foreach (string k in rec.Values.Keys)
-                {
-                    if (!order.Contains(k))
-                        order.Add(k);
-                }
-                foreach (string k in order)
-                {
-                    string v = rec.Values[k];
-                    if (v == null)
+                    MedField field;
+                    if (!MedFieldMap.TryField(k, out field))
+                        continue;
+                    if (!MedFieldMap.UsedBy(app, field))
+                        continue;
+                    string v;
+                    if (!rec.Values.TryGetValue(k, out v) || v == null)
                         v = "";
                     rb.Add(new TypedValue(1000, k + "=" + v));
                 }

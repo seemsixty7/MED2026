@@ -657,6 +657,13 @@ namespace MEDDotNet
             }
         }
 
+        static void SetUsed(MedRecord rec, MedField field, string value)
+        {
+            if (!MedFieldMap.UsedBy(rec.AppName, field))
+                return;
+            rec.Set(MedFieldMap.Key(field), value ?? "");
+        }
+
         public List<MedRecord> ReadRows()
         {
             List<MedRecord> list = new List<MedRecord>();
@@ -670,18 +677,18 @@ namespace MEDDotNet
                 MedRecord rec = new MedRecord();
                 rec.Id = IdFromRow(row);
                 rec.AppName = MedApps.FromDisplay(type);
-                rec.Set(MedKeys.Tag, Convert.ToString(row.Cells["Tag"].Value));
-                rec.Set(MedKeys.RelatedTag, Convert.ToString(row.Cells["RelatedTag"].Value));
-                rec.Set(MedKeys.Size, MedXdata.FormatValue(MedField.Size, Convert.ToString(row.Cells["Size"].Value)));
-                rec.Set(MedKeys.Alternate, MedXdata.FormatValue(MedField.Alternate, Convert.ToString(row.Cells["Alternate"].Value)));
-                rec.Set(MedKeys.Depth, MedXdata.FormatValue(MedField.Depth, Convert.ToString(row.Cells["Depth"].Value)));
-                rec.Set(MedKeys.Distance, MedXdata.FormatValue(MedField.Distance, Convert.ToString(row.Cells["Distance"].Value)));
-                rec.Set(MedKeys.Code, MedXdata.FormatValue(MedField.Code, Convert.ToString(row.Cells["Code"].Value)));
+                SetUsed(rec, MedField.Tag, Convert.ToString(row.Cells["Tag"].Value));
+                SetUsed(rec, MedField.RelatedTag, Convert.ToString(row.Cells["RelatedTag"].Value));
+                SetUsed(rec, MedField.Size, MedXdata.FormatValue(MedField.Size, Convert.ToString(row.Cells["Size"].Value)));
+                SetUsed(rec, MedField.Alternate, MedXdata.FormatValue(MedField.Alternate, Convert.ToString(row.Cells["Alternate"].Value)));
+                SetUsed(rec, MedField.Depth, MedXdata.FormatValue(MedField.Depth, Convert.ToString(row.Cells["Depth"].Value)));
+                SetUsed(rec, MedField.Distance, MedXdata.FormatValue(MedField.Distance, Convert.ToString(row.Cells["Distance"].Value)));
+                SetUsed(rec, MedField.Code, MedXdata.FormatValue(MedField.Code, Convert.ToString(row.Cells["Code"].Value)));
                 bool msr = false;
                 if (row.Cells["Measure"].Value is bool)
                     msr = (bool)row.Cells["Measure"].Value;
-                rec.Set(MedKeys.Measure, msr ? "T" : "F");
-                rec.Set(MedKeys.Flange, MedXdata.FormatValue(MedField.Flange, Convert.ToString(row.Cells["Flange"].Value)));
+                SetUsed(rec, MedField.Measure, msr ? "T" : "F");
+                SetUsed(rec, MedField.Flange, MedXdata.FormatValue(MedField.Flange, Convert.ToString(row.Cells["Flange"].Value)));
                 list.Add(rec);
             }
             return list;

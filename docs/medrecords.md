@@ -23,3 +23,15 @@ No Description column. Flange is only enabled for Tray and Fitting.
 ## Show
 
 **Show entity** (or context menu) half-zooms to the current row's entity, draws a yellow halo, then restores the view and pick set when the dialog closes.
+
+## Per-type xdata
+
+Writes only the keys that type uses (same as `MEDBuildXData` / classic `MEDCHG`). Extra empty fields are not stored. Old drawings with extra keys still read.
+
+| Type | Keys |
+| --- | --- |
+| Conduit | `ITEM_TAG_`, `#ITEMSIZE`, `#ITEMCODE`, `#ITEMDIST`, `ITEM_MESR` |
+| Cable | `ITEM_TAG_`, `#ITEMSIZE`, `#ITEMCODE`, `ITEM_RTAG`, `#ITEMDIST`, `ITEM_MESR` |
+| Tray | `ITEM_TAG_`, `#ITEMSIZE`, `#ITEMCODE`, `#ITEMDIST`, `#ITEMDPTH`, `ITEM_MESR`, `#ITEMFLNG` |
+| Fitting | `ITEM_TAG_`, `#ITEMSIZE`, `#ITEMCODE`, `#ITEM_ALT`, `#ITEMDPTH`, `#ITEMFLNG` |
+| Equipment | `ITEM_TAG_`, `#ITEMCODE` |

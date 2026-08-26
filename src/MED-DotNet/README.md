@@ -2,7 +2,7 @@
 
 AutoCAD .NET helper for MED. Database plus the MED Properties palette.
 
-CAD001 in src/CAD001 is the old LDIS/Core project (batch plot + crude dialogs). Leave it. Future MED dialogs (replacing OpenDCL / AutoCAD DCL) go here later, not in CAD001.
+Future MED dialogs (replacing OpenDCL / AutoCAD DCL) stay in MED-DotNet.
 
 ## Build
 

@@ -52,4 +52,4 @@ Imperial plot scale is `1`. Metric plot scale is `25.4`. Changing scale writes `
 
 Size lists come from lisp (`_CONSIZE_LIST`, `_TRAYSIZE_LIST`, …) with built-in fallbacks.
 
-Defaults that are **not** on the palette still live in `med.spc`: default tray type/code, flex type, cable code, default up/down distance (`_MEDDIST`, 10'), file-info block names, layer names, title block.
+Defaults that are **not** on the palette still live in `med.spc`: default tray type/code, flex type, cable count (`_CABNUM`), default up/down distance (`_MEDDIST`, 10'), file-info block names, layer names, title block. Cable type/code is the [Cable palette](cable.md) (`CABLE` / `CABLEPALETTE`).

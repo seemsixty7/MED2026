@@ -20,6 +20,7 @@ These replaced the 2012 DCL dialogs. Do not treat the old DCL screens as current
 
 - [MEDTYPE](medtype.md) — catalog grid (`MEDTYPES`)
 - [MEDSETTINGS](medsettings.md) — conduit / tray / scale defaults (`MEDSET`)
+- [Cable palette](cable.md) — type then cable (`CABLE`, `CABLEPALETTE`, `CABLESET`)
 - [MEDCHG / MED Properties](medchg.md) — entity xdata (`MEDPROPERTIES`, `MEDPROPS`; `MED` and `MC` still call `MEDCHG`)
 - [MEDRECORDS](medrecords.md) — handle-based multi-xdata grid (`MEDXDEDIT`)
 - [MEDSHOWBOM](medshowbom.md) — current-drawing BOM browse (`MEDSHOW`, `MEDSHOWSUM`)
@@ -32,7 +33,7 @@ LISP in `Support` still routes raceway, places details, tags, and extracts BOM.
 
 - [Conduit](conduit.md) — `CONDUIT`, bends, fittings, `CHGSIZE`, `MEDLIST`
 - [Cable tray](tray.md) — two-point tray, centerline, offsets, fittings
-- [Cable](cable.md) — `CABLE`, related tag, grounding
+- [Cable](cable.md) — `CABLE` palette (type then cable), related tag, `CABLE-CLASSIC`
 - [Details / equipment](detail.md) — `DETAIL`, `LTG` / `GND` / `PWR` / `INS` / `TRY`, `DETAG`
 - [Detail conduit (two-line)](detail-conduit.md) — `2LCON`, away / toward / break
 - [Tagging](tagging.md) — `CTAG`, `TTAG`, balloons, section marks

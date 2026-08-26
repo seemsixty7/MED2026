@@ -1,10 +1,10 @@
 (princ "\rLoading MEDCable...")
-(defun c:cable ( / conent conpt conqty cabtag)
-    (med_cur_set "c:cable")
+;; Draw body used by CABLE (.NET) and CABLE-CLASSIC.
+(defun med-cable-draw ( / conent conpt conqty cabtag cabreltag ptprompt xdlist)
     (setvar "cmdecho" 0)
     (command "linetype" "s" _LTP "")
     (command "pline")
-    (setq ptprompt (strcat "\nPick start point of " 
+    (setq ptprompt (strcat "\nPick start point of "
                            (clookup _CABCODE _CABNUM _CABLE) ": ")
           conpt (getpoint ptprompt)
     )
@@ -34,12 +34,23 @@
     (med_ret_ok)
     (terpri)
 )
-(defun c:run3dcable ( / conent conpt conqty cabtag)
+;; Old lisp-only CABLE (no palette). CABLE is the .NET command.
+(defun c:cable-classic ( / )
+    (med_cur_set "c:cable-classic")
+    (if (member (type MED-CableApplyLayer) '(EXRXSUBR SUBR USUBR EXSUBR))
+        (vl-catch-all-apply 'MED-CableApplyLayer)
+    )
+    (med-cable-draw)
+)
+(defun c:run3dcable ( / conent conpt conqty cabtag cabreltag ptprompt xdlist)
     (med_cur_set "c:run3dcable")
+    (if (member (type MED-CableApplyLayer) '(EXRXSUBR SUBR USUBR EXSUBR))
+        (vl-catch-all-apply 'MED-CableApplyLayer)
+    )
     (setvar "cmdecho" 0)
     (command "linetype" "s" _LTP "")
     (command "3dpoly")
-    (setq ptprompt (strcat "\nPick start point of " 
+    (setq ptprompt (strcat "\nPick start point of "
                            (clookup _CABCODE _CABNUM _CABLE) ": ")
           conpt (getpoint ptprompt)
     )

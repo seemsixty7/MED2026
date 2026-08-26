@@ -84,6 +84,8 @@
     <Compile Include="MedLisp.cs" />
     <Compile Include="MedSettingsControl.cs" />
     <Compile Include="MedSettingsPalette.cs" />
+    <Compile Include="MedCablePalette.cs" />
+    <Compile Include="MedCableControl.cs" />
     <Compile Include="MedShowBomForm.cs" />
     <Compile Include="MedScaleChoice.cs" />
     <Compile Include="MedTypeForm.cs" />

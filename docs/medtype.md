@@ -17,7 +17,7 @@ MEDTYPE catalog grid. *Screenshot still needed — do not invent one. `docs/imag
 | ITEMTYPE | Type | CONDUIT, CABLE, TRAY, FITTING, EQUIP |
 | ITEMCODE | Code | Integer. Unique with type. |
 | ITEMDESC | Description | Catalog text |
-| ITEM_GRP | Group | Detail grouping. No group → detail does not appear in `DETAIL` / `LTG` / … |
+| ITEM_GRP | Group | Cable Type for the Cable palette. Details: grouping. No group → detail does not appear in `DETAIL` / `LTG` / … |
 | ITEMKEY1–4 | Key1–4 | Details: number, drawing, block/slide, layer set. See [database.md](database.md) |
 | USER1–4 | User1–4 | Details: DETNUM fill, insert function, sort. Tray USER1 = section length (ft) for reporting |
 

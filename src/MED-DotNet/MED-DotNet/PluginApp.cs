@@ -12,7 +12,7 @@ namespace MEDDotNet
         {
             Document doc = Application.DocumentManager.MdiActiveDocument;
             if (doc != null)
-                doc.Editor.WriteMessage("\nMED-DotNet loaded. MEDCHG / MEDPROPERTIES for entity xdata, MEDSETTINGS for defaults, MEDCHG-CLASSIC for the old DCL, ProcessSQLStatementNET for SQL.");
+                doc.Editor.WriteMessage("\nMED-DotNet loaded. CABLE / CABLEPALETTE for cables, MEDCHG / MEDPROPERTIES for entity xdata, MEDSETTINGS for defaults, MEDCHG-CLASSIC for the old DCL, ProcessSQLStatementNET for SQL.");
         }
 
         public void Terminate()

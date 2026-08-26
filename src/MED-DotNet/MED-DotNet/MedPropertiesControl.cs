@@ -75,7 +75,7 @@ namespace MEDDotNet
 
             AddEditor(root, MedField.Tag, "Tag");
             AddEditor(root, MedField.RelatedTag, "Related Tag");
-            AddEditor(root, MedField.Size, "Size");
+            AddEditor(root, MedField.Size, "Size/Count");
             AddEditor(root, MedField.Alternate, "Alternate");
             AddEditor(root, MedField.Depth, "Depth");
             AddEditor(root, MedField.Distance, "Distance");

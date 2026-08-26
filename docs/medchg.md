@@ -26,11 +26,13 @@ Xdata keys match the old MEDBuildXData / MEDCHG names. Same layout the 2012 dial
 
 | Type | Fields |
 | --- | --- |
-| Conduit | Tag, Size, Code, Distance, Measure |
+| Conduit | Tag, Size/Count, Code, Distance, Measure |
 | Cable | Tag, Related Tag, Alternate (count), Code, Distance, Measure |
-| Tray | Tag, Size, Code, Distance, Depth, Measure, Flange |
-| Fitting | Tag, Size, Alternate, Depth, Distance, Code, Flange |
+| Tray | Tag, Size/Count, Code, Distance, Depth, Measure, Flange |
+| Fitting | Tag, Size/Count, Alternate, Depth, Distance, Code, Flange |
 | Equipment | Tag, Code |
+
+Size/Count is conduit/tray size, or cable quantity; Equipment has no Size.
 
 Measure on: extract uses the entity length. Measure off: extract uses Distance (blocks such as conduit up/down cannot be measured — the checkbox will not stay on). Description is **not** stored; it is looked up from [MEDTYPE](medtype.md) by type+code.
 

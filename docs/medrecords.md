@@ -1,4 +1,4 @@
-﻿# MEDRECORDS
+# MEDRECORDS
 
 Commands: `MEDRECORDS`, `MEDXDEDIT`.
 
@@ -10,7 +10,9 @@ MEDRECORDS grid and Show halo.
 
 ## Grid
 
-Columns: Handle (read-only), Type (MEDType dropdown: Conduit / Cable / Tray / Fitting / Equipment), Tag, Related Tag, Size, Alt, Depth, Dist, Code (dropdown from `MEDType`), Measure, Flange.
+Columns: Handle (read-only), Type (MEDType dropdown: Conduit / Cable / Tray / Fitting / Equipment), Tag, Related Tag, Size/Count, Alt, Depth, Dist, Code (dropdown from `MEDType`), Measure, Flange.
+
+Size/Count is conduit/tray size, or cable quantity; Equipment has no Size.
 
 No Description column. Flange is only enabled for Tray and Fitting.
 

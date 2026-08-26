@@ -76,7 +76,7 @@ namespace MEDDotNet
 
             AddTextCol("Tag", "Tag", 70);
             AddTextCol("RelatedTag", "Related Tag", 80);
-            AddTextCol("Size", "Size", 55);
+            AddTextCol("Size", "Size/Count", 55);
             AddTextCol("Alternate", "Alt", 50);
             AddTextCol("Depth", "Depth", 50);
             AddTextCol("Distance", "Dist", 50);

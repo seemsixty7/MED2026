@@ -13,7 +13,10 @@ Conduit stays icon-based. Cables are picked on the palette: **Cable Type** (`MED
 | Building Wire | 1–173 | `MEDCable-BuildingWire` |
 | Tray Cable | 190–293 | `MEDCable-TrayCable` |
 | Ground Cable | 300–338 | `MEDCable-GroundCable` |
+| Instrument Cable | 400–425 | `MEDCable-InstrumentCable` |
 | Residential Cable | 1000+ | `MEDCable-ResidentialCable` |
+
+Instrument Cable 400–425 is a generic catalog (shielded/unshielded TC, PLTC, thermocouple extension). Project specs can specialize those rows later.
 
 The layer is created if missing. Color and linetype stay AutoCAD default. Changing type or cable on the palette writes `_CABCODE` and sets `CLAYER`; `CABLE` sets the layer again before drawing.
 

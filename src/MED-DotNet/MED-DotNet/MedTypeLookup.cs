@@ -26,6 +26,7 @@ namespace MEDDotNet
             "Building Wire",
             "Tray Cable",
             "Ground Cable",
+            "Instrument Cable",
             "Residential Cable"
         };
 
@@ -69,8 +70,22 @@ namespace MEDDotNet
         public static List<string> CableGroups()
         {
             List<string> list = new List<string>();
+            Dictionary<string, bool> seen = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
             for (int i = 0; i < PreferredCableGroups.Length; i++)
-                list.Add(PreferredCableGroups[i]);
+            {
+                string name = PreferredCableGroups[i];
+                if (seen.ContainsKey(name))
+                    continue;
+                seen[name] = true;
+                list.Add(name);
+            }
+            foreach (MedTypeRow row in ForApp(MedApps.Cable))
+            {
+                if (string.IsNullOrEmpty(row.Group) || seen.ContainsKey(row.Group))
+                    continue;
+                seen[row.Group] = true;
+                list.Add(row.Group);
+            }
             return list;
         }
 

@@ -44,7 +44,7 @@ Edit with [MEDTYPE](medtype.md), not a desktop database tool.
 | ITEMTYPE | ITEM_TYPE | CONDUIT, CABLE, TRAY, FITTING, EQUIP |
 | ITEMCODE | ITEM_CODE | Integer. Unique **per type**. |
 | ITEMDESC | ITEM_DESC | Catalog text looked up at extract and in MEDLIST |
-| ITEM_GRP | ITEM_GRP | Cable Type on the Cable palette (Building Wire, Tray Cable, Ground Cable, Residential Cable). Details: grouping (Lighting, Grounding, …). Empty group hides a detail from `DETAIL` / `LTG` / … |
+| ITEM_GRP | ITEM_GRP | Cable Type on the Cable palette (Building Wire, Tray Cable, Ground Cable, Instrument Cable, Residential Cable). Details: grouping (Lighting, Grounding, …). Empty group hides a detail from `DETAIL` / `LTG` / … |
 | ITEMKEY1 | ITEMKEY1 | Details: detail number |
 | ITEMKEY2 | ITEMKEY2 | Details: drawing number the detail lives on |
 | ITEMKEY3 | ITEMKEY3 | Details: block (and slide) name to insert. Blank + `opt_eq_ins` in USER2 → pick an entity to attach |

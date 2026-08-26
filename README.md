@@ -2,10 +2,13 @@
 
 AutoCAD electrical and instrumentation toolkit: equipment types, bill of materials, records, and drawing settings.
 
-## Requirements
+Windows x64. AutoCAD 2020 or later. MIT license.
 
-- Windows x64
-- AutoCAD 2020 or later
+Author: Clint Moore, PMP. Consulting: [mooredesign.net](https://mooredesign.net).
+
+## Docs
+
+See [docs/README.md](docs/README.md) for install, database, and the new C# commands (`MEDTYPE`, `MEDSETTINGS`, `MEDCHG`, `MEDRECORDS`, `MEDSHOWBOM`).
 
 ## Database
 
@@ -21,10 +24,8 @@ The PowerShell installer copies Support, sample drawings, and the seed database,
 
 After files are in place, APPLOAD `Support\MED2026-ProfileSetup.lsp` and run `MED2026SETUP` once.
 
+Do not install over a live shop PC that already uses SQL Server as the production MED database.
+
 Useful commands: `MEDTYPE`  `MEDSETTINGS`  `MEDCHG`  `MEDSHOWBOM`
-
-## Author
-
-Dewitt Clinton Moore. Find MED and consulting at [mooredesign.net](https://mooredesign.net).
 
 No warranty. See [LICENSE](LICENSE) (MIT).

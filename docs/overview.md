@@ -2,7 +2,7 @@
 
 MED helps you generate electrical plans, details, and wiring diagrams in AutoCAD. You draw raceway and equipment in the DWG. MED stores a small material record on each entity, looks up a description in the catalog, and can extract a bill of materials for the current drawing.
 
-Windows x64. AutoCAD 2020 or later. MIT license.
+Windows x64. AutoCAD 2020–2024 for the current `MED-DotNet.dll` (.NET Framework 4.7.2). AutoCAD 2025/2026 needs a later .NET 8 build. MIT license.
 
 Author: Clint Moore, PMP. Consulting: [mooredesign.net](https://mooredesign.net).
 

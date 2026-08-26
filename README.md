@@ -2,7 +2,7 @@
 
 AutoCAD electrical and instrumentation toolkit: equipment types, bill of materials, records, and drawing settings.
 
-Windows x64. AutoCAD 2020 or later. MIT license.
+Windows x64. AutoCAD 2020–2024 for the current `MED-DotNet.dll` (.NET Framework 4.7.2). AutoCAD 2025/2026 needs a later .NET 8 build. MIT license.
 
 Author: Clint Moore, PMP. Consulting: [mooredesign.net](https://mooredesign.net).
 
@@ -15,7 +15,7 @@ See [docs/README.md](docs/README.md).
 - [Database](docs/database.md)
 - [Drawing setup](docs/setup.md)
 - [Commands](docs/commands.md)
-- C# UI: [MEDTYPE](docs/medtype.md), [MEDSETTINGS](docs/medsettings.md), [MEDCHG](docs/medchg.md), [MEDRECORDS](docs/medrecords.md), [MEDSHOWBOM](docs/medshowbom.md)
+- C# UI: [MEDTYPE](docs/medtype.md), [MEDSETTINGS](docs/medsettings.md), [Cable palette](docs/cable.md), [MEDCHG](docs/medchg.md), [MEDRECORDS](docs/medrecords.md), [MEDSHOWBOM](docs/medshowbom.md)
 - Draw: [conduit](docs/conduit.md), [tray](docs/tray.md), [cable](docs/cable.md), [details](docs/detail.md), [two-line conduit](docs/detail-conduit.md), [tagging](docs/tagging.md), [3D](docs/3d.md), [utilities](docs/utilities.md)
 
 ## Database
@@ -36,6 +36,6 @@ After files are in place, APPLOAD `installer\MED2026-ProfileSetup.lsp` and run `
 
 Do not install over a live shop PC that already uses SQL Server as the production MED database.
 
-Useful commands: `MEDTYPE`  `MEDSETTINGS`  `MEDCHG`  `MEDSHOWBOM`  `CONDUIT`  `TRAY`  `BOM`
+Useful commands: `MEDTYPE`  `MEDSETTINGS`  `MEDCABLE`  `MEDCHG`  `MEDSHOWBOM`  `CONDUIT`  `TRAY`  `CABLE`  `BOM`
 
 No warranty. See [LICENSE](LICENSE) (MIT).

@@ -4,6 +4,8 @@ Default directory: `C:\MED2026`.
 
 After files are in place, see [overview.md](overview.md) and [setup.md](setup.md) for what MED is and how to scale a drawing.
 
+The shipped `MED-DotNet.dll` is .NET Framework 4.7.2, built against AutoCAD 2020 references. That covers AutoCAD **2020–2024**. AutoCAD **2025/2026** need a separate .NET 8 build (not in this tree yet). Native ObjectARX is also later, as per-year rebuilds.
+
 ## MED2026-Setup.exe
 
 Run `MED2026-Setup.exe` (Inno wrapper). It unpacks the tree under `{app}` then runs `installer\Install-MED2026.ps1` with `-Provider SQLite`. Setup default is `C:\MED2026`.
@@ -28,7 +30,7 @@ The script copies Support and the seed database `Data\MED.db`. It writes local `
 
 `MED2026SETUP` puts Support first on the AutoCAD search path, adds it to trusted paths, and CUILOADs `med.cuix` if found. Safe to run more than once.
 
-`CSharpAdd.lsp` NETLOADs `MED-DotNet.dll` on startup. Then: `MEDTYPE`, `MEDSETTINGS`, `MEDCHG`, `MEDSHOWBOM`.
+`CSharpAdd.lsp` NETLOADs `MED-DotNet.dll` on startup. Then: `MEDTYPE`, `MEDSETTINGS`, `MEDCABLE`, `MEDCHG`, `MEDSHOWBOM`.
 
 4. `SETUP` for scale and title block. `MEDSETTINGS` for conduit/tray defaults this session.
 

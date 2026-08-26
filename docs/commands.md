@@ -22,7 +22,7 @@ Aliases: `MED` and `MC` call `MEDCHG`. Classic DCL: `MEDCHG-CLASSIC`.
 | --- | --- | --- |
 | [MEDTYPE](medtype.md) | `MEDTYPES` | C# grid on `MEDType` |
 | [MEDSETTINGS](medsettings.md) | `MEDSET` | C# palette; lisp globals + scale |
-| [Cable palette](cable.md) | `CABLEPALETTE`, `CABLESET` | Type then cable; `CABLE` draws |
+| [Cable palette](cable.md) | `MEDCABLE`, `CABLEPALETTE`, `CABLESET` | Type then cable; `CABLE` draws |
 | [MEDCHG](medchg.md) | `MEDPROPERTIES`, `MEDPROPS`, `MED`, `MC` | Properties palette (entity xdata) |
 | `MEDCHG-CLASSIC` | | Old DCL editor |
 | [MEDRECORDS](medrecords.md) | `MEDXDEDIT` | Handle-based multi-xdata grid |
@@ -84,9 +84,8 @@ See [cable.md](cable.md).
 
 | Command | What it does |
 | --- | --- |
-| `CABLE` | Cable palette, type layer, route polyline; tag + related tag |
-| `CABLEPALETTE` / `CABLESET` | Show the Cable palette only |
-| `CABLE` | Old lisp-only CABLE (no palette) |
+| `MEDCABLE` / `CABLEPALETTE` / `CABLESET` | Show the Cable palette only |
+| `CABLE` | Lisp draw (`c:cable`); tag + related tag. Route Cable on the palette runs this |
 | `RUN3DCABLE` | Same on a 3DPOLY using current `_CABCODE` and type layer |
 | `2LINE` `3LINE` | Double / triple line |
 | `MEDLINE` | Polyline on current MED linetype |

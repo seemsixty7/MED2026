@@ -1,6 +1,8 @@
 # Cable
 
-`CABLE` is a C# command. It shows the Cable palette, sets `_CABCODE` and the current layer from the selected type, then draws an LWPOLYLINE with `MED_CABLE` xdata via lisp `med-cable-draw`. Cables differ from conduit and tray: they have a **related tag** (`RTAG`) for the raceway they ride in (conduit tag or tray tag). The relationship is stored for the database only — nothing in the drawing auto-updates when the raceway changes.
+The Cable palette is C# (`MEDCABLE` / `CABLEPALETTE` / `CABLESET`). Drawing the polyline is still lisp `CABLE` (`c:cable` in `Support\medcable.lsp`), which calls `med-cable-draw`.
+
+Cables differ from conduit and tray: they have a **related tag** (`RTAG`) for the raceway they ride in (conduit tag or tray tag). The relationship is stored for the database only. Nothing in the drawing auto-updates when the raceway changes.
 
 Conduit stays icon-based. Cables are picked on the palette: **Cable Type** (`MEDType.ITEM_GRP`) then **Cable** (`ITEMCODE` + `ITEMDESC`). `_CABNUM` (count) is left as-is from settings / `med.spc`.
 
@@ -18,25 +20,27 @@ Conduit stays icon-based. Cables are picked on the palette: **Cable Type** (`MED
 
 Instrument Cable 400–425 is a generic catalog (shielded/unshielded TC, PLTC, thermocouple extension). Project specs can specialize those rows later.
 
-The layer is created if missing. Color and linetype stay AutoCAD default. Changing type or cable on the palette writes `_CABCODE` and sets `CLAYER`; `CABLE` sets the layer again before drawing.
+The layer is created if missing. Color and linetype stay AutoCAD default. Changing type or cable on the palette writes `_CABCODE` and sets `CLAYER`. `CABLE` / Route Cable apply the layer again before drawing.
 
 ## Commands
 
 | Command | What it does |
 | --- | --- |
-| `CABLE` | Show palette, apply type layer + `_CABCODE`, then `med-cable-draw`. If no cable is selected yet, the palette stays up and you get a prompt — nothing is drawn. |
-| `CABLEPALETTE` / `CABLESET` | Show the palette only. |
-| `CABLE` | Old lisp-only route (`c:cable-classic` in `Support\medcable.lsp`). Same draw body, no palette. |
+| `MEDCABLE` / `CABLEPALETTE` / `CABLESET` | Show the Cable palette only. |
+| `CABLE` | Original lisp draw (`c:cable` → `med-cable-draw`). Uses current `_CABCODE`. |
 | `RUN3DCABLE` | Same prompts on a `3DPOLY`, using current `_CABCODE` and the same type layer. |
 
-Ribbon / CUI `CABLE` hits the .NET command (the macro name is `CABLE`, not a hardcoded lisp call). Grounding-size toolbar buttons still `(setq _CABCODE …) cable`; the palette refreshes to that code, then draws.
+Ribbon / CUI macros named `CABLE` hit the lisp command, not the palette. Grounding-size toolbar buttons still `(setq _CABCODE …) cable` and draw with lisp.
 
 ## Route
 
-1. `CABLE` (or `CABLEPALETTE` then pick type/cable, then `CABLE`).
-2. `Pick start point of <catalog description>:`, then `Pick point:` until Enter. Internally this is a PLINE.
-3. `Cable Tag number <NONE>:`
-4. `Cable Relate Tag <NONE>:` — the raceway tag, if any.
+1. `MEDCABLE` (or `CABLEPALETTE`) and pick Cable Type then Cable.
+2. **Route Cable** on the palette (sets `_CABCODE` and runs `CABLE`), or type `CABLE`.
+3. `Pick start point of <catalog description>:`, then `Pick point:` until Enter. Internally this is a PLINE.
+4. `Cable Tag number <NONE>:`
+5. `Cable Relate Tag <NONE>:` — the raceway tag, if any.
+
+If no cable is selected yet, Route Cable / `CABLE` prompts and nothing is drawn. The palette stays up.
 
 Osnap when connecting to other cables. Tagging off (`MEDSETTINGS`) fills both tags with NONE.
 

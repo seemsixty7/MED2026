@@ -2,7 +2,7 @@
 
 MED is an AutoCAD electrical and instrumentation toolkit. Material codes live on entities (xdata). Descriptions live in the catalog table `MEDType`. A bill of materials extract goes into `MEDProject`.
 
-Windows x64. AutoCAD 2020 or later. MIT license.
+Windows x64. AutoCAD 2020–2024 for the current `MED-DotNet.dll` (.NET Framework 4.7.2). AutoCAD 2025/2026 needs a later .NET 8 build. MIT license.
 
 Author: Clint Moore, PMP. Consulting: [mooredesign.net](https://mooredesign.net).
 
@@ -20,7 +20,7 @@ These replaced the 2012 DCL dialogs. Do not treat the old DCL screens as current
 
 - [MEDTYPE](medtype.md) — catalog grid (`MEDTYPES`)
 - [MEDSETTINGS](medsettings.md) — conduit / tray / scale defaults (`MEDSET`)
-- [Cable palette](cable.md) — type then cable (`CABLE`, `CABLEPALETTE`, `CABLESET`)
+- [Cable palette](cable.md) — type then cable (`MEDCABLE`, `CABLEPALETTE`, `CABLESET`); `CABLE` draws
 - [MEDCHG / MED Properties](medchg.md) — entity xdata (`MEDPROPERTIES`, `MEDPROPS`; `MED` and `MC` still call `MEDCHG`)
 - [MEDRECORDS](medrecords.md) — handle-based multi-xdata grid (`MEDXDEDIT`)
 - [MEDSHOWBOM](medshowbom.md) — current-drawing BOM browse (`MEDSHOW`, `MEDSHOWSUM`)
@@ -33,7 +33,7 @@ LISP in `Support` still routes raceway, places details, tags, and extracts BOM.
 
 - [Conduit](conduit.md) — `CONDUIT`, bends, fittings, `CHGSIZE`, `MEDLIST`
 - [Cable tray](tray.md) — two-point tray, centerline, offsets, fittings
-- [Cable](cable.md) — `CABLE` palette (type then cable), related tag, `CABLE`
+- [Cable](cable.md) — `MEDCABLE` palette (type then cable), related tag, lisp `CABLE` to draw
 - [Details / equipment](detail.md) — `DETAIL`, `LTG` / `GND` / `PWR` / `INS` / `TRY`, `DETAG`
 - [Detail conduit (two-line)](detail-conduit.md) — `2LCON`, away / toward / break
 - [Tagging](tagging.md) — `CTAG`, `TTAG`, balloons, section marks

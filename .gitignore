@@ -1,0 +1,31 @@
+# Build
+src/**/bin/
+src/**/obj/
+src/MED-DotNet/packages/
+src/MED-DotNet/nuget.exe
+*.user
+*.suo
+
+# Machine-local (installer writes these)
+Support/MEDDataBaseSettings.dat
+Support/Project.dat
+
+# Local working copies, not the public tree
+Delete/
+Review/
+Logos/
+Dwg/
+/med.db
+*.bak*
+*.cuix.bak*
+
+Thumbs.db
+Desktop.ini
+
+# Inno compiler output (rebuild with ISCC)
+installer/Output/
+.vs/
+
+# Never ship a machine connect string
+src/**/MEDDataBaseSettings.dat
+

@@ -1,0 +1,8 @@
+; Copy to MEDDataBaseSettings.dat or let the installer write it.
+; SQLite (default out-of-box):
+Provider=SQLite
+ConnectString=Data Source=C:\MED2026\Data\MED.db
+
+; SQL Server (optional):
+; Provider=SqlServer
+; ConnectString=Server=YOURSERVER\INSTANCE;Database=MED;Integrated Security=SSPI;

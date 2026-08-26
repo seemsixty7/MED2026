@@ -1,0 +1,1574 @@
+//
+//      AutoCAD menu file - MED.MNU
+//
+//
+// MED Comments
+//  If adding additional POP menus be sure to add to the _MEDMENULIST
+//  found in the MED.MNL file.
+
+***MENUGROUP=MED
+
+***POP1
+**POP1MEDMAIN
+ID_MEDMAIN     [MED Main]
+               [MED Settings     ]^C^CMEDSET 
+               [MED Data to BOM  ]^C^CBOM 
+               [MED BOM Selection]^C^CBOMSS 
+               [Browse BOM       ]^C^CSHOW 
+               [MED Change       ]^C^CMEDCHG 
+               [MED Change Classic]^C^CMEDCHG-CLASSIC 
+               [MED Records      ]^C^CMEDRECORDS 
+               [MED Data Copy    ]^C^CMEDCOPY 
+               [MED Item Find    ]^C^CMEDFIND 
+               [Change Size      ]^C^CCHGSIZE 
+               [MED List         ]^C^CMEDLIST 
+               [MED Data Strip   ]^C^CMEDSTRIP 
+               [Detail Update    ]^C^CDETAGUPD 
+               [Isolate   Equip  ]^C^CISOLATE 
+               [Unisolate Equip]^C^CUNISOLATE 
+               [--]
+               [Title Block Setup ]^C^CSETUP 
+               [--]
+               [->Tagging         ]
+                 [Add Bubble Leader]^C^CABL 
+                 [Conduit Tag      ]^C^CCTAG 
+                 [Detail Tag       ]^C^CDETAG 
+                 [HotDog Tag       ]^C^CHDTAG 
+                 [Instrument Bubble]^C^CIT 
+                 [Material Bubble  ]^C^CMB 
+                 [Move Bubble/Leadr]^C^CMBL 
+                 [<-Wire Markers   ]^C^CWIRES 
+               [ Icon]$I=MED.MEDTAGSICON $I=* 
+               [->Misc. Tools]
+                 [Add Hoop      ]^C^CGR 
+                 [Arrow Leader  ]^C^CALEAD 
+                 [Attribute Rotate]^C^CATTROT 
+                 [Bracket       ]^C^CBRACKET 
+                 [Block Name    ]^C^CBN 
+                 [Change Layer  ]^C^CCL 
+                 [Cut Marks     ]^C^CCUT 
+                 [Draw Pline Box]^C^CPBOX 
+                 [Extend Multi  ]^C^CEM 
+                 [File Date     ]^C^CFD 
+                 [Freeze Layers ]^C^CFL 
+                 [Hoop Leader   ]^C^CGRAB 
+                 [Line Break    ]^C^CLBREAK 
+                 [Priority Break]^C^CLB 
+                 [Revison Cloud ]^C^CCLOUD 
+                 [Box Cloud     ]^C^CBOXCLOUD 
+                 [Section Marks ]^C^CSECT 
+                 [Set Curr. Layr]^C^CSL 
+                 [Tray Fix      ]^C^CTRAYFIX 
+                 [<-Trim Multiple ]^C^CTM 
+               [ Icon]$I=MED.MEDTOOLSICON $I=* 
+               [->Text & Attributes]
+                 [Add Attribute     ]^C^CADDATRIB 
+                 [Attribute Change  ]^C^CACX 
+                 [Attribute Replace ]^C^CAC 
+                 [Dialog Edit       ]^C^CDD 
+                 [Change Text       ]^C^CCT 
+                 [Coordinate Text   ]^C^CCD 
+                 [Replace Text      ]^C^CRT 
+                 [Find & Replace Txt]^C^CCX 
+                 [<-Suffix & Prefix   ]^C^CCTEDIT 
+               [--]
+               [Plan Drawings  ]^C^CMEDPLAN
+               [Detail Drawings]^C^CMEDDETAIL
+               [Wiring Diagrams]^C^CMEDWIRING
+
+***POP2
+**POP2CONDUIT
+               [Plan Conduit]
+               [->Set Size]
+                 [ Set Size... ]^C^CCONSIZE 
+                 [--]
+                 [  1/2"  ]^C^C(setq _ACSIZE 0.84  _CLETT "A" _CSIZE 0.5 ) 
+                 [  3/4"  ]^C^C(setq _ACSIZE 1.050 _CLETT "B" _CSIZE 0.75) 
+                 [   1"   ]^C^C(setq _ACSIZE 1.315 _CLETT "C" _CSIZE 1.0 ) 
+                 [ 1-1/4" ]^C^C(setq _ACSIZE 1.660 _CLETT "D" _CSIZE 1.25) 
+                 [ 1-1/2" ]^C^C(setq _ACSIZE 1.9   _CLETT "E" _CSIZE 1.5 ) 
+                 [   2"   ]^C^C(setq _ACSIZE 2.375 _CLETT "F" _CSIZE 2.0 ) 
+                 [ 2-1/2" ]^C^C(setq _ACSIZE 2.875 _CLETT "G" _CSIZE 2.5 ) 
+                 [   3"   ]^C^C(setq _ACSIZE 3.50  _CLETT "H" _CSIZE 3.0 ) 
+                 [ 3-1/2" ]^C^C(setq _ACSIZE 4.0   _CLETT "I" _CSIZE 3.5 ) 
+                 [   4"   ]^C^C(setq _ACSIZE 4.50  _CLETT "J" _CSIZE 4.0 ) 
+                 [   5"   ]^C^C(setq _ACSIZE 5.563 _CLETT "K" _CSIZE 5.0 ) 
+                 [<-   6"   ]^C^C(setq _ACSIZE 6.625 _CLETT "L" _CSIZE 6.0 ) 
+               [--]
+               [EMT     ]^C^C(smlayer _MCON) (setq _CODE 4) CONDUIT 
+               [PVC     ]^C^C(smlayer _MCON) (setq _CODE 3) CONDUIT 
+               [RIGID   ]^C^C(smlayer _MCON) (setq _CODE 1) CONDUIT 
+               [PVC-COAT]^C^C(smlayer _MCON) (setq _CODE 2) CONDUIT 
+               [--]
+               [Down    ]^C^C(smlayer _MCON) (setblkins nil "1cond" nil nil _SC 4) MEDBlockInsert
+               [Up      ]^C^C(smlayer _MCON) (setblkins nil "1conu" nil nil _SC 5) MEDBlockInsert
+               [--]
+               [Flex    ]^C^Cflex 
+               [--]
+               [Define: ]^C^CDEFINE 
+               [--]
+               [ Icons     ]$i=MED.MEDplancon $i=* 
+               [--]
+               [->Fittings]
+                 [Bub     ]^C^C(setq _FITTCODE  94) (setblkins _MEDFIT "1bub"     nil nil _SC 2) MEDBlockInsert
+                 [Cee     ]^C^C(setq _FITTCODE  50) (setblkins _MEDFIT "1cee"     nil nil _SC 2) MEDBlockInsert
+                 [Gual    ]^C^C(setq _FITTCODE 141) (setblkins _MEDFIT "1gual"    nil nil _SC 2) MEDBlockInsert
+                 [Guat    ]^C^C(setq _FITTCODE 142) (setblkins _MEDFIT "1guat"    nil nil _SC 2) MEDBlockInsert
+                 [Guax    ]^C^C(setq _FITTCODE 143) (setblkins _MEDFIT "1guax"    nil nil _SC 2) MEDBlockInsert
+                 [Guatside]^C^C(setq _FITTCODE 142) (setblkins _MEDFIT "1guatsid" nil nil _SC 2) MEDBlockInsert
+                 [Gualside]^C^C(setq _FITTCODE 141) (setblkins _MEDFIT "1gualsid" nil nil _SC 2) MEDBlockInsert
+                 [Hub     ]^C^C(setq _FITTCODE 120) (setblkins _MEDFIT "1hub"     nil nil _SC 2) MEDBlockInsert
+                 [Lbr     ]^C^C(setq _FITTCODE  30) (setblkins _MEDFIT "1lbr"     nil nil _SC 2) MEDBlockInsert
+                 [Lbl     ]^C^C(setq _FITTCODE  30) (setblkins _MEDFIT "1lbl"     nil nil _SC 2) MEDBlockInsert
+                 [Lbd  R  ]^C^C(setq _FITTCODE  39) (setblkins _MEDFIT "1lbdr"    nil nil _SC 2) MEDBlockInsert
+                 [Lbd  L  ]^C^C(setq _FITTCODE  39) (setblkins _MEDFIT "1lbdl"    nil nil _SC 2) MEDBlockInsert
+                 [Lb-down ]^C^C(setq _FITTCODE  30) (setblkins _MEDFIT "1lbd"     nil nil _SC 3) MEDBlockInsert
+                 [Lb-up   ]^C^C(setq _FITTCODE  30) (setblkins _MEDFIT "1lbu"     nil nil _SC 6) MEDBlockInsert
+                 [Lby     ]^C^C(setq _FITTCODE  41) (setblkins _MEDFIT "1lby"     nil nil _SC 2) MEDBlockInsert
+                 [Plug-Rec]^C^C(setq _FITTCODE 100) (setblkins _MEDFIT "1cap"     nil nil _SC 2) MEDBlockInsert
+                 [Plug-SqH]^C^C(setq _FITTCODE 101) (setblkins _MEDFIT "1cap"     nil nil _SC 2) MEDBlockInsert
+                 [Reducer ]^C^C(setq _FITTCODE 103 _TYPE T) (setblkins _MEDFIT "1re"      nil nil _SC 8) MEDBlockInsert
+                 [Seal    ]^C^C(setq _FITTCODE  61) (setblkins _MEDFIT "1seal"    nil nil _SC 2) MEDBlockInsert
+                 [Seal-Drn]^C^C(setq _FITTCODE  64) (setblkins _MEDFIT "1sealdr"  nil nil _SC 2) MEDBlockInsert
+                 [Tee     ]^C^C(setq _FITTCODE  11) (setblkins _MEDFIT "1tee"     nil nil _SC 2) MEDBlockInsert
+                 [T-down  ]^C^C(setq _FITTCODE  11) (setblkins _MEDFIT "1teed"    nil nil _SC 3) MEDBlockInsert
+                 [T-up    ]^C^C(setq _FITTCODE  11) (setblkins _MEDFIT "1teeu"    nil nil _SC 3) MEDBlockInsert
+                 [Union   ]^C^C(setq _FITTCODE  72) (setblkins _MEDFIT "1union"   nil nil _SC 2) MEDBlockInsert
+                 [<-X     ]^C^C(setq _FITTCODE  80) (setblkins _MEDFIT "1exs"     nil nil _SC 2) MEDBlockInsert
+               [ Icons ]$i=MED.MEDplanfit $i=* 
+               [->Long Radius Elbows]
+                 [18" RGS Long Radius Elbow  ]^C^C(attachfitting 89) 
+                 [24" RGS Long Radius Elbow  ]^C^C(attachfitting 90) 
+                 [<-36" RGS Long Radius Elbow]^C^C(attachfitting 91) 
+               [--]
+               [->Cables]
+                 [#4/0 Gnd Cable ]^C^C(smlayer _MEDGRND)(setq _CABCODE 308) cable 
+                 [#2/0 Gnd Cable ]^C^C(smlayer _MEDGRND)(setq _CABCODE 310) cable 
+                 [<-#2 Gnd Cable   ]^C^C(smlayer _MEDGRND)(setq _CABCODE 313) cable 
+               [Ground Cable Down    ]^C^C(smlayer _MEDGRND) (setblkins nil "1cond" nil nil _SC 10) MEDBlockInsert
+               [Ground Cable Up      ]^C^C(smlayer _MEDGRND) (setblkins nil "1conu" nil nil _SC 11) MEDBlockInsert
+
+***POP2DETCONDUIT
+               [Detail Conduit]
+               [->Set Size]
+                 [Size Menu]
+                 [Current Size](if _CSIZE (progn (princ (rtos _CSIZE 4))(princ))(princ)) 
+                 [--]
+                 [  1/2"  ]^C^C(setq _ACSIZE 0.84  _CLETT "A" _CSIZE 0.5 ) 
+                 [  3/4"  ]^C^C(setq _ACSIZE 1.050 _CLETT "B" _CSIZE 0.75) 
+                 [   1"   ]^C^C(setq _ACSIZE 1.315 _CLETT "C" _CSIZE 1.0 ) 
+                 [ 1-1/4" ]^C^C(setq _ACSIZE 1.660 _CLETT "D" _CSIZE 1.25) 
+                 [ 1-1/2" ]^C^C(setq _ACSIZE 1.9   _CLETT "E" _CSIZE 1.5 ) 
+                 [   2"   ]^C^C(setq _ACSIZE 2.375 _CLETT "F" _CSIZE 2.0 ) 
+                 [ 2-1/2" ]^C^C(setq _ACSIZE 2.875 _CLETT "G" _CSIZE 2.5 ) 
+                 [   3"   ]^C^C(setq _ACSIZE 3.50  _CLETT "H" _CSIZE 3.0 ) 
+                 [ 3-1/2" ]^C^C(setq _ACSIZE 4.0   _CLETT "I" _CSIZE 3.5 ) 
+                 [   4"   ]^C^C(setq _ACSIZE 4.50  _CLETT "J" _CSIZE 4.0 ) 
+                 [   5"   ]^C^C(setq _ACSIZE 5.563 _CLETT "K" _CSIZE 5.0 ) 
+                 [   6"   ]^C^C(setq _ACSIZE 6.625 _CLETT "L" _CSIZE 6.0 ) 
+                 [<---]
+               [--]
+               [Bends   ](toggle "_CONFILL" "Conduit Bend Radius") 
+               [ ON/OFF ](toggle "_CONFILL" "Conduit Bend Radius") 
+               [--]
+               [Draw Conduit   ]^C^C(smlayer _MCON) (setq _CODE 1) 2lcon
+               [--]
+               [FLEX    ]^C^C(smlayer _MCON) (setq _CODE 7) 2lflex 
+               [--]
+               [Add Break]^C^C2break 
+               [Turn Away]^C^C2away 
+               [Turn Toward]^C^C2toward 
+
+**POP2ONELINES
+               [One Lines]
+               [Bus or Feeder   ]^C^C(smlayer _MEDPCABLE) MEDLINE 
+               [Control Cable   ]^C^C(smlayer _MEDCCABLE) MEDLINE 
+               [Instrument Cable]^C^C(smlayer _MEDICABLE) MEDLINE 
+               [ Icon]$I=MED.MEDWDLTYPE $I=* 
+               [--]
+               [->Typical Starters]
+                 [Typical Mag. Strtr     ]^C^C(typstrins "typstrm1") 
+                 [Typical Mag. Strtr 2SP ]^C^C(typstrins "typstrm2") 
+                 [Typical Therm Strtr    ]^C^C(typstrins "typstrt1") 
+                 [Typical Therm Strtr 2SP]^C^C(typstrins "typstrt2") 
+                 [Typical Welding Recptcl]^C^C(typstrins "typstrwl") 
+                 [Typical Lighting Panel ]^C^C(typstrins "typstrlp") 
+                 [<-Typical Distrib Panel]^C^C(typstrins "typstrdp") 
+               [ Icon]$I=MED.MEDWDTYPSTART $I=* 
+               [--]
+               [->Control Devices]
+                 [Hand Off Auto     ]^C^C(setblkins _MEDSYM "devhoa"  nil nil _SC -1) MEDBlockInsert
+                 [Start / Stop      ]^C^C(setblkins _MEDSYM "devss"   nil nil _SC -1) MEDBlockInsert
+                 [Stop Station      ]^C^C(setblkins _MEDSYM "devs"    nil nil _SC -1) MEDBlockInsert
+                 [Slow / Fast / Stop]^C^C(setblkins _MEDSYM "devsfs"  nil nil _SC -1) MEDBlockInsert
+                 [A or B Selector   ]^C^C(setblkins _MEDSYM "devab"   nil nil _SC -1) MEDBlockInsert
+                 [PLC/DCS Interconct]^C^C(setblkins _MEDSYM "devplc"  nil nil _SC -1) MEDBlockInsert
+                 [Indicator Light   ]^C^C(setblkins _MEDSYM "pilot03" nil nil _SC -1) MEDBlockInsert
+                 [<-Off On          ]^C^C(setblkins _MEDSYM "devoo"   nil nil _SC -1) MEDBlockInsert
+               [ Icon]$I=MED.MEDWD1lcntdev $I=* 
+               [--]
+               [->Feeder Loads]
+                 [Motor or Pump     ]^C^C(setblkins _MEDSYM "motor01" nil nil _SC -1) MEDBlockInsert
+                 [Transformer       ]^C^C(setblkins _MEDSYM "xfmr01"  nil nil _SC -1) MEDBlockInsert
+                 [Lighting Panel    ]^C^C(setblkins _MEDSYM "ltgpnl"  nil nil _SC -1) MEDBlockInsert
+                 [Distribution Panel]^C^C(setblkins _MEDSYM "ltgpnl"  nil nil _SC -1) MEDBlockInsert
+                 [Welding Receptacle]^C^C(setblkins _MEDSYM "eqpweld" nil nil _SC -1) MEDBlockInsert
+                 [<-Lighting Contactor]^C^C(setblkins _MEDSYM "eqpcntr" nil nil _SC -1) MEDBlockInsert
+               [ Icon]$I=MED.medwd1lloads $I=* 
+               [--]
+               [->Relays & Meters      ]
+                 [Single Designator    ]^C^C(setblkins _MEDSYM "devmtr1" nil nil _SC -1) MEDBlockInsert
+                 [Dual Designator      ]^C^C(setblkins _MEDSYM "devmtr2" nil nil _SC -1) MEDBlockInsert
+                 [Dual Designator w/Lin]^C^C(setblkins _MEDSYM "devmtr3" nil nil _SC -1) MEDBlockInsert
+                 [Device w/Designator  ]^C^C(setblkins _MEDSYM "devmtr4" nil nil _SC -1) MEDBlockInsert
+                 [<-Normal Test Switch ]^C^C(setblkins _MEDSYM "devmtr5" nil nil _SC -1) MEDBlockInsert
+               [ Icon]$I=MED.medwd1lmeters $I=* 
+               [--]
+               [->Components         ]
+                 [Stab Socket        ]^C^C(setblkins _MEDSYM "STAB"    nil nil _SC -1) MEDBlockInsert
+                 [Stabbed Socket     ]^C^C(setblkins _MEDSYM "STABED"  nil nil _SC -1) MEDBlockInsert
+                 [Circuit Breaker    ]^C^C(setblkins _MEDSYM "CBRKR"   nil nil _SC -1) MEDBlockInsert
+                 [Fused Disconnect   ]^C^C(setblkins _MEDSYM "FUSESW"  nil nil _SC -1) MEDBlockInsert
+                 [Control Transformer]^C^C(setblkins _MEDSYM "CPT01"   nil nil _SC -1) MEDBlockInsert
+                 [M Contactor Coil   ]^C^C(setblkins _MEDSYM "COIL01"  nil nil _SC -1) MEDBlockInsert
+                 [Fuse               ]^C^C(setblkins _MEDSYM "FUSE02"  nil nil _SC -1) MEDBlockInsert
+                 [Fuse w/ Connects   ]^C^C(setblkins _MEDSYM "FUSE"    nil nil _SC -1) MEDBlockInsert
+                 [Thermal Overloads  ]^C^C(setblkins _MEDSYM "TOLOAD"  nil nil _SC -1) MEDBlockInsert
+                 [Magnetic Overloads ]^C^C(setblkins _MEDSYM "MOLOAD"  nil nil _SC -1) MEDBlockInsert
+                 [<-Main Contact     ]
+               [ Icon]$I=MED.medwd1lcmpnt $I=* 
+
+
+***POP3
+**POP3TRAY
+               [Cable Tray]
+               [3D Tray Out]^C^CMAKE3DTRAY 
+               [->Set Size]
+                 [Width- ]
+                 [   6"   ](setq _TRSIZE  6.0) 
+                 [   9"   ](setq _TRSIZE  9.0) 
+                 [  12"   ](setq _TRSIZE 12.0) 
+                 [  18"   ](setq _TRSIZE 18.0) 
+                 [  24"   ](setq _TRSIZE 24.0) 
+                 [  30"   ](setq _TRSIZE 30.0) 
+                 [  36"   ](setq _TRSIZE 36.0) 
+                 [  42"   ](setq _TRSIZE 42.0) 
+                 [<-  48"   ](setq _TRSIZE 48.0) 
+               [->Set Depth]
+                 [Depth- ]
+                 [   3"   ](setq _TRDEPTH 3.0) 
+                 [   4"   ](setq _TRDEPTH 4.0) 
+                 [<-   6"   ](setq _TRDEPTH 6.0) 
+               [->Set Radius]
+                 [Radius-  ]
+                 [12" Radius]^C^C(setq _TRFITTADD 0 _TRRAD 12.0) 
+                 [24" Radius]^C^C(setq _TRFITTADD 1 _TRRAD 24.0) 
+                 [36" Radius]^C^C(setq _TRFITTADD 2 _TRRAD 36.0) 
+                 [<-48" Radius]^C^C(setq _TRFITTADD 120 _TRRAD 48.0) 
+               [--]
+               [TRAY PLAN VIEW...]
+               [Heavy Duty Cable Tray]^C^C(setq _TRTYPE 2) TRAY 
+               [Medium Duty Cable Tray]^C^C(setq _TRTYPE 1) TRAY 
+               [Light Duty Cable Tray]^C^C(setq _TRTYPE 0) TRAY 
+               [Plan Vert 90     ]^C^CTRAYV90 
+               [Horizontal Offset]^C^CTRAYOFF 
+               [Vertical Offset  ]^C^CPTRAYOFF 
+               [TrayDown         ]^C^Ctraydn 
+               [TrayUp           ]^C^Ctrayup 
+               [->Plan Fittings]
+                 [90 Elbow   ]^C^CTRAY90 
+                 [60 Elbow   ]^C^CTRAY60 
+                 [45 Elbow   ]^C^CTRAY45 
+                 [30 Elbow   ]^C^CTRAY30 
+                 [Tee        ]^C^CTRAYTEE 
+                 [Cross      ]^C^CTRAYCROSS 
+                 [Str RE     ]^C^CTRAYRE 
+                 [Lft RE     ]^C^CTRAYREL 
+                 [<-Rgt RE     ]^C^CTRAYRER 
+               [ Icon ]$i=MED.MEDtraysldp $i=* 
+               [--]
+               [TRAY SIDE VIEW...]
+               [Heavy Duty Cable Tray       ]^C^C(setq _TRTYPE 2) VTRAY 
+               [Medium Duty Cable Tray       ]^C^C(setq _TRTYPE 1) VTRAY 
+               [Light Duty Cable Tray       ]^C^C(setq _TRTYPE 0) VTRAY 
+               [Offset           ]^C^CVTRAYOFF 
+               [->Fittings Side View]
+                 [90 Elbow   ]^C^CVTRAY90 
+                 [60 Elbow   ]^C^CVTRAY60 
+                 [45 Elbow   ]^C^CVTRAY45 
+                 [<-30 Elbow   ]^C^CVTRAY30 
+               [ Icon ]$i=MED.MEDtraysldv $i=* 
+               [--]
+               [Cable Channel...]
+               [4" Cable Channel]^C^C(setq _CHANSIZE 4.0) channel 
+               [6" Cable Channel]^C^C(setq _CHANSIZE 6.0) channel 
+               [Plan Vert 90    ]^C^CCHANV90 
+               [Channel Down    ]^C^Cchandn 
+               [Channel Up      ]^C^Cchanup 
+               [Channel Offset  ]^C^CCHANOFF 
+               [->Channel Fittings]
+                 [30 Deg Chan. Fit]^C^Cchan30 
+                 [45 Deg Chan. Fit]^C^Cchan45 
+                 [60 Deg Chan. Fit]^C^Cchan60 
+                 [90 Deg Chan. Fit]^C^Cchan90 
+                 [Channel Cross   ]^C^CCHANCROSS 
+                 [<-Channel Tee   ]^C^CCHANTEE 
+               [ Icon ]$i=MED.MEDchansld $i=* 
+**POP3DETFITTINGS
+               [Fittings]
+               [->Fittings]
+                 [Bub     ]^C^C(setq _FITTCODE  94) (setblkins _MEDETFIT (strcat "bub"     _CLETT) nil nil 1 2) MEDBlockInsert
+                 [Coupling]^C^C(setq _FITTCODE   8) (setblkins _MEDETFIT (strcat "coup"    _CLETT) nil nil 1 2) MEDBlockInsert
+                 [Cee     7]^C^C(setq _FITTCODE  50) (setblkins _MEDETFIT (strcat "c"       _CLETT) nil nil 1 1) MEDBlockInsert
+                 [Cee     8]^C^C(setq _FITTCODE  51) (setblkins _MEDETFIT (strcat "C8"      _CLETT) nil nil 1 1) MEDBlockInsert
+                 [ --Back   8]^C^C(setq _FITTCODE  51) (setblkins _MEDETFIT (strcat "C8-BACK" _CLETT) nil nil 1 1) MEDBlockInsert
+                 [ --Side   8]^C^C(setq _FITTCODE  51) (setblkins _MEDETFIT (strcat "C8-SIDE" _CLETT) nil nil 1 1) MEDBlockInsert
+                 [ --End    8]^C^C(setq _FITTCODE  51) (setblkins _MEDETFIT (strcat "C8-END"  _CLETT) nil nil 1 1) MEDBlockInsert
+                 [Hub CH  ]^C^C(setq _FITTCODE 120) (setblkins _MEDETFIT (strcat "hub"     _CLETT) nil nil 1 2) MEDBlockInsert
+                 [Hub MYR ]^C^C(setq _FITTCODE 121) (setblkins _MEDETFIT (strcat "mhub"    _CLETT) nil nil 1 2) MEDBlockInsert
+                 [LB      7]^C^C(setq _FITTCODE  30) (setblkins _MEDETFIT (strcat "lb"      _CLETT) nil nil 1 1) MEDBlockInsert
+                 [LB oppisite  7]^C^C(setq _FITTCODE  30) (setblkins _MEDETFIT (strcat "lb_"     _CLETT) nil nil 1 1) MEDBlockInsert
+                 [LBD     ]^C^C(setq _FITTCODE  39) (setblkins _MEDETFIT (strcat "lbd"     _CLETT) nil nil 1 1) MEDBlockInsert
+                 [LL      7]^C^C(setq _FITTCODE  33) (setblkins _MEDETFIT (strcat "ll"      _CLETT) nil nil 1 2) MEDBlockInsert
+                 [LR      7]^C^C(setq _FITTCODE  36) (setblkins _MEDETFIT (strcat "lr"      _CLETT) nil nil 1 2) MEDBlockInsert
+                 [LBY     ]^C^C(setq _FITTCODE  41) (setblkins _MEDETFIT (strcat "lby"     _CLETT) nil nil 1 2) MEDBlockInsert
+                 [LBYFRNT ]^C^C(setq _FITTCODE  41) (setblkins _MEDETFIT (strcat "lbyfrnt" _CLETT) nil nil 1 2) MEDBlockInsert
+                 [FlexConn]^C^C(setq _FITTCODE 103) (setblkins _MEDETFIT (strcat "ltsc"    _CLETT) nil nil 1 2) MEDBlockInsert
+                 [Reducer ]^C^C(setq _FITTCODE 103 _TYPE T) (setblkins _MEDETFIT (strcat "re"    _CLETT) nil nil 1 8) MEDBlockInsert
+                 [Seal    ]^C^C(setq _FITTCODE  61) (setblkins _MEDETFIT (strcat "eys"     _CLETT) nil nil 1 2) MEDBlockInsert
+                 [ Side-R ]^C^C(setq _FITTCODE  61) (setblkins _MEDETFIT (strcat "EYS-SIDER" _CLETT) nil nil 1 2) MEDBlockInsert
+                 [ Side-L ]^C^C(setq _FITTCODE  61) (setblkins _MEDETFIT (strcat "EYS-SIDEL" _CLETT) nil nil 1 2) MEDBlockInsert
+                 [Seal-EYSX]^C^C(setq _FITTCODE  67) (setblkins _MEDETFIT (strcat "eysx"     _CLETT) nil nil 1 2) MEDBlockInsert
+                 [ Side-R ]^C^C(setq _FITTCODE  67) (setblkins _MEDETFIT (strcat "EYSX-SIDER" _CLETT) nil nil 1 2) MEDBlockInsert
+                 [ Side-L ]^C^C(setq _FITTCODE  67) (setblkins _MEDETFIT (strcat "EYSX-SIDEL" _CLETT) nil nil 1 2) MEDBlockInsert
+                 [Seal-Drn]^C^C(setq _FITTCODE  64) (setblkins _MEDETFIT (strcat "EYD"     _CLETT) nil nil 1 2) MEDBlockInsert
+                 [ Side-R ]^C^C(setq _FITTCODE  64) (setblkins _MEDETFIT (strcat "EYD-SIDER" _CLETT) nil nil 1 2) MEDBlockInsert
+                 [ Side-L ]^C^C(setq _FITTCODE  64) (setblkins _MEDETFIT (strcat "EYD-SIDEL" _CLETT) nil nil 1 2) MEDBlockInsert
+                 [Seal-EYDX]^C^C(setq _FITTCODE  60) (setblkins _MEDETFIT (strcat "EYDX"     _CLETT) nil nil 1 2) MEDBlockInsert
+                 [ Side-R ]^C^C(setq _FITTCODE  60) (setblkins _MEDETFIT (strcat "EYDX-SIDER" _CLETT) nil nil 1 2) MEDBlockInsert
+                 [ Side-L ]^C^C(setq _FITTCODE  60) (setblkins _MEDETFIT (strcat "EYDX-SIDEL" _CLETT) nil nil 1 2) MEDBlockInsert
+                 [Seal Elbow]^C^C(setq _FITTCODE  62) (setblkins _MEDETFIT (strcat "eys29" _CLETT) nil nil 1 2) MEDBlockInsert
+                 [ Side   ]^C^C(setq _FITTCODE  62) (setblkins _MEDETFIT (strcat "eys29-SIDE" _CLETT) nil nil 1 2) MEDBlockInsert
+                 [Tee     7]^C^C(setq _FITTCODE  11) (setblkins _MEDETFIT (strcat "t"       _CLETT) nil nil 1 2) MEDBlockInsert
+                 [UNF     ]^C^C(setq _FITTCODE  73) (setblkins _MEDETFIT (strcat "uny"     _CLETT) nil nil 1 2) MEDBlockInsert
+                 [UNY     ]^C^C(setq _FITTCODE  72) (setblkins _MEDETFIT (strcat "uny"     _CLETT) nil nil 1 2) MEDBlockInsert
+                 [<-X     7]^C^C(setq _FITTCODE  80) (setblkins _MEDETFIT (strcat "x"       _CLETT) nil nil 1 2) MEDBlockInsert
+               [ Icons ]$i=MED.meddetailfit $i=* 
+               [--]
+               [->Gua Fittings]
+                 [GUA     ]^C^C(setq _FITTCODE 144) (setblkins _MEDETFIT (strcat "gua-"    _CLETT) nil nil 1 1) MEDBlockInsert
+                 [GUAB    ]^C^C(setq _FITTCODE 145) (setblkins _MEDETFIT (strcat "guab"    _CLETT) nil nil 1 2) MEDBlockInsert
+                 [GUAC    ]^C^C(setq _FITTCODE 146) (setblkins _MEDETFIT (strcat "guac"    _CLETT) nil nil 1 2) MEDBlockInsert
+                 [GUAD    ]^C^C(setq _FITTCODE 147) (setblkins _MEDETFIT (strcat "guad"    _CLETT) nil nil 1 2) MEDBlockInsert
+                 [GUAL    ]^C^C(setq _FITTCODE 141) (setblkins _MEDETFIT (strcat "gual"    _CLETT) nil nil 1 2) MEDBlockInsert
+                 [GUAM    ]^C^C(setq _FITTCODE 148) (setblkins _MEDETFIT (strcat "guam"    _CLETT) nil nil 1 2) MEDBlockInsert
+                 [GUAN    ]^C^C(setq _FITTCODE 149) (setblkins _MEDETFIT (strcat "guan"    _CLETT) nil nil 1 2) MEDBlockInsert
+                 [GUAT    ]^C^C(setq _FITTCODE 142) (setblkins _MEDETFIT (strcat "guat"    _CLETT) nil nil 1 2) MEDBlockInsert
+                 [GUAW    ]^C^C(setq _FITTCODE 150) (setblkins _MEDETFIT (strcat "guaw"    _CLETT) nil nil 1 2) MEDBlockInsert
+                 [<-GUAX  ]^C^C(setq _FITTCODE 143) (setblkins _MEDETFIT (strcat "guax"    _CLETT) nil nil 1 2) MEDBlockInsert
+               [ Icons ]$i=MED.meddetailgua $i=* 
+               [--]
+               [->Devices]
+                 [Feed Through](toggle "_FEED" "Device switch Feed through") 
+                 [--]
+                 [FSC-W/Plug ]^C^C(setq _FITTCODE  1100) (setblkins _MEDETFIT (strcat (feedset "FSCPlug") _CLETT) nil nil 1.0 2) MEDBlockInsert
+                 [SideView   ]^C^C(setq _FITTCODE  1100) (setblkins _MEDETFIT (strcat (feedset "FSCPlug") "SIDE" _CLETT) nil nil 1.0 2) MEDBlockInsert
+                 [2Gang FSC-W/Plugs ]^C^C(setq _FITTCODE  1101) (setblkins _MEDETFIT (strcat (feedset "FSC2GPlug") _CLETT) nil nil 1.0 2) MEDBlockInsert
+                 [2Gang FSC-W/Switches ]^C^C(setq _FITTCODE  1111) (setblkins _MEDETFIT (strcat (feedset "FSC2GSwitch") _CLETT) nil nil 1.0 2) MEDBlockInsert
+                 [--]
+                 [Switch    ]^C^C(setq _FITTCODE  206) (setblkins _MEDETFIT (strcat (feedset "eds") _CLETT) nil nil 1.0 2) MEDBlockInsert
+                 [SideView  ]^C^C(setq _FITTCODE  206) (setblkins _MEDETFIT (strcat (feedset "eds") "sid" _CLETT) nil nil 1.0 2) MEDBlockInsert
+                 [H O A     ]^C^C(setq _FITTCODE  200) (setblkins _MEDETFIT (strcat (feedset "hoas") _CLETT) nil nil 1.0 2) MEDBlockInsert
+                 [Start/Stop]^C^C(setq _FITTCODE  202) (setblkins _MEDETFIT (strcat (feedset "efs") "s-s" _CLETT) nil nil 1.0 2) MEDBlockInsert
+                 [Stop      ]^C^C(setq _FITTCODE  204) (setblkins _MEDETFIT (strcat (feedset "efs") "stp" _CLETT) nil nil 1.0 2) MEDBlockInsert
+                 [--]
+                 [Outlet    ]^C^C(setq _FITTCODE  208) (setblkins _MEDETFIT (strcat (feedset "cps") _CLETT) nil nil 1.0 2) MEDBlockInsert
+                 [2 Outlet  ]^C^C(setq _FITTCODE  210) (setblkins _MEDETFIT (strcat "2cps" _CLETT) nil nil 1.0 2) MEDBlockInsert
+                 [SideView]^C^C(setq _FITTCODE  208) (setblkins _MEDETFIT (strcat (feedset "cps") "sid" _CLETT) nil nil 1.0 2) MEDBlockInsert
+                 [--]
+                 [DelayedPlug-CESD]^C^C(setq _FITTCODE  1000) (setblkins _MEDETFIT (strcat "CESDFRNT" _CLETT) nil nil 1.0 2) MEDBlockInsert
+                 [SideView]^C^C(setq _FITTCODE  1000) (setblkins _MEDETFIT (strcat "CESDSIDE" _CLETT) nil nil 1.0 2) MEDBlockInsert
+                 [Plug-SRD_Cap]^C^C(setq _FITTCODE  1002) (setblkins _MEDETFIT (strcat "SRD-CAP-FRNT" _CLETT) nil nil 1.0 2) MEDBlockInsert
+                 [SideView]^C^C(setq _FITTCODE  1002) (setblkins _MEDETFIT (strcat "SRD-CAP-SIDE" _CLETT) nil nil 1.0 2) MEDBlockInsert
+                 [Plug-SRD_Door]^C^C(setq _FITTCODE  1001) (setblkins _MEDETFIT (strcat "SRDFRONT" _CLETT) nil nil 1.0 2) MEDBlockInsert
+                 [SideView]^C^C(setq _FITTCODE  1001) (setblkins _MEDETFIT (strcat "SRDSIDE" _CLETT) nil nil 1.0 2) MEDBlockInsert
+                 [<-EPC CB-Plug]^C^C(setq _FITTCODE  1010) (setblkins _MEDETFIT (strcat "EPC_SIDE" _CLETT) nil nil 1.0 2) MEDBlockInsert
+               [ Icons ]$i=MED.meddetaildevices $i=* 
+               [--]
+               [->Panels]
+                 []^C^C(opt_eq_ins (list (list "" 8)) 1 "1flite" _MEDELEQP)
+               [->Lighting]
+                 [VMV Type]
+                 [Stansn  ]^C^C(setq _FITTCODE 243) (setblkins _MEDETFIT (strcat "vmvstan" _CLETT) nil nil 1 1) MEDBlockInsert
+                 [Pendant ]^C^C(setq _FITTCODE 241) (setblkins _MEDETFIT (strcat "vmvpend" _CLETT) nil nil 1 1) MEDBlockInsert
+                 [Wallmnt ]^C^C(setq _FITTCODE 242) (setblkins _MEDETFIT (strcat "vmvwall" _CLETT) nil nil 1 1) MEDBlockInsert
+                 [--]
+                 [EVCXType]
+                 [ Ceiling]^C^C(setq _FITTCODE 251) (setblkins _MEDETFIT (strcat "evcx"    _CLETT) nil nil 1 1) MEDBlockInsert
+                 [ Pendant]^C^C(setq _FITTCODE 252) (setblkins _MEDETFIT (strcat "evapend" _CLETT) nil nil 1 1) MEDBlockInsert
+                 [--]
+                 [Globe   ]^C^C(setq _FITTCODE 244) (setblkins _MEDETFIT "globe"                   nil nil 1 2) MEDBlockInsert
+                 [Globe 30]^C^C(setq _FITTCODE 245) (setblkins _MEDETFIT "globe30"                 nil nil 1 2) MEDBlockInsert
+                 [--]
+                 [<-UNJ/UNJY]^C^Cunj 
+               [ Icon ]$i=MED.meddetaillight $i=* 
+
+**POP3ELEMENTARY
+               [Elementary]
+               [Control Wiring       ]^C^C(smlayer _MEDCCABLE) MEDLINE 
+               [Power Wiring         ]^C^C(smlayer _MEDPCABLE) MEDLINE 
+               [Field Wiring         ]^C^C(setq _LTP "HIDDEN")(smlayer _MEDCCABLE) MEDLINE 
+               [ Icon]$I=MED.MEDWDLTYPE $I=* 
+               [--]
+               [->Contacts & Switches]
+                 [->Open                ]
+                   [ Contact            ]^C^C(setblkins _MEDSYM "cono"  nil nil _SC -1) MEDBlockInsert
+                   [ Limit              ]^C^C(setblkins _MEDSYM "lmbno" nil nil _SC -1) MEDBlockInsert
+                   [ Limit Held Open    ]^C^C(setblkins _MEDSYM "lmtno" nil nil _SC -1) MEDBlockInsert
+                   [ Level              ]^C^C(setblkins _MEDSYM "lvno"  nil nil _SC -1) MEDBlockInsert
+                   [ Flow               ]^C^C(setblkins _MEDSYM "flno"  nil nil _SC -1) MEDBlockInsert
+                   [ Pressure           ]^C^C(setblkins _MEDSYM "psno"  nil nil _SC -1) MEDBlockInsert
+                   [ Push Button        ]^C^C(setblkins _MEDSYM "pbno"  nil nil _SC -1) MEDBlockInsert
+                   [ Software           ]^C^C(setblkins _MEDSYM "sino"  nil nil _SC -1) MEDBlockInsert
+                   [ Switch             ]^C^C(setblkins _MEDSYM "swno"  nil nil _SC -1) MEDBlockInsert
+                   [ Timed Energized    ]^C^C(setblkins _MEDSYM "teno"  nil nil _SC -1) MEDBlockInsert
+                   [ Timed De-Energized ]^C^C(setblkins _MEDSYM "tdno"  nil nil _SC -1) MEDBlockInsert
+                   [<- Temperature        ]^C^C(setblkins _MEDSYM "tmno"  nil nil _SC -1) MEDBlockInsert
+                 [--]
+                 [->Closed              ]
+                   [ Contact            ]^C^C(setblkins _MEDSYM "conc"  nil nil _SC -1) MEDBlockInsert
+                   [ Limit              ]^C^C(setblkins _MEDSYM "lmtnc" nil nil _SC -1) MEDBlockInsert
+                   [ Limit Held Closed  ]^C^C(setblkins _MEDSYM "lmbnc" nil nil _SC -1) MEDBlockInsert
+                   [ Level              ]^C^C(setblkins _MEDSYM "lvnc"  nil nil _SC -1) MEDBlockInsert
+                   [ Flow               ]^C^C(setblkins _MEDSYM "flnc"  nil nil _SC -1) MEDBlockInsert
+                   [ Pressure           ]^C^C(setblkins _MEDSYM "psnc"  nil nil _SC -1) MEDBlockInsert
+                   [ Push Button        ]^C^C(setblkins _MEDSYM "pbnc"  nil nil _SC -1) MEDBlockInsert
+                   [ Software           ]^C^C(setblkins _MEDSYM "sinc"  nil nil _SC -1) MEDBlockInsert
+                   [ Switch             ]^C^C(setblkins _MEDSYM "swnc"  nil nil _SC -1) MEDBlockInsert
+                   [ Timed Energized    ]^C^C(setblkins _MEDSYM "tenc"  nil nil _SC -1) MEDBlockInsert
+                   [ Timed De-Energized ]^C^C(setblkins _MEDSYM "tdnc"  nil nil _SC -1) MEDBlockInsert
+                   [<- Temperature        ]^C^C(setblkins _MEDSYM "tmnc"  nil nil _SC -1) MEDBlockInsert
+                 [--]
+                 [Misc Switches       ]
+                 [ Hand Off Auto      ]^C^C(setblkins _MEDSYM "hoasw"  nil nil _SC -1) MEDBlockInsert
+                 [ Rotary 3 Position  ]^C^C(setblkins _MEDSYM "slra03" nil nil _SC -1) MEDBlockInsert
+                 [ Rotary 4 Position  ]^C^C(setblkins _MEDSYM "slra04" nil nil _SC -1) MEDBlockInsert
+                 [ 3 Position         ]^C^C(setblkins _MEDSYM "slha03" nil nil _SC -1) MEDBlockInsert
+                 [<- 4 Position       ]^C^C(setblkins _MEDSYM "slha04" nil nil _SC -1) MEDBlockInsert
+               [ Icon]$I=MED.MEDWDswitches $I=* 
+               [--]
+               [->Typical Circuits    ]
+                 [ Start / Stop       ]^C^C(typstrins "typcrss") 
+                 [ Hand Off Auto      ]^C^C(typstrins "typcrhoa") 
+                 [ Double Start/Stop  ]^C^C(typstrins "typcrdss") 
+                 [ Triple Start/Stop  ]^C^C(typstrins "typcrtss") 
+                 [ Start/Stop w/Indctr]^C^C(typstrins "typcrssi") 
+                 [ mY tEMP]^C^C(typstrins "mytemp") 
+                 [<- Fused Cntrl Xfmr ]^C^C(typstrins "typcrfcx") 
+               [ Icon]$I=MED.MEDWDtypcir $I=* 
+               [--]
+               [->Overcurrent Protection]
+                 [Circuit Breakers  3P]^C^C(setblkins _MEDSYM "CB03"     nil nil _SC -1) MEDBlockInsert
+                 [Circuit Breaker   1P]^C^C(setblkins _MEDSYM "CBRKR"    nil nil _SC -1) MEDBlockInsert
+                 [Fused Disconnect  3P]^C^C(setblkins _MEDSYM "FD03"     nil nil _SC -1) MEDBlockInsert
+                 [<-Fused Disconnect  1P]^C^C(setblkins _MEDSYM "FUSESW" nil nil _SC -1) MEDBlockInsert
+               [ Icon]$I=MED.medwdovercurr $I=* 
+               [--]
+               [->Transformers & Indctr]
+                 [Auto Transformer     ]^C^C(setblkins _MEDSYM "autoxfmr" nil nil _SC -1) MEDBlockInsert
+                 [Air Core             ]^C^C(setblkins _MEDSYM "xfmr3"    nil nil _SC -1) MEDBlockInsert
+                 [Iron Core            ]^C^C(setblkins _MEDSYM "xfmr4"    nil nil _SC -1) MEDBlockInsert
+                 [Current              ]^C^C(setblkins _MEDSYM "currxfmr" nil nil _SC -1) MEDBlockInsert
+                 [Dual Voltage         ]^C^C(setblkins _MEDSYM "dualxfmr" nil nil _SC -1) MEDBlockInsert
+                 [--]
+                 [Identifiers          ]
+                 [ Delta Xfmr          ]^C^C(setblkins _MEDSYM "xfmrdel"  nil nil _SC -1) MEDBlockInsert
+                 [ Delta w/ Ground Xfmr]^C^C(setblkins _MEDSYM "xfmrdelg" nil nil _SC -1) MEDBlockInsert
+                 [ Wye Xfmr            ]^C^C(setblkins _MEDSYM "xfmrwye"  nil nil _SC -1) MEDBlockInsert
+                 [ Wye w/Center Tap Grn]^C^C(setblkins _MEDSYM "xfmrwyeg" nil nil _SC -1) MEDBlockInsert
+                 [Inductors            ]
+                 [ Iron Core            ]^C^C(setblkins _MEDSYM "indciron" nil nil _SC -1) MEDBlockInsert
+                 [<- Air Core           ]^C^C(setblkins _MEDSYM "indcair"  nil nil _SC -1) MEDBlockInsert
+               [ Icon]$I=MED.MEDWDxfmrind $I=* 
+               [--]
+               [->Resistors & Semi-Cond]
+                 [Fixed                ]^C^C(setblkins _MEDSYM "resfixed" nil nil _SC -1) MEDBlockInsert
+                 [Heating Element      ]^C^C(setblkins _MEDSYM "heatelem" nil nil _SC -1) MEDBlockInsert
+                 [Adjustable Fixed Taps]^C^C(setblkins _MEDSYM "resadjst" nil nil _SC -1) MEDBlockInsert
+                 [Adjustable Rheostat  ]^C^C(setblkins _MEDSYM "rheostat" nil nil _SC -1) MEDBlockInsert
+                 [--]
+                 [Semi-Conductors        ]
+                 [ Diode                  ]^C^C(setblkins _MEDSYM "diode01"  nil nil _SC -1) MEDBlockInsert
+                 [ Tunnel Diode           ]^C^C(setblkins _MEDSYM "diode02"  nil nil _SC -1) MEDBlockInsert
+                 [ Zener Diode            ]^C^C(setblkins _MEDSYM "diode03"  nil nil _SC -1) MEDBlockInsert
+                 [ Bi-Direct Diode        ]^C^C(setblkins _MEDSYM "diode04"  nil nil _SC -1) MEDBlockInsert
+                 [ Triac                  ]^C^C(setblkins _MEDSYM "triac"    nil nil _SC -1) MEDBlockInsert
+                 [ SCR                    ]^C^C(setblkins _MEDSYM "scr"      nil nil _SC -1) MEDBlockInsert
+                 [ PUT                    ]^C^C(setblkins _MEDSYM "put"      nil nil _SC -1) MEDBlockInsert
+                 [ Photo Cell             ]^C^C(setblkins _MEDSYM "photocel" nil nil _SC -1) MEDBlockInsert
+                 [ Full Wave Rectifier    ]^C^C(setblkins _MEDSYM "fullrect" nil nil _SC -1) MEDBlockInsert
+                 [ NPN Transistor         ]^C^C(setblkins _MEDSYM "npn"      nil nil _SC -1) MEDBlockInsert
+                 [ PNP Transistor         ]^C^C(setblkins _MEDSYM "pnp"      nil nil _SC -1) MEDBlockInsert
+                 [ UJT N Base             ]^C^C(setblkins _MEDSYM "ujtnbase" nil nil _SC -1) MEDBlockInsert
+                 [ UJT P Base             ]^C^C(setblkins _MEDSYM "ujtpbase" nil nil _SC -1) MEDBlockInsert
+                 [ Gate Turn Off Thyristor]^C^C(setblkins _MEDSYM "gatetrst" nil nil _SC -1) MEDBlockInsert
+                 [--]
+                 [Capacitors           ]
+                 [ Fixed                ]^C^C(setblkins _MEDSYM "capactr2"   nil nil _SC -1) MEDBlockInsert 
+                 [ Fixed        W/Conn  ]^C^C(setblkins _MEDSYM "capactr1"   nil nil _SC -1) MEDBlockInsert
+                 [ Adjustable           ]^C^C(setblkins _MEDSYM "capactr4"   nil nil _SC -1) MEDBlockInsert
+                 [<- Adjustable W/Conn  ]^C^C(setblkins _MEDSYM "capactr3"   nil nil _SC -1) MEDBlockInsert
+               [ Icon]$I=MED.medwddiode $I=* 
+               [--]
+               [->Misc Components        ]
+                 [Annunciator            ]^C^C(setblkins _MEDSYM "anunciat" nil nil _SC -1) MEDBlockInsert
+                 [Battery 1 Cell         ]^C^C(setblkins _MEDSYM "batt01"  nil nil _SC -1) MEDBlockInsert
+                 [Battery 2 Cell         ]^C^C(setblkins _MEDSYM "batt02"  nil nil _SC -1) MEDBlockInsert
+                 [Battery 3 Cell         ]^C^C(setblkins _MEDSYM "batt03"  nil nil _SC -1) MEDBlockInsert
+                 [Battery 4 Cell         ]^C^C(setblkins _MEDSYM "batt04"  nil nil _SC -1) MEDBlockInsert
+                 [Bell                   ]^C^C(setblkins _MEDSYM "bell"     nil nil _SC -1) MEDBlockInsert
+                 [Buzzer                 ]^C^C(setblkins _MEDSYM "buzzer"   nil nil _SC -1) MEDBlockInsert
+                 [Chasis Ground          ]^C^C(setblkins _MEDSYM "grnd02" nil nil _SC -1) MEDBlockInsert
+                 [Coil                   ]^C^C(setblkins _MEDSYM "coil02"   nil nil _SC -1) MEDBlockInsert
+                 [Earth Ground           ]^C^C(setblkins _MEDSYM "grnd01" nil nil _SC -1) MEDBlockInsert
+                 [Fuse                   ]^C^C(setblkins _MEDSYM "FUSE02"   nil nil _SC -1) MEDBlockInsert
+                 [Horn, Alarm or Siren   ]^C^C(setblkins _MEDSYM "horn"     nil nil _SC -1) MEDBlockInsert
+                 [Indicator Light        ]^C^C(setblkins _MEDSYM "pilot03"  nil nil _SC -1) MEDBlockInsert
+                 [Meter                  ]^C^C(setblkins _MEDSYM "devmtr1"  nil nil _SC -1) MEDBlockInsert
+                 [Meter Shunt            ]^C^C(setblkins _MEDSYM "mtrshunt" nil nil _SC -1) MEDBlockInsert
+                 [Motor                  ]^C^C(setblkins _MEDSYM "motor01"  nil nil _SC -1) MEDBlockInsert
+                 [Overloads              ]^C^C(setblkins _MEDSYM "oloads"   nil nil _SC -1) MEDBlockInsert
+                 [<-Thermocouple         ]^C^C(setblkins _MEDSYM "tcouple"  nil nil _SC -1) MEDBlockInsert
+               [Icon]$I=MED.medwdmscmpnt $I=* 
+
+***POP4
+**POP4EQUIP
+               [Details]
+               [Details...               ]^C^CDETAIL 
+               [Lighting                 ]^C^CLTG 
+               [Grounding                ]^C^CGND 
+               [Power                    ]^C^CPWR 
+               [Instrumentation          ]^C^CINST 
+               [Tray                     ]^C^CTRY 
+
+**POP4DETMISC
+               [Misc]
+               [->J-Boxes]
+                 [8X8     ]^C^C(setq _FITTCODE 221 _ZERO T) (setblkins _MEDETFIT "jbox8x8" nil 0 1 2) MEDBlockInsert
+                 [--]
+                 [8x4     ]^C^C(setq _FITTCODE 222 _ZERO T) (setblkins _MEDETFIT "jbox8x4" nil 0 1 2) MEDBlockInsert
+                 [--]
+                 [4X4     ]^C^C(setq _FITTCODE 223 _ZERO T) (setblkins _MEDETFIT "jbox4x4" nil 0 1 2) MEDBlockInsert
+                 [--]
+                 [<-HUBS    ]HUBS 
+               [ Icons ]$i=MED.meddetailbox $i=* 
+               [--]
+               [->Construction Material]
+                 [Angle Side View  ]^C^C(setblkins _MEDEQP "angle"    nil nil 1 0) MEDBlockInsert
+                 [--]
+                 [Channel Top View ]^C^C(setblkins _MEDEQP "channel"  nil nil 1 0) MEDBlockInsert
+                 [--]
+                 [SqrWashr         ]^C^C(setblkins _MEDEQP "fltsqwsh" nil nil 1 0) MEDBlockInsert
+                 [--]
+                 [Sprngnut         ]^C^C(setblkins _MEDEQP "sprnut"   nil nil 1 0) MEDBlockInsert
+                 [--]
+                 [Unistrut Side View]^C^C(setblkins _MEDEQP "uniside" nil nil 1 0) MEDBlockInsert
+                 [ Clamp Elevation  ]^C^C(setq _FITTCODE 123)(setblkins _MEDEQP (strcat "uclmpe" _CLETT) nil nil 1 2) MEDBlockInsert
+                 [ Clamp Front view ]^C^C(setq _FITTCODE 123)(setblkins _MEDEQP (strcat "uclmpf" _CLETT) nil nil 1 2) MEDBlockInsert
+                 [<- Clamp Side View]^C^C(setq _FITTCODE 123)(setblkins _MEDEQP (strcat "uclmps" _CLETT) nil nil 1 2) MEDBlockInsert
+               [ Icon ]$i=MED.meddetailconst $i=* 
+
+**POP4WDMISC
+               [Misc]
+               [Solid Connect   ]^C^C(setblkins _MEDSYM "connectf" nil nil _SC -1) MEDBlockInsert
+               [Open Connect    ]^C^C(setblkins _MEDSYM "connecto" nil nil _SC -1) MEDBlockInsert
+               [--]
+               [->Terminals               ]
+                 [Genrate Terminal Strip   ]^C^CTSTRIP 
+                 [Terminal Type 01         ]^C^C(setblkins _MEDSYM "term01"   nil nil _SC -1) MEDBlockInsert
+                 [Terminal Type 02         ]^C^C(setblkins _MEDSYM "term02"   nil nil _SC -1) MEDBlockInsert
+                 [Terminal Type 03         ]^C^C(setblkins _MEDSYM "term03"   nil nil _SC -1) MEDBlockInsert
+                 [Terminal Type 04         ]^C^C(setblkins _MEDSYM "term04"   nil nil _SC -1) MEDBlockInsert
+                 [Terminal Type 05         ]^C^C(setblkins _MEDSYM "term05"   nil nil _SC -1) MEDBlockInsert
+                 [Terminal Type 06         ]^C^C(setblkins _MEDSYM "term06"   nil nil _SC -1) MEDBlockInsert
+                 [Terminal Type 07         ]^C^C(setblkins _MEDSYM "term07"   nil nil _SC -1) MEDBlockInsert
+                 [Terminal Type 08         ]^C^C(setblkins _MEDSYM "term08"   nil nil _SC -1) MEDBlockInsert
+                 [Terminal Type 09         ]^C^C(setblkins _MEDSYM "term09"   nil nil _SC -1) MEDBlockInsert
+                 [Terminal Type 10         ]^C^C(setblkins _MEDSYM "term10"   nil nil _SC -1) MEDBlockInsert
+                 [Terminal Type 11         ]^C^C(setblkins _MEDSYM "term11"   nil nil _SC -1) MEDBlockInsert
+                 [Terminal Type 12         ]^C^C(setblkins _MEDSYM "term12"   nil nil _SC -1) MEDBlockInsert
+                 [Terminal Type 13         ]^C^C(setblkins _MEDSYM "term13"   nil nil _SC -1) MEDBlockInsert
+                 [Terminal Type 14         ]^C^C(setblkins _MEDSYM "term14"   nil nil _SC -1) MEDBlockInsert
+                 [Terminal Type 15         ]^C^C(setblkins _MEDSYM "term15"   nil nil _SC -1) MEDBlockInsert
+                 [Terminal Type 16         ]^C^C(setblkins _MEDSYM "term16"   nil nil _SC -1) MEDBlockInsert
+                 [Terminal Type 17         ]^C^C(setblkins _MEDSYM "term17"   nil nil _SC -1) MEDBlockInsert
+                 [Terminal Type 18         ]^C^C(setblkins _MEDSYM "term18"   nil nil _SC -1) MEDBlockInsert
+                 [Terminal Type 19         ]^C^C(setblkins _MEDSYM "term19"   nil nil _SC -1) MEDBlockInsert
+                 [Terminal Type 20         ]^C^C(setblkins _MEDSYM "term20"   nil nil _SC -1) MEDBlockInsert
+                 [Terminal Type 21         ]^C^C(setblkins _MEDSYM "term21"   nil nil _SC -1) MEDBlockInsert
+                 [Terminal Type 22         ]^C^C(setblkins _MEDSYM "term22"   nil nil _SC -1) MEDBlockInsert
+                 [Terminal Type 23         ]^C^C(setblkins _MEDSYM "term23"   nil nil _SC -1) MEDBlockInsert
+                 [Terminal Type 24         ]^C^C(setblkins _MEDSYM "term24"   nil nil _SC -1) MEDBlockInsert
+                 [Terminal Type 25         ]^C^C(setblkins _MEDSYM "term25"   nil nil _SC -1) MEDBlockInsert
+                 [Terminal Type 26         ]^C^C(setblkins _MEDSYM "term26"   nil nil _SC -1) MEDBlockInsert
+                 [Terminal Type 27         ]^C^C(setblkins _MEDSYM "term27"   nil nil _SC -1) MEDBlockInsert
+                 [<-Terminal Type 28       ]^C^C(setblkins _MEDSYM "term28"   nil nil _SC -1) MEDBlockInsert
+               [ Icon]$I=MED.MEDTERMINALS $I=* 
+               [--]
+               [->Linetype                ]
+                 [_____  Power             ]^C^C(smlayer _MEDPCABLE) MEDLINE 
+                 [_____  Control           ]^C^C(smlayer _MEDCCABLE) MEDLINE 
+                 [_____  Instrument        ]^C^C(smlayer _MEDICABLE) MEDLINE 
+                 [__ __  Power             ]^C^C(setq _LTP "DASHED")(smlayer _MEDPCABLE) MEDLINE 
+                 [__ __  Control           ]^C^C(setq _LTP "DASHED")(smlayer _MEDCCABLE) MEDLINE 
+                 [__ __  Instrument        ]^C^C(setq _LTP "DASHED")(smlayer _MEDICABLE) MEDLINE 
+                 [_ _ _  Power             ]^C^C(setq _LTP "HIDDEN")(smlayer _MEDPCABLE) MEDLINE 
+                 [_ _ _  Control           ]^C^C(setq _LTP "HIDDEN")(smlayer _MEDCCABLE) MEDLINE 
+                 [<-_ _ _  Instrument        ]^C^C(setq _LTP "HIDDEN")(smlayer _MEDICABLE) MEDLINE 
+               [ Icon]$I=MED.MEDWDLTYPE $I=* 
+               [--]
+               [Misc Diagram Tools      ]
+               [ Fillet  0.0625           ]^C^CFILLET R (* _SC 0.06250) FILLET 
+               [ Fillet  0.09375          ]^C^CFILLET R (* _SC 0.09375) FILLET 
+               [ Fillet  0.125            ]^C^CFILLET R (* _SC 0.12500) FILLET 
+               [ Draw Double Lines        ]^C^C2LINE 
+               [ Draw Triple Lines      ]^C^C3LINE 
+
+
+***TOOLBARS
+**CONDUIT_SIZE
+ID_CONSIZE     [_Toolbar("Conduit Size", _Floating, _Hide, 300, 100, 1)]
+ID_CSIZE_A     [_Button("1/2", "CON_0050", "CON_0050_32")]^C^C(setq _ACSIZE 0.84  _CLETT "A" _CSIZE 0.5 ) 
+ID_CSIZE_B     [_Button("3/4", "CON_0075", "CON_0075_32")]^C^C(setq _ACSIZE 1.050 _CLETT "B" _CSIZE 0.75) 
+ID_CSIZE_C     [_Button("1"", "CON_0100", "CON_0100_32")]^C^C(setq _ACSIZE 1.315 _CLETT "C" _CSIZE 1.0 ) 
+ID_CSIZE_D     [_Button("1-1/4", "CON_0125", "CON_0125_32")]^C^C(setq _ACSIZE 1.660 _CLETT "D" _CSIZE 1.25) 
+ID_CSIZE_E     [_Button("1-1/2", "CON_0150", "CON_0150_32")]^C^C(setq _ACSIZE 1.9   _CLETT "E" _CSIZE 1.5 ) 
+ID_CSIZE_F     [_Button("2"", "CON_0200", "CON_0200_32")]^C^C(setq _ACSIZE 2.375 _CLETT "F" _CSIZE 2.0 ) 
+ID_CSIZE_G     [_Button("2-1/2", "CON_0250", "CON_0250_32")]^C^C(setq _ACSIZE 2.875 _CLETT "G" _CSIZE 2.5 ) 
+ID_CSIZE_H     [_Button("3"", "CON_0300", "CON_0300_32")]^C^C(setq _ACSIZE 3.50  _CLETT "H" _CSIZE 3.0 ) 
+ID_CSIZE_I     [_Button("3-1/2", "CON_0350", "CON_0350_32")]^C^C(setq _ACSIZE 4.0   _CLETT "I" _CSIZE 3.5 ) 
+ID_CSIZE_J     [_Button("4"", "CON_0400", "CON_0400_32")]^C^C(setq _ACSIZE 4.50  _CLETT "J" _CSIZE 4.0 ) 
+ID_CSIZE_K     [_Button("5"", "CON_0500", "CON_0500_32")]^C^C(setq _ACSIZE 5.563 _CLETT "K" _CSIZE 5.0 ) 
+ID_CSIZE_L     [_Button("6"", "CON_0600", "CON_0600_32")]^C^C(setq _ACSIZE 6.625 _CLETT "L" _CSIZE 6.0 ) 
+
+**TRAY_SIZE
+ID_TRYSIZE     [_Toolbar("Tray Size", _Floating, _Hide, 400, 100, 0)]
+TRAY_0600      [_Button("6 Inch Tray", "TRAY_0600", "TRAY_0600_32")]^C^C(setq _TRSIZE  6.0) 
+TRAY_0900      [_Button("9 Inch Tray", "TRAY_0900", "TRAY_0900_32")]^C^C(setq _TRSIZE  9.0) 
+TRAY_1200      [_Button("12 Inch Tray", "TRAY_1200", "TRAY_1200_32")]^C^C(setq _TRSIZE 12.0) 
+TRAY_1800      [_Button("18 Inch Tray", "TRAY_1800", "TRAY_1800_32")]^C^C(setq _TRSIZE 18.0) 
+TRAY_2400      [_Button("24 Inch Tray", "TRAY_2400", "TRAY_2400_32")]^C^C(setq _TRSIZE 24.0) 
+TRAY_3000      [_Button("30 Inch Tray", "TRAY_3000", "TRAY_3000_32")]^C^C(setq _TRSIZE 30.0) 
+TRAY_3600      [_Button("36 Inch Tray", "TRAY_3600", "TRAY_3600_32")]^C^C(setq _TRSIZE 36.0) 
+TRAY_4200      [_Button("42 Inch Tray", "TRAY_4200", "TRAY_4200_32")]^C^C(setq _TRSIZE 42.0) 
+TRAY_4800      [_Button("48 Inch Tray", "TRAY_4800", "TRAY_4800_32")]^C^C(setq _TRSIZE 48.0) 
+
+**MEDFITTINGS
+ID_MEDFITTINGS [_Toolbar("Conduit Fittings", _Floating, _Hide, 300, 130, 1)]
+CON_UNION      [_Button("Union", "CON_UNION", "CON_UNION_32")]^C^C(setq _FITTCODE  72) (setblkins _MEDFIT "1union"   nil nil _SC 2) MEDBlockInsert
+CON_CEE        [_Button("Cee", "CON_CEE", "CON_CEE_32")]^C^C(setq _FITTCODE  50) (setblkins _MEDFIT "1cee"     nil nil _SC 2) MEDBlockInsert
+CON_BUB        [_Button("BUB", "CON_BUB", "CON_BUB_32")]^C^C(setq _FITTCODE  94) (setblkins _MEDFIT "1bub"     nil nil _SC 2) MEDBlockInsert
+CON_SEAL       [_Button("Seal", "CON_SEAL", "CON_SEAL_32")]^C^C(setq _FITTCODE  61) (setblkins _MEDFIT "1seal"    nil nil _SC 2) MEDBlockInsert
+CON_SEALDR     [_Button("Seal w/Drain", "CON_SEALDR", "CON_SEALDR_32")]^C^C(setq _FITTCODE  64) (setblkins _MEDFIT "1sealdr"  nil nil _SC 2) MEDBlockInsert
+CON_REPLUG     [_Button("Recessed Plug", "CON_REPLUG", "CON_REPLUG_32")]^C^C(setq _FITTCODE 100) (setblkins _MEDFIT "1capa"     nil nil _SC 2) MEDBlockInsert
+CON_SQPLUG     [_Button("Square Head Plug", "CON_SQPLUG", "CON_SQPLUG_32")]^C^C(setq _FITTCODE 101) (setblkins _MEDFIT "1cap"     nil nil _SC 2) MEDBlockInsert
+CON_HUB        [_Button("Hub", "CON_HUB", "CON_HUB_32")]^C^C(setq _FITTCODE 120) (setblkins _MEDFIT "1hub"     nil nil _SC 2) MEDBlockInsert
+CON_RE         [_Button("Reducer", "CON_RE", "CON_RE_32")]^C^C(setq _FITTCODE 103 _TYPE T) (setblkins _MEDFIT "1re"      nil nil _SC 8) MEDBlockInsert
+
+**MED_LSP
+ID_MED_LSP [_Toolbar("Lisp Tools", _Floating, _Hide, 200, 100, 1)]
+LSP_PBOX       [_Button("Polyline Box", "LSP_PBOX", "LSP_PBOX_32")]^C^CPBOX 
+LSP_ABL        [_Button("Add Bubble Leader", "LSP_ABL", "LSP_ABL_32")]^C^CABL 
+LSP_MBL        [_Button("Move Bubble Leader", "LSP_MBL", "LSP_MBL_32")]^C^CMBL 
+LSP_CLOUD      [_Button("Revision Cloud", "LSP_CLOUD", "LSP_CLOUD_32")]^C^CCLOUD 
+LSP_BOXCLOUD   [_Button("Box Cloud", "LSP_BOXCLOUD", "LSP_BOXCLOUD_32")]^C^CBOXCLOUD 
+LSP_BRACKET    [_Button("Bracket", "LSP_BRACKET", "LSP_BRACKET_32")]^C^CBRACKET 
+LSP_LBREAK     [_Button("Line Breaks", "LSP_LBREAK", "LSP_LBREAK_32")]^C^CLBREAK 
+LSP_MOTOR      [_Button("Parametric Motor", "LSP_MOTOR", "LSP_MOTOR_32")]^C^CMOTOR 
+LSP_FILEDATE   [_Button("File Date", "LSP_FILEDATE", "LSP_FILEDATE_32")]^C^CFD 
+LSP_EM         [_Button("Extend Muliple", "LSP_EM", "LSP_EM_32")]^C^CEM 
+LSP_TM         [_Button("Trim Multiple", "LSP_TM", "LSP_TM_32")]^C^CTM 
+LSP_PW         [_Button("Polyline Width", "LSP_PW", "LSP_PW_32")]^C^CPW 
+LSP_LB         [_Button("Priority Break", "LSP_LB", "LSP_LB_32")]^C^CLB 
+
+**MISC_SYMBOLS
+ID_Misc_Symbols_0 [_Toolbar("Misc Symbols", _Floating, _Hide, 200, 200, 1)]
+SYM_NARR       [_Button("North Arrow", "SYM_NARR", "SYM_NARR_32")]^C^C(setblkins _MEDSYM "n_arrow" nil nil _SC -1) MEDBlockInsert
+SYM_BREAK      [_Button("Break Symbol", "SYM_BREAK", "SYM_BREAK_32")]^C^C(setblkins _MEDSYM "break" nil nil _SC -1) MEDBlockInsert
+SYM_ARROW      [_Button("Arrow", "SYM_ARROW", "SYM_ARROW_32")]^C^C(setblkins _MEDSYM "arrhead" nil nil (* _LEADSYMSIZE _SC) -1) MEDBlockInsert
+SYM_CONTINUE   [_Button("Separate Symbol", "SYM_CONTINUE", "SYM_CONTINUE_32")]^C^C(setblkins _MEDSYM "separ" nil nil _SC -1) MEDBlockInsert
+SYM_SEPARATE   [_Button("Separator Symbol", "SYM_SEPARATE", "SYM_SEPARATE_32")]^C^C(setblkins _MEDSYM "separ" nil nil _SC -1) MEDBlockInsert
+SYM_CONNECT2   [_Button("Open Connect Dot", "SYM_CONNECT2", "SYM_CONNECT2_32")]^C^C(setblkins _MEDSYM "connecto" nil nil _SC -1) MEDBlockInsert
+SYM_CONNECT    [_Button("Solid Connect Dot", "SYM_CONNECT", "SYM_CONNECT_32")]^C^C(setblkins _MEDSYM "connectf" nil nil _SC -1) MEDBlockInsert
+MNU_TERMINALS  [_Button("Icon Menu for Various Terminals", "MNU_TERMINALS", "MNU_TERMINALS_32")]^C^C$I=MED.MEDTERMINALS $I=* 
+
+**MED_MAIN
+ID_MED_MAIN [_Toolbar("Main Tool Bar", _Floating, _Show, 100, 100, 1)]
+WEB_MDHOME     [_Button("Momentum Design Systems Home Page", "WEB_MDHOME", "WEB_MDHOME_32")]^C^C_browser http://www.momentumdesignsystems.com
+WEB_MDDOCS     [_Button("MED Docs", "WEB_MDDOCS", "WEB_MDDOCS_32")]^C^C_browser !_MEDDOCFILE
+ID__14         [_Flyout("Text Styles", ICON8145.bmp, ICON_24_BLANK, _OtherIcon, MED.TEXT_STYLES)]
+ID__15         [_Flyout("Attribute Tools", ICON3281.bmp, ICON_24_BLANK, _OtherIcon, MED.ATTRIBUTE_TOOLS)]
+ID__16         [_Flyout("Tagging", ICON6827.bmp, ICON_24_BLANK, _OtherIcon, MED.TAGGING)]
+LSP_DD         [_Button("Dialog Edit Text and Attributes", "LSP_DD", "ICON_32_BLANK")]^C^CDD 
+ID__22         [_Flyout("MED Data Tools", ICON9961.bmp, ICON_24_BLANK, _OtherIcon, MED.MED_DATA_TOOLS)]
+ID__23         [_Flyout("MED Lisp Utilities", ICON0491.bmp, ICON_24_BLANK, _OtherIcon, MED.MED_LSP)]
+LSP_SETUP      [_Button("Drawing Setup", "LSP_SETUP", "LSP_SETUP_32")]^C^CSETUP 
+LSP_REVTAG     [_Button("Revision Triangle", "LSP_REVTAG", "LSP_REVTAG_32")]^C^C(setblkins _REVISION "revtag" nil nil _SC -1) MEDBlockInsert
+ID__24         [_Flyout("Layer Tools", ICON2995.bmp, ICON_24_BLANK, _OtherIcon, MED.LAYER_TOOLS)]
+ID__25         [_Flyout("Fillets", ICON1942.bmp, ICON_24_BLANK, _OtherIcon, MED.FILLETS)]
+ID__26         [_Flyout("Misc Symbols", ICON4827.bmp, ICON_24_BLANK, _OtherIcon, MED.MISC_SYMBOLS)]
+ID__10         [_Flyout("Power Lines", ICON4464.bmp, ICON_24_BLANK, _OtherIcon, MED.PWRLINE)]
+ID__11         [_Flyout("Control Lines", ICON5705.bmp, ICON_24_BLANK, _OtherIcon, MED.CNTLINE)]
+ID__12         [_Flyout("Instrument Lines", ICON8145.bmp, ICON_24_BLANK, _OtherIcon, MED.INSLINE)]
+LSP_2LINE      [_Button("Double Line", "LSP_2LINE", "LSP_2LINE_32")]^C^C2line 
+LSP_3LINE      [_Button("Triple Line", "LSP_3LINE", "LSP_3LINE_32")]^C^C3line 
+
+**DETAILCONDUIT
+ID_MED_CONDUIT [_Toolbar("Detail Conduit", _Floating, _Show, 300, 200, 1)]
+ID__2          [_Flyout("Conduit Size", ICON.bmp, ICON_24_BLANK, _OtherIcon, MED.CONDUIT_SIZE)]
+CON_CONDUIT    [_Button("Draw Conduit", "CON_CONDUIT", "CON_CONDUIT_32")]^C^C2LCON 
+CON_FLEX       [_Button("Draw Flex", "CON_FLEX", "CON_FLEX_32")]^C^C2LFLEX 
+CON_AWAY       [_Button("Turn Away", "CON_AWAY", "CON_AWAY_32")]^C^C2AWAY 
+CON_TOWARD     [_Button("Turn Toward", "CON_TOWARD", "CON_TOWARD_32")]^C^C2TOWARD 
+CON_BREAK      [_Button("Conduit Break", "CON_BREAK", "CON_BREAK_32")]^C^C2BREAK 
+FIT_CONDULET   [_Button("Condulet Fittings", "FIT_CONDULET", "FIT_CONDULET_32")]^C^C$i=MED.meddetailfit $i=* 
+FIT_GUA        [_Button("GUA Type Fittings", "FIT_GUA", "FIT_GUA_32")]^C^C$i=MED.meddetailgua $i=* 
+ID__1          [_Flyout("RS Jboxes", ICON.bmp, ICON_24_BLANK, _OtherIcon, MED.RS_JBOXES)]
+CON_DEVICES    [_Button("Devices", "CON_DEVICES", "CON_DEVICES_32")]^C^C$i=MED.meddetaildevices $i=* 
+CON_LTG        [_Button("Lighting", "CON_LTG", "CON_LTG_32")]^C^C$i=MED.meddetaillight $i=* 
+CON_MATERIAL   [_Button("Misc Hardware", "CON_MATERIAL", "CON_MATERIAL_32")]^C^C$i=MED.meddetailconst $i=* 
+
+**PLANCONDUIT
+ID_MED_CONDUIT [_Toolbar("Conduit", _Floating, _Show, 300, 300, 1)]
+ID__2          [_Flyout("Conduit Size", ICON.bmp, ICON_24_BLANK, _OtherIcon, MED.CONDUIT_SIZE)]
+ID__3          [_Flyout("Conduit Types", ICON8467.bmp, ICON_24_BLANK, _OtherIcon, MED.CONDUIT_TYPES)]
+CON_DOWN       [_Button("Conduit Down", "CON_DOWN", "CON_DOWN_32")]^C^C(smlayer _MCON) (setblkins nil "1cond" nil nil _SC 4) MEDBlockInsert
+CON_UP         [_Button("Conduit Up Solid", "CON_UP", "CON_UP_32")]^C^C(smlayer _MCON) (setblkins nil "1conus" nil nil _SC 5) MEDBlockInsert
+CON_UPOPEN     [_Button("Conduit Up Open", "CON_UPOPEN", "CON_UPOPEN_32")]^C^C(smlayer _MCON) (setblkins nil "1conu" nil nil _SC 5) MEDBlockInsert
+ID__4          [_Flyout("Conduit Fittings", ICON0041.bmp, ICON_24_BLANK, _OtherIcon, MED.MEDFITTINGS)]
+ID__6          [_Flyout("Conduit L Fittings", ICON6334.bmp, ICON_24_BLANK, _OtherIcon, MED.CONDUIT_L_FITTINGS)]
+ID__7          [_Flyout("Conduit T and Cross Fittings", ICON6500.bmp, ICON_24_BLANK, _OtherIcon, MED.CONDUIT_T_AND_CROSS_FITTINGS)]
+ID__8          [_Flyout("Conduit GUA Fittings", ICON9169.bmp, ICON_24_BLANK, _OtherIcon, MED.CONDUIT_GUA_FITTINGS)]
+
+**MED_TRAY
+ID_MED_TRAY [_Toolbar("Cable Tray", _Floating, _Show, 400, 130, 1)]
+TRAY_3DTRAYOUT [_Button("Export Tray to 3D Model", "TRAY_3DTRAYOUT", "TRAY_3DTRAYOUT_32")]^C^CMAKE3DTRAY 
+ID__0          [_Flyout("Trayszfly", ICON8467.bmp, ICON_32_BLANK, _OtherIcon, MED.TRAY_SIZE)]
+ID__5          [_Flyout("Tray Depth", ICON5724.bmp, ICON_24_BLANK, _OtherIcon, MED.TRAY_DEPTH)]
+ID__13         [_Flyout("Tray Radius", ICON1478.bmp, ICON_24_BLANK, _OtherIcon, MED.TRAY_RADIUS)]
+ID__9          [_Flyout("Tray Types", ICON9358.bmp, ICON_24_BLANK, _OtherIcon, MED.TRAY_TYPES)]
+TRAY_TRAYFIX   [_Button("Fix Tray Outline", "TRAY_TRAYFIX", "TRAY_TRAYFIX_32")]^C^CTRAYFIX 
+TRAY_OFFSET    [_Button("Tray Offset", "TRAY_OFFSET", "TRAY_OFFSET_32")]^C^CTRAYOFF 
+TRAY_PTRAYOFF  [_Button("Vertical Tray Offset", "TRAY_PTRAYOFF", "TRAY_PTRAYOFF_32")]^C^CPTRAYOFF 
+ID__10         [_Flyout("Tray Side Views", ICON6962.bmp, ICON_24_BLANK, _OtherIcon, MED.TRAY_SIDE_VIEW)]
+ID__11         [_Flyout("Tray Elbows", ICON4464.bmp, ICON_24_BLANK, _OtherIcon, MED.TRAY_ELBOWS)]
+ID__12         [_Flyout("Tray Fittings", ICON5705.bmp, ICON_24_BLANK, _OtherIcon, MED.TRAY_FITTINGS)]
+TRAY_DOWN      [_Button("Vertical Tray Down", "TRAY_DOWN", "TRAY_DOWN_32")]^C^CTRAYDN 
+TRAY_UP        [_Button("Vertical Tray Up", "TRAY_UP", "TRAY_UP_32")]^C^CTRAYUP 
+
+**CONDUIT_TYPES
+ID_Conduit_Types_0 [_Toolbar("Conduit Types", _Floating, _Hide, 300, 160, 1)]
+CON_RGS        [_Button("Rigid Steel Conduit", "CON_RGS", "CON_RGS_32")]^C^C(smlayer _MCON) (setq _CODE 1) CONDUIT 
+CON_EMT        [_Button("Electrical Metallic Tubing", "CON_EMT", "CON_EMT_32")]^C^C(smlayer _MCON) (setq _CODE 4) CONDUIT 
+CON_IMT        [_Button("Intermediate Metallic Tubing", "CON_IMT", "CON_IMT_32")]^C^C(smlayer _MCON) (setq _CODE 6) CONDUIT 
+CON_PVCRGS     [_Button("PVC Coated Rigid Steel Conduit", "CON_PVCRGS", "CON_PVCRGS_32")]^C^C(smlayer _MCON) (setq _CODE 2) CONDUIT 
+CON_PVC        [_Button("PVC Conduit", "CON_PVC", "CON_PVC_32")]^C^C(smlayer _MCON) (setq _CODE 3) CONDUIT 
+
+**CONDUIT_L_FITTINGS
+ID_Conduit_L_Fittings_0 [_Toolbar("Conduit L Fittings", _Floating, _Hide, 300, 190, 1)]
+CON_LB2        [_Button("LB Fitting", "CON_LB2", "CON_LB2_32")]^C^C(setq _FITTCODE  30) (setblkins _MEDFIT "1lbr"     nil nil _SC 2) MEDBlockInsert
+CON_LB1        [_Button("LB Fitting", "CON_LB1", "CON_LB1_32")]^C^C(setq _FITTCODE  30) (setblkins _MEDFIT "1lbl"     nil nil _SC 2) MEDBlockInsert
+CON_LL         [_Button("LL Fitting", "CON_LL", "CON_LL_32")]^C^C(setq _FITTCODE  33) (setblkins _MEDFIT "1lbl"     nil nil _SC 2) MEDBlockInsert
+CON_LR         [_Button("LR Fitting", "CON_LR", "CON_LR_32")]^C^C(setq _FITTCODE  36) (setblkins _MEDFIT "1lbr"     nil nil _SC 2) MEDBlockInsert
+CON_LBDOWN     [_Button("LB Fitting Down", "CON_LBDOWN", "CON_LBDOWN_32")]^C^C(setq _FITTCODE  30) (setblkins _MEDFIT "1lbd"     nil nil _SC 3) MEDBlockInsert
+CON_LBUP       [_Button("LB Fitting Up Solid", "CON_LBUP", "CON_LBUP_32")]^C^C(setq _FITTCODE  30) (setblkins _MEDFIT "1lbu"     nil nil _SC 6) MEDBlockInsert
+CON_LBOUPOPEN  [_Button("LB Fitting Up Open", "CON_LBUPOPEN", "CON_LBUPOPEN_32")]^C^C(setq _FITTCODE  30) (setblkins _MEDFIT "1lbuo"     nil nil _SC 6) MEDBlockInsert
+CON_LBD1       [_Button("LBD Fitting", "CON_LBD1", "CON_LBD1_32")]^C^C(setq _FITTCODE  39) (setblkins _MEDFIT "1lbdl"    nil nil _SC 2) MEDBlockInsert
+CON_LBD2       [_Button("LBD Fitting", "CON_LBD2", "CON_LBD2_32")]^C^C(setq _FITTCODE  39) (setblkins _MEDFIT "1lbdr"    nil nil _SC 2) MEDBlockInsert
+CON_LBY        [_Button("LBY Fitting", "CON_LBY", "CON_LBY_32")]^C^C(setq _FITTCODE  41) (setblkins _MEDFIT "1lby"     nil nil _SC 2) MEDBlockInsert
+
+**CONDUIT_GUA_FITTINGS
+ID_Conduit_GUA_Fittings_0 [_Toolbar("Conduit GUA Fittings", _Floating, _Hide, 741, 148, 1)]
+CON_GUAL       [_Button("GUAL Fitting", "CON_GUAL", "CON_GUAL_32")]^C^C(setq _FITTCODE 141) (setblkins _MEDFIT "1gual"    nil nil _SC 2) MEDBlockInsert
+CON_GUAT       [_Button("GUAT Fitting", "CON_GUAT", "CON_GUAT_32")]^C^C(setq _FITTCODE 142) (setblkins _MEDFIT "1guat"    nil nil _SC 2) MEDBlockInsert 
+CON_GUAX       [_Button("GUAX Fitting", "CON_GUAX", "CON_GUAX_32")]^C^C(setq _FITTCODE 143) (setblkins _MEDFIT "1guax"    nil nil _SC 2) MEDBlockInsert
+
+**CONDUIT_T_AND_CROSS_FITTINGS
+ID_Conduit_T_and_Cross_Fittings_0 [_Toolbar("Conduit T and Cross Fittings", _Floating, _Hide, 530, 182, 1)]
+CON_TEE        [_Button("Tee Fitting", "CON_TEE", "CON_TEE_32")]^C^C(setq _FITTCODE  11) (setblkins _MEDFIT "1tee"     nil nil _SC 2) MEDBlockInsert
+CON_TEEDOWN    [_Button("Tee Fitting Down", "CON_TEEDOWN", "CON_TEEDOWN_32")]^C^C(setq _FITTCODE  11) (setblkins _MEDFIT "1teed"    nil nil _SC 3) MEDBlockInsert
+CON_TEEUP      [_Button("Tee Fitting Up Solid", "CON_TEEUP", "CON_TEEUP_32")]^C^C(setq _FITTCODE  11) (setblkins _MEDFIT "1teeu"    nil nil _SC 3) MEDBlockInsert
+CON_TEEUPOPEN  [_Button("Tee Fitting Up Open", "CON_TEEUPOPEN", "CON_TEEUPOPEN_32")]^C^C(setq _FITTCODE  11) (setblkins _MEDFIT "1teeuo"    nil nil _SC 3) MEDBlockInsert
+CON_CROSS      [_Button("Cross Fitting", "CON_CROSS", "CON_CROSS_32")]^C^C(setq _FITTCODE  80) (setblkins _MEDFIT "1exs"     nil nil _SC 2) MEDBlockInsert
+
+**LIGHTING_SYMBOLS
+ID_Lighting_Symbols_0 [_Toolbar("Lighting Symbols", _Floating, _Hide, 157, 461, 1)]
+EQP_OHLITE     [_Button("Ceiling or Pendant Light", "EQP_OHLITE", "EQP_OHLITE_32")]^C^C(opt_eq_ins (list (list "" 1)) 1 "1liteoh" _MEDELEQP) 
+EQP_WALLLITE   [_Button("Wall Mount Light", "EQP_WALLLITE", "EQP_WALLLITE_32")]^C^C(opt_eq_ins (list (list "" 2)) 1 "1litewm" _MEDELEQP) 
+EQP_STANLITE   [_Button("Stanchion Mount Light", "EQP_STANLITE", "EQP_STANLITE_32")]^C^C(opt_eq_ins (list (list "" 3)) 1 "1stanlit" _MEDELEQP) 
+EQP_LITETYPE   [_Button("Schedule Designator", "EQP_LITETYPE", "EQP_LITETYPE_32")]^C^C(setblkins _MEDELEQP "1litype" nil nil _SC -1) MEDBlockInsert
+EQP_WALLPACK   [_Button("WallPack Light", "EQP_WALLPACK", "EQP_WALLPACK_32")]^C^C(opt_eq_ins (list (list "" 4)) 1 "1paclite" _MEDELEQP) 
+EQP_EMERG      [_Button("Emergency Light", "EQP_EMERG", "EQP_EMERG_32")]^C^C(opt_eq_ins (list (list "" 5)) 1 "1emrglit" _MEDELEQP) 
+EQP_CIELFAN    [_Button("Exhaust Fan", "EQP_CIELFAN", "EQP_CIELFAN_32")]^C^C(opt_eq_ins (list (list "" 7)) 1 "1fanoh" _MEDELEQP) 
+EQP_POLE       [_Button("Flood Light Pole", "EQP_POLE", "EQP_POLE_32")]^C^C(opt_eq_ins (list (list "" 9)) 1 "1fpole" _MEDELEQP) 
+EQP_FLITE      [_Button("Flood Light", "EQP_FLITE", "EQP_FLITE_32")]^C^C(opt_eq_ins (list (list "" 8)) 1 "1flite" _MEDELEQP) 
+
+**TRAY_FITTINGS
+ID_Tray_Fittings_0 [_Toolbar("Tray Fittings", _Floating, _Hide, 513, 170, 1)]
+TRAY_FITTCROSS [_Button("Cross Fitting", "TRAY_FITTCROSS", "TRAY_FITTCROSS_32")]^C^CTRAYCROSS 
+TRAY_FITTTEE   [_Button("Tee Fitting", "TRAY_FITTTEE", "TRAY_FITTTEE_32")]^C^CTRAYTEE 
+TRAY_FITTRESTR [_Button("Straight Reducer Fitting", "TRAY_FITTRESTR", "TRAY_FITTRESTR_32")]^C^CTRAYRE 
+TRAY_FITTRELH  [_Button("LeftHand Reducer Fitting", "TRAY_FITTRELH", "TRAY_FITTRELH_32")]^C^CTRAYREL 
+TRAY_FITTRERH  [_Button("RightHand Reducer Fitting", "TRAY_FITTRERH", "TRAY_FITTRERH_32")]^C^CTRAYRER 
+
+**TRAY_ELBOWS
+ID_Tray_Elbows_0 [_Toolbar("Tray Elbows", _Floating, _Hide, 355, 115, 1)]
+TRAY_FITT90    [_Button("90 Degree Hoirizonatal Elbow", "TRAY_FITT90", "TRAY_FITT90_32")]^C^CTRAY90 
+TRAY_FITT60    [_Button("60 Degree Hoirizonatal Elbow", "TRAY_FITT60", "TRAY_FITT60_32")]^C^CTRAY60 
+TRAY_FITT45    [_Button("45 Degree Hoirizonatal Elbow", "TRAY_FITT45", "TRAY_FITT45_32")]^C^CTRAY45 
+TRAY_FITT30    [_Button("30 Degree Hoirizonatal Elbow", "TRAY_FITT30", "TRAY_FITT30_32")]^C^CTRAY30 
+TRAY_FITTV90   [_Button("90 Degree Vertical Elbow", "TRAY_FITTV90", "TRAY_FITTV90_32")]^C^CTRAYV90 
+
+**TRAY_SIDE_VIEW
+ID_Tray_Side_View_0 [_Toolbar("Tray Side View", _Floating, _Hide, 273, 605, 1)]
+TRAY_SIDEVIEW  [_Button("CableTray Side View", "TRAY_SIDEVIEW", "TRAY_SIDEVIEW_32")]^C^CVTRAY 
+TRAY_VOFFSET   [_Button("Side View Tray Offset", "TRAY_VOFFSET", "TRAY_VOFFSET_32")]^C^CVTRAYOFF 
+TRAY_SIDE90    [_Button("90 Degree Vertical Elbow", "TRAY_SIDE90", "TRAY_SIDE90_32")]^C^CVTRA90 
+TRAY_SIDE60    [_Button("60 Degree Vertical Elbow", "TRAY_SIDE60", "TRAY_SIDE60_32")]^C^CVTRAY60 
+TRAY_SIDE45    [_Button("45 Degree Vertical Elbow", "TRAY_SIDE45", "TRAY_SIDE45_32")]^C^CVTRAY45 
+TRAY_SIDE30    [_Button("30 Degree Vertical Elbow", "TRAY_SIDE30", "TRAY_SIDE30_32")]^C^CVTRAY30 
+
+**TRAY_DEPTH
+ID_Tray_Depth_0 [_Toolbar("Tray Depth", _Floating, _Hide, 235, 408, 1)]
+TRAY_03DPTH    [_Button("Set Tray Depth to 3 Inch", "TRAY_03DPTH", "TRAY_03DPTH_32")]^C^C(setq _TRDEPTH 3.0) 
+TRAY_04DPTH    [_Button("Set Tray Depth to 4 Inch", "TRAY_04DPTH", "TRAY_04DPTH_32")]^C^C(setq _TRDEPTH 4.0) 
+TRAY_06DPTH    [_Button("Set Tray Depth to 6 Inch", "TRAY_06DPTH", "TRAY_06DPTH_32")]^C^C(setq _TRDEPTH 6.0) 
+
+**TRAY_RADIUS
+ID_Tray_Radius_0 [_Toolbar("Tray Radius", _Floating, _Hide, 98, 414, 1)]
+TRAY_12RAD     [_Button("12 Radius", "TRAY_12RAD", "TRAY_12RAD_32")]^C^C(setq _TRFITTADD 0 _TRRAD 12.0) 
+TRAY_24RAD     [_Button("24 Radius", "TRAY_24RAD", "TRAY_24RAD_32")]^C^C(setq _TRFITTADD 1 _TRRAD 24.0) 
+TRAY_36RAD     [_Button("36 Radius", "TRAY_36RAD", "TRAY_36RAD_32")]^C^C(setq _TRFITTADD 2 _TRRAD 36.0) 
+TRAY_48RAD     [_Button("48 Radius", "TRAY_48RAD", "TRAY_48RAD_32")]^C^C(setq _TRFITTADD 120 _TRRAD 48.0) 
+
+**TRAY_TYPES
+ID_Tray_Types_0 [_Toolbar("Tray Types", _Floating, _Hide, 386, 184, 1)]
+TRAY_HEAVY     [_Button("Heavy Duty Tray", "TRAY_HEAVY", "TRAY_HEAVY_32")]^C^C(setq _TRTYPE 2) TRAY 
+TRAY_MEDIUM    [_Button("Medium Duty Tray", "TRAY_MEDIUM", "TRAY_MEDIUM_32")]^C^C(setq _TRTYPE 1) TRAY 
+TRAY_LIGHT     [_Button("Light Duty Tray", "TRAY_LIGHT", "TRAY_LIGHT_32")]^C^C(setq _TRTYPE 0) TRAY 
+
+**TEXT_STYLES
+**TB_TEXT_STYLES
+ID_Text_Styles_0 [_Toolbar("Text Styles", _Floating, _Hide, 366, 321, 9)]
+LSP_T937THIN   [_Button("0.09375 Thin Text", "LSP_T937THIN", "LSP_T937THIN_32")]^C^C(if (not C:T937THIN) (c:loadtxt)) T937THIN 
+LSP_T937       [_Button("0.09375 Text", "LSP_T937", "LSP_T937_32")]^C^C(if (not C:T937) (c:loadtxt)) T937 
+LSP_T125       [_Button("0.125 Text", "LSP_T125", "LSP_T125_32")]^C^C(if (not C:T125) (c:loadtxt)) T125 
+LSP_B125       [_Button("0.125 Bold Text", "LSP_B125", "LSP_B125_32")]^C^C(if (not C:B125) (c:loadtxt)) B125 
+LSP_B187       [_Button("0.1875 Bold Text", "LSP_B187", "LSP_B187_32")]^C^C(if (not C:B187) (c:loadtxt)) B187 
+LSP_CT         [_Button("Change Text Entities", "LSP_CT", "LSP_CT_32")]^C^CCT 
+LSP_RT         [_Button("Replace Text", "LSP_RT", "LSP_RT_32")]^C^CRT 
+LSP_XT         [_Button("Change Text Styles", "LSP_XT", "LSP_XT_32")]^C^CXT 
+LSP_LOADTXT    [_Button("Load Text Styles", "LSP_LOADTXT", "LSP_LOADTXT_32")]^C^CLOADTXT 
+
+**MED_DATA_TOOLS
+ID_MED_Data_Tools_0 [_Toolbar("MED Data Tools", _Floating, _Hide, 130, 565, 1)]
+LSP_MEDCHG      [_Button("MED Change", "LSP_MEDCHG", "LSP_MEDCHG_32")]^C^CMEDCHG 
+LSP_MEDREC      [_Button("MED Records", "LSP_MEDLIST", "LSP_MEDLIST_32")]^C^CMEDRECORDS 
+LSP_MEDCHGC     [_Button("MED Change Classic", "LSP_MEDCHG", "LSP_MEDCHG_32")]^C^CMEDCHG-CLASSIC 
+LSP_MEDSET      [_Button("MED Settings", "LSP_MEDSET", "LSP_MEDSET_32")]^C^CMEDSET 
+LSP_MEDLIST     [_Button("MED List", "LSP_MEDLIST", "LSP_MEDLIST_32")]^C^CDDMEDLIST 
+LSP_BOM        [_Button("Bill Of Material Extraction", "LSP_BOM", "LSP_BOM_32")]^C^CBOM 
+LSP_BOMSS      [_Button("Bill Of Material Extraction via Selection Set", "LSP_BOMSS", "LSP_BOMSS_32")]^C^CBOMSS 
+LSP_BROWSE     [_Button("Browse Material Extraction", "LSP_BROWSE", "LSP_BROWSE_32")]^C^CSHOW 
+LSP_DETAGUPD   [_Button("Detail Tag Update", "LSP_DETAGUPD", "LSP_DETAGUPD_32")]^C^CDETAGUPD 
+LSP_MEDFIND     [_Button("MED Find", "LSP_MEDFIND", "LSP_MEDFIND_32")]^C^CMEDFIND 
+LSP_MEDCOPY     [_Button("MED Data Copy", "LSP_MEDCOPY", "LSP_MEDCOPY_32")]^C^CMEDCOPY 
+LSP_MEDSTRIP    [_Button("MED Data Strip", "LSP_MEDSTRIP", "LSP_MEDSTRIP_32")]^C^CMEDSTRIP 
+LSP_CHGSZ      [_Button("Change Conduit or Fitting Size", "LSP_CHGSZ", "LSP_CHGSZ_32")]^C^CCHGSIZE 
+
+**TAGGING
+ID_Tagging_0   [_Toolbar("Tagging", _Floating, _Hide, 206, 413, 1)]
+LSP_CTAG       [_Button("Conduit Tag", "LSP_CTAG", "LSP_CTAG_32")]^C^CCTAG 
+LSP_TTAG       [_Button("Tray Tag", "LSP_TTAG", "LSP_TTAG_32")]^C^CTTAG 
+LSP_DETAG      [_Button("Detail Tag", "LSP_DETAG", "LSP_DETAG_32")]^C^CDETAG 
+LSP_IT         [_Button("Instrument Tag", "LSP_IT", "LSP_IT_32")]^C^CIT 
+LSP_MB         [_Button("Material Bubble", "LSP_MB", "LSP_MB_32")]^C^CMB 
+LSP_MB2        [_Button("Material Bubble", "LSP_MB2", "LSP_MB2_32")]^C^CMB1 
+LSP_HDTAG      [_Button("Hotdog Tag", "LSP_HDTAG", "LSP_HDTAG_32")]^C^CHDTAG 
+LSP_SECT       [_Button("Section Callouts", "LSP_SECT", "LSP_SECT_32")]^C^CSECT 
+LSP_CUT        [_Button("Cut Marks", "LSP_CUT", "LSP_CUT_32")]^C^CCUT 
+LSP_WIRES      [_Button("Wire Identifiers", "LSP_WIRES", "LSP_WIRES_32")]^C^CWIRES 
+LSP_ALEAD      [_Button("Arrowhead Leader", "LSP_ALEAD", "LSP_ALEAD_32")]^C^CALEAD 
+LSP_GRAB       [_Button("Hoop Leader", "LSP_GRAB", "LSP_GRAB_32")]^C^CGRAB 
+LSP_LOOPIT     [_Button("Loop Leader", "LSP_LOOPIT", "LSP_LOOPIT_32")]^C^CLOOPIT 
+LSP_ADDHOOP    [_Button("Add Hoop to Line", "LSP_ADDHOOP", "LSP_ADDHOOP_32")]^C^CGR 
+
+**ATTRIBUTE_TOOLS
+**TB_ATTRIBUTE_TOOLS
+ID_Attribute_Tools_0 [_Toolbar("Attribute Tools", _Floating, _Hide, 377, 114, 1)]
+LSP_ACX        [_Button("Attribute Find Replace", "LSP_ACX", "LSP_ACX_32")]^C^CACX 
+LSP_AC         [_Button("Attribute Change", "LSP_AC", "LSP_AC_32")]^C^CAC 
+LSP_ATTROT     [_Button("Attribute Rotate to Zero", "LSP_ATTROT", "LSP_ATTROT_32")]^C^CATTROT 
+
+**DETAILS
+ID_Details_0   [_Toolbar("Details", _Floating, _Show, 223, 348, 1)]
+EQP_LTG        [_Button("Lighting Details", "EQP_LTG", "EQP_LTG_32")]^C^CLTG 
+EQP_GND        [_Button("Grounding Details", "EQP_GND", "EQP_GND_32")]^C^CGND 
+EQP_PWR        [_Button("Power Details", "EQP_PWR", "EQP_PWR_32")]^C^CPWR 
+EQP_INS        [_Button("Instrument Details", "EQP_INS", "EQP_INS_32")]^C^CINS 
+EQP_TRY        [_Button("Tray Details", "EQP_TRY", "EQP_TRY_32")]^C^CTRY 
+ID__17         [_Flyout("Receptacles and Switches", ICON5436.bmp, ICON_24_BLANK, _OtherIcon, MED.RECEPTACLES_AND_SWITCHES)]
+ID__18         [_Flyout("Lighting Symbols", ICON2391.bmp, ICON_24_BLANK, _OtherIcon, MED.LIGHTING_SYMBOLS)]
+ID__19         [_Flyout("Fluorescent Lighting", ICON4604.bmp, ICON_24_BLANK, _OtherIcon, MED.FLUORESCENT_LIGHTING)]
+ID__20         [_Flyout("Grounding Symbols", ICON3902.bmp, ICON_24_BLANK, _OtherIcon, MED.GROUNDING_SYMBOLS)]
+ID__21         [_Flyout("Detectors and Alarms", ICON0153.bmp, ICON_24_BLANK, _OtherIcon, MED.DETECTORS_AND_ALARMS)]
+
+**RECEPTACLES_AND_SWITCHES
+ID_Receptacles_and_Switches_0 [_Toolbar("Receptacles and Switches", _Floating, _Hide, 248, 376, 1)]
+EQP_PLUG120    [_Button("120 Volt Receptacle", "EQP_PLUG120", "EQP_PLUG120_32")]^C^C(opt_eq_ins (list (list "" 10)) 1 "1plug" _MEDELEQP) 
+EQP_PLUGDED    [_Button("120 Volt Dedicated Receptacle", "EQP_PLUGDED", "EQP_PLUGDED_32")]^C^C(opt_eq_ins (list (list "" 10)) 1 "1plugded" _MEDELEQP) 
+EQP_PLUGGFI    [_Button("120 Volt GFI Receptacle", "EQP_PLUGGFI", "EQP_PLUGGFI_32")]^C^C(opt_eq_ins (list (list "" 11)) 1 "1gfci" _MEDELEQP) 
+EQP_PLUG240    [_Button("240 Volt Receptacle", "EQP_PLUG240", "EQP_PLUG240_32")]^C^C(opt_eq_ins (list (list "" 12)) 1 "1plug230" _MEDELEQP) 
+EQP_PLUGWELD   [_Button("Welding Receptacle", "EQP_PLUGWELD", "EQP_PLUGWELD_32")]^C^C(opt_eq_ins (list (list "" 13)) 1 "1weld" _MEDELEQP) 
+EQP_SWITCH     [_Button("Switch", "EQP_SWITCH", "EQP_SWITCH_32")]^C^C(opt_eq_ins (list (list "" 14)) 1 "1switch" _MEDELEQP) 
+EQP_PHOTOCELL  [_Button("Photocell", "EQP_PHOTOCELL", "EQP_PHOTOCELL_32")]^C^C(opt_eq_ins (list (list "" 15)) 1 "1photo" _MEDELEQP) 
+EQP_PHONE      [_Button("Phone Jack", "EQP_PHONE", "EQP_PHONE_32")]^C^C(opt_eq_ins (list (list "" 16)) 1 "1phnjk" _MEDELEQP) 
+
+**FLUORESCENT_LIGHTING
+ID_Fluorescent_Lighting_0 [_Toolbar("Fluorescent Lighting", _Floating, _Hide, 316, 223, 1)]
+EQP_42FLUOR    [_Button("4x2 Fluorescent Light", "EQP_42FLUOR", "EQP_42FLUOR_32")]^C^C(opt_eq_ins (list (list "" 17)) 0 "14x2flit" _MEDELEQP) 
+EQP_41FLUOR    [_Button("4x1 Fluorescent Light", "EQP_41FLUOR", "EQP_41FLUOR_32")]^C^C(opt_eq_ins (list (list "" 18)) 0 "14x1flit" _MEDELEQP) 
+EQP_81FLUOR    [_Button("8x1 Fluorescent Light", "EQP_81FLUOR", "EQP_81FLUOR_32")]^C^C(opt_eq_ins (list (list "" 19)) 0 "11x8flit" _MEDELEQP) 
+EQP_8SLIM      [_Button("8 ft Slim Line", "EQP_8SLIM", "EQP_8SLIM_32")]^C^C(opt_eq_ins (list (list "" 20)) 0 "18flite" _MEDELEQP) 
+
+**DETECTORS_AND_ALARMS
+ID_Detectors_and_Alarms_0 [_Toolbar("Detectors and Alarms", _Floating, _Hide, 224, 384, 1)]
+EQP_GASDET     [_Button("Gas Detector", "EQP_GASDET", "EQP_GASDET_32")]^C^C(opt_eq_ins (list (list "" 801)) 1 "1gasd" _MEDELEQP) 
+EQP_SMOKEDET   [_Button("Smoke Detector", "EQP_SMOKEDET", "EQP_SMOKEDET_32")]^C^C(opt_eq_ins (list (list "" 802)) 1 "1smoked" _MEDELEQP) 
+EQP_TEMPDET    [_Button("Temperature Detector", "EQP_TEMPDET", "EQP_TEMPDET_32")]^C^C(opt_eq_ins (list (list "" 803)) 1 "1tempd" _MEDELEQP) 
+EQP_FLAMEDET   [_Button("Flame Detector", "EQP_FLAMEDET", "EQP_FLAMEDET_32")]^C^C(opt_eq_ins (list (list "" 804)) 1 "1flamed" _MEDELEQP) 
+EQP_HORN       [_Button("Horn", "EQP_HORN", "EQP_HORN_32")]^C^C(opt_eq_ins (list (list "" 805)) 1 "1horn" _MEDELEQP) 
+
+**GROUNDING_SYMBOLS
+ID_Grounding_Symbols_0 [_Toolbar("Grounding Symbols", _Floating, _Hide, 401, 457, 1)]
+EQP_GNDWELL    [_Button("Ground Well", "EQP_GNDWELL", "EQP_GNDWELL_32")]^C^C(opt_eq_ins (list (list "" 202)) 1 "1grnd" _MEDGRND) 
+EQP_TESTWELL   [_Button("Ground Test WellL", "EQP_TESTWELL", "EQP_TESTWELL_32")]^C^C(opt_eq_ins (list (list "" 203)) 1 "1grndtw" _MEDGRND) 
+EQP_GNDSPLICE  [_Button("Ground Splice", "EQP_GNDSPLICE", "EQP_GNDSPLICE_32")]^C^C(opt_eq_ins (list (list "#4/0x#4/0" 204) (list "#4/0x#2/0" 205)(list "#4/0x#2" 206)) 1 "1grmain" _MEDGRND) 
+EQP_GNDTAP     [_Button("Ground Tap", "EQP_GNDTAP", "EQP_GNDTAP_32")]^C^C(opt_eq_ins (list (list "Motor Tap" 201) (list "#4/0x#2/0" 207)(list "#4/0x#2" 208)(list "#2/0x#2" 209)) 1 "1grtap" _MEDGRND) 
+
+**FILLETS
+ID_Fillets_0   [_Toolbar("Fillets", _Floating, _Hide, 189, 342, 1)]
+LSP_FILLET000  [_Button("Fillet Zero Radius", "LSP_FILLET000", "LSP_FILLET000_32")]^C^CF0 
+LSP_FILLET625  [_Button("Fillet 0.0625 Radius", "LSP_FILLET625", "LSP_FILLET625_32")]^C^CFILLET R (* _SC 0.06250) FILLET 
+LSP_FILLET937  [_Button("Fillet 0.09375 Radius", "LSP_FILLET937", "LSP_FILLET937_32")]^C^CFILLET R (* _SC 0.09375) FILLET 
+LSP_FILLET125  [_Button("Fillet 0.125 Radius", "LSP_FILLET125", "LSP_FILLET125_32")]^C^CFILLET R (* _SC 0.125000) FILLET 
+LSP_FILLETFC   [_Button("Fillet Conduit", "LSP_FILLETFC", "LSP_FILLETFC_32")]^C^CFC 
+
+**LAYER_TOOLS
+ID_Layer_Tools_0 [_Toolbar("Layer Tools", _Floating, _Hide, 335, 324, 1)]
+LSP_CL         [_Button("Change Layer of Entities", "LSP_CL", "LSP_CL_32")]^C^CCL 
+LSP_SL         [_Button("Set Current Layer", "LSP_SL", "LSP_SL_32")]^C^CSL 
+LSP_FL         [_Button("Freez Layers of Entities", "LSP_FL", "LSP_FL_32")]^C^CFL 
+
+**SWITCHES
+ID_SWITCHES_0  [_Toolbar("Switches", _Floating, _Hide, 218, 262, 5)]
+SYM_SWHOA      [_Button("Hand Off Auto Switch", "SYM_SWHOA", "SYM_SWHOA_32")]^C^C(setblkins _MEDSYM "hoasw"  nil nil _SC -1) MEDBlockInsert
+SYM_SW3POS     [_Button("Three Position Switch", "SYM_SW3POS", "SYM_SW3POS_32")]^C^C(setblkins _MEDSYM "slra03" nil nil _SC -1) MEDBlockInsert
+SYM_SW4POS     [_Button("Four Position Switch", "SYM_SW4POS", "SYM_SW4POS_32")]^C^C(setblkins _MEDSYM "slra04" nil nil _SC -1) MEDBlockInsert
+SYM_SW3POS2    [_Button("Three Position Switch", "SYM_SW3POS2", "SYM_SW3POS2_32")]^C^C(setblkins _MEDSYM "slha03" nil nil _SC -1) MEDBlockInsert
+SYM_SW4POS2    [_Button("Four Position Switch", "SYM_SW4POS2", "SYM_SW4POS2_32")]^C^C(setblkins _MEDSYM "slha04" nil nil _SC -1) MEDBlockInsert
+
+**SWITCHESNO
+ID_SWITCHESNO_0 [_Toolbar("Switches Normally Open", _Floating, _Hide, 215, 241, 12)]
+SYM_SWCONNO    [_Button("Contact NO", "SYM_SWCONNO", "SYM_SWCONNO_32")]^C^C(setblkins _MEDSYM "cono"  nil nil _SC -1) MEDBlockInsert
+SYM_SWPUSHNO   [_Button("Pushbutton NO", "SYM_SWPUSHNO", "SYM_SWPUSHNO_32")]^C^C(setblkins _MEDSYM "pbno"  nil nil _SC -1) MEDBlockInsert
+SYM_SWITCHNO   [_Button("Switch NO", "SYM_SWITCHNO", "SYM_SWITCHNO_32")]^C^C(setblkins _MEDSYM "swno"  nil nil _SC -1) MEDBlockInsert
+SYM_SWLIMHLDNO [_Button("Limit Switch Held Open", "SYM_SWLIMHLDNO", "SYM_SWLIMHLDNO_32")]^C^C(setblkins _MEDSYM "lmtno" nil nil _SC -1) 
+SYM_SWLIMNO    [_Button("Limit Switch NO", "SYM_SWLIMNO", "SYM_SWLIMNO_32")]^C^C(setblkins _MEDSYM "lmbno" nil nil _SC -1) MEDBlockInsert
+SYM_SWLEVNO    [_Button("Level Switch NO", "SYM_SWLEVNO", "SYM_SWLEVNO_32")]^C^C(setblkins _MEDSYM "lvno"  nil nil _SC -1) MEDBlockInsert
+SYM_SWFLOWNO   [_Button("Flow Switch NO", "SYM_SWFLOWNO", "SYM_SWFLOWNO_32")]^C^C(setblkins _MEDSYM "flno"  nil nil _SC -1) MEDBlockInsert
+SYM_SWPRESNO   [_Button("Pressure Switch NO", "SYM_SWPRESNO", "SYM_SWPRESNO_32")]^C^C(setblkins _MEDSYM "psno"  nil nil _SC -1) MEDBlockInsert
+SYM_SWSOFTNO   [_Button("Software Switch NO", "SYM_SWSOFTNO", "SYM_SWSOFTNO_32")]^C^C(setblkins _MEDSYM "sino"  nil nil _SC -1) MEDBlockInsert
+SYM_SWTEMPNO   [_Button("Temperature Switch NO", "SYM_SWTEMPNO", "SYM_SWTEMPNO_32")]^C^C(setblkins _MEDSYM "tmno"  nil nil _SC -1) MEDBlockInsert
+SYM_SWTIMEENO  [_Button("Timed Energized Switch NO", "SYM_SWTIMEENO", "SYM_SWTIMEENO_32")]^C^C(setblkins _MEDSYM "teno"  nil nil _SC -1) MEDBlockInsert
+SYM_SWTIMEDNO  [_Button("Timed De-Energized Switch NO", "SYM_SWTIMEDNO", "SYM_SWTIMEDNO_32")]^C^C(setblkins _MEDSYM "tdno"  nil nil _SC -1) MEDBlockInsert
+
+**SWITCHESNC
+ID_SWITCHESNC_0 [_Toolbar("Switches Normally Closed", _Floating, _Hide, 279, 241, 12)]
+SYM_SWCONNC    [_Button("Contact NC", "SYM_SWCONNC", "SYM_SWCONNC_32")]^C^C(setblkins _MEDSYM "conc"  nil nil _SC -1) MEDBlockInsert
+SYM_SWPUSHNC   [_Button("Pushbutton NC", "SYM_SWPUSHNC", "SYM_SWPUSHNC_32")]^C^C(setblkins _MEDSYM "pbnc"  nil nil _SC -1) MEDBlockInsert
+SYM_SWITCHNC   [_Button("Switch NC", "SYM_SWITCHNC", "SYM_SWITCHNC_32")]^C^C(setblkins _MEDSYM "swnc"  nil nil _SC -1) MEDBlockInsert
+SYM_SWLIMHLDNC [_Button("Limit Switch Held Closed", "SYM_SWLIMHLDNC", "SYM_SWLIMHLDNC_32")]^C^C(setblkins _MEDSYM "lmbnc" nil nil _SC -1) MEDBlockInsert
+SYM_SWLIMNC    [_Button("Limit Switch NC", "SYM_SWLIMNC", "SYM_SWLIMNC_32")]^C^C(setblkins _MEDSYM "lmtnc" nil nil _SC -1) MEDBlockInsert
+SYM_SWLEVNC    [_Button("Level Switch NC", "SYM_SWLEVNC", "SYM_SWLEVNC_32")]^C^C(setblkins _MEDSYM "lvnc"  nil nil _SC -1) MEDBlockInsert
+SYM_SWFLOWNC   [_Button("Flow Switch NC", "SYM_SWFLOWNC", "SYM_SWFLOWNC_32")]^C^C(setblkins _MEDSYM "flnc"  nil nil _SC -1) MEDBlockInsert
+SYM_SWPRESNC   [_Button("Pressure Switch NC", "SYM_SWPRESNC", "SYM_SWPRESNC_32")]^C^C(setblkins _MEDSYM "psnc"  nil nil _SC -1) MEDBlockInsert
+SYM_SWSOFTNC   [_Button("Software Switch NC", "SYM_SWSOFTNC", "SYM_SWSOFTNC_32")]^C^C(setblkins _MEDSYM "sinc"  nil nil _SC -1) MEDBlockInsert
+SYM_SWTEMPNC   [_Button("Temperature Switch NC", "SYM_SWTEMPNC", "SYM_SWTEMPNC_32")]^C^C(setblkins _MEDSYM "tmnc"  nil nil _SC -1) MEDBlockInsert
+SYM_SWTIMEENC  [_Button("Timed Energized Switch NC", "SYM_SWTIMEENC", "SYM_SWTIMEENC_32")]^C^C(setblkins _MEDSYM "tenc"  nil nil _SC -1) MEDBlockInsert
+SYM_SWTIMEDNC  [_Button("Timed De-Energized Switch NC", "SYM_SWTIMEDNC", "SYM_SWTIMEDNC_32")]^C^C(setblkins _MEDSYM "tdnc"  nil nil _SC -1) MEDBlockInsert
+
+**COMPONENTS
+ID_COMPONENTS_0 [_Toolbar("Components", _Floating, _Hide, 168, 213, 16)]
+SYM_ANNUNC     [_Button("Annunciator", "SYM_ANNUNC", "SYM_ANNUNC_32")]^C^C(setblkins _MEDSYM "anunciat" nil nil _SC -1) MEDBlockInsert
+SYM_BATTERY    [_Button("Battery", "SYM_BATTERY", "SYM_BATTERY_32")]^C^C(setblkins _MEDSYM "batt02"  nil nil _SC -1) MEDBlockInsert
+SYM_BELL       [_Button("Bell", "SYM_BELL", "SYM_BELL_32")]^C^C(setblkins _MEDSYM "bell"     nil nil _SC -1) MEDBlockInsert
+SYM_HORN       [_Button("Horn", "SYM_HORN", "SYM_HORN_32")]^C^C(setblkins _MEDSYM "buzzer"   nil nil _SC -1) MEDBlockInsert
+SYM_CHASGND    [_Button("Chasis Ground", "SYM_CHASGND", "SYM_CHASGND_32")]^C^C(setblkins _MEDSYM "grnd02" nil nil _SC -1) MEDBlockInsert
+SYM_COIL       [_Button("Coil", "SYM_COIL", "SYM_COIL_32")]^C^C(setblkins _MEDSYM "coil02"   nil nil _SC -1) MEDBlockInsert
+SYM_ERTHGND    [_Button("Earth Ground", "SYM_ERTHGND", "SYM_ERTHGND_32")]^C^C(setblkins _MEDSYM "grnd01" nil nil _SC -1) MEDBlockInsert
+SYM_CONFUSE    [_Button("Fuse", "SYM_CONFUSE", "SYM_CONFUSE_32")]^C^C(setblkins _MEDSYM "FUSE02"   nil nil _SC -1) MEDBlockInsert
+SYM_SIREN      [_Button("Siren", "SYM_SIREN", "SYM_SIREN_32")]^C^C(setblkins _MEDSYM "horn"     nil nil _SC -1) MEDBlockInsert
+SYM_PILOT1     [_Button("Indicator Light", "SYM_PILOT1", "SYM_PILOT1_32")]^C^C(setblkins _MEDSYM "pilot03"  nil nil _SC -1) MEDBlockInsert
+SYM_METER      [_Button("Meter", "SYM_METER", "SYM_METER_32")]^C^C(setblkins _MEDSYM "devmtr1"  nil nil _SC -1) MEDBlockInsert
+SYM_SHUNT      [_Button("Meter Shunt", "SYM_SHUNT", "SYM_SHUNT_32")]^C^C(setblkins _MEDSYM "mtrshunt" nil nil _SC -1) MEDBlockInsert
+SYM_MOTOR1     [_Button("Motor", "SYM_MOTOR1", "SYM_MOTOR1_32")]^C^C(setblkins _MEDSYM "motor01"  nil nil _SC -1) MEDBlockInsert
+SYM_OLS        [_Button("Overloads", "SYM_OLS", "SYM_OLS_32")]^C^C(setblkins _MEDSYM "oloads"   nil nil _SC -1) MEDBlockInsert
+SYM_THERMO     [_Button("Thermocouple", "SYM_THERMO", "SYM_THERMO_32")]^C^C(setblkins _MEDSYM "tcouple"  nil nil _SC -1) MEDBlockInsert
+SYM_HEATER     [_Button("Heater Elememt", "SYM_HEATER", "SYM_HEATER_32")]^C^C(setblkins _MEDSYM "heater"  nil nil _SC -1) MEDBlockInsert
+
+**SEMICONDUCTORS
+ID_SEMICONDUCTORS_0 [_Toolbar("Semi Conductors", _Floating, _Hide, 190, 242, 13)]
+SYM_FXDRESIST  [_Button("Fixed Resistor", "SYM_FXDRESIST", "SYM_FXDRESIST_32")]^C^C(setblkins _MEDSYM "resfixed" nil nil _SC -1) MEDBlockInsert
+SYM_HEATELM    [_Button("Heating Element", "SYM_HEATELM", "SYM_HEATELM_32")]^C^C(setblkins _MEDSYM "heatelem" nil nil _SC -1) MEDBlockInsert
+SYM_ADJRHEOFXD [_Button("Adjustable rheostat fixed Temps", "SYM_ADJRHEOFXD", "SYM_ADJRHEOFXD_32")]^C^C(setblkins _MEDSYM "resadjst" nil nil _SC -1) MEDBlockInsert
+SYM_ADJRHEO    [_Button("Adjustable Rheostat", "SYM_ADJRHEO", "SYM_ADJRHEO_32")]^C^C(setblkins _MEDSYM "rheostat" nil nil _SC -1) MEDBlockInsert
+SYM_NPNTRAN    [_Button("NPN Transisitor", "SYM_NPNTRAN", "SYM_NPNTRAN_32")]^C^C(setblkins _MEDSYM "npn"      nil nil _SC -1) MEDBlockInsert
+SYM_PNPTRAN    [_Button("PNP Transistor", "SYM_PNPTRAN", "SYM_PNPTRAN_32")]^C^C(setblkins _MEDSYM "pnp"      nil nil _SC -1) MEDBlockInsert
+SYM_UJTNBASE   [_Button("UJT N Base", "SYM_UJTNBASE", "SYM_UJTNBASE_32")]^C^C(setblkins _MEDSYM "ujtnbase" nil nil _SC -1) MEDBlockInsert
+SYM_UJTPBASE   [_Button("UJT P Base", "SYM_UJTPBASE", "SYM_UJTPBASE_32")]^C^C(setblkins _MEDSYM "ujtpbase" nil nil _SC -1) MEDBlockInsert
+SYM_GATETHY    [_Button("Gate Turn off Thyristor", "SYM_GATETHY", "SYM_GATETHY_32")]^C^C(setblkins _MEDSYM "gatetrst" nil nil _SC -1) MEDBlockInsert
+SYM_FIXCAP     [_Button("Fixed Capacitor", "SYM_FIXCAP", "SYM_FIXCAP_32")]^C^C(setblkins _MEDSYM "capactr2"   nil nil _SC -1) MEDBlockInsert
+SYM_FIXCAP2    [_Button("Fixed Capacitor with Connects", "SYM_FIXCAP2", "SYM_FIXCAP2_32")]^C^C(setblkins _MEDSYM "capactr1"   nil nil _SC -1) MEDBlockInsert
+SYM_ADJCAP     [_Button("Adjustable Capacitor", "SYM_ADJCAP", "SYM_ADJCAP_32")]^C^C(setblkins _MEDSYM "capactr4"   nil nil _SC -1) MEDBlockInsert
+SYM_ADJCAP2    [_Button("Adjustable Capacitor With Connec", "SYM_ADJCAP2", "SYM_ADJCAP2_32")]^C^C(setblkins _MEDSYM "capactr3"   nil nil _SC -1) MEDBlockInsert
+
+**XFMRANDINDUCT
+ID_XFMRANDINDUCT_0 [_Toolbar("Transformers and Inductors", _Floating, _Hide, 139, 232, 11)]
+SYM_AUTOXFMR   [_Button("Auto Transformer", "SYM_AUTOXFMR", "SYM_AUTOXFMR_32")]^C^C(setblkins _MEDSYM "autoxfmr" nil nil _SC -1) MEDBlockInsert
+SYM_AIRCORE    [_Button("Air Core Transformer", "SYM_AIRCORE", "SYM_AIRCORE_32")]^C^C(setblkins _MEDSYM "xfmr3"    nil nil _SC -1) MEDBlockInsert
+SYM_IRONCORE   [_Button("Iron Core Transformer", "SYM_IRONCORE", "SYM_IRONCORE_32")]^C^C(setblkins _MEDSYM "xfmr4"    nil nil _SC -1) MEDBlockInsert
+SYM_CURXFMR    [_Button("Current Transformer", "SYM_CURXFMR", "SYM_CURXFMR_32")]^C^C(setblkins _MEDSYM "currxfmr" nil nil _SC -1) MEDBlockInsert
+SYM_DUALXFMR   [_Button("Dual Voltage Transformer", "SYM_DUALXFMR", "SYM_DUALXFMR_32")]^C^C(setblkins _MEDSYM "dualxfmr" nil nil _SC -1) MEDBlockInsert
+SYM_DELTA      [_Button("Delta Transformer Symbol", "SYM_DELTA", "SYM_DELTA_32")]^C^C(setblkins _MEDSYM "xfmrdel"  nil nil _SC -1) MEDBlockInsert
+SYM_DELTAWGND  [_Button("Delta Transformer Symbol w/Grnd", "SYM_DELTAWGND", "SYM_DELTAWGND_32")]^C^C(setblkins _MEDSYM "xfmrdelg" nil nil _SC -1) MEDBlockInsert
+SYM_WYE        [_Button("Wye Transformer Symbol", "SYM_WYE", "SYM_WYE_32")]^C^C(setblkins _MEDSYM "xfmrwye"  nil nil _SC -1) MEDBlockInsert
+SYM_WYEWGND    [_Button("Wye Transformer Symbol w/Grnd", "SYM_WYEWGND", "SYM_WYEWGND_32")]^C^C(setblkins _MEDSYM "xfmrwyeg" nil nil _SC -1) MEDBlockInsert
+SYM_AIRCORE2   [_Button("Air Core Transformer", "SYM_AIRCORE2", "SYM_AIRCORE2_32")]^C^C(setblkins _MEDSYM "indciron" nil nil _SC -1) MEDBlockInsert
+SYM_IRONCORE2  [_Button("Iron Core Transform", "SYM_IRONCORE2", "SYM_IRONCORE2_32")]^C^C(setblkins _MEDSYM "indcair"  nil nil _SC -1) MEDBlockInsert
+
+**OVERCURRENT
+ID_OVERCURRENT_0 [_Toolbar("Overcurrent Protection", _Floating, _Hide, 185, 235, 4)]
+SYM_CB3PH      [_Button("Three Phase Circuit Breraker", "SYM_CB3PH", "SYM_CB3PH_32")]^C^C(setblkins _MEDSYM "CB03"     nil nil _SC -1) MEDBlockInsert
+SYM_CB1PH      [_Button("Single Phase Circuit Breaker", "SYM_CB1PH", "SYM_CB1PH_32")]^C^C(setblkins _MEDSYM "CBRKR"    nil nil _SC -1) MEDBlockInsert
+SYM_FD3PH      [_Button("Three Phase Fused Disconnect", "SYM_FD3PH", "SYM_FD3PH_32")]^C^C(setblkins _MEDSYM "FD03"     nil nil _SC -1) MEDBlockInsert
+SYM_FD1PH      [_Button("Single Phase Fused Disconnect", "SYM_FD1PH", "SYM_FD1PH_32")]^C^C(setblkins _MEDSYM "FUSESW" nil nil _SC -1) MEDBlockInsert
+
+**PWRLINE
+ID_PWRLINE_0 [_Toolbar("Power Lines", _Floating, _Hide, 240, 193, 3)]
+LSP_PWRLINE    [_Button("Continuous Power Line", "LSP_PWRLINE", "LSP_PWRLINE_32")]^C^C(smlayer _MEDPCABLE) MEDLINE 
+LSP_PWRLINEHD  [_Button("Hidden Power Line", "LSP_PWRLINEHD", "LSP_PWRLINEHD_32")]^C^C(setq _LTP "HIDDEN")(smlayer _MEDPCABLE) MEDLINE 
+LSP_PWRLINEDSH [_Button("Dashed Power Line", "LSP_PWRLINEDSH", "LSP_PWRLINEDSH_32")]^C^C(setq _LTP "DASHED")(smlayer _MEDPCABLE) MEDLINE 
+
+**CNTLINE
+ID_CNTLINE_0   [_Toolbar("Control Lines", _Floating, _Hide, 0, 0, 3)]
+LSP_CNTLINE    [_Button("Continuous Control Line", "LSP_CNTLINE", "LSP_CNTLINE_32")]^C^C(smlayer _MEDCCABLE) MEDLINE 
+LSP_CNTLINEHD  [_Button("Hidden Control Line", "LSP_CNTLINEHD", "LSP_CNTLINEHD_32")]^C^C(setq _LTP "HIDDEN")(smlayer _MEDCCABLE) MEDLINE 
+LSP_CNTLINEDSH [_Button("Dashed Control Line", "LSP_CNTLINEDSH", "LSP_CNTLINEDSH_32")]^C^C(setq _LTP "DASHED")(smlayer _MEDCCABLE) MEDLINE 
+
+**INSLINE
+ID_INSLINE_0   [_Toolbar("Instrument Lines", _Floating, _Hide, 0, 0, 3)]
+LSP_INSLINE    [_Button("Continuous Instrument Line", "LSP_INSLINE", "LSP_INSLINE_32")]^C^C(smlayer _MEDICABLE) MEDLINE 
+LSP_INSLINEHD  [_Button("Hidden Instrument Line", "LSP_INSLINEHD", "LSP_INSLINEHD_32")]^C^C(setq _LTP "HIDDEN")(smlayer _MEDICABLE) MEDLINE 
+LSP_INSLINEDSH [_Button("Dashed Instrument Line", "LSP_INSLINEDSH", "LSP_INSLINEDSH_32")]^C^C(setq _LTP "DASHED")(smlayer _MEDICABLE) MEDLINE 
+
+**DIODES
+ID_DIODES_0    [_Toolbar("Diaodes", _Floating, _Hide, 0, 0, 9)]
+SYM_DIODE      [_Button("Diode", "SYM_DIODE", "SYM_DIODE_32")]^C^C(setblkins _MEDSYM "diode01"  nil nil _SC -1) MEDBlockInsert
+SYM_TUNLDIOD   [_Button("Tunnel Diode", "SYM_TUNLDIOD", "SYM_TUNLDIOD_32")]^C^C(setblkins _MEDSYM "diode02"  nil nil _SC -1) MEDBlockInsert
+SYM_ZENRDIOD   [_Button("Zener Diode", "SYM_ZENRDIOD", "SYM_ZENRDIOD_32")]^C^C(setblkins _MEDSYM "diode03"  nil nil _SC -1) MEDBlockInsert
+SYM_BIDIRDIOD  [_Button("Bi-Directional Diode", "SYM_BIDIRDIOD", "SYM_BIDIRDIOD_32")]^C^C(setblkins _MEDSYM "diode04"  nil nil _SC -1) MEDBlockInsert
+SYM_TRIAC      [_Button("Triac", "SYM_TRIAC", "SYM_TRIAC_32")]^C^C(setblkins _MEDSYM "triac"    nil nil _SC -1) MEDBlockInsert
+SYM_SCR        [_Button("SCR", "SYM_SCR", "SYM_SCR_32")]^C^C(setblkins _MEDSYM "scr"      nil nil _SC -1) MEDBlockInsert
+SYM_PUT        [_Button("PUT", "SYM_PUT", "SYM_PUT_32")]^C^C(setblkins _MEDSYM "put"      nil nil _SC -1) MEDBlockInsert
+SYM_PHOTCELL   [_Button("PhotoCell", "SYM_PHOTCELL", "SYM_PHOTCELL_32")]^C^C(setblkins _MEDSYM "photocel" nil nil _SC -1) MEDBlockInsert
+SYM_FWAVRECT   [_Button("Full Wave Rectifier", "SYM_FWAVRECT", "SYM_FWAVRECT_32")]^C^C(setblkins _MEDSYM "fullrect" nil nil _SC -1) MEDBlockInsert
+
+**CONTROLS
+ID_CONTROLS_0  [_Toolbar("Controls", _Floating, _Hide, 0, 0, 8)]
+SYM_HOA        [_Button("Hand Off Auto", "SYM_HOA", "SYM_HOA_32")]^C^C(setblkins _MEDSYM "devhoa"  nil nil _SC -1) MEDBlockInsert
+SYM_SS         [_Button("Start Stop", "SYM_S-S", "SYM_S-S_32")]^C^C(setblkins _MEDSYM "devss"   nil nil _SC -1) MEDBlockInsert
+SYM_STOP       [_Button("Stop", "SYM_STOP", "SYM_STOP_32")]^C^C(setblkins _MEDSYM "devs"    nil nil _SC -1) MEDBlockInsert
+SYM_SFS        [_Button("Slow Fast Stop", "SYM_SFS", "SYM_SFS_32")]^C^C(setblkins _MEDSYM "devsfs"  nil nil _SC -1) MEDBlockInsert
+SYM_AORB       [_Button("A or B Selector", "SYM_AORB", "SYM_AORB_32")]^C^C(setblkins _MEDSYM "devab"   nil nil _SC -1) MEDBlockInsert
+SYM_OFFON      [_Button("Off On", "SYM_OFFON", "SYM_OFFON_32")]^C^C(setblkins _MEDSYM "devoo"   nil nil _SC -1) MEDBlockInsert
+SYM_ICON       [_Button("PLC/DCS Interconnect", "SYM_ICON", "SYM_ICON_32")]^C^C(setblkins _MEDSYM "devplc"  nil nil _SC -1) MEDBlockInsert
+SYM_PILOT      [_Button("Pilot Indicator Light", "SYM_PILOT", "SYM_PILOT_32")]^C^C(setblkins _MEDSYM "pilot03" nil nil _SC -1) MEDBlockInsert
+
+**LOADS
+ID_LOADS_0     [_Toolbar("Loads", _Floating, _Hide, 0, 0, 6)]
+SYM_MOTOR      [_Button("Motor", "SYM_MOTOR", "SYM_MOTOR_32")]^C^C(setblkins _MEDSYM "motor01" nil nil _SC -1) MEDBlockInsert
+SYM_XFMR       [_Button("Transformer", "SYM_XFMR", "SYM_XFMR_32")]^C^C(setblkins _MEDSYM "xfmr01"  nil nil _SC -1) MEDBlockInsert
+SYM_LTGPNL     [_Button("Lighting Panel", "SYM_LTGPNL", "SYM_LTGPNL_32")]^C^C(setblkins _MEDSYM "ltgpnl"  nil nil _SC -1) MEDBlockInsert
+SYM_DISPNL     [_Button("Distribution Panel", "SYM_DISPNL", "SYM_DISPNL_32")]^C^C(setblkins _MEDSYM "ltgpnl"  nil nil _SC -1) MEDBlockInsert
+SYM_LTGCON     [_Button("Lighting Contactor", "SYM_LTGCON", "SYM_LTGCON_32")]^C^C(setblkins _MEDSYM "eqpcntr" nil nil _SC -1) MEDBlockInsert
+SYM_WELD       [_Button("Welding Receptacle", "SYM_WELD", "SYM_WELD_32")]^C^C(setblkins _MEDSYM "eqpweld" nil nil _SC -1) MEDBlockInsert
+
+**RELAYS
+ID_RELAYS_0    [_Toolbar("Relays", _Floating, _Hide, 0, 0, 5)]
+SYM_RLYSING    [_Button("Single Designator Relay", "SYM_RLYSING", "SYM_RLYSING_32")]^C^C(setblkins _MEDSYM "devmtr1" nil nil _SC -1) MEDBlockInsert
+SYM_RLYDUAL    [_Button("Dual Designator Relay", "SYM_RLYDUAL", "SYM_RLYDUAL_32")]^C^C(setblkins _MEDSYM "devmtr2" nil nil _SC -1) MEDBlockInsert
+SYM_RLYDUALW   [_Button("Dual Designator Relay w/line", "SYM_RLYDUALW", "SYM_RLYDUALW_32")]^C^C(setblkins _MEDSYM "devmtr3" nil nil _SC -1) MEDBlockInsert
+SYM_DEVDES     [_Button("Device with Designator", "SYM_DEVDES", "SYM_DEVDES_32")]^C^C(setblkins _MEDSYM "devmtr4" nil nil _SC -1) MEDBlockInsert
+SYM_TSTSW      [_Button("Normal Test switch", "SYM_TSTSW", "SYM_TSTSW_32")]^C^C(setblkins _MEDSYM "devmtr5" nil nil _SC -1) MEDBlockInsert
+
+**OLCOMPONENTS
+ID_OLCOMPONENTS_0 [_Toolbar("One Line Components", _Floating, _Hide, 0, 0, 11)]
+SYM_STAB1      [_Button("Stab Socket", "SYM_STAB1", "SYM_STAB1_32")]^C^C(setblkins _MEDSYM "STAB"    nil nil _SC -1) MEDBlockInsert
+SYM_STAB2      [_Button("Stabbed Socket", "SYM_STAB2", "SYM_STAB2_32")]^C^C(setblkins _MEDSYM "STABED"  nil nil _SC -1) MEDBlockInsert
+SYM_CIRBRK     [_Button("Circuit Breaker", "SYM_CIRBRK", "SYM_CIRBRK_32")]^C^C(setblkins _MEDSYM "CBRKR"   nil nil _SC -1) MEDBlockInsert
+SYM_FUSBRK     [_Button("Fused Disconnect", "SYM_FUSBRK", "SYM_FUSBRK_32")]^C^C(setblkins _MEDSYM "FUSESW"  nil nil _SC -1) MEDBlockInsert
+SYM_CONMAG     [_Button("Magnetic Overloads", "SYM_CONMAG", "SYM_CONMAG_32")]^C^C(setblkins _MEDSYM "MOLOAD"  nil nil _SC -1) MEDBlockInsert
+SYM_CONOL      [_Button("Thermal Overloads", "SYM_CONOL", "SYM_CONOL_32")]^C^C(setblkins _MEDSYM "TOLOAD"  nil nil _SC -1) MEDBlockInsert
+SYM_CNTXFMR    [_Button("Control Transformer", "SYM_CNTXFMR", "SYM_CNTXFMR_32")]^C^C(setblkins _MEDSYM "CPT01"   nil nil _SC -1) MEDBlockInsert
+SYM_CONTACT    [_Button("Main Contact", "SYM_CONTACT", "SYM_CONTACT_32")]^C^C(setblkins _MEDSYM "CONTACTR" nil nil _SC -1) MEDBlockInsert
+SYM_CONCOIL    [_Button("Main Contactor Coil", "SYM_CONCOIL", "SYM_CONCOIL_32")]^C^C(setblkins _MEDSYM "COIL01"  nil nil _SC -1) MEDBlockInsert
+SYM_FUSE       [_Button("Fuse", "SYM_FUSE", "SYM_FUSE_32")]^C^C(setblkins _MEDSYM "FUSE02"    nil nil _SC -1) MEDBlockInsert
+SYM_CONFUSE2   [_Button("Fuse with Connects", "SYM_CONFUSE2", "SYM_CONFUSE2_32")]^C^C(setblkins _MEDSYM "FUSE"  nil nil _SC -1) MEDBlockInsert
+
+**CABLES
+ID_Cables_0    [_Toolbar("Cables", _Floating, _Show, 0, 0, 1)]
+CAB_NUM40      [_Button("4/0 Ground Cable", "CAB_NUM40", "CAB_NUM40_32")]^C^C(smlayer _MEDGRND)(setq _CABCODE 308) cable 
+CAB_NUM20      [_Button("2/0 Ground Cable", "CAB_NUM20", "CAB_NUM20_32")]^C^C(smlayer _MEDGRND)(setq _CABCODE 310) cable
+CAB_NUM2       [_Button("2 Ground Cable", "CAB_NUM2", "CAB_NUM2_32")]^C^C(smlayer _MEDGRND)(setq _CABCODE 313) cable 
+CAB_UP         [_Button("Ground Cable Up", "CAB_UP", "CAB_UP_32")]^C^C(smlayer _MEDGRND) (setblkins nil "1conus" nil nil _SC 11) MEDBlockInsert
+CAB_UPOPEN     [_Button("Ground Cable Up", "CAB_UPOPEN", "CAB_UPOPEN_32")]^C^C(smlayer _MEDGRND) (setblkins nil "1conu" nil nil _SC 11) MEDBlockInsert
+CAB_DOWN       [_Button("Ground Cable Up", "CAB_DOWN", "CAB_DOWN_32")]^C^C(smlayer _MEDGRND) (setblkins nil "1cond" nil nil _SC 10) MEDBlockInsert
+
+**RS_JBOXES
+**TB_RS_JBOXES
+ID_RS_Jboxes_0 [_Toolbar("RS Jboxes", _Floating, _Hide, 0, 0, 1)]
+CON_JBOX8X8    [_Button("RS JBOX 8x8", "CON_JBOX8X8", "CON_JBOX8X8_32")]^C^C(setq _FITTCODE 221 _ZERO T) (setblkins _MEDETFIT "jbox8x8" nil 0 1 2) MEDBlockInsert
+CON_JBOX4X8    [_Button("RS JBOX 4x8", "CON_JBOX4X8", "CON_JBOX4X8_32")]^C^C(setq _FITTCODE 222 _ZERO T) (setblkins _MEDETFIT "jbox8x4" nil 0 1 2) MEDBlockInsert
+CON_JBOX4X4    [_Button("RS JBOX 4x4", "CON_JBOX4X4", "CON_JBOX4X4_32")]^C^C(setq _FITTCODE 223 _ZERO T) (setblkins _MEDETFIT "jbox4x4" nil 0 1 2) MEDBlockInsert
+CON_JBOXHUB    [_Button("RS JBOX Hubs", "CON_JBOXHUBS", "CON_JBOXHUBS_32")]^C^CHUBS 
+
+**ONELINES
+ID_ONELINES_0  [_Toolbar("One Lines", _Floating, _Show, 0, 0, 1)]
+ID__17         [_Flyout("Oneline Components", ICON0491.bmp, ICON_24_BLANK, _OtherIcon, MED.OLCOMPONENTS)]
+ID__18         [_Flyout("Oneline Relays", ICON2995.bmp, ICON_24_BLANK, _OtherIcon, MED.RELAYS)]
+ID__19         [_Flyout("Oneline Controls", ICON1942.bmp, ICON_24_BLANK, _OtherIcon, MED.CONTROLS)]
+ID__20         [_Flyout("Oneline Loads", ICON4827.bmp, ICON_24_BLANK, _OtherIcon, MED.LOADS)]
+
+**ELEMENTARY
+ID_ELEMENTARY_0 [_Toolbar("Elementary", _Floating, _Show, 0, 0, 1)]
+ID__2          [_Flyout("Overcurrnt Protection", ICON0041.bmp, ICON_24_BLANK, _OtherIcon, MED.OVERCURRENT)]
+ID__3          [_Flyout("Components", ICON8467.bmp, ICON_24_BLANK, _OtherIcon, MED.COMPONENTS)]
+ID__4          [_Flyout("Diodes", ICON6500.bmp, ICON_24_BLANK, _OtherIcon, MED.DIODES)]
+ID__5          [_Flyout("Semi Conductors", ICON9169.bmp, ICON_24_BLANK, _OtherIcon, MED.SEMICONDUCTORS)]
+ID__6          [_Flyout("Transformers and Inductors", ICON5724.bmp, ICON_24_BLANK, _OtherIcon, MED.XFMRANDINDUCT)]
+ID__7          [_Flyout("Normally Open Switches", ICON1478.bmp, ICON_24_BLANK, _OtherIcon, MED.SWITCHESNO)]
+ID__8          [_Flyout("Normally Closed Switches", ICON9358.bmp, ICON_24_BLANK, _OtherIcon, MED.SWITCHESNC)]
+ID__16         [_Flyout("Misc Switches", ICON6962.bmp, ICON_24_BLANK, _OtherIcon, MED.SWITCHES)]
+
+
+
+***IMAGE
+**MEDPLANCON
+[Plan Conduit                    ]
+[MEDplan1(bendonof,Bends On/Off)](toggle "_CONFILL" "Conduit Bend Radius") 
+[MEDplan1(rigconc,RGS Conduit Cont)]^C^C(smlayer _MCON)(setq _CODE 1) CONDUIT 
+[MEDplan1(rigcond,RGS Conduit Dashed)]^C^C(smlayer (list "MCONB" "BLUE" "DASHED"))(setq _CODE 1) CONDUIT 
+[MEDplan1(rigconh,RGS Conduit Hidden)]^C^C(smlayer _MCON)(setq _CODE 1 _LTP H_CON) CONDUIT 
+[MEDplan1(pvcrconc,PVC-RGS Con. Cont)]^C^C(smlayer _MCON)(setq _CODE 2) CONDUIT 
+[MEDplan1(pvcrcond,PVC-RGS Con. Dash)]^C^C(smlayer _MCON)(setq _CODE 2 _LTP U_CON) CONDUIT 
+[MEDplan1(pvcrconh,PVC-RGS Con. Hidd)]^C^C(smlayer _MCON)(setq _CODE 2 _LTP H_CON) CONDUIT 
+[MEDplan1(pvcconc,PVC Conduit Cont)]^C^C(smlayer _MCON)(setq _CODE 3) CONDUIT 
+[MEDplan1(pvccond,PVC Conduit Dashed)]^C^C(smlayer _MCON)(setq _CODE 3 _LTP U_CON) CONDUIT 
+[MEDplan1(pvcconh,PVC Conduit Hidden)]^C^C(smlayer _MCON)(setq _CODE 3 _LTP H_CON) CONDUIT 
+[MEDplan1(emtconc,EMT Conduit Cont)]^C^C(smlayer _MCON)(setq _CODE 4) CONDUIT 
+[MEDplan1(emtcond,EMT Conduit Dashed)]^C^C(smlayer _MCON)(setq _CODE 4 _LTP U_CON) CONDUIT 
+[MEDplan1(emtconh,EMT Conduit Hidden)]^C^C(smlayer _MCON)(setq _CODE 4 _LTP H_CON) CONDUIT 
+[MEDplan1(condown,Conduit Down)]^C^C(setblkins nil "1cond" nil nil _SC 4) MEDBlockInsert
+[MEDplan1(conup,Conduit Up)]^C^C(setblkins nil "1conu" nil nil _SC 5) MEDBlockInsert
+[MEDplan1(flexcon,Flexible Conduit   )]^C^Cflex 
+
+**MEDPLANFIT
+[Plan Conduit Fittings]
+[MEDplan(1lbr,LB Fitting)]^C^C(setq _FITTCODE  30) (setblkins _MEDFIT "1lbr"     nil nil _SC 2) MEDBlockInsert
+[MEDplan(1lbl,LB Fitting)]^C^C(setq _FITTCODE  30) (setblkins _MEDFIT "1lbl"     nil nil _SC 2) MEDBlockInsert
+[MEDplan(1lbd,Lb down)]^C^C(setq _FITTCODE  30) (setblkins _MEDFIT "1lbd"     nil nil _SC 3) MEDBlockInsert
+[MEDplan(1lbu,Lb up)]^C^C(setq _FITTCODE  30) (setblkins _MEDFIT "1lbu"     nil nil _SC 6) MEDBlockInsert
+[MEDplan(1tee,Tee)]^C^C(setq _FITTCODE  11) (setblkins _MEDFIT "1tee"     nil nil _SC 2) MEDBlockInsert
+[MEDplan(1teed,T-down)]^C^C(setq _FITTCODE  11) (setblkins _MEDFIT "1teed"    nil nil _SC 3) MEDBlockInsert
+[MEDplan(1teeu,T-up)]^C^C(setq _FITTCODE  11) (setblkins _MEDFIT "1teeu"    nil nil _SC 3) MEDBlockInsert
+[MEDplan(1teed,T-down to Tee)]^C^C(setq _FITTCODE  11) (setblkins _MEDFIT "2teed"    nil nil _SC 3) MEDBlockInsert
+[MEDplan(1union,Union)]^C^C(setq _FITTCODE  72) (setblkins _MEDFIT "1union"   nil nil _SC 1) MEDBlockInsert
+[MEDplan(1cee,'C' Fitting)]^C^C(setq _FITTCODE  50) (setblkins _MEDFIT "1cee"     nil nil _SC 2) MEDBlockInsert
+[MEDplan(1cap,Recessed Plug)]^C^C(setq _FITTCODE 100) (setblkins _MEDFIT "1cap"     nil nil _SC 2) MEDBlockInsert
+[MEDplan(1cap,Square Head Plug)]^C^C(setq _FITTCODE 101) (setblkins _MEDFIT "1cap"     nil nil _SC 2) MEDBlockInsert
+[MEDplan(1exs,X)]^C^C(setq _FITTCODE  30) (setblkins _MEDFIT "1exs"     nil nil _SC 2) MEDBlockInsert
+[MEDplan(1seal,Seal)]^C^C(setq _FITTCODE  61) (setblkins _MEDFIT "1seal"    nil nil _SC 1) MEDBlockInsert
+[MEDplan(1sealdr,Seal-Drain)]^C^C(setq _FITTCODE  64) (setblkins _MEDFIT "1sealdr"  nil nil _SC 1) MEDBlockInsert
+[MEDplan(1bub,Pulling fitting)]^C^C(setq _FITTCODE  94) (setblkins _MEDFIT "1bub"     nil nil _SC 2) MEDBlockInsert
+[MEDplan(1hub,Hub)]^C^C(setq _FITTCODE 120) (setblkins _MEDFIT "1hub"     nil nil _SC 2) MEDBlockInsert
+[MEDplan(lbdr,LBD Fitting)]^C^C(setq _FITTCODE  39) (setblkins _MEDFIT "1lbdr"    nil nil _SC 2) MEDBlockInsert
+[MEDplan(lbdl,LBD Fitting)]^C^C(setq _FITTCODE  39) (setblkins _MEDFIT "1lbdl"    nil nil _SC 2) MEDBlockInsert
+[MEDplan(1lby,Lby)]^C^C(setq _FITTCODE  41) (setblkins _MEDFIT "1lby"     nil nil _SC 1) MEDBlockInsert
+[MEDplan(1re,Reducer)]^C^C(setq _FITTCODE 103) (setblkins _MEDFIT "1re"      nil nil _SC 2) MEDBlockInsert
+[MEDplan(1gual,Gual Fitting)]^C^C(setq _FITTCODE 141) (setblkins _MEDFIT "1gual"    nil nil _SC 2) MEDBlockInsert
+[MEDplan(1guat,Guat Fitting)]^C^C(setq _FITTCODE 142) (setblkins _MEDFIT "1guat"    nil nil _SC 2) MEDBlockInsert
+[MEDplan(1guax,Guax Fitting)]^C^C(setq _FITTCODE 143) (setblkins _MEDFIT "1guax"    nil nil _SC 2) MEDBlockInsert
+[MEDplan(1guatsid,Guat side view)]^C^C(setq _FITTCODE 142) (setblkins _MEDFIT "1guatsid" nil nil _SC 2) MEDBlockInsert
+[MEDplan(1gualsid,Gual side view)]^C^C(setq _FITTCODE 141) (setblkins _MEDFIT "1gualsid" nil nil _SC 2) MEDBlockInsert
+
+**MEDTRAYSLDP
+[Tray Plan View and Fittings]
+[MEDplan2(tray,Cable Tray)]^C^C(setq _TRTYPE 2) TRAY 
+[MEDplan2(tray,Fiberglass Tray)]^C^C(setq _TRTYPE 1) TRAY 
+[MEDplan2(trayoff,Offset Cable Tray)]^C^CTRAYOFF 
+[MEDplan2(tray30,Horizontal 30 deg )]^C^CTRAY30 
+[MEDplan2(tray45,Horizontal 45 deg )]^C^CTRAY45 
+[MEDplan2(tray60,Horizontal 60 deg )]^C^CTRAY60 
+[MEDplan2(tray90,Horizontal 90 deg )]^C^CTRAY90 
+[MEDplan2(traycros,Tray Cross Fitt.)]^C^CTRAYCROSS 
+[MEDplan2(traytee,Tray Tee Fitt.   )]^C^CTRAYTEE 
+[MEDplan2(trayre,Tray Str. Reducer )]^C^CTRAYRE 
+[MEDplan2(trayrel,Tray Left Reducer)]^C^CTRAYREL 
+[MEDplan2(trayrer,Tray Rght Reducer)]^C^CTRAYRER 
+[MEDplan2(trayup,Tray Down         )]^C^CTRAYDN 
+[MEDplan2(traydn,Tray Up           )]^C^CTRAYUP 
+
+**MEDTRAYSLDV
+[Tray Side View and Fittings]
+[MEDplan2(vtray,Vertical Cable Tray)]^C^CVTRAY 
+[MEDplan2(trayv90,Plan Vertical Fit)]^C^CVTRAY90 
+[MEDplan2(vtray30,Vertical 30 deg  )]^C^CVTRAY30 
+[MEDplan2(vtray45,Vertical 45 deg  )]^C^CVTRAY45 
+[MEDplan2(vtray60,Vertical 60 deg  )]^C^CVTRAY60 
+[MEDplan2(vtray90,Vertical 90 deg  )]^C^CVTRAY90 
+
+**MEDTRAYSLD1
+[Plan Cable Tray Hardware]
+[MEDplan2(trayep,Tray Exp Plate    )]^C^CTRAYEP 
+[MEDplan2(trayeg,Tray Exp Guide    )]^C^CTRAYEG 
+[MEDplan2(trayhd,Tray Hold Down    )]^C^CTRAYHD 
+[trayhang,Tray Trapeze             ]^C^CTRAYHANG 
+[MEDplan2(strut,Strut Support      )]^C^CSTRUT 
+
+**MEDCHANSLD
+[Plan Cable Channel and Fittings]
+[MEDplan2(chan4)]^C^C(setq _CHANSIZE 4.0) channel 
+[MEDplan2(chan6)]^C^C(setq _CHANSIZE 6.0) channel 
+[MEDplan2(chanv90,Plan Vertical Fit)]^C^CVCHAN90 
+[MEDplan2(chanoff,Offset Cable Chan)]^C^CCHANOFF 
+[MEDplan2(chan30,Horizontal 30 deg )]^C^CCHAN30 
+[MEDplan2(chan45,Horizontal 45 deg )]^C^CCHAN45 
+[MEDplan2(chan60,Horizontal 60 deg )]^C^CCHAN60 
+[MEDplan2(chan90,Horizontal 90 deg )]^C^CCHAN90 
+[MEDplan2(chancros,chan Cross Fitt.)]^C^CCHANCROSS 
+[MEDplan2(chantee,chan Tee Fitt.   )]^C^CCHANTEE 
+[MEDplan2(chandn,chan Down         )]^C^CCHANDN 
+[MEDplan2(chanup,chan Up           )]^C^CCHANUP 
+
+**MEDTAGSICON
+[Misc. Tagging Tools]
+[MEDtags(abl,Add Bubble Leader)]^C^CABL 
+[MEDtags(ctag,Conduit Tag     )]^C^CCTAG 
+[MEDtags(detag,Detail Tag     )]^C^CDETAG 
+[MEDtags(hdtag,HotDog Tag     )]^C^CHDTAG 
+[MEDtags(it,Instrument Bubble )]^C^CIT 
+[MEDtags(mb,Material Bubble   )]^C^CMB 
+[MEDtags(mbl,Move Bubble/Leadr)]^C^CMBL 
+[MEDtags(wires,Wire Markers   )]^C^CWIRES 
+
+**MEDTOOLSICON
+[Misc. Tools]
+[MEDtools(gr,Add Hoop        )]^C^CGR 
+[MEDtools(alead,Arrow Leader )]^C^CALEAD 
+[MEDtools(bracket,Bracket    )]^C^CBRACKET 
+[MEDtools(cut,Cut Marks      )]^C^CCUT 
+[MEDtools(pbox,Draw Pline Box)]^C^CPBOX 
+[MEDtools(em,Extend Multi    )]^C^CEM 
+[MEDtools(fd,File Date       )]^C^CFD 
+[MEDtools(grab,Grab Leader   )]^C^CGRAB 
+[MEDtools(lbreak,Line Break  )]^C^CLBREAK 
+[MEDtools(lb,Priority Break  )]^C^CLB 
+[MEDtools(cloud,Revison Cloud)]^C^CCLOUD 
+[MEDtools(sect,Section Marks )]^C^CSECT 
+[MEDtools(tm,Trim Multiple   )]^C^CTM 
+
+**MEDDETAILDEVICES
+[Detail Outlet Devices]
+[meddtl(hoasc,H O A)]^C^C(setq _FITTCODE  200) (setblkins _MEDETFIT (strcat (feedset "hoas") _CLETT) nil nil 1.0 2) MEDBlockInsert
+[meddtl(efss-sc,Start/Stop)]^C^C(setq _FITTCODE  202) (setblkins _MEDETFIT (strcat (feedset "efs") "s-s" _CLETT) nil nil 1.0 2) MEDBlockInsert
+[meddtl(efsstpc,Stop)]^C^C(setq _FITTCODE  204) (setblkins _MEDETFIT (strcat (feedset "efs") "stp" _CLETT) nil nil 1.0 2) MEDBlockInsert
+[ --]
+[meddtl(cpsc,Outlet)]^C^C(setq _FITTCODE  208) (setblkins _MEDETFIT (strcat (feedset "cps") _CLETT) nil nil 1.0 2) MEDBlockInsert
+[meddtl(2cpsc,2 Outlet)]^C^C(setq _FITTCODE  210) (setblkins _MEDETFIT (strcat "2cps" _CLETT) nil nil 1.0 2) MEDBlockInsert
+[meddtl(cpssidc,SideView)]^C^C(setq _FITTCODE  208) (setblkins _MEDETFIT (strcat (feedset "cps") "sid" _CLETT) nil nil 1.0 2) MEDBlockInsert
+
+**MEDDETAILFIT
+[Detail fittings]
+[meddtl(bubc,Pulling fitting)]^C^C(setq _FITTCODE  94) (setblkins _MEDETFIT (strcat "bub"     _CLETT) nil nil 1 2) MEDBlockInsert
+[meddtl(coupc,Coupling)]^C^C(setq _FITTCODE   8) (setblkins _MEDETFIT (strcat "coup"    _CLETT) nil nil 1 2) MEDBlockInsert
+[meddtl(cd,Cee)]^C^C(setq _FITTCODE  50) (setblkins _MEDETFIT (strcat "c"       _CLETT) nil nil 1 1) MEDBlockInsert
+[meddtl(hubc,J-box hub)]^C^C(setq _FITTCODE 120) (setblkins _MEDETFIT (strcat "hub"     _CLETT) nil nil 1 2) MEDBlockInsert
+[meddtl(lbc,LB)]^C^C(setq _FITTCODE  30) (setblkins _MEDETFIT (strcat "lb"      _CLETT) nil nil 1 1) MEDBlockInsert
+[meddtl(lb_c,LB)]^C^C(setq _FITTCODE  30) (setblkins _MEDETFIT (strcat "lb_"     _CLETT) nil nil 1 1) MEDBlockInsert
+[meddtl(lbdf,LBD)]^C^C(setq _FITTCODE  39) (setblkins _MEDETFIT (strcat "lbd"     _CLETT) nil nil 1 1) MEDBlockInsert
+[meddtl(lbd_f,LBD)]^C^C(setq _FITTCODE  39) (setblkins _MEDETFIT (strcat "lbd"     _CLETT) nil nil 1 1) MEDBlockInsert
+[meddtl(llc,LL)]^C^C(setq _FITTCODE  34) (setblkins _MEDETFIT (strcat "ll"      _CLETT) nil nil 1 2) MEDBlockInsert
+[meddtl(lrc,LR)]^C^C(setq _FITTCODE  37) (setblkins _MEDETFIT (strcat "lr"      _CLETT) nil nil 1 2) MEDBlockInsert
+[meddtl(lbyc,LBY)]^C^C(setq _FITTCODE  41) (setblkins _MEDETFIT (strcat "lby"     _CLETT) nil nil 1 2) MEDBlockInsert
+[meddtl(lbyfrntc,Front view LBY)]^C^C(setq _FITTCODE  41) (setblkins _MEDETFIT (strcat "lbyfrnt" _CLETT) nil nil 1 2) MEDBlockInsert
+[meddtl(ltscc,Flex connector)]^C^C(setq _FITTCODE 103) (setblkins _MEDETFIT (strcat "ltsc"  _CLETT) nil nil 1 2) MEDBlockInsert
+[meddtl(rec,Reducer)]^C^C(setq _FITTCODE 103 _TYPE T) (setblkins _MEDETFIT (strcat "re"    _CLETT) nil nil 1 8) MEDBlockInsert
+[meddtl(eysc,Seal)]^C^C(setq _FITTCODE  61) (setblkins _MEDETFIT (strcat "eys"   _CLETT) nil nil 1 2) MEDBlockInsert
+[meddtl(eydsidec,Seal Drain)]^C^C(setq _FITTCODE  64) (setblkins _MEDETFIT (strcat "eydside" _CLETT) nil nil 1 2) MEDBlockInsert
+[meddtl(tc,Tee)]^C^C(setq _FITTCODE  11) (setblkins _MEDETFIT (strcat "t"     _CLETT) nil nil 1 2) MEDBlockInsert
+[meddtl(unyc,Union UNY)]^C^C(setq _FITTCODE  72) (setblkins _MEDETFIT (strcat "uny"     _CLETT) nil nil 1 2) MEDBlockInsert
+[meddtl(unyc,Union UNF)]^C^C(setq _FITTCODE  73) (setblkins _MEDETFIT (strcat "uny"     _CLETT) nil nil 1 2) MEDBlockInsert
+[meddtl(xc,X)]^C^C(setq _FITTCODE  80) (setblkins _MEDETFIT (strcat "x"     _CLETT) nil nil 1 2) MEDBlockInsert
+
+**MEDDETAILGUA
+[Detail GUA fittings]
+[meddtl(gua-c,GUA)]^C^C(setq _FITTCODE 144) (setblkins _MEDETFIT (strcat "gua-"    _CLETT) nil nil 1 1) MEDBlockInsert
+[meddtl(guabc,GUAB)]^C^C(setq _FITTCODE 145) (setblkins _MEDETFIT (strcat "guab"    _CLETT) nil nil 1 2) MEDBlockInsert
+[meddtl(guacc,GUAC)]^C^C(setq _FITTCODE 146) (setblkins _MEDETFIT (strcat "guac"    _CLETT) nil nil 1 2) MEDBlockInsert
+[meddtl(guadc,GUAD)]^C^C(setq _FITTCODE 147) (setblkins _MEDETFIT (strcat "guad"    _CLETT) nil nil 1 2) MEDBlockInsert
+[meddtl(gualc,GUAL)]^C^C(setq _FITTCODE 141) (setblkins _MEDETFIT (strcat "gual"    _CLETT) nil nil 1 2) MEDBlockInsert
+[meddtl(guama,GUAM)]^C^C(setq _FITTCODE 148) (setblkins _MEDETFIT (strcat "guam"    _CLETT) nil nil 1 2) MEDBlockInsert
+[meddtl(guanc,GUAN)]^C^C(setq _FITTCODE 149) (setblkins _MEDETFIT (strcat "guan"    _CLETT) nil nil 1 2) MEDBlockInsert
+[meddtl(guatc,GUAT)]^C^C(setq _FITTCODE 142) (setblkins _MEDETFIT (strcat "guat"    _CLETT) nil nil 1 2) MEDBlockInsert
+[meddtl(guawa,GUAW)]^C^C(setq _FITTCODE 150) (setblkins _MEDETFIT (strcat "guaw"    _CLETT) nil nil 1 2) MEDBlockInsert
+[meddtl(guaxc,GUAX)]^C^C(setq _FITTCODE 143) (setblkins _MEDETFIT (strcat "guax"    _CLETT) nil nil 1 2) MEDBlockInsert
+
+**MEDDETAILBOX
+[Detail J-Boxes]
+[meddtl(jbox8x8,8X8 J-box)]^C^C(setq _FITTCODE 221 _ZERO T) (setblkins _MEDETFIT "jbox8x8" nil 0 1 2) MEDBlockInsert
+[meddtl(jbox8x4,8x4 J-box)]^C^C(setq _FITTCODE 222 _ZERO T) (setblkins _MEDETFIT "jbox8x4" nil 0 1 2) MEDBlockInsert
+[meddtl(jbox4x4,4X4 J-box)]^C^C(setq _FITTCODE 223 _ZERO T) (setblkins _MEDETFIT "jbox4x4" nil 0 1 2) MEDBlockInsert
+
+**MEDDETAILLIGHT
+[Detail LIGHTING]
+[meddtl(vmvstane,Stanchion mount   )]^C^C(setq _FITTCODE 403) (setblkins _MEDETFIT (strcat "vmvstan" _CLETT) nil nil 1 1) MEDBlockInsert
+[meddtl(vmvpendb,Pendant mount     )]^C^C(setq _FITTCODE 401) (setblkins _MEDETFIT (strcat "vmvpend" _CLETT) nil nil 1 1) MEDBlockInsert
+[meddtl(vmvwallc,Wall mount        )]^C^C(setq _FITTCODE 402) (setblkins _MEDETFIT (strcat "vmvwall" _CLETT) nil nil 1 1) MEDBlockInsert
+[meddtl(evcxb,evcx ceiling mount   )]^C^C(setq _FITTCODE 411) (setblkins _MEDETFIT (strcat "evcx"    _CLETT) nil nil 1 1) MEDBlockInsert
+[meddtl(evapendb,eva pendant mount )]^C^C(setq _FITTCODE 412) (setblkins _MEDETFIT (strcat "evapend" _CLETT) nil nil 1 1) MEDBlockInsert
+[meddtl(globe,globe reflector      )]^C^C(setq _FITTCODE 404) (setblkins _MEDETFIT "globe"                   nil nil 1 2) MEDBlockInsert
+[meddtl(globe30,30 degree globe    )]^C^C(setq _FITTCODE 405) (setblkins _MEDETFIT "globe30"                 nil nil 1 2) MEDBlockInsert
+
+**MEDDETAILCONST
+[Detail Construction Materials]
+[meddtl(angle,Angle Iron           )]^C^C(setblkins _MEDEQP "angle"    nil nil 1 0) MEDBlockInsert
+[meddtl(channel,Channel            )]^C^C(setblkins _MEDEQP "channel"  nil nil 1 0) MEDBlockInsert
+[meddtl(fltsqwsh,Flat Washer       )]^C^C(setblkins _MEDEQP "fltsqwsh" nil nil 1 0) MEDBlockInsert
+[meddtl(sprnut,Spring Nut          )]^C^C(setblkins _MEDEQP "sprnut"   nil nil 1 0) MEDBlockInsert
+[meddtl(Uniside,Unistrut           )]^C^C(setblkins _MEDEQP "uniside"  nil nil 1 0) MEDBlockInsert
+[meddtl(uniclmpe,Unistrut Clamp    )]^C^C(setq _FITTCODE 123)(setblkins _MEDEQP (strcat "uclmpe" _CLETT) nil nil 1 2) MEDBlockInsert
+[meddtl(uniclmpf,Unistrut Clamp    )]^C^C(setq _FITTCODE 123)(setblkins _MEDEQP (strcat "uclmpf" _CLETT) nil nil 1 2) MEDBlockInsert
+[meddtl(uniclmps,Unistrut Clamp    )]^C^C(setq _FITTCODE 123)(setblkins _MEDEQP (strcat "uclmps" _CLETT) nil nil 1 2) MEDBlockInsert
+
+**MEDWDLTYPE
+[Wiring Diagram Lintypes]
+[medwire1(powerc,Power Bylayer)]^C^C(smlayer _MEDPCABLE) MEDLINE 
+[medwire1(powerd,Power Dashed)]^C^C(setq _LTP "DASHED")(smlayer _MEDPCABLE) MEDLINE 
+[medwire1(powerh,Power Hidden)]^C^C(setq _LTP "HIDDEN")(smlayer _MEDPCABLE) MEDLINE 
+[medwire1(controlc,Control Bylayer)]^C^C(smlayer _MEDCCABLE) MEDLINE 
+[medwire1(controld,Control Dashed)]^C^C(setq _LTP "DASHED")(smlayer _MEDCCABLE) MEDLINE 
+[medwire1(controlh,Control Hidden)]^C^C(setq _LTP "HIDDEN")(smlayer _MEDCCABLE) MEDLINE 
+[medwire1(instc,Instrmnt Bylayer)]^C^C(smlayer _MEDICABLE) MEDLINE 
+[medwire1(instd,Instrmnt Dashed)]^C^C(setq _LTP "DASHED")(smlayer _MEDICABLE) MEDLINE 
+[medwire1(insth,Instrmnt Hidden)]^C^C(setq _LTP "HIDDEN")(smlayer _MEDICABLE) MEDLINE 
+
+**MEDWDTYPSTART
+[Typical One-Line Starters]
+[medwire1(typstrm1,Magnetic Starter)]^C^C(typstrins "typstrm1") 
+[medwire1(typstrm2,Magnetic 2 Speed)]^C^C(typstrins "typstrm2") 
+[medwire1(typstrt1,Thermal Starter)]^C^C(typstrins "typstrt1") 
+[medwire1(typstrt2,Thermal 2 Speed)]^C^C(typstrins "typstrt2") 
+[medwire1(typstrlp,Lighting Panel)]^C^C(typstrins "typstrlp") 
+[medwire1(typstrdp,Distribution Pnl)]^C^C(typstrins "typstrdp") 
+[medwire1(typstrwl,Welding Receptcl)]^C^C(typstrins "typstrwl") 
+
+**MEDWD1LCNTDEV
+[One-line Control Devices]
+[medwire1(devhoa,Hand Off Auto)]^C^C(setblkins _MEDSYM "devhoa"  nil nil _SC -1) MEDBlockInsert
+[medwire1(devss,Start / Stop)]^C^C(setblkins _MEDSYM "devss"   nil nil _SC -1) MEDBlockInsert
+[medwire1(devs,Stop Station)]^C^C(setblkins _MEDSYM "devs"    nil nil _SC -1) MEDBlockInsert
+[medwire1(devsfs,Slow / Fast / Stop)]^C^C(setblkins _MEDSYM "devsfs"  nil nil _SC -1) MEDBlockInsert
+[medwire1(devab,A or B Selector)]^C^C(setblkins _MEDSYM "devab"   nil nil _SC -1) MEDBlockInsert
+[medwire1(devplc,PLC/DCS Interconct)]^C^C(setblkins _MEDSYM "devplc"  nil nil _SC -1) MEDBlockInsert
+[medwire1(pilot,Indicator Light)]^C^C(setblkins _MEDSYM "pilot03" nil nil _SC -1) MEDBlockInsert
+[medwire1(devoo,Off On)]^C^C(setblkins _MEDSYM "devoo"   nil nil _SC -1) MEDBlockInsert
+
+**MEDWD1LCMPNT
+[One-line Components]
+[medwire1(1lstab,Stab Socket)]^C^C(setblkins _MEDSYM "STAB"    nil nil _SC -1) MEDBlockInsert
+[medwire1(1lstabed,Stabbed Socket)]^C^C(setblkins _MEDSYM "STABED"  nil nil _SC -1) MEDBlockInsert
+[medwire1(1lckbrk,Circuit Breaker)]^C^C(setblkins _MEDSYM "CBRKR"   nil nil _SC -1) MEDBlockInsert
+[medwire1(1lfused,Fused Disconnect)]^C^C(setblkins _MEDSYM "FUSESW"  nil nil _SC -1) MEDBlockInsert
+[medwire1(1lcpt,Control Transformer)]^C^C(setblkins _MEDSYM "CPT01"   nil nil _SC -1) MEDBlockInsert
+[medwire1(1lmcoil,M Contactor Coil)]^C^C(setblkins _MEDSYM "COIL01"  nil nil _SC -1) MEDBlockInsert
+[medwire1(1lfuse,Fuse)]^C^C(setblkins _MEDSYM "FUSE02"  nil nil _SC -1) MEDBlockInsert
+[medwire1(1lfusew,Fuse w/ Connects)]^C^C(setblkins _MEDSYM "FUSE"    nil nil _SC -1) MEDBlockInsert
+[medwire1(1ltload,Thermal Overloads)]^C^C(setblkins _MEDSYM "TOLOAD"  nil nil _SC -1) MEDBlockInsert
+[medwire1(1lmload,Magnetic Overloads)]^C^C(setblkins _MEDSYM "MOLOAD"  nil nil _SC -1) MEDBlockInsert
+[medwire1(1lmcntct,Main Contact)]^C^C(setblkins _MEDSYM "CONTACTR"nil nil _SC -1) MEDBlockInsert
+
+**MEDWD1LMETERS
+[Relays & Misc Devices]
+[medwire1(1lmtr1,Single Designator)]^C^C(setblkins _MEDSYM "devmtr1" nil nil _SC -1) MEDBlockInsert
+[medwire1(1lmtr2,Dual Designator)]^C^C(setblkins _MEDSYM "devmtr2" nil nil _SC -1) MEDBlockInsert
+[medwire1(1lmtr3,Dual Designator w/Lin)]^C^C(setblkins _MEDSYM "devmtr3" nil nil _SC -1) MEDBlockInsert
+[medwire1(1ldev4,Device w/Designator)]^C^C(setblkins _MEDSYM "devmtr4" nil nil _SC -1) MEDBlockInsert
+[medwire1(1ltstsw,Normal Test Switch)]^C^C(setblkins _MEDSYM "devmtr5" nil nil _SC -1) MEDBlockInsert
+
+**MEDWD1LLOADS
+[One-line Load Symbols]
+[medwire1(motor,Motor or Pump)]^C^C(setblkins _MEDSYM "motor01" nil nil _SC -1) MEDBlockInsert
+[medwire1(1lxfmr,Transformer)]^C^C(setblkins _MEDSYM "xfmr01"  nil nil _SC -1) MEDBlockInsert
+[medwire1(1lpanel,Lighting Panel)]^C^C(setblkins _MEDSYM "ltgpnl"  nil nil _SC -1) MEDBlockInsert
+[medwire1(1lpanel,Distribution Pnl)]^C^C(setblkins _MEDSYM "ltgpnl"  nil nil _SC -1) MEDBlockInsert
+[medwire1(1lweld,Welding Receptacl)]^C^C(setblkins _MEDSYM "eqpweld" nil nil _SC -1) MEDBlockInsert
+[medwire1(1lcntcr,Lighting Contctr)]^C^C(setblkins _MEDSYM "eqpcntr" nil nil _SC -1) MEDBlockInsert
+
+**MEDWDSWITCHES
+[Wiring Contacts & Switches]
+[medwire2(cono,NO Contact)]^C^C(setblkins _MEDSYM "cono"  nil nil _SC -1) MEDBlockInsert
+[medwire2(lmno,NO Limit)]^C^C(setblkins _MEDSYM "lmbno" nil nil _SC -1) MEDBlockInsert
+[medwire2(lmhno,Limit Held Open)]^C^C(setblkins _MEDSYM "lmtno" nil nil _SC -1) MEDBlockInsert
+[medwire2(floatno,NO Level)]^C^C(setblkins _MEDSYM "lvno"  nil nil _SC -1) MEDBlockInsert
+[medwire2(flowno,NO Flow)]^C^C(setblkins _MEDSYM "flno"  nil nil _SC -1) MEDBlockInsert
+[medwire2(pressno,NO Pressure)]^C^C(setblkins _MEDSYM "psno"  nil nil _SC -1) MEDBlockInsert
+[medwire2(pushno,NO Push Button)]^C^C(setblkins _MEDSYM "pbno"  nil nil _SC -1) MEDBlockInsert
+[medwire2(softno,NO Software)]^C^C(setblkins _MEDSYM "sino"  nil nil _SC -1) MEDBlockInsert
+[medwire2(switchno,NO Switch)]^C^C(setblkins _MEDSYM "swno"  nil nil _SC -1) MEDBlockInsert
+[medwire2(timeeno,NO Timed Energized)]^C^C(setblkins _MEDSYM "teno"  nil nil _SC -1) MEDBlockInsert
+[medwire2(timedno,NO Timed De-Energized)]^C^C(setblkins _MEDSYM "tdno"  nil nil _SC -1) MEDBlockInsert
+[medwire2(tempno)]^C^C(setblkins _MEDSYM "tmno"  nil nil _SC -1) MEDBlockInsert
+[medwire2(conc,NC Contact)]^C^C(setblkins _MEDSYM "conc"  nil nil _SC -1) MEDBlockInsert
+[medwire2(lmnc,NC Limit)]^C^C(setblkins _MEDSYM "lmtnc" nil nil _SC -1) MEDBlockInsert
+[medwire2(lmhnc,Limit Held Closed)]^C^C(setblkins _MEDSYM "lmbnc" nil nil _SC -1) MEDBlockInsert
+[medwire2(floatnc,NC Level)]^C^C(setblkins _MEDSYM "lvnc"  nil nil _SC -1) MEDBlockInsert
+[medwire2(flownc,NC Flow)]^C^C(setblkins _MEDSYM "flnc"  nil nil _SC -1) MEDBlockInsert
+[medwire2(pressnc,NC Pressure)]^C^C(setblkins _MEDSYM "psnc"  nil nil _SC -1) MEDBlockInsert
+[medwire2(pushnc,NC Push Button)]^C^C(setblkins _MEDSYM "pbnc"  nil nil _SC -1) MEDBlockInsert
+[medwire2(softnc,NC Software)]^C^C(setblkins _MEDSYM "sinc"  nil nil _SC -1) MEDBlockInsert
+[medwire2(switchnc,NC Switch)]^C^C(setblkins _MEDSYM "swnc"  nil nil _SC -1) MEDBlockInsert
+[medwire2(timeenc,NC Timed Energized)]^C^C(setblkins _MEDSYM "tenc"  nil nil _SC -1) MEDBlockInsert
+[medwire2(timednc,NC Timed De-Energized)]^C^C(setblkins _MEDSYM "tdnc"  nil nil _SC -1) MEDBlockInsert
+[medwire2(tempnc,NC Temperature)]^C^C(setblkins _MEDSYM "tmnc"  nil nil _SC -1) MEDBlockInsert
+[medwire2(hoa,Hand Off Auto)]^C^C(setblkins _MEDSYM "hoasw"  nil nil _SC -1) MEDBlockInsert
+[medwire2(ro3pos,Rotary 3 Position)]^C^C(setblkins _MEDSYM "slra03" nil nil _SC -1) MEDBlockInsert
+[medwire2(ro4pos,Rotary 4 Position)]^C^C(setblkins _MEDSYM "slra04" nil nil _SC -1) MEDBlockInsert
+[medwire2(3pos,3 Position)]^C^C(setblkins _MEDSYM "slha03" nil nil _SC -1) MEDBlockInsert
+[medwire2(4pos,4 Position)]^C^C(setblkins _MEDSYM "slha04" nil nil _SC -1) MEDBlockInsert
+
+**MEDWDTYPCIR
+[Typical Elementary Circuits]
+[medwire2(typcrss,Start / Stop)]^C^C(typstrins "typcrss") 
+[medwire2(typcrhoa,Hand Off Auto)]^C^C(typstrins "typcrhoa") 
+[medwire2(typcr2ss,Double Start/Stop)]^C^C(typstrins "typcrdss") 
+[medwire2(typcr3ss,Triple Start/Stop)]^C^C(typstrins "typcrtss") 
+[medwire2(typcrssp,Start/Stop w/Indctr)]^C^C(typstrins "typcrssi") 
+[medwire2(typcrfxf,Fused Cntrl Xfmr)]^C^C(typstrins "typcrfcx") 
+
+**MEDWDOVERCURR
+[Overcurrent Protection]
+[medwire2(3pcktbrk,Circuit Breakers  3P)]^C^C(setblkins _MEDSYM "CB03"     nil nil _SC -1) MEDBlockInsert
+[medwire2(1pcktbrk,Circuit Breaker   1P)]^C^C(setblkins _MEDSYM "CBRKR"    nil nil _SC -1) MEDBlockInsert
+[medwire2(3pfusesw,Fused Disconnect  3P)]^C^C(setblkins _MEDSYM "FD03"     nil nil _SC -1) MEDBlockInsert
+[medwire2(1pfusesw,Fused Disconnect  1P)]^C^C(setblkins _MEDSYM "FUSESW" nil nil _SC -1) MEDBlockInsert
+
+**MEDWDXFMRIND
+[Transformers and Inductors]
+[medwire2(xfmauto,Auto Transformer)]^C^C(setblkins _MEDSYM "autoxfmr" nil nil _SC -1) MEDBlockInsert
+[medwire2(xfmair,Air Core)]^C^C(setblkins _MEDSYM "xfmr3"    nil nil _SC -1) MEDBlockInsert
+[medwire2(xfmiron,Iron Core)]^C^C(setblkins _MEDSYM "xfmr4"    nil nil _SC -1) MEDBlockInsert
+[medwire2(xfmcurr,Current)]^C^C(setblkins _MEDSYM "currxfmr" nil nil _SC -1) MEDBlockInsert
+[medwire2(xfmdual,Dual Voltage)]^C^C(setblkins _MEDSYM "dualxfmr" nil nil _SC -1) MEDBlockInsert
+[medwire2(xfmdelt,Delta Xfmr)]^C^C(setblkins _MEDSYM "xfmrdel"  nil nil _SC -1) MEDBlockInsert
+[medwire2(xfmdeltg,Delta w/ Ground Xfmr)]^C^C(setblkins _MEDSYM "xfmrdelg" nil nil _SC -1) MEDBlockInsert
+[medwire2(xfmwye,Wye Xfmr)]^C^C(setblkins _MEDSYM "xfmrwye"  nil nil _SC -1) MEDBlockInsert
+[medwire2(xfmwyeg,Wye w/Center Tap Grn)]^C^C(setblkins _MEDSYM "xfmrwyeg" nil nil _SC -1) MEDBlockInsert
+[medwire2(indctirn,Iron Core)]^C^C(setblkins _MEDSYM "indciron" nil nil _SC -1) MEDBlockInsert
+[medwire2(indctair,Air Core)]^C^C(setblkins _MEDSYM "indcair"  nil nil _SC -1) MEDBlockInsert
+
+**MEDWDDIODE
+[Diodes and Semi Conductors]
+[medwire2(resist,Fixed Resistor)]^C^C(setblkins _MEDSYM "resfixed" nil nil _SC -1) MEDBlockInsert
+[medwire2(resheat,Heating Element)]^C^C(setblkins _MEDSYM "heatelem" nil nil _SC -1) MEDBlockInsert
+[medwire2(adjres,Adjustable Resistor Fxd Tps)]^C^C(setblkins _MEDSYM "resadjst" nil nil _SC -1) MEDBlockInsert
+[medwire2(rheostat,Adjustable Rheostat)]^C^C(setblkins _MEDSYM "rheostat" nil nil _SC -1) MEDBlockInsert
+[medwire2(diode01,Diode)]^C^C(setblkins _MEDSYM "diode01"  nil nil _SC -1) MEDBlockInsert
+[medwire2(diode02,Tunnel Diode)]^C^C(setblkins _MEDSYM "diode02"  nil nil _SC -1) MEDBlockInsert
+[medwire2(diode03,Zener Diode)]^C^C(setblkins _MEDSYM "diode03"  nil nil _SC -1) MEDBlockInsert
+[medwire2(diode04,Bi-Direct Diode)]^C^C(setblkins _MEDSYM "diode04"  nil nil _SC -1) MEDBlockInsert
+[medwire2(triac,Triac)]^C^C(setblkins _MEDSYM "triac"    nil nil _SC -1) MEDBlockInsert
+[medwire2(scr,SCR)]^C^C(setblkins _MEDSYM "scr"      nil nil _SC -1) MEDBlockInsert
+[medwire2(put,PUT)]^C^C(setblkins _MEDSYM "put"      nil nil _SC -1) MEDBlockInsert
+[medwire2(photocel,Photo Cell)]^C^C(setblkins _MEDSYM "photocel" nil nil _SC -1) MEDBlockInsert
+[medwire2(fullrect,Full Wave Rectifier)]^C^C(setblkins _MEDSYM "fullrect" nil nil _SC -1) MEDBlockInsert
+[medwire2(npn,NPN Transistor)]^C^C(setblkins _MEDSYM "npn"      nil nil _SC -1) MEDBlockInsert
+[medwire2(pnp,PNP Transistor)]^C^C(setblkins _MEDSYM "pnp"      nil nil _SC -1) MEDBlockInsert
+[medwire2(ujtnbase,UJT N Base)]^C^C(setblkins _MEDSYM "ujtnbase" nil nil _SC -1) MEDBlockInsert
+[medwire2(ujtpbase,UJT P Base)]^C^C(setblkins _MEDSYM "ujtpbase" nil nil _SC -1) MEDBlockInsert
+[medwire2(gatetrst,Gate Turn Off Thyristor)]^C^C(setblkins _MEDSYM "gatetrst" nil nil _SC -1) MEDBlockInsert
+[medwire2(capactr2,Fixed Capacitor)]^C^C(setblkins _MEDSYM "capactr2"   nil nil _SC -1) MEDBlockInsert
+[medwire2(capactr1,Fixed Capacitor W/Conn)]^C^C(setblkins _MEDSYM "capactr1"   nil nil _SC -1) MEDBlockInsert
+[medwire2(capactr4,Adjustable Capacitor)]^C^C(setblkins _MEDSYM "capactr4"   nil nil _SC -1) MEDBlockInsert
+[medwire2(capactr3,Adjustable Capacitor W/Conn)]^C^C(setblkins _MEDSYM "capactr3"   nil nil _SC -1) MEDBlockInsert
+
+**MEDWDMSCMPNT
+[Misc Wiring Diagram Components]
+[medwire2(anunciat,Annunciator)]^C^C(setblkins _MEDSYM "anunciat" nil nil _SC -1) MEDBlockInsert
+[medwire2(batt02,Battery)]^C^C(setblkins _MEDSYM "batt02"  nil nil _SC -1) MEDBlockInsert
+[medwire2(bell,Bell)]^C^C(setblkins _MEDSYM "bell"     nil nil _SC -1) MEDBlockInsert
+[medwire2(buzzer,Buzzer)]^C^C(setblkins _MEDSYM "buzzer"   nil nil _SC -1) MEDBlockInsert
+[medwire2(grnd02,Chasis Ground)]^C^C(setblkins _MEDSYM "grnd02" nil nil _SC -1) MEDBlockInsert
+[medwire2(coil02,Coil)]^C^C(setblkins _MEDSYM "coil02"   nil nil _SC -1) MEDBlockInsert
+[medwire2(grnd01,Earth Ground)]^C^C(setblkins _MEDSYM "grnd01" nil nil _SC -1) MEDBlockInsert
+[medwire2(FUSE02,Fuse)]^C^C(setblkins _MEDSYM "FUSE02"   nil nil _SC -1) MEDBlockInsert
+[medwire2(horn,Horn Alarm or Siren)]^C^C(setblkins _MEDSYM "horn"     nil nil _SC -1) MEDBlockInsert
+[medwire2(pilot03,Indicator Light)]^C^C(setblkins _MEDSYM "pilot03"  nil nil _SC -1) MEDBlockInsert
+[medwire2(devmtr1,Meter)]^C^C(setblkins _MEDSYM "devmtr1"  nil nil _SC -1) MEDBlockInsert
+[medwire2(mtrshunt,Meter Shunt)]^C^C(setblkins _MEDSYM "mtrshunt" nil nil _SC -1) MEDBlockInsert
+[medwire2(motor01,Motor)]^C^C(setblkins _MEDSYM "motor01"  nil nil _SC -1) MEDBlockInsert
+[medwire2(oloads,Overloads)]^C^C(setblkins _MEDSYM "oloads"   nil nil _SC -1) MEDBlockInsert
+[medwire2(tcouple,Thermocouple)]^C^C(setblkins _MEDSYM "tcouple"  nil nil _SC -1) MEDBlockInsert
+
+**MEDTERMINALS
+[Misc Terminals]
+[medterm(term01,Terminal 01)]^C^C(setblkins _MEDSYM "term01" nil nil _SC -1) MEDBlockInsert
+[medterm(term02,Terminal 02)]^C^C(setblkins _MEDSYM "term02" nil nil _SC -1) MEDBlockInsert
+[medterm(term03,Terminal 03)]^C^C(setblkins _MEDSYM "term03" nil nil _SC -1) MEDBlockInsert
+[medterm(term04,Terminal 04)]^C^C(setblkins _MEDSYM "term04" nil nil _SC -1) MEDBlockInsert
+[medterm(term05,Terminal 05)]^C^C(setblkins _MEDSYM "term05" nil nil _SC -1) MEDBlockInsert
+[medterm(term06,Terminal 06)]^C^C(setblkins _MEDSYM "term06" nil nil _SC -1) MEDBlockInsert
+[medterm(term07,Terminal 07)]^C^C(setblkins _MEDSYM "term07" nil nil _SC -1) MEDBlockInsert
+[medterm(term08,Terminal 08)]^C^C(setblkins _MEDSYM "term08" nil nil _SC -1) MEDBlockInsert
+[medterm(term09,Terminal 09)]^C^C(setblkins _MEDSYM "term09" nil nil _SC -1) MEDBlockInsert
+[medterm(term10,Terminal 10)]^C^C(setblkins _MEDSYM "term10" nil nil _SC -1) MEDBlockInsert
+[medterm(term11,Terminal 11)]^C^C(setblkins _MEDSYM "term11" nil nil _SC -1) MEDBlockInsert
+[medterm(term12,Terminal 12)]^C^C(setblkins _MEDSYM "term12" nil nil _SC -1) MEDBlockInsert
+[medterm(term13,Terminal 13)]^C^C(setblkins _MEDSYM "term13" nil nil _SC -1) MEDBlockInsert
+[medterm(term14,Terminal 14)]^C^C(setblkins _MEDSYM "term14" nil nil _SC -1) MEDBlockInsert
+[medterm(term15,Terminal 15)]^C^C(setblkins _MEDSYM "term15" nil nil _SC -1) MEDBlockInsert
+[medterm(term16,Terminal 16)]^C^C(setblkins _MEDSYM "term16" nil nil _SC -1) MEDBlockInsert
+[medterm(term17,Terminal 17)]^C^C(setblkins _MEDSYM "term17" nil nil _SC -1) MEDBlockInsert
+[medterm(term18,Terminal 18)]^C^C(setblkins _MEDSYM "term18" nil nil _SC -1) MEDBlockInsert
+[medterm(term19,Terminal 19)]^C^C(setblkins _MEDSYM "term19" nil nil _SC -1) MEDBlockInsert
+[medterm(term20,Terminal 20)]^C^C(setblkins _MEDSYM "term20" nil nil _SC -1) MEDBlockInsert
+[medterm(term21,Terminal 21)]^C^C(setblkins _MEDSYM "term21" nil nil _SC -1) MEDBlockInsert
+[medterm(term22,Terminal 22)]^C^C(setblkins _MEDSYM "term22" nil nil _SC -1) MEDBlockInsert
+[medterm(term23,Terminal 23)]^C^C(setblkins _MEDSYM "term23" nil nil _SC -1) MEDBlockInsert
+[medterm(term24,Terminal 24)]^C^C(setblkins _MEDSYM "term24" nil nil _SC -1) MEDBlockInsert
+[medterm(term25,Terminal 25)]^C^C(setblkins _MEDSYM "term25" nil nil _SC -1) MEDBlockInsert
+[medterm(term26,Terminal 26)]^C^C(setblkins _MEDSYM "term26" nil nil _SC -1) MEDBlockInsert
+[medterm(term27,Terminal 27)]^C^C(setblkins _MEDSYM "term27" nil nil _SC -1) MEDBlockInsert
+[medterm(term28,Terminal 28)]^C^C(setblkins _MEDSYM "term28" nil nil _SC -1) MEDBlockInsert
+
+***HELPSTRINGS

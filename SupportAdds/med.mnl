@@ -1,0 +1,55 @@
+(setq _MEDMENULIST (list (list 1 "POP1MEDMAIN")
+                        (list 2 "POP2CONDUIT" "POP2DETCONDUIT" "POP2ONELINES")
+                        (list 3 "POP3TRAY" "POP3DETFITTINGS" "POP3ELEMENTARY")
+                        (list 4 "POP4EQUIP" "POP4DETMISC" "POP4WDMISC")
+                  )
+)
+
+(defun C:MEDMENU()
+  (command "menu" "acad")
+; to add an additional menu group add it here.
+  (command "menuload" "med")
+  (medmenuset 1)
+
+)  
+(defun C:MEDPLAN()
+   (medmenuset 1)
+)
+(defun C:MEDDETAIL()
+   (medmenuset 2)
+)
+(defun C:MEDWIRING()
+   (medmenuset 3)
+)
+
+(defun medmenuset (medgrppos) ; medgrppos = 1 for Plans  2 for Details and 3 for Wiring Diagrams
+;  First unload all MED popmenus
+  (foreach medpop _MEDMENULIST
+      (foreach medpoptitle medpop
+         (if (= (type medpoptitle) (type ""))
+          (menucmd (strcat "GMED." medpoptitle "=-"))
+         )
+      )
+  )
+
+; next find the last pop menu loaded hopefully Help   
+  (setq popmenucnt 1)
+  (while (menucmd (strcat "P" (itoa popmenucnt) ".1=?"))
+     (setq popmenucnt (1+ popmenucnt))
+  )
+
+  (setq popmenucnt (- popmenucnt 2)
+        medmenupos nil
+  )
+
+;Reload MED menus with the correct MED Menu Group
+  (foreach medpop _MEDMENULIST
+     (if (not medmenupos)
+        (progn 
+          (menucmd (strcat "P" (itoa (setq popmenucnt (1+ popmenucnt))) "=+MED." (nth 1 medpop)))
+          (setq medmenupos T)
+        )
+        (menucmd (strcat "P" (itoa (setq popmenucnt (1+ popmenucnt))) "=+MED." (nth medgrppos medpop)))
+     )
+  )
+)

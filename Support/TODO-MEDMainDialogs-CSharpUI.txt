@@ -1,0 +1,5 @@
+﻿MEDMainDialogs.lsp — planned update
+Replace LISP/DCL dialogs with C# dialog interfaces.
+Do not treat the current LISP dialogs as the long-term UI.
+Keep this file as the behavior/reference source until the C# UI exists.
+Logged 2026-08-25 by DC.

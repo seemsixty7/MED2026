@@ -1,0 +1,18 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="CAD001" GeneratedClassName="Settings1">
+  <Profiles />
+  <Settings>
+    <Setting Name="connstr" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">Server=TTD-6NNYNK3\ARVADACORE;Database=CoreTools;Integrated Security=SSPI </Value>
+    </Setting>
+    <Setting Name="connstrlocal" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">Server=DESKTOP-UGG2A0V\MDDEVELOPMENT;Database=EngineeringData;Trusted_Connection=True;</Value>
+    </Setting>
+    <Setting Name="constrazure" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">Server=mooredesign.database.windows.net,1433;Initial Catalog=CoreTools;Persist Security Info=False;User ID=clintmoore;Password="AzuretnilCM1967!1";MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;</Value>
+    </Setting>
+    <Setting Name="connstrarvada" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">Server=TTD-6NNYNK3\ARVADACORE;Database=CoreTools;Integrated Security=SSPI </Value>
+    </Setting>
+  </Settings>
+</SettingsFile>

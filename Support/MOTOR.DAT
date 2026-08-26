@@ -1,0 +1,18 @@
+**Note Top 10 line of this file are for notes:
+Dim A is the length of the motor
+Dim B is the width of the motor
+Dim C is the distance from center line to far edge of motor box
+Dim D is the width of the motor box
+
+
+
+Horse Dim     Dim     Dim     Dim
+Power A       B       C       D
+5     12.81   9.34    7.03    3.12
+10    16.44   10.5    8.69    3.62
+20    21.31   12.5    9.69    5.52
+30    23.67   14.0    12.66   6.25
+50    26.45   16.0    15.20   7.0
+75    28.06   18.0    16.31   7.0
+125   31.56   20.0    19.19   10.0
+200   36.43   22.0    20.50   10.0

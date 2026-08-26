@@ -28,4 +28,4 @@ installer/Output/
 
 # Never ship a machine connect string
 src/**/MEDDataBaseSettings.dat
-
+Samples/

@@ -30,7 +30,7 @@ Material codes live on entities (xdata). Descriptions live in `MEDType`. `BOM` e
 
 Run `MED2026-Setup.exe` (Inno wrapper) or `installer\Install-MED2026.ps1`.
 
-The PowerShell installer copies Support, sample drawings, and the seed database, writes local `Project.dat` / `MEDDataBaseSettings.dat`, and can create a **MED2026 AutoCAD** desktop shortcut. You choose the install directory; the Setup default is `C:\MED2026`.
+The PowerShell installer copies Support and the seed database, writes local `Project.dat` / `MEDDataBaseSettings.dat`, and can create a **MED2026 AutoCAD** desktop shortcut. You choose the install directory; the Setup default is `C:\MED2026`.
 
 After files are in place, APPLOAD `installer\MED2026-ProfileSetup.lsp` and run `MED2026SETUP` once. Then `SETUP` for scale.
 

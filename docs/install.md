@@ -18,7 +18,7 @@ powershell -ExecutionPolicy Bypass -File installer\Install-MED2026.ps1
 
 Optional parameters: `-InstallDir`, `-Provider SQLite|SqlServer`, `-SqlConnectString`, `-AcadYear` (default 2024).
 
-The script copies Support, sample drawings, and the seed database `Data\MED.db`. It writes local `Support\Project.dat` and `Support\MEDDataBaseSettings.dat`, inserts the current Windows login into `MEDUsers`, sets user environment variable `MED2026`, and can create a **MED2026 AutoCAD** desktop shortcut (`acad.exe /p MED2026`).
+The script copies Support and the seed database `Data\MED.db`. It writes local `Support\Project.dat` and `Support\MEDDataBaseSettings.dat`, inserts the current Windows login into `MEDUsers`, sets user environment variable `MED2026`, and can create a **MED2026 AutoCAD** desktop shortcut (`acad.exe /p MED2026`).
 
 ## After files are in place
 

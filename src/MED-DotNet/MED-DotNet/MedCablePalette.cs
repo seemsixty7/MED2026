@@ -22,10 +22,10 @@ namespace MEDDotNet
             MedCablePalette.Show();
         }
 
-        [CommandMethod("CABLE")]
+        [CommandMethod("MEDCABLE")]
         public void Cable()
         {
-            MedCablePalette.RunCable();
+            MedCablePalette.Show();
         }
 
         [LispFunction("MED-CableApplyLayer")]
@@ -236,6 +236,39 @@ namespace MEDDotNet
             MedCableLayers.EnsureAndSetCurrent(group);
             if (doc != null)
                 doc.SendStringToExecute("(med-cable-draw) ", true, false, false);
+        }
+
+        public static void RouteCurrent()
+        {
+            Ensure();
+            int? code = null;
+            try
+            {
+                if (_ctl != null)
+                {
+                    if (_ctl.IsHandleCreated && _ctl.InvokeRequired)
+                        _ctl.Invoke(new Action(delegate { code = _ctl.SelectedCode; }));
+                    else
+                        code = _ctl.SelectedCode;
+                }
+            }
+            catch (System.Exception)
+            {
+            }
+
+            Document doc = AcadApp.DocumentManager.MdiActiveDocument;
+            if (!code.HasValue || code.Value <= 0)
+            {
+                if (doc != null)
+                    doc.Editor.WriteMessage("\nSelect a Cable Type and Cable, then Route Cable.");
+                return;
+            }
+
+            if (doc != null)
+            {
+                string cmd = "(progn (setq _CABCODE " + code.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) + ") (c:cable)) ";
+                doc.SendStringToExecute(cmd, true, false, false);
+            }
         }
     }
 }

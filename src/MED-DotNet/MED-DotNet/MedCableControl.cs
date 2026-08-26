@@ -274,7 +274,7 @@ namespace MEDDotNet
 
         void RouteClicked(object sender, EventArgs e)
         {
-            MedCablePalette.RunCable();
+            MedCablePalette.RouteCurrent();
         }
 
         void ApplySelection()

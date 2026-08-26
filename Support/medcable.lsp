@@ -1,5 +1,5 @@
 (princ "\rLoading MEDCable...")
-;; Draw body used by CABLE (.NET) and CABLE-CLASSIC.
+;; Draw body used by CABLE.
 (defun med-cable-draw ( / conent conpt conqty cabtag cabreltag ptprompt xdlist)
     (setvar "cmdecho" 0)
     (command "linetype" "s" _LTP "")
@@ -34,9 +34,8 @@
     (med_ret_ok)
     (terpri)
 )
-;; Old lisp-only CABLE (no palette). CABLE is the .NET command.
-(defun c:cable-classic ( / )
-    (med_cur_set "c:cable-classic")
+(defun c:cable ( / )
+    (med_cur_set "c:cable")
     (if (member (type MED-CableApplyLayer) '(EXRXSUBR SUBR USUBR EXSUBR))
         (vl-catch-all-apply 'MED-CableApplyLayer)
     )

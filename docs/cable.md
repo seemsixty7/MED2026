@@ -26,7 +26,7 @@ The layer is created if missing. Color and linetype stay AutoCAD default. Changi
 | --- | --- |
 | `CABLE` | Show palette, apply type layer + `_CABCODE`, then `med-cable-draw`. If no cable is selected yet, the palette stays up and you get a prompt — nothing is drawn. |
 | `CABLEPALETTE` / `CABLESET` | Show the palette only. |
-| `CABLE-CLASSIC` | Old lisp-only route (`c:cable-classic` in `Support\medcable.lsp`). Same draw body, no palette. |
+| `CABLE` | Old lisp-only route (`c:cable-classic` in `Support\medcable.lsp`). Same draw body, no palette. |
 | `RUN3DCABLE` | Same prompts on a `3DPOLY`, using current `_CABCODE` and the same type layer. |
 
 Ribbon / CUI `CABLE` hits the .NET command (the macro name is `CABLE`, not a hardcoded lisp call). Grounding-size toolbar buttons still `(setq _CABCODE …) cable`; the palette refreshes to that code, then draws.

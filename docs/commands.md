@@ -86,7 +86,7 @@ See [cable.md](cable.md).
 | --- | --- |
 | `CABLE` | Cable palette, type layer, route polyline; tag + related tag |
 | `CABLEPALETTE` / `CABLESET` | Show the Cable palette only |
-| `CABLE-CLASSIC` | Old lisp-only CABLE (no palette) |
+| `CABLE` | Old lisp-only CABLE (no palette) |
 | `RUN3DCABLE` | Same on a 3DPOLY using current `_CABCODE` and type layer |
 | `2LINE` `3LINE` | Double / triple line |
 | `MEDLINE` | Polyline on current MED linetype |

@@ -33,7 +33,7 @@ LISP in `Support` still routes raceway, places details, tags, and extracts BOM.
 
 - [Conduit](conduit.md) — `CONDUIT`, bends, fittings, `CHGSIZE`, `MEDLIST`
 - [Cable tray](tray.md) — two-point tray, centerline, offsets, fittings
-- [Cable](cable.md) — `CABLE` palette (type then cable), related tag, `CABLE-CLASSIC`
+- [Cable](cable.md) — `CABLE` palette (type then cable), related tag, `CABLE`
 - [Details / equipment](detail.md) — `DETAIL`, `LTG` / `GND` / `PWR` / `INS` / `TRY`, `DETAG`
 - [Detail conduit (two-line)](detail-conduit.md) — `2LCON`, away / toward / break
 - [Tagging](tagging.md) — `CTAG`, `TTAG`, balloons, section marks

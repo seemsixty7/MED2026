@@ -113,8 +113,8 @@ namespace MEDDotNet
                       | PaletteSetStyles.ShowCloseButton
                       | PaletteSetStyles.ShowPropertiesMenu
                       | PaletteSetStyles.Snappable;
-            _ps.MinimumSize = new Size(240, 200);
-            _ps.Size = new Size(300, 260);
+            _ps.MinimumSize = new Size(240, 240);
+            _ps.Size = new Size(300, 300);
             _ps.DockEnabled = DockSides.Left | DockSides.Right;
             _ps.Add("Cable", _ctl);
             _ps.KeepFocus = false;

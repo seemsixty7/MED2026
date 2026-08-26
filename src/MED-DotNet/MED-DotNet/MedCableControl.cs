@@ -51,6 +51,17 @@ namespace MEDDotNet
             g.Controls.Add(_desc, 0, g.RowCount - 1);
             g.SetColumnSpan(_desc, 2);
 
+            Button route = new Button();
+            route.Text = "Route Cable";
+            route.AutoSize = true;
+            route.Anchor = AnchorStyles.Left;
+            route.Margin = new Padding(0, 8, 0, 2);
+            route.Click += RouteClicked;
+            g.RowCount++;
+            g.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            g.Controls.Add(route, 0, g.RowCount - 1);
+            g.SetColumnSpan(route, 2);
+
             box.Controls.Add(g);
             AddGroup(root, box);
             Controls.Add(root);
@@ -259,6 +270,11 @@ namespace MEDDotNet
                 return;
             UpdateDesc();
             ApplySelection();
+        }
+
+        void RouteClicked(object sender, EventArgs e)
+        {
+            MedCablePalette.RunCable();
         }
 
         void ApplySelection()

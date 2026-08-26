@@ -27,7 +27,7 @@ Xdata keys match the old MEDBuildXData / MEDCHG names. Same layout the 2012 dial
 | Type | Fields |
 | --- | --- |
 | Conduit | Tag, Size/Count, Code, Distance, Measure |
-| Cable | Tag, Related Tag, Alternate (count), Code, Distance, Measure |
+| Cable | Tag, Related Tag, Size/Count, Code, Distance, Measure |
 | Tray | Tag, Size/Count, Code, Distance, Depth, Measure, Flange |
 | Fitting | Tag, Size/Count, Alternate, Depth, Distance, Code, Flange |
 | Equipment | Tag, Code |

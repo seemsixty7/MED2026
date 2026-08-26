@@ -12,7 +12,7 @@ MEDRECORDS grid and Show halo.
 
 Columns: Handle (read-only), Type (MEDType dropdown: Conduit / Cable / Tray / Fitting / Equipment), Tag, Related Tag, Size/Count, Alt, Depth, Dist, Code (dropdown from `MEDType`), Measure, Flange.
 
-Size/Count is conduit/tray size, or cable quantity; Equipment has no Size.
+Size/Count is conduit/tray size, or cable quantity (#ITEMSIZE). Cable does not use Alt; Alternate is the second size on fittings/reducers. Equipment has no Size.
 
 No Description column. Flange is only enabled for Tray and Fitting.
 

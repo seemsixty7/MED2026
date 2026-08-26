@@ -107,7 +107,7 @@ namespace MEDDotNet
                 return field == MedField.Tag || field == MedField.Size || field == MedField.Code
                     || field == MedField.Distance || field == MedField.Measure;
             if (app == MedApps.Cable)
-                return field == MedField.Tag || field == MedField.RelatedTag || field == MedField.Alternate
+                return field == MedField.Tag || field == MedField.RelatedTag || field == MedField.Size
                     || field == MedField.Code || field == MedField.Distance || field == MedField.Measure;
             if (app == MedApps.Tray)
                 return field == MedField.Tag || field == MedField.Size || field == MedField.Code

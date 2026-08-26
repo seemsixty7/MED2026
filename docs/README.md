@@ -1,4 +1,4 @@
-﻿# MED2026 docs
+# MED2026 docs
 
 MED is an AutoCAD electrical and instrumentation toolkit. Material codes live on entities (xdata). Descriptions live in the catalog table `MEDType`. A bill of materials extract goes into `MEDProject`.
 
@@ -6,31 +6,45 @@ Windows x64. AutoCAD 2020 or later. MIT license.
 
 Author: Clint Moore, PMP. Consulting: [mooredesign.net](https://mooredesign.net).
 
-## Layout
+## Start here
 
-This pass is install, the database, and the new C# UI. Old LISP routing/detail/oneline commands are not documented here yet.
-
+- [What MED is](overview.md) — xdata vs catalog vs BOM
 - [Install](install.md)
 - [Database](database.md)
-- [Commands](commands.md)
-  - [MEDTYPE](medtype.md)
-  - [MEDSETTINGS](medsettings.md)
-  - [MEDCHG / MED Properties](medchg.md)
-  - [MEDRECORDS](medrecords.md)
-  - [MEDSHOWBOM](medshowbom.md)
+- [Drawing setup](setup.md) — `SETUP`, scale sets
+- [Commands](commands.md) — full index, grouped like the 2012 guide
 
-Screenshot filenames are placeholders under `docs/images/`. Drop real PNGs there. Do not invent UI pictures. `medshowbom.png` is present; the rest still need dedicated shots. See [images/README.md](images/README.md).
+## Catalog, settings, properties (C# UI)
+
+These replaced the 2012 DCL dialogs. Do not treat the old DCL screens as current.
+
+- [MEDTYPE](medtype.md) — catalog grid (`MEDTYPES`)
+- [MEDSETTINGS](medsettings.md) — conduit / tray / scale defaults (`MEDSET`)
+- [MEDCHG / MED Properties](medchg.md) — entity xdata (`MEDPROPERTIES`, `MEDPROPS`; `MED` and `MC` still call `MEDCHG`)
+- [MEDRECORDS](medrecords.md) — handle-based multi-xdata grid (`MEDXDEDIT`)
+- [MEDSHOWBOM](medshowbom.md) — current-drawing BOM browse (`MEDSHOW`, `MEDSHOWSUM`)
+
+Classic DCL editor: `MEDCHG-CLASSIC` in `Support\medchg.lsp`.
+
+## Draw
+
+LISP in `Support` still routes raceway, places details, tags, and extracts BOM.
+
+- [Conduit](conduit.md) — `CONDUIT`, bends, fittings, `CHGSIZE`, `MEDLIST`
+- [Cable tray](tray.md) — two-point tray, centerline, offsets, fittings
+- [Cable](cable.md) — `CABLE`, related tag, grounding
+- [Details / equipment](detail.md) — `DETAIL`, `LTG` / `GND` / `PWR` / `INS` / `TRY`, `DETAG`
+- [Detail conduit (two-line)](detail-conduit.md) — `2LCON`, away / toward / break
+- [Tagging](tagging.md) — `CTAG`, `TTAG`, balloons, section marks
+- [3D extract](3d.md) — `MAKE3DTRAY`, `ESOLID`
+- [Utilities](utilities.md) — text, layers, leaders, quick keys
+
+## Screenshots
+
+Real shots under `docs/images/`: `medshowbom.png`, `medproperties.png`, `medrecords.png`, `acad-ui.png`. Placeholders still noted for `medtype.png` and `medsettings.png`. Do not invent UI pictures. See [images/README.md](images/README.md).
 
 ## Source notes
 
-`D:\MEDConsolidate\MEDDocs\UserGuide.docx` is an empty 2013 Word manual template. Not used. Do not port its TOC or "how to customize this manual" filler.
+`D:\MEDConsolidate\MEDDocs\UserGuide.docx` is an empty 2013 Word manual template. Not used.
 
-`D:\MEDConsolidate\MEDDocs\MED 2012 Full Docs.doc` (858 KB, 2013-03-21) extracted with Python `olefile` (no Word COM). Real facts from that 2012 users guide are reused here: catalog vs BOM, codes on the entity / descriptions in MEDTYPE, MEDTYPE / MEDCHG / MEDSET / SHOW, scale sets (Full / Architectural / Engineering). Toolbar tutorials, Access / `.dbf` / `MEDPACK`, and MED 1.53 training-icon steps are obsolete and were not ported.
-
-## Screenshots needed
-
-1. MEDTYPE grid
-2. MED Settings palette with scale combo
-3. MED Properties (MEDCHG)
-4. MEDRECORDS grid + Show halo
-5. MEDSHOWBOM dialog
+These pages port the 2012 users guide (`MED 2012 Full Docs.doc`, 21 Mar 2013) where the workflow still matches MED2026. Toolbar-icon training, Access / `.dbf` / `MEDPACK`, and the MED 1.53 training-icon steps are obsolete and were not ported. When 2012 and 2026 disagree, 2026 wins.

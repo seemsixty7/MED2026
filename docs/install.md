@@ -1,6 +1,8 @@
-﻿# Install
+# Install
 
 Default directory: `C:\MED2026`.
+
+After files are in place, see [overview.md](overview.md) and [setup.md](setup.md) for what MED is and how to scale a drawing.
 
 ## MED2026-Setup.exe
 
@@ -21,12 +23,14 @@ The script copies Support, sample drawings, and the seed database `Data\MED.db`.
 ## After files are in place
 
 1. Launch AutoCAD (the MED2026 shortcut if you have it).
-2. APPLOAD `Support\MED2026-ProfileSetup.lsp`.
+2. APPLOAD `installer\MED2026-ProfileSetup.lsp` (the installer also copies this next to Support).
 3. Run `MED2026SETUP` once.
 
 `MED2026SETUP` puts Support first on the AutoCAD search path, adds it to trusted paths, and CUILOADs `med.cuix` if found. Safe to run more than once.
 
 `CSharpAdd.lsp` NETLOADs `MED-DotNet.dll` on startup. Then: `MEDTYPE`, `MEDSETTINGS`, `MEDCHG`, `MEDSHOWBOM`.
+
+4. `SETUP` for scale and title block. `MEDSETTINGS` for conduit/tray defaults this session.
 
 ## Do not
 

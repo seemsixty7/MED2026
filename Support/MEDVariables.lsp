@@ -27,7 +27,7 @@
 
 (setq MEDDBCONNECTSTRING "Provider=sqloledb;Data Source=DESKTOP-UGG2A0V\\MDDEVELOPMENT;Initial Catalog=MED;Integrated Security=SSPI;")
 ;This Connect string works for Azure Data Source SCORE! Need to figure out a different means of authentication or put his in an ecrypted file.
-;(setq MEDDBCONNECTSTRING "Provider=SQLOLEDB.1;Data Source=mooredesign.database.windows.net,1433;Initial Catalog=MEDMain;Persist Security Info=False;User ID=clintmoore;Password=\"PASSWORDHERE\";MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;")
+;(setq MEDDBCONNECTSTRING "Provider=SQLOLEDB.1;Data Source=yourcompany.database.windows.net,1433;Initial Catalog=MEDMain;Persist Security Info=False;User ID=clintmoore;Password=\"PASSWORDHERE\";MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;")
 ;(setq MEDDBCONNECTSTRING (strcat "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=C:\\MED2018\\Data\\MED2018.accdb;Persist Security Info=False;"))
 
 

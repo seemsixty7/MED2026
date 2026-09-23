@@ -1,8 +1,7 @@
 ; MED2026 Inno Setup wrapper
-; Unpacks the OpenSource tree under {app}, then runs installer\Install-MED2026.ps1
-; SourceDir is the parent of installer (repo root).
-; Layout must be {app}\Support, {app}\Data, {app}\installer, {app}\Dwgs
-; so the ps1 RepoRoot (parent of installer) is {app}.
+; Unpacks under {app}, then runs installer\Install-MED2026.ps1 hidden as the
+; logged-in user (HKCU AutoCAD profile + desktop icon). Users never run a .ps1.
+; Layout: {app}\Support, {app}\Data, {app}\Dwg, {app}\installer
 
 #define MyAppName "MED2026"
 #define MyAppVersion "2026.0"
@@ -18,7 +17,7 @@ DefaultDirName={sd}\MED2026
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
 OutputDir=installer\Output
-OutputBaseFilename=MED2026-Setup
+OutputBaseFilename=MED2026-Setup-0923a
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
@@ -30,23 +29,89 @@ SourceDir=..
 UninstallDisplayName={#MyAppName}
 SetupLogging=yes
 
-; C:\MED2026 needs elevation on modern Windows; lowest cannot create it.
-
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Files]
-; Support keepers. Live shop settings and backups stay out of the package.
-Source: "Support\*"; DestDir: "{app}\Support"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "MEDDataBaseSettings.dat,Project.dat,*.bak,med.cuix.bak-*,MEDRibbon.cuix.bak-*"
+Source: "Support\*"; DestDir: "{app}\Support"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "MEDDataBaseSettings.dat,Project.dat,*.bak,med.cuix.bak-*,MEDRibbon.cuix.bak-*,acad.rx,MEDMain.odcl,TODO-MEDMainDialogs-CSharpUI.txt,MEDMainDialogs-RedoWithCSharp.lsp,TESTICONONEINCHa.bmp,MEDDataBaseSettings.example.dat"
 Source: "Data\MED.db"; DestDir: "{app}\Data"; Flags: ignoreversion
 Source: "Data\README.txt"; DestDir: "{app}\Data"; Flags: ignoreversion
-Source: "Samples\*"; DestDir: "{app}\Dwgs"; Flags: ignoreversion recursesubdirs createallsubdirs skipifsourcedoesntexist
+; Real block library. Not Samples, not a Dwgs folder. Skip leftover Csch1.
+Source: "Dwg\*"; DestDir: "{app}\Dwg"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "Csch1.dwg,csch1.dwg,CSCH1.dwg"
 Source: "installer\Install-MED2026.ps1"; DestDir: "{app}\installer"; Flags: ignoreversion
 Source: "installer\MED2026-ProfileSetup.lsp"; DestDir: "{app}\installer"; Flags: ignoreversion
+Source: "installer\MED2026-ProfileSetup.lsp"; DestDir: "{app}\Support"; Flags: ignoreversion
+Source: "installer\MED2026-FirstRun.scr"; DestDir: "{app}\Support"; Flags: ignoreversion
+
+[Icons]
+; Public desktop so the icon is visible even if UAC ran Setup elevated.
+; Filename is filled in by [Code] once acad.exe is found.
+Name: "{commondesktop}\MED2026 AutoCAD"; Filename: "{code:GetAcadExe}"; Parameters: "/p MED2026 /b ""{app}\Support\MED2026-FirstRun.scr"""; WorkingDir: "{app}"; Comment: "AutoCAD with MED2026 profile"; Check: AcadFound
 
 [Run]
-; Do not add a second desktop icon here; the ps1 already creates "MED2026 AutoCAD.lnk".
+; Must be the logged-in user so the AutoCAD profile lands in THEIR HKCU.
+; Hidden: nobody has to know this is PowerShell.
 Filename: "powershell.exe"; \
-    Parameters: "-ExecutionPolicy Bypass -File ""{app}\installer\Install-MED2026.ps1"" -InstallDir ""{app}"" -Provider SQLite"; \
-    StatusMsg: "Configuring MED2026 (SQLite, profile, shortcut)..."; \
-    Flags: waituntilterminated
+    Parameters: "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File ""{app}\installer\Install-MED2026.ps1"" -InstallDir ""{app}"" -Provider SQLite"; \
+    StatusMsg: "Creating the MED2026 AutoCAD profile and desktop shortcut..."; \
+    Flags: waituntilterminated runasoriginaluser runhidden
+
+
+[Code]
+function AcadYearPaths(Year: string): string;
+begin
+  Result := ExpandConstant('{pf}') + '\Autodesk\AutoCAD ' + Year + '\acad.exe';
+end;
+
+function GetAcadExe(Param: string): string;
+begin
+  if FileExists(AcadYearPaths('2024')) then
+    Result := AcadYearPaths('2024')
+  else if FileExists(AcadYearPaths('2022')) then
+    Result := AcadYearPaths('2022')
+  else if FileExists(AcadYearPaths('2020')) then
+    Result := AcadYearPaths('2020')
+  else
+    Result := AcadYearPaths('2024');
+end;
+
+function AcadFound: Boolean;
+begin
+  Result := FileExists(AcadYearPaths('2024')) or FileExists(AcadYearPaths('2022')) or FileExists(AcadYearPaths('2020'));
+end;
+
+procedure WriteSqliteSettings;
+var
+  P, Contents: String;
+begin
+  P := ExpandConstant('{app}\Support\MEDDataBaseSettings.dat');
+  if not FileExists(P) then
+  begin
+    Contents := 'Provider=SQLite' + #13#10 +
+      'ConnectString=Data Source=' + ExpandConstant('{app}\Data\MED.db') + #13#10;
+    SaveStringToFile(P, Contents, False);
+  end;
+end;
+
+procedure WriteProjectDat;
+var
+  P, S, Contents: String;
+begin
+  P := ExpandConstant('{app}\Support\Project.dat');
+  if not FileExists(P) then
+  begin
+    S := ExpandConstant('{app}\Support');
+    Contents := 'MED.db' + #13#10 + S + #13#10 + S + #13#10 + S + #13#10 +
+      ExpandConstant('{app}\Dwg') + #13#10;
+    SaveStringToFile(P, Contents, False);
+  end;
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  if CurStep = ssPostInstall then
+  begin
+    WriteSqliteSettings;
+    WriteProjectDat;
+  end;
+end;

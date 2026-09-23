@@ -39,7 +39,9 @@ namespace MEDDotNet
     {
         ComboBox _typeFilter;
         CheckBox _summary;
+        CheckBox _groupByTag;
         CheckBox _thisProject;
+        ComboBox _project;
         DataGridView _grid;
         Label _status;
         bool _loading;
@@ -47,7 +49,7 @@ namespace MEDDotNet
         public MedShowBomForm(bool summary)
         {
             Text = "MED BOM";
-            Width = 980;
+            Width = 1040;
             Height = 520;
             StartPosition = FormStartPosition.CenterParent;
             MinimizeBox = false;
@@ -76,36 +78,63 @@ namespace MEDDotNet
             _summary.AutoSize = true;
             _summary.Location = new Point(220, 10);
             _summary.Checked = summary;
-            _summary.CheckedChanged += delegate { if (!_loading) Reload(); };
+            _summary.CheckedChanged += delegate
+            {
+                _groupByTag.Enabled = _summary.Checked;
+                if (!_loading) Reload();
+            };
+
+            _groupByTag = new CheckBox();
+            _groupByTag.Text = "Group by Tag";
+            _groupByTag.AutoSize = true;
+            _groupByTag.Location = new Point(460, 10);
+            _groupByTag.Enabled = summary;
+            _groupByTag.CheckedChanged += delegate { if (!_loading) Reload(); };
+
+            Label projLbl = new Label();
+            projLbl.Text = "Project";
+            projLbl.AutoSize = true;
+            projLbl.Location = new Point(8, 38);
+
+            _project = new ComboBox();
+            _project.DropDownStyle = ComboBoxStyle.DropDown;
+            _project.Location = new Point(60, 34);
+            _project.Width = 150;
+            _project.SelectedIndexChanged += ProjectChanged;
+            _project.Validated += ProjectChanged;
+            _project.KeyDown += ProjectKeyDown;
 
             _thisProject = new CheckBox();
             _thisProject.Text = "This project only";
             _thisProject.AutoSize = true;
-            _thisProject.Location = new Point(220, 34);
+            _thisProject.Location = new Point(220, 36);
             _thisProject.Checked = true;
             _thisProject.CheckedChanged += delegate { if (!_loading) Reload(); };
 
             Button refresh = new Button();
             refresh.Text = "Refresh";
             refresh.Width = 80;
-            refresh.Location = new Point(460, 8);
+            refresh.Location = new Point(580, 8);
             refresh.Click += delegate { Reload(); };
 
             Button copy = new Button();
             copy.Text = "Copy";
             copy.Width = 80;
-            copy.Location = new Point(548, 8);
+            copy.Location = new Point(668, 8);
             copy.Click += delegate { CopyGrid(); };
 
             Button csv = new Button();
             csv.Text = "Export CSV";
             csv.Width = 88;
-            csv.Location = new Point(636, 8);
+            csv.Location = new Point(756, 8);
             csv.Click += delegate { ExportCsv(); };
 
             top.Controls.Add(typeLbl);
             top.Controls.Add(_typeFilter);
             top.Controls.Add(_summary);
+            top.Controls.Add(_groupByTag);
+            top.Controls.Add(projLbl);
+            top.Controls.Add(_project);
             top.Controls.Add(_thisProject);
             top.Controls.Add(refresh);
             top.Controls.Add(copy);
@@ -280,18 +309,52 @@ namespace MEDDotNet
             catch { return 0; }
         }
 
+        void ProjectKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode != Keys.Enter)
+                return;
+            e.Handled = true;
+            e.SuppressKeyPress = true;
+            ProjectChanged(sender, e);
+        }
+
+        void ProjectChanged(object sender, EventArgs e)
+        {
+            if (_loading)
+                return;
+            string v = MedUserProject.ComboProjectText(_project);
+            if (v.Length == 0)
+                return;
+            MedUserProject.SetCurrentProject(v);
+            if (!_loading)
+                Reload();
+        }
+
+        void FillProjectCombo()
+        {
+            string project = "PROJECT1";
+            try { project = MedLisp.GetString("_MEDPROJECT", "PROJECT1"); }
+            catch (System.Exception) { }
+            MedUserProject.FillProjectCombo(_project, project);
+        }
+
         void Reload()
         {
             Document doc = AcadApp.DocumentManager.MdiActiveDocument;
             if (doc == null)
                 return;
             string dwg = System.IO.Path.GetFileName(doc.Name);
-            string project = "PROJECT1";
-            try { project = MedLisp.GetString("_MEDPROJECT", "PROJECT1"); }
-            catch (System.Exception) { }
+            string project = MedUserProject.ComboProjectText(_project);
+            if (string.IsNullOrEmpty(project))
+            {
+                project = "PROJECT1";
+                try { project = MedLisp.GetString("_MEDPROJECT", "PROJECT1"); }
+                catch (System.Exception) { }
+            }
 
             string type = SqlItemType(Convert.ToString(_typeFilter.SelectedItem));
             bool summary = _summary.Checked;
+            bool byTag = summary && _groupByTag.Checked;
             bool byProject = _thisProject.Checked;
 
             string where = "WHERE p.ITEM_DWG_='" + SqlText(dwg) + "'";
@@ -303,12 +366,24 @@ namespace MEDDotNet
             string sql;
             if (summary)
             {
-                sql = "SELECT p.ITEM_TYPE, p.ITEM_CODE, CAST('ALL TAGS' AS varchar(20)) AS ITEM_TAG_, "
-                    + "SUM(p.ITEM_QTY_) AS ITEM_QTY_, p.ITEM_SIZE, t.ITEMDESC "
-                    + "FROM MEDProject p LEFT JOIN MEDType t ON p.ITEM_CODE=t.ITEMCODE AND p.ITEM_TYPE=t.ITEMTYPE "
-                    + where
-                    + " GROUP BY p.ITEM_TYPE, p.ITEM_CODE, p.ITEM_SIZE, t.ITEMDESC "
-                    + "ORDER BY p.ITEM_TYPE, p.ITEM_CODE";
+                if (byTag)
+                {
+                    sql = "SELECT p.ITEM_TYPE, p.ITEM_CODE, p.ITEM_TAG_, "
+                        + "SUM(p.ITEM_QTY_) AS ITEM_QTY_, p.ITEM_SIZE, t.ITEMDESC "
+                        + "FROM MEDProject p LEFT JOIN MEDType t ON p.ITEM_CODE=t.ITEMCODE AND p.ITEM_TYPE=t.ITEMTYPE "
+                        + where
+                        + " GROUP BY p.ITEM_TYPE, p.ITEM_CODE, p.ITEM_TAG_, p.ITEM_SIZE, t.ITEMDESC "
+                        + "ORDER BY p.ITEM_TYPE, p.ITEM_CODE, p.ITEM_TAG_";
+                }
+                else
+                {
+                    sql = "SELECT p.ITEM_TYPE, p.ITEM_CODE, CAST('ALL TAGS' AS varchar(20)) AS ITEM_TAG_, "
+                        + "SUM(p.ITEM_QTY_) AS ITEM_QTY_, p.ITEM_SIZE, t.ITEMDESC "
+                        + "FROM MEDProject p LEFT JOIN MEDType t ON p.ITEM_CODE=t.ITEMCODE AND p.ITEM_TYPE=t.ITEMTYPE "
+                        + where
+                        + " GROUP BY p.ITEM_TYPE, p.ITEM_CODE, p.ITEM_SIZE, t.ITEMDESC "
+                        + "ORDER BY p.ITEM_TYPE, p.ITEM_CODE";
+                }
             }
             else
             {
@@ -371,7 +446,7 @@ namespace MEDDotNet
             SetFill("Unit", 25);
             SetFill("BOM qty", 100);
             SetFill("Description", 300);
-            string mode = summary ? "summary" : "detail";
+            string mode = !summary ? "detail" : (byTag ? "summary by tag" : "summary");
             string projBit = byProject ? " project " + project : " all projects";
             _status.Text = n + " " + mode + " row(s) for " + dwg + projBit
                 + ". Linear qty is inches in the DB; BOM qty is feet. Fittings/equipment are each.";
@@ -381,10 +456,15 @@ namespace MEDDotNet
 
         public static void ShowBom(bool summary)
         {
+            MedUserProject.EnsureReady(true);
             using (MedShowBomForm form = new MedShowBomForm(summary))
             {
                 form._loading = true;
-                try { form.Reload(); }
+                try
+                {
+                    form.FillProjectCombo();
+                    form.Reload();
+                }
                 finally { form._loading = false; }
                 AcadApp.ShowModalDialog(form);
             }

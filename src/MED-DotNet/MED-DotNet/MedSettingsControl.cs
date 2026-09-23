@@ -7,7 +7,7 @@ namespace MEDDotNet
     internal class MedSettingsControl : UserControl
     {
         ComboBox _scale;
-        TextBox _project;
+        ComboBox _project;
         CheckBox _tagging;
         CheckBox _sizeOvr;
         CheckBox _userRot;
@@ -40,15 +40,18 @@ namespace MEDDotNet
             GroupBox general = MakeGroup("General");
             TableLayoutPanel g = MakeGrid();
             _scale = MakeCombo();
-            _scale.DropDownWidth = 260;
+            _scale.DropDownWidth = 260;
+
             _scale.DropDownHeight = 400;
             foreach (MedScaleChoice sc in MedScaleChoice.All())
                 _scale.Items.Add(sc);
             _scale.SelectedIndexChanged += ScaleChanged;
             AddRow(g, "Scale", _scale);
-            _project = MakeText();
+            _project = MakeCombo();
+            _project.DropDownStyle = ComboBoxStyle.DropDown;
             _project.Validated += ProjectValidated;
-            _project.KeyDown += TextKeyDown;
+            _project.SelectedIndexChanged += ProjectValidated;
+            _project.KeyDown += ProjectKeyDown;
             AddRow(g, "Project", _project);
             _tagging = MakeCheck();
             _tagging.CheckStateChanged += TaggingChanged;
@@ -193,13 +196,26 @@ namespace MEDDotNet
                 tb.Parent.SelectNextControl(tb, true, true, true, true);
         }
 
+        void ProjectKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode != Keys.Enter)
+                return;
+            e.Handled = true;
+            e.SuppressKeyPress = true;
+            ProjectValidated(sender, e);
+            ComboBox cbo = sender as ComboBox;
+            if (cbo != null)
+                cbo.Parent.SelectNextControl(cbo, true, true, true, true);
+        }
+
         public void LoadFromLisp()
         {
             _loading = true;
             try
             {
+                MedUserProject.EnsureReady(true);
                 SelectScale(MedLisp.GetReal("_SC"), MedLisp.GetReal("_PLOTSCALE"));
-                _project.Text = MedLisp.GetString("_MEDPROJECT", "PROJECT1");
+                MedUserProject.FillProjectCombo(_project, MedLisp.GetString("_MEDPROJECT", "PROJECT1"));
                 _tagging.Checked = !MedLisp.GetLispTrue("_TAGOFF");
                 _sizeOvr.Checked = MedLisp.GetInt("_SIZEOVR", 0) != 0;
                 _userRot.Checked = MedLisp.GetInt("_USERROT", 0) != 0;
@@ -314,10 +330,10 @@ namespace MEDDotNet
         {
             if (_loading)
                 return;
-            string v = (_project.Text ?? "").Trim();
+            string v = MedUserProject.ComboProjectText(_project);
             if (v.Length == 0)
                 return;
-            MedLisp.Run(delegate { MedLisp.SetString("_MEDPROJECT", v); });
+            MedUserProject.SetCurrentProject(v);
         }
 
         void TaggingChanged(object sender, EventArgs e)

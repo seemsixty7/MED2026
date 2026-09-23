@@ -1,0 +1,5 @@
+(setq MED2026-ROOT (if (getenv "MED2026") (getenv "MED2026") "C:\\MED2026"))
+(setq MED2026-SUPPORT (strcat MED2026-ROOT "\\Support"))
+(setenv "TRUSTEDPATHS" (strcat MED2026-SUPPORT (if (and (getenv "TRUSTEDPATHS") (/= (getenv "TRUSTEDPATHS") "")) (strcat ";" (getenv "TRUSTEDPATHS")) "")))
+(load (strcat MED2026-SUPPORT "\\MED2026-ProfileSetup.lsp"))
+

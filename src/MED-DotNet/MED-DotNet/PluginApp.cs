@@ -13,6 +13,10 @@ namespace MEDDotNet
             Document doc = Application.DocumentManager.MdiActiveDocument;
             if (doc != null)
                 doc.Editor.WriteMessage("\nMED-DotNet loaded. CABLE / CABLEPALETTE for cables, MEDCHG / MEDPROPERTIES for entity xdata, MEDSETTINGS for defaults, MEDCHG-CLASSIC for the old DCL, ProcessSQLStatementNET for SQL.");
+
+            // Idempotent MEDUsers.LastProject migration + restore _MEDPROJECT from LastProject.
+            try { MedUserProject.EnsureReady(true); }
+            catch (System.Exception) { }
         }
 
         public void Terminate()

@@ -114,7 +114,7 @@
      (setq  	 _MEDEQP    (list "MEDEQP"       "RED"     "CONTINUOUS"))
      (setq  	 _MEDGRND   (list "MEDGRND"      "GREEN"   "PHANTOM2"  ))
      (setq  	 _MEDCENLAY (list "MEDCENTER"    "WHITE"   "CONTINUOUS"))
-     (setq  	 _MEDTRAY   (list "MEDTRAY"      "BLUE"    "CONTINUOUS"))
+     (setq  	 _MEDTRAY   (list "MEDTRAY"      "YELLOW"  "CONTINUOUS" 0.3))
      (setq  	 _MEDWIRE   (list "MEDWIRE"      "GREEN"   "CONTINUOUS"))
      (setq  	 _MEDPCABLE (list "MEDPOWER"     "BLUE"    "CONTINUOUS"))
      (setq  	 _MEDCCABLE (list "MEDCONTROL"   "CYAN"    "CONTINUOUS"))

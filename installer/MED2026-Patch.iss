@@ -144,7 +144,7 @@ begin
   Contents :=
     'version={#MyAppVersion}' + #13#10 +
     'build_date=2026-09-24' + #13#10 +
-    'git=19ad639' + #13#10 +
+    'git=81b1915' + #13#10 +
     'channel=patch' + #13#10;
   SaveStringToFile(P, Contents, False);
 end;

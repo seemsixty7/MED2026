@@ -100,6 +100,7 @@
 (regapp "MED_DOUBLE")
 (regapp "MED_CABLE")   (setq len_cable   6)
 (regapp "VERT_DATA")
+(regapp "MEDProperties")  ; 3D model ID only (not BOM)
 
 ;;;Set MED Document Variable
 ;;Left for last incase of error
@@ -121,3 +122,4 @@
       meddircnt nil
 
 )
+

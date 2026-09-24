@@ -2184,7 +2184,7 @@
            (setq xdatalista (nth xdcnta xdatalist)
                  appnm      (nth 0 xdatalista)
            )
-           (if (and (/= appnm _DOUBLE) (/= appnm _ELEC))
+           (if (and (/= appnm _DOUBLE) (/= appnm _ELEC) (/= appnm "MEDProperties"))
              (setq applist  (append applist (list appnm)))
            )
            (setq xdcnta (1+ xdcnta))
@@ -2204,6 +2204,37 @@
   (entmod xentdata)
   (princ)
 )
+;; MEDProperties: 3D model identification only (NOT BOM). Excluded from xd_apps.
+;; Prefers .NET MED-SetMedProperties (XData + {dwg}.medprops.json upsert). Falls back to LISP XData
+;; plus MED-UpsertMedPropertiesJson when the DLL is loaded; pure LISP XData if not.
+(defun MEDSetMedProperties (ent objectType size description tag length weight / xd r w)
+  (setq w (if weight weight ""))
+  (setq r (vl-catch-all-apply (quote MED-SetMedProperties)
+            (list ent objectType size description tag length w)))
+  (cond
+    ((vl-catch-all-error-p r)
+      ;; .NET not loaded or failed — write XData in LISP
+      (if (not (tblsearch "APPID" "MEDProperties"))
+        (regapp "MEDProperties")
+      )
+      (setq xd (list "MEDProperties"
+                     (cons 1002 "{")
+                     (cons 1000 (strcat "ObjectType=" (if objectType (vl-princ-to-string objectType) "")))
+                     (cons 1000 (strcat "Size=" (if size (vl-princ-to-string size) "")))
+                     (cons 1000 (strcat "Description=" (if description (vl-princ-to-string description) "")))
+                     (cons 1000 (strcat "Tag=" (if tag (vl-princ-to-string tag) "")))
+                     (cons 1000 (strcat "Length=" (if length (vl-princ-to-string length) "")))
+                     (cons 1000 (strcat "Weight=" (if weight (vl-princ-to-string weight) "")))
+                     (cons 1002 "}")))
+      (xdatadd ent xd)
+      ;; Best-effort JSON sidecar if .NET upsert is available
+      (vl-catch-all-apply (quote MED-UpsertMedPropertiesJson)
+        (list ent objectType size description tag length w))
+    )
+  )
+  ent
+)
+
 
 ;; function to read appropriate string from medtype.dat file
 ;; then build string with size and description
@@ -2889,3 +2920,6 @@
 			
 (princ "Done.")
 			
+
+
+

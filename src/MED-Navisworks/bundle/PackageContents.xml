@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ApplicationPackage SchemaVersion="1.0"
+                    AutodeskProduct="Navisworks"
+                    Name="MED Properties"
+                    Description="Display MEDProperties (ObjectType, Size, Description, Tag, Length, Weight) on Navisworks ModelItems"
+                    AppVersion="1.0.0"
+                    ProductType="Application"
+                    Author="MED">
+  <CompanyDetails Name="MED" Url="" Email="" />
+  <Components Description="MED Properties for Navisworks Manage/Simulate 2024">
+    <RuntimeRequirements OS="Win64"
+                         Platform="NAVMAN|NAVSIM"
+                         SeriesMin="Nw21"
+                         SeriesMax="Nw21" />
+    <ComponentEntry AppName="MEDPropertiesPlugin"
+                    Version="1.0.0"
+                    ModuleName="./Contents/Nw21/MEDPropertiesPlugin.dll"
+                    AppDescription="MED Properties dock pane"
+                    LoadOnCommandInvocation="False"
+                    LoadOnAutoCADStartup="False">
+    </ComponentEntry>
+  </Components>
+</ApplicationPackage>

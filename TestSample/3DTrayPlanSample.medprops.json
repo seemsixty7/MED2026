@@ -1,0 +1,79 @@
+{
+  "version": 1,
+  "sourceDwg": "3DTrayPlanSample.dwg",
+  "app": "MEDProperties",
+  "items": [
+    {
+      "handle": "73",
+      "objectType": "TRAY",
+      "size": "24.0000",
+      "description": "24\" Cable Tray Heavy Duty",
+      "tag": "NONE",
+      "length": "175.3790",
+      "weight": ""
+    },
+    {
+      "handle": "77",
+      "objectType": "TRAY",
+      "size": "24.0000",
+      "description": "24\" Cable Tray Heavy Duty",
+      "tag": "NONE",
+      "length": "199.3610",
+      "weight": ""
+    },
+    {
+      "handle": "7A",
+      "objectType": "TRAY",
+      "size": "24.0000",
+      "description": "24\" Cable Tray Heavy Duty",
+      "tag": "NONE",
+      "length": "41.8540",
+      "weight": ""
+    },
+    {
+      "handle": "7D",
+      "objectType": "TRAY",
+      "size": "24.0000",
+      "description": "24\" Cable Tray Heavy Duty",
+      "tag": "NONE",
+      "length": "49.6091",
+      "weight": ""
+    },
+    {
+      "handle": "80",
+      "objectType": "TRAY",
+      "size": "24.0000",
+      "description": "24\" Cable Tray Heavy Duty",
+      "tag": "NONE",
+      "length": "80.0000",
+      "weight": ""
+    },
+    {
+      "handle": "83",
+      "objectType": "TRAY",
+      "size": "24.0000",
+      "description": "24\" Cable Tray Heavy Duty",
+      "tag": "NONE",
+      "length": "94.1623",
+      "weight": ""
+    },
+    {
+      "handle": "86",
+      "objectType": "TRAY",
+      "size": "24.0000",
+      "description": "24\" Cable Tray Heavy Duty",
+      "tag": "NONE",
+      "length": "157.9567",
+      "weight": ""
+    },
+    {
+      "handle": "89",
+      "objectType": "TRAY",
+      "size": "24.0000",
+      "description": "24\" Cable Tray Heavy Duty",
+      "tag": "NONE",
+      "length": "120.0000",
+      "weight": ""
+    }
+  ]
+}

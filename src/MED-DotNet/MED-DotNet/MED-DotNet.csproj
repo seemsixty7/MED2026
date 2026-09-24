@@ -77,6 +77,9 @@
     <Compile Include="ProcessSQL.cs" />
     <Compile Include="PluginApp.cs" />
     <Compile Include="MedXdata.cs" />
+    <Compile Include="MedPropertiesXData.cs" />
+    <Compile Include="MedPropertiesSidecar.cs" />
+    <Compile Include="MedPropertiesLisp.cs" />
     <Compile Include="MedPropertiesControl.cs" />
     <Compile Include="MedTypeLookup.cs" />
     <Compile Include="MedRecordsGridForm.cs">
@@ -105,3 +108,4 @@ if exist "$(SolutionDir)..\..\Support\" copy /Y "$(SolutionDir)packages\Stub.Sys
 if exist "$(SolutionDir)..\..\Support\" copy /Y "$(SolutionDir)packages\Stub.System.Data.SQLite.Core.NetFramework.1.0.118.0\build\net46\x64\SQLite.Interop.dll" "$(SolutionDir)..\..\Support\SQLite.Interop.dll"</PostBuildEvent>
   </PropertyGroup>
 </Project>
+

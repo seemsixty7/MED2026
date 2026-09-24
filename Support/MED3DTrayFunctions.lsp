@@ -4,7 +4,7 @@
 ;(setq MED_TRAY_TYPEOVERRIDE (list 0.0 1.5 1.5));Use this to set tray forced to Fiberglass Tray Shifts base up and uses C Frames on both sides
 (setq MED_TRAY_RUNGSPACING 9.0) ; Planning to use this for Adding Rungs
 
-(defun MEDDraw3DTray (TrayDataList UCSData / TrayPoint1 TrayPoint2 TrayWidth TrayDepth TrayFlange) ; List includes StartPoint EndPoint Width Depth Flange
+(defun MEDDraw3DTray (TrayDataList UCSData / TrayPoint1 TrayPoint2 TrayWidth TrayDepth TrayFlange TrayBaseEnt TrayFlangeEnt1 TrayFlangeEnt2) ; List includes StartPoint EndPoint Width Depth Flange
 	(setq TrayPoint1 (nth 0 TrayDataList)
 		  TrayPoint2 (nth 1 TrayDataList)
 		  TrayWidth  (nth 2 TrayDataList)
@@ -16,11 +16,12 @@
 		  TrayFlangeEnt2 (MEDBuild3DTrayFlange TrayDataList -1.0 UCSData)
     )
     (command "union" TrayBaseEnt TrayFlangeEnt1 TrayFlangeEnt2 "")
+    TrayBaseEnt ; surviving 3DSOLID after UNION
 )
 (defun c:traytest()
 	(MEDConvertTrayto3d (car (entsel)))
 )
-(defun MEDConvertTrayTo3D(TrayEntity / TrayPoint1 TrayPoint2)
+(defun MEDConvertTrayTo3D(TrayEntity / TrayPoint1 TrayPoint2 Tray3DEnt TrayTag TraySize TrayCode TrayDist TrayLen TrayDesc TraySizeStr)
 	(setq TrayEntityData (entget TrayEntity)
 		  TrayEntityUCSData (dxf 210 TrayentityData)
 	)
@@ -39,14 +40,38 @@
 	)
 
 
-	(MEDDraw3DTray (list  TrayEntityPoint1
+	(setq Tray3DEnt
+	  (MEDDraw3DTray (list  TrayEntityPoint1
 						  TrayEntityPoint2
 			             (nth 2 TrayMEDData) ; Width
 			             (nth 5 TrayMEDData) ; Depth
 			             (nth 7 TrayMEDData) ; FlangeSize
 			       )
 					TrayUCSData
+	  )
 	)
+	;; Attach MEDProperties (3D ID only, not BOM) from source MED_TRAY + geometry length
+	(if (and Tray3DEnt TrayMEDData)
+	  (progn
+	    (setq TrayTag  (nth 1 TrayMEDData)
+	          TraySize (nth 2 TrayMEDData)
+	          TrayCode (nth 3 TrayMEDData)
+	          TrayDist (nth 4 TrayMEDData)
+	          TrayLen  (if (and TrayDist (numberp TrayDist) (/= TrayDist 0.0))
+	                       TrayDist
+	                       (distance TrayEntityPoint1 TrayEntityPoint2))
+	          TrayDesc (if (and TrayCode (numberp TrayCode))
+	                       (clookup TrayCode TraySize _TRAY)
+	                       "")
+	          TraySizeStr (if (numberp TraySize) (rtos TraySize 2 4) (if TraySize (vl-princ-to-string TraySize) ""))
+	    )
+	    (MEDSetMedProperties Tray3DEnt "TRAY" TraySizeStr TrayDesc
+	                         (if TrayTag TrayTag "")
+	                         (rtos TrayLen 2 4)
+	                         "")
+	  )
+	)
+	Tray3DEnt
 )
 		  
 (defun MEDBuild3DTrayBase (MB3DTB_TrayData TrayUCSData / TrayPoint1 TrayPoint2 TrayAngle)
@@ -783,3 +808,4 @@
 )
       	  
 (princ "Done.")
+

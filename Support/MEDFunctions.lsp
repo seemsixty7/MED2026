@@ -2235,6 +2235,83 @@
   ent
 )
 
+;; Stamp MEDProperties on a 3D entity from source BOM XData (same fields as tray).
+;; objectType: TRAY|FITTING|CABLE|CONDUIT|EQUIPMENT (schema kept even if exporters incomplete).
+;; lengthOverride: optional string; when nil, TRAY/CABLE/CONDUIT use BOM dist; FITTING/EQUIPMENT Length="".
+;; Call after each 3D solid is created: (MEDStamp3DFromBom (entlast) sourceEnt "FITTING")
+(defun MEDStamp3DFromBom (solidEnt sourceEnt objectType lengthOverride / bomApp xd tag size code dist desc sizeStr lenStr ot)
+  (if (not (and solidEnt sourceEnt objectType))
+    solidEnt
+    (progn
+      (setq ot (strcase (vl-princ-to-string objectType))
+            bomApp (cond
+                     ((= ot "TRAY") _TRAY)
+                     ((= ot "FITTING") _FITTING)
+                     ((= ot "CABLE") _CABLE)
+                     ((= ot "CONDUIT") _CONDUIT)
+                     ((= ot "EQUIPMENT") _EQUIP)
+                     (T nil)
+                   )
+            xd (if bomApp (xdataget sourceEnt bomApp) nil)
+      )
+      (if xd
+        (progn
+          (setq tag (nth 1 xd))
+          (cond
+            ((= ot "EQUIPMENT")
+              ;; equip XData: (app tag code) — no size/dist
+              (setq size nil
+                    code (nth 2 xd)
+                    desc (if (and code (numberp code)) (clookup code nil _EQUIP) "")
+                    sizeStr ""
+                    lenStr ""
+              )
+            )
+            ((= ot "CABLE")
+              ;; (app tag size code rtag dist ...)
+              (setq size (nth 2 xd)
+                    code (nth 3 xd)
+                    dist (nth 5 xd)
+                    desc (if (and code (numberp code)) (clookup code size _CABLE) "")
+                    sizeStr (if (numberp size) (rtos size 2 4) (if size (vl-princ-to-string size) ""))
+                    lenStr (if lengthOverride lengthOverride
+                             (if (and dist (numberp dist) (/= dist 0.0)) (rtos dist 2 4) ""))
+              )
+            )
+            ((= ot "FITTING")
+              ;; (app tag size code alt dpth flange) — Length empty per schema
+              (setq size (nth 2 xd)
+                    code (nth 3 xd)
+                    desc (if (and code (numberp code)) (clookup code size _FITTING) "")
+                    sizeStr (if (numberp size) (rtos size 2 4) (if size (vl-princ-to-string size) ""))
+                    lenStr ""
+              )
+            )
+            (T
+              ;; TRAY / CONDUIT: (app tag size code dist ...)
+              (setq size (nth 2 xd)
+                    code (nth 3 xd)
+                    dist (nth 4 xd)
+                    desc (if (and code (numberp code))
+                             (clookup code size (if (= ot "TRAY") _TRAY _CONDUIT))
+                             "")
+                    sizeStr (if (numberp size) (rtos size 2 4) (if size (vl-princ-to-string size) ""))
+                    lenStr (if lengthOverride lengthOverride
+                             (if (and dist (numberp dist) (/= dist 0.0)) (rtos dist 2 4) ""))
+              )
+            )
+          )
+          (MEDSetMedProperties solidEnt ot sizeStr desc
+                               (if tag tag "")
+                               lenStr
+                               "")
+        )
+      )
+      solidEnt
+    )
+  )
+)
+
 
 ;; function to read appropriate string from medtype.dat file
 ;; then build string with size and description

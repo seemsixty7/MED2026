@@ -1,4 +1,7 @@
 (princ "\rLoading MED3DMisc...")
+;; TODO(MEDProperties EQUIPMENT): no BOM-driven 3D equipment exporter yet.
+;; When one exists, stamp with: (MEDStamp3DFromBom solidEnt sourceEquipEnt "EQUIPMENT" nil)
+;; 3DJBOX below is freeform (no source MED_EQUIP) — do not invent a fake exporter.
 ;;;This is the controlliong factor for the offset from the jbox edge
 (setq MED_JBoxDoorOffset 1.0)
 ;;;This is the depth of the actual door

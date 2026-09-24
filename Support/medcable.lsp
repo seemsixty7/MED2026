@@ -75,6 +75,8 @@
     (chg_tray_pl_wdth (entlast) _CONPLWIDTH)
     (setq xdlist (bld_cable _CABCODE _CABNUM cabtag cabreltag nil "T"))
     (xdatadd (entlast) xdlist)
+    ;; MEDProperties CABLE on 3D polyline (ObjectType in schema; no solid exporter)
+    (MEDStamp3DFromBom (entlast) (entlast) "CABLE" nil)
     (princ)
     (med_ret_ok)
     (terpri)

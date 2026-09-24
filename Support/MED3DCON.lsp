@@ -67,8 +67,14 @@
 	      )
 	      (princ "\nAbout to run the 3d process")
 	      (if (= condir -1)
-	        (mk3dvconbend conpt1 benddir consize benrad nil)
-	        (mk3dvconbend conpt1 benddir consize benrad T)
+	        (progn
+	          (mk3dvconbend conpt1 benddir consize benrad nil)
+	          (MEDStamp3DFromBom (entlast) conent "CONDUIT" nil)
+	        )
+	        (progn
+	          (mk3dvconbend conpt1 benddir consize benrad T)
+	          (MEDStamp3DFromBom (entlast) conent "CONDUIT" nil)
+	        )
 	      )
 	   )
 	 )
@@ -80,6 +86,8 @@
 	 (princ "\nAbout to run 3d conduit segment")
         (setq mk3dcondist (* condist condir))
         (mk3dconvertical conpt1 mk3dcondist consize)
+	 ;; MEDProperties CONDUIT on vertical segment solid
+	 (MEDStamp3DFromBom (entlast) conent "CONDUIT" nil)
 	 (setq cnt (1+ cnt))
 	)
        
@@ -235,11 +243,14 @@
 		    (setq cpt (append cpt (list mklwzpoint)))
 			  
 		    (mk3dconbend spt ept cpt (* actualsize 0.5) iang)
+		    ;; MEDProperties CONDUIT on each segment solid
+		    (MEDStamp3DFromBom (entlast) plent "CONDUIT" nil)
 		  )
 		  (progn
 		    (setq spt (append spt (list mklwzpoint)))
 		    (setq ept (append ept (list mklwzpoint)))
 		    (mk3dcon spt ept (* actualsize 0.5))
+		    (MEDStamp3DFromBom (entlast) plent "CONDUIT" nil)
 		  )
 		)
 	      )
@@ -312,6 +323,8 @@
       )
     )
   )
+  ;; TODO(MEDProperties): enable conduit-fitting walk below when MAKE3DCONDUIT
+  ;; exports MED_FITTING solids; m3dconduitfit already stamps FITTING via MEDStamp3DFromBom.
   ;(setq 3doutconduit (ssget "x" (list (list -3 (list "MED_FITTING")))))
   ;(if 3doutconduit
   ;  (progn
@@ -397,6 +410,10 @@
     )
     (T nil)
     
+  )
+  ;; MEDProperties: conduit fittings use FITTING ObjectType (Length empty)
+  (if (entlast)
+    (MEDStamp3DFromBom (entlast) conduitfitent "FITTING" nil)
   )
   (setvar "ELEVATION" m3delev)
   

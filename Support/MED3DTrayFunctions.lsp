@@ -53,22 +53,12 @@
 	;; Attach MEDProperties (3D ID only, not BOM) from source MED_TRAY + geometry length
 	(if (and Tray3DEnt TrayMEDData)
 	  (progn
-	    (setq TrayTag  (nth 1 TrayMEDData)
-	          TraySize (nth 2 TrayMEDData)
-	          TrayCode (nth 3 TrayMEDData)
-	          TrayDist (nth 4 TrayMEDData)
+	    (setq TrayDist (nth 4 TrayMEDData)
 	          TrayLen  (if (and TrayDist (numberp TrayDist) (/= TrayDist 0.0))
 	                       TrayDist
 	                       (distance TrayEntityPoint1 TrayEntityPoint2))
-	          TrayDesc (if (and TrayCode (numberp TrayCode))
-	                       (clookup TrayCode TraySize _TRAY)
-	                       "")
-	          TraySizeStr (if (numberp TraySize) (rtos TraySize 2 4) (if TraySize (vl-princ-to-string TraySize) ""))
 	    )
-	    (MEDSetMedProperties Tray3DEnt "TRAY" TraySizeStr TrayDesc
-	                         (if TrayTag TrayTag "")
-	                         (rtos TrayLen 2 4)
-	                         "")
+	    (MEDStamp3DFromBom Tray3DEnt TrayEntity "TRAY" (rtos TrayLen 2 4))
 	  )
 	)
 	Tray3DEnt
@@ -320,7 +310,7 @@
 (defun c:trayfittest()
 	(MEDConvertTrayElbowto3d (car (entsel)))
 )
-(defun MEDConvertTrayElbowTo3D(TrayEntity)
+(defun MEDConvertTrayElbowTo3D(TrayEntity / TrayEntityData TrayMEDData Tray3DEnt)
 	(setq TrayEntityData (entget TrayEntity)
 		  TrayMEDData (xdataget TrayEntity _FITTING)
 	)
@@ -336,6 +326,10 @@
 			       )
 		           TrayEntity
 	)
+	;; MEDProperties FITTING (Length empty per schema)
+	(setq Tray3DEnt (entlast))
+	(MEDStamp3DFromBom Tray3DEnt TrayEntity "FITTING" nil)
+	Tray3DEnt
 )
 
 (defun MEDDraw3DTrayFit (TrayDataList TrayCenterLine / TrayPoint1 TrayPoint2 TrayWidth TrayDepth TrayFlange) ; List includes StartPoint EndPoint Width Depth Flange
@@ -598,7 +592,7 @@
 (defun c:trayteetest()
 	(MEDConvertTrayTeeTo3d (car (entsel)))
 )
-(defun MEDConvertTrayTeeTo3D(TrayEntity)
+(defun MEDConvertTrayTeeTo3D(TrayEntity / TrayEntityData TrayMEDData Tray3DEnt)
 	(setq TrayEntityData (entget TrayEntity)
 		  TrayMEDData (xdataget TrayEntity _FITTING)
 	)
@@ -614,6 +608,10 @@
 			       )
 		           TrayEntity
 	)
+	;; MEDProperties FITTING (Length empty per schema)
+	(setq Tray3DEnt (entlast))
+	(MEDStamp3DFromBom Tray3DEnt TrayEntity "FITTING" nil)
+	Tray3DEnt
 )
 
 (defun MEDBuild3DTrayFlangeFromEntity (MB3DTF_TrayData MB3DTF_FlipValue MB3DTF_Entity / TrayPoint1 TrayPoint2 TrayAngle) ;Flip value is 1.0 normal opposite is -1
@@ -767,7 +765,7 @@
 (defun c:trayretest()
 	(MEDConvertTrayReducerTo3d (car (entsel)))
 )
-(defun MEDConvertTrayReducerTo3D(TrayEntity)
+(defun MEDConvertTrayReducerTo3D(TrayEntity / TrayEntityData TrayMEDData Tray3DEnt)
 	(setq TrayEntityData (entget TrayEntity)
 		  TrayMEDData (xdataget TrayEntity _FITTING)
 	)
@@ -783,13 +781,17 @@
 			       )
 		           TrayEntity
 	)
+	;; MEDProperties FITTING (Length empty per schema)
+	(setq Tray3DEnt (entlast))
+	(MEDStamp3DFromBom Tray3DEnt TrayEntity "FITTING" nil)
+	Tray3DEnt
 )
       	  
 	
 (defun c:traylrretest()
 	(MEDConvertTrayLRReducerTo3d (car (entsel)))
 )
-(defun MEDConvertTrayLRReducerTo3D(TrayEntity)
+(defun MEDConvertTrayLRReducerTo3D(TrayEntity / TrayEntityData TrayMEDData Tray3DEnt)
 	(setq TrayEntityData (entget TrayEntity)
 		  TrayMEDData (xdataget TrayEntity _FITTING)
 	)
@@ -805,6 +807,10 @@
 			       )
 		           TrayEntity
 	)
+	;; MEDProperties FITTING (Length empty per schema)
+	(setq Tray3DEnt (entlast))
+	(MEDStamp3DFromBom Tray3DEnt TrayEntity "FITTING" nil)
+	Tray3DEnt
 )
       	  
 (princ "Done.")

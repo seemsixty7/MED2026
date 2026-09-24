@@ -1,16 +1,17 @@
 ; MED2026 Inno Setup wrapper
-; Unpacks under {app}, then runs installer\Install-MED2026.ps1 hidden as the
-; logged-in user (HKCU AutoCAD profile + desktop icon). Users never run a .ps1.
+; Unpacks under {app}, then runs installer\Install-MED2026.ps1 as the
+; logged-in user (HKCU AutoCAD profile + desktop icon). Visible like Core so
+; profile failures stay on screen. Users never run a .ps1.
 ; Layout: {app}\Support, {app}\Data, {app}\Dwg, {app}\installer
 ; Optional: Navisworks MEDProperties plugin to per-user AppData (no Autodesk API DLLs).
 ; Optional opt-in install registration -> MooreDesign Netlify (not InstallHer).
 
 #define MyAppName "MED2026"
-#define MyAppVersion "2026.0.0924d"
+#define MyAppVersion "2026.0.0924e"
 #define MyAppPublisher "Dewitt Clinton Moore"
-#define MyOutputBase "MED2026-Setup-0924d"
+#define MyOutputBase "MED2026-Setup-0924e"
 #define MedBuildDate "2026-09-24"
-#define MedGitHash "abcdc9e"
+#define MedGitHash "6cf0eb4"
 #define MedRegisterUrl "https://mooredesign.net/.netlify/functions/med-register"
 
 [Setup]
@@ -67,19 +68,15 @@ Source: "installer\MED2026-FirstRun.scr"; DestDir: "{app}\Support"; Flags: ignor
 ; No Autodesk.* API DLLs. Traditional layout: folder name = DLL base name.
 Source: "installer\staging\Navis\MEDPropertiesPlugin\MEDPropertiesPlugin.dll"; DestDir: "{app}\installer\navis\MEDPropertiesPlugin"; Flags: ignoreversion; Components: navis
 
-[Icons]
-; Public desktop so the icon is visible even if UAC ran Setup elevated.
-; Filename is filled in by [Code] once acad.exe is found.
-Name: "{commondesktop}\MED2026 AutoCAD"; Filename: "{code:GetAcadExe}"; Parameters: "/p MED2026 /b ""{app}\Support\MED2026-FirstRun.scr"""; WorkingDir: "{app}"; Comment: "AutoCAD with MED2026 profile"; Check: AcadFound; Components: core
-
+; Desktop shortcut is created by Install-MED2026.ps1 (user desktop + optional
+; public) with /p MED2026 /b FirstRun.scr — one source of truth (matches Core).
 [Run]
-; Must be the logged-in user so the AutoCAD profile lands in THEIR HKCU.
-; Hidden: nobody has to know this is PowerShell.
+; Visible so profile clone errors stay on screen (matches Core2026; no runhidden).
+; Must be the logged-in user so HKCU AutoCAD profiles are theirs.
 Filename: "powershell.exe"; \
-    Parameters: "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File ""{app}\installer\Install-MED2026.ps1"" -InstallDir ""{app}"" -Provider SQLite"; \
-    StatusMsg: "Creating the MED2026 AutoCAD profile and desktop shortcut..."; \
-    Flags: waituntilterminated runasoriginaluser runhidden; Components: core
-
+    Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\installer\Install-MED2026.ps1"" -InstallDir ""{app}"" -Provider SQLite -SkipCopy"; \
+    StatusMsg: "Configuring AutoCAD profile for MED2026..."; \
+    Flags: waituntilterminated runasoriginaluser; Components: core
 [Code]
 #include "MED-Registration.issinc"
 
@@ -191,3 +188,4 @@ begin
     MedHandleRegistrationPostInstall('full');
   end;
 end;
+

@@ -1,4 +1,4 @@
-using Autodesk.AutoCAD.DatabaseServices;
+﻿using Autodesk.AutoCAD.DatabaseServices;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -116,15 +116,31 @@ namespace MEDDotNet
         /// </summary>
         public static int RebuildFromDatabase(Database db, Transaction tr)
         {
+            return RebuildFromDatabase(db, tr, null);
+        }
+
+        /// <param name="dwgPathOverride">When set (e.g. side Database after ReadDwgFile), sidecar path and sourceDwg use this file.</param>
+        public static int RebuildFromDatabase(Database db, Transaction tr, string dwgPathOverride)
+        {
             if (db == null || tr == null)
                 return 0;
-            string path = PathFor(db);
+            string path = !string.IsNullOrWhiteSpace(dwgPathOverride)
+                ? PathForDwgPath(dwgPathOverride)
+                : PathFor(db);
             if (string.IsNullOrEmpty(path))
                 return 0;
 
             string sourceDwg = "";
-            try { sourceDwg = Path.GetFileName(db.Filename) ?? ""; }
-            catch { }
+            if (!string.IsNullOrWhiteSpace(dwgPathOverride))
+            {
+                try { sourceDwg = Path.GetFileName(dwgPathOverride) ?? ""; }
+                catch { }
+            }
+            if (string.IsNullOrEmpty(sourceDwg))
+            {
+                try { sourceDwg = Path.GetFileName(db.Filename) ?? ""; }
+                catch { }
+            }
 
             List<SidecarItem> items = new List<SidecarItem>();
             BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);

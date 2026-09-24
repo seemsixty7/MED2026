@@ -2213,7 +2213,7 @@
             (list ent objectType size description tag length w)))
   (cond
     ((vl-catch-all-error-p r)
-      ;; .NET not loaded or failed — write XData in LISP
+      ;; .NET not loaded or failed â€” write XData in LISP
       (if (not (tblsearch "APPID" "MEDProperties"))
         (regapp "MEDProperties")
       )
@@ -2233,6 +2233,36 @@
     )
   )
   ent
+)
+
+;; After 3D tray/conduit export: write/update {dwg}.medprops.json beside a saved DWG.
+;; dwgPath nil = active document; otherwise rebuild from that on-disk file (WBLOCK target).
+;; Unsaved active drawing: skip with a clear message (do not fail the export).
+(defun MEDRebuildMedPropsJsonBeside (dwgPath / r titled)
+  (cond
+    ((and dwgPath (= (type dwgPath) 'STR) (/= dwgPath "") (findfile dwgPath))
+      (setq r (vl-catch-all-apply (quote MED-RebuildMedPropertiesJsonForFile) (list dwgPath)))
+      (if (vl-catch-all-error-p r)
+        (prompt (strcat "\nMEDProperties JSON rebuild failed: "
+                        (vl-catch-all-error-message r)
+                        " (save then MEDREBUILDMEDPROPSJSON)."))
+      )
+    )
+    (T
+      (setq titled (getvar "DWGTITLED"))
+      (if (or (null titled) (= titled 0))
+        (prompt "\nMEDProperties: drawing not saved — skipped .medprops.json (SAVE then MEDREBUILDMEDPROPSJSON).")
+        (progn
+          (setq r (vl-catch-all-apply (quote MED-RebuildMedPropertiesJson) nil))
+          (if (vl-catch-all-error-p r)
+            (prompt (strcat "\nMEDProperties JSON rebuild failed: "
+                            (vl-catch-all-error-message r)))
+          )
+        )
+      )
+    )
+  )
+  (princ)
 )
 
 ;; Stamp MEDProperties on a 3D entity from source BOM XData (same fields as tray).
@@ -2259,7 +2289,7 @@
           (setq tag (nth 1 xd))
           (cond
             ((= ot "EQUIPMENT")
-              ;; equip XData: (app tag code) — no size/dist
+              ;; equip XData: (app tag code) â€” no size/dist
               (setq size nil
                     code (nth 2 xd)
                     desc (if (and code (numberp code)) (clookup code nil _EQUIP) "")
@@ -2279,7 +2309,7 @@
               )
             )
             ((= ot "FITTING")
-              ;; (app tag size code alt dpth flange) — Length empty per schema
+              ;; (app tag size code alt dpth flange) â€” Length empty per schema
               (setq size (nth 2 xd)
                     code (nth 3 xd)
                     desc (if (and code (numberp code)) (clookup code size _FITTING) "")

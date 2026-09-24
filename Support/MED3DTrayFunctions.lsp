@@ -449,6 +449,7 @@
       (c:3dsout (ssget "X" (list (cons 0 "3dsolid") (cons 8 (nth 0 _MED3DTRAY)))) 0 0 30 0.1 3dsoutfname)
       (command "erase" (ssget "X" (list (cons 0 "3dsolid") (cons 8 (nth 0 _MED3DTRAY)))) "")
       (command "plan" "")
+      ;; 3DS export discards solids — no medprops.json
     )
     ;;testing default path as the drawing prefix
     ;(setq 3dsoutfname (getfiled "Select file name for 3Dtray output" (substr (getvar "dwgname") 1 (- (strlen (getvar "dwgname")) 4)) "dwg" 1))
@@ -461,10 +462,16 @@
       ;(command (list 0.0 0.0 0.0) (ssget "X" (list (cons 0 "3dsolid") (cons 8 (nth 0 _MED3DTRAY)))) "")
       (command (list 0.0 0.0 0.0) (ssget "X" (list (cons 0 "3dsolid") )) "")
       (command "plan" "")
+      ;; Sidecar must sit beside the WBLOCK target (handles in that file), not the source DWG.
+      (if (and 3dsoutfname (findfile 3dsoutfname))
+        (MEDRebuildMedPropsJsonBeside 3dsoutfname)
+      )
     )
     ((= outputformat "Layer")
       ;(command "-layer" "off" "*" "" "On" (nth 0 _MED3DTRAY) "")
       (prompt "\nUse the PLAN command to return to plan view:")
+      ;; Solids remain in the active drawing — rebuild sibling JSON if DWG is saved.
+      (MEDRebuildMedPropsJsonBeside nil)
     )
   )
 

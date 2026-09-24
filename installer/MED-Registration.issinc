@@ -1,0 +1,259 @@
+var
+  MedRegPage: TWizardPage;
+  MedRegCheck: TNewCheckBox;
+  MedRegNameEdit: TNewEdit;
+  MedRegEmailEdit: TNewEdit;
+  MedRegNameLabel: TNewStaticText;
+  MedRegEmailLabel: TNewStaticText;
+  MedRegHint: TNewStaticText;
+  MedRegSkipPage: Boolean;
+  MedRegCachedName: String;
+  MedRegCachedEmail: String;
+  MedRegHaveExisting: Boolean;
+
+function MedJsonEscape(const S: String): String;
+var
+  T: String;
+begin
+  T := S;
+  StringChangeEx(T, '\', '\\', True);
+  StringChangeEx(T, '"', '\"', True);
+  StringChangeEx(T, #13, '\r', True);
+  StringChangeEx(T, #10, '\n', True);
+  Result := T;
+end;
+
+function MedEmailLooksValid(const Email: String): Boolean;
+var
+  AtPos, DotPos: Integer;
+begin
+  AtPos := Pos('@', Email);
+  DotPos := Pos('.', Email);
+  Result := (Length(Email) >= 5) and (AtPos > 1) and (DotPos > AtPos + 1) and (DotPos < Length(Email));
+end;
+
+function MedRegFilePath: String;
+begin
+  Result := ExpandConstant('{app}\Support\MED.registration.json');
+end;
+
+function MedExtractJsonString(const Contents, Key: String): String;
+var
+  Low, Needle, Slice: String;
+  P, EndPos: Integer;
+begin
+  Result := '';
+  Low := LowerCase(Contents);
+  Needle := '"' + LowerCase(Key) + '":';
+  P := Pos(Needle, Low);
+  if P = 0 then
+    Exit;
+  Slice := Copy(Contents, P + Length(Needle), Length(Contents));
+  while (Length(Slice) > 0) and ((Slice[1] = ' ') or (Slice[1] = #9)) do
+    Delete(Slice, 1, 1);
+  if (Length(Slice) = 0) or (Slice[1] <> '"') then
+    Exit;
+  Delete(Slice, 1, 1);
+  EndPos := Pos('"', Slice);
+  if EndPos = 0 then
+    Exit;
+  Result := Copy(Slice, 1, EndPos - 1);
+end;
+
+function MedLoadExistingOptIn: Boolean;
+var
+  P, Low: String;
+  ContentsA: AnsiString;
+begin
+  Result := False;
+  MedRegHaveExisting := False;
+  MedRegCachedName := '';
+  MedRegCachedEmail := '';
+  P := MedRegFilePath;
+  if not FileExists(P) then
+    Exit;
+  if not LoadStringFromFile(P, ContentsA) then
+    Exit;
+  Low := LowerCase(ContentsA);
+  if (Pos('"optin": true', Low) = 0) and (Pos('"optin":true', Low) = 0) then
+    Exit;
+  MedRegCachedName := MedExtractJsonString(ContentsA, 'name');
+  MedRegCachedEmail := MedExtractJsonString(ContentsA, 'email');
+  if MedRegCachedEmail = '' then
+    Exit;
+  MedRegHaveExisting := True;
+  Result := True;
+end;
+
+procedure MedRegUpdateEnabled;
+var
+  En: Boolean;
+begin
+  En := MedRegCheck.Checked;
+  MedRegNameEdit.Enabled := En;
+  MedRegEmailEdit.Enabled := En;
+  MedRegNameLabel.Enabled := En;
+  MedRegEmailLabel.Enabled := En;
+end;
+
+procedure MedRegCheckClick(Sender: TObject);
+begin
+  MedRegUpdateEnabled;
+end;
+
+procedure MedCreateRegistrationPage;
+begin
+  MedRegSkipPage := False;
+  MedRegPage := CreateCustomPage(wpSelectDir,
+    'Optional registration',
+    'Register this MED install with Moore Design (optional)');
+
+  MedRegCheck := TNewCheckBox.Create(MedRegPage);
+  MedRegCheck.Parent := MedRegPage.Surface;
+  MedRegCheck.Left := ScaleX(0);
+  MedRegCheck.Top := ScaleY(8);
+  MedRegCheck.Width := MedRegPage.SurfaceWidth;
+  MedRegCheck.Caption := 'Register this install (optional)';
+  MedRegCheck.Checked := False;
+  MedRegCheck.OnClick := @MedRegCheckClick;
+
+  MedRegHint := TNewStaticText.Create(MedRegPage);
+  MedRegHint.Parent := MedRegPage.Surface;
+  MedRegHint.Left := ScaleX(0);
+  MedRegHint.Top := ScaleY(36);
+  MedRegHint.Width := MedRegPage.SurfaceWidth;
+  MedRegHint.Height := ScaleY(40);
+  MedRegHint.WordWrap := True;
+  MedRegHint.Caption :=
+    'If you opt in, Moore Design stores your name, email, and the MED version/channel being installed (mooredesign.net). Nothing is sent unless you check the box.';
+
+  MedRegNameLabel := TNewStaticText.Create(MedRegPage);
+  MedRegNameLabel.Parent := MedRegPage.Surface;
+  MedRegNameLabel.Left := ScaleX(0);
+  MedRegNameLabel.Top := ScaleY(88);
+  MedRegNameLabel.Caption := 'Name:';
+
+  MedRegNameEdit := TNewEdit.Create(MedRegPage);
+  MedRegNameEdit.Parent := MedRegPage.Surface;
+  MedRegNameEdit.Left := ScaleX(0);
+  MedRegNameEdit.Top := ScaleY(106);
+  MedRegNameEdit.Width := ScaleX(300);
+
+  MedRegEmailLabel := TNewStaticText.Create(MedRegPage);
+  MedRegEmailLabel.Parent := MedRegPage.Surface;
+  MedRegEmailLabel.Left := ScaleX(0);
+  MedRegEmailLabel.Top := ScaleY(140);
+  MedRegEmailLabel.Caption := 'Email:';
+
+  MedRegEmailEdit := TNewEdit.Create(MedRegPage);
+  MedRegEmailEdit.Parent := MedRegPage.Surface;
+  MedRegEmailEdit.Left := ScaleX(0);
+  MedRegEmailEdit.Top := ScaleY(158);
+  MedRegEmailEdit.Width := ScaleX(300);
+
+  MedRegUpdateEnabled;
+end;
+
+function MedRegPageNextCheck: Boolean;
+begin
+  Result := True;
+  if not MedRegCheck.Checked then
+    Exit;
+  if Trim(MedRegNameEdit.Text) = '' then
+  begin
+    MsgBox('Please enter your name, or uncheck registration.', mbError, MB_OK);
+    Result := False;
+    Exit;
+  end;
+  if not MedEmailLooksValid(Trim(MedRegEmailEdit.Text)) then
+  begin
+    MsgBox('Please enter a valid email address, or uncheck registration.', mbError, MB_OK);
+    Result := False;
+    Exit;
+  end;
+end;
+
+procedure MedWriteRegistrationJson(const Name, Email, Channel: String);
+var
+  P, NowIso, FirstReg, SupportDir: String;
+  ContentsA: AnsiString;
+  ExistingA: AnsiString;
+begin
+  SupportDir := ExpandConstant('{app}\Support');
+  if not DirExists(SupportDir) then
+    ForceDirectories(SupportDir);
+  P := MedRegFilePath;
+  NowIso := GetDateTimeString('yyyy-mm-dd"T"hh:nn:ss', '-', ':');
+  FirstReg := NowIso;
+  if FileExists(P) then
+  begin
+    if LoadStringFromFile(P, ExistingA) then
+    begin
+      FirstReg := MedExtractJsonString(ExistingA, 'firstRegistered');
+      if FirstReg = '' then
+        FirstReg := NowIso;
+    end;
+  end;
+  ContentsA :=
+    '{' + #13#10 +
+    '  "optIn": true,' + #13#10 +
+    '  "name": "' + MedJsonEscape(Name) + '",' + #13#10 +
+    '  "email": "' + MedJsonEscape(Email) + '",' + #13#10 +
+    '  "firstRegistered": "' + MedJsonEscape(FirstReg) + '",' + #13#10 +
+    '  "lastVersion": "{#MyAppVersion}",' + #13#10 +
+    '  "lastChannel": "' + Channel + '"' + #13#10 +
+    '}' + #13#10;
+  SaveStringToFile(P, ContentsA, False);
+end;
+
+procedure MedPostRegistration(const Channel: String);
+var
+  Ps1, Params, LogFile: String;
+  ResultCode: Integer;
+begin
+  try
+    ExtractTemporaryFile('Register-MEDInstall.ps1');
+  except
+    Exit;
+  end;
+  Ps1 := ExpandConstant('{tmp}\Register-MEDInstall.ps1');
+  if not FileExists(Ps1) then
+    Exit;
+  LogFile := ExpandConstant('{log}');
+  if LogFile = '' then
+    LogFile := ExpandConstant('{tmp}\MED-register.log');
+  Params :=
+    '-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "' + Ps1 + '"' +
+    ' -RegistrationFile "' + MedRegFilePath + '"' +
+    ' -Url "{#MedRegisterUrl}"' +
+    ' -Version "{#MyAppVersion}"' +
+    ' -Channel "' + Channel + '"' +
+    ' -Git "{#MedGitHash}"' +
+    ' -BuildDate "{#MedBuildDate}"' +
+    ' -LogPath "' + LogFile + '"';
+  Exec('powershell.exe', Params, '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+end;
+
+procedure MedHandleRegistrationPostInstall(const Channel: String);
+var
+  Name, Email: String;
+begin
+  if MedRegHaveExisting and MedRegSkipPage then
+  begin
+    Name := MedRegCachedName;
+    Email := MedRegCachedEmail;
+    if Email <> '' then
+    begin
+      MedWriteRegistrationJson(Name, Email, Channel);
+      MedPostRegistration(Channel);
+    end;
+    Exit;
+  end;
+  if (MedRegPage <> nil) and MedRegCheck.Checked then
+  begin
+    Name := Trim(MedRegNameEdit.Text);
+    Email := Trim(MedRegEmailEdit.Text);
+    MedWriteRegistrationJson(Name, Email, Channel);
+    MedPostRegistration(Channel);
+  end;
+end;

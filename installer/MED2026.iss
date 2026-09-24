@@ -3,11 +3,15 @@
 ; logged-in user (HKCU AutoCAD profile + desktop icon). Users never run a .ps1.
 ; Layout: {app}\Support, {app}\Data, {app}\Dwg, {app}\installer
 ; Optional: Navisworks MEDProperties plugin to per-user AppData (no Autodesk API DLLs).
+; Optional opt-in install registration -> MooreDesign Netlify (not InstallHer).
 
 #define MyAppName "MED2026"
-#define MyAppVersion "2026.0.0924"
+#define MyAppVersion "2026.0.0924b"
 #define MyAppPublisher "Dewitt Clinton Moore"
-#define MyOutputBase "MED2026-Setup-0924a"
+#define MyOutputBase "MED2026-Setup-0924b"
+#define MedBuildDate "2026-09-24"
+#define MedGitHash "a5a57d2"
+#define MedRegisterUrl "https://mooredesign.net/.netlify/functions/med-register"
 
 [Setup]
 AppId={{8E2F6A1B-4C9D-4E07-9B53-7A1C0D2E4F68}
@@ -45,12 +49,14 @@ Name: "navis"; Description: "Navisworks MEDProperties plugin (per-user AppData)"
 
 [Files]
 ; Core Support pack ? do not ship live .dat settings; Create if missing in [Code]
-Source: "Support\*"; DestDir: "{app}\Support"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: core; Excludes: "MEDDataBaseSettings.dat,Project.dat,*.bak,med.cuix.bak-*,MEDRibbon.cuix.bak-*,acad.rx,MEDMain.odcl,TODO-MEDMainDialogs-CSharpUI.txt,MEDMainDialogs-RedoWithCSharp.lsp,TESTICONONEINCHa.bmp,MEDDataBaseSettings.example.dat"
+Source: "Support\*"; DestDir: "{app}\Support"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: core; Excludes: "MEDDataBaseSettings.dat,Project.dat,*.bak,med.cuix.bak-*,MEDRibbon.cuix.bak-*,acad.rx,MEDMain.odcl,TODO-MEDMainDialogs-CSharpUI.txt,MEDMainDialogs-RedoWithCSharp.lsp,TESTICONONEINCHa.bmp,MEDDataBaseSettings.example.dat,MED.registration.json"
 Source: "Data\MED.db"; DestDir: "{app}\Data"; Flags: ignoreversion; Components: core
 Source: "Data\README.txt"; DestDir: "{app}\Data"; Flags: ignoreversion; Components: core
 ; Real block library. Not Samples, not a Dwgs folder. Skip leftover Csch1.
 Source: "Dwg\*"; DestDir: "{app}\Dwg"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: core; Excludes: "Csch1.dwg,csch1.dwg,CSCH1.dwg"
 Source: "installer\Install-MED2026.ps1"; DestDir: "{app}\installer"; Flags: ignoreversion; Components: core
+Source: "installer\Register-MEDInstall.ps1"; DestDir: "{app}\installer"; Flags: ignoreversion; Components: core
+Source: "installer\Register-MEDInstall.ps1"; Flags: dontcopy
 Source: "installer\MED2026-ProfileSetup.lsp"; DestDir: "{app}\installer"; Flags: ignoreversion; Components: core
 Source: "installer\MED2026-ProfileSetup.lsp"; DestDir: "{app}\Support"; Flags: ignoreversion; Components: core
 Source: "installer\MED2026-FirstRun.scr"; DestDir: "{app}\Support"; Flags: ignoreversion; Components: core
@@ -74,6 +80,8 @@ Filename: "powershell.exe"; \
     Flags: waituntilterminated runasoriginaluser runhidden; Components: core
 
 [Code]
+#include "MED-Registration.issinc"
+
 function AcadYearPaths(Year: string): string;
 begin
   Result := ExpandConstant('{pf}') + '\Autodesk\AutoCAD ' + Year + '\acad.exe';
@@ -140,10 +148,36 @@ begin
   P := ExpandConstant('{app}\Support\MED.version.txt');
   Contents :=
     'version={#MyAppVersion}' + #13#10 +
-    'build_date=2026-09-24' + #13#10 +
-    'git=81b1915' + #13#10 +
+    'build_date={#MedBuildDate}' + #13#10 +
+    'git={#MedGitHash}' + #13#10 +
     'channel=' + Channel + #13#10;
   SaveStringToFile(P, Contents, False);
+end;
+
+procedure InitializeWizard;
+begin
+  MedCreateRegistrationPage;
+end;
+
+function ShouldSkipPage(PageID: Integer): Boolean;
+begin
+  Result := False;
+  if (MedRegPage <> nil) and (PageID = MedRegPage.ID) then
+  begin
+    { Re-check after dir is known }
+    if MedLoadExistingOptIn then
+    begin
+      MedRegSkipPage := True;
+      Result := True;
+    end;
+  end;
+end;
+
+function NextButtonClick(CurPageID: Integer): Boolean;
+begin
+  Result := True;
+  if (MedRegPage <> nil) and (CurPageID = MedRegPage.ID) then
+    Result := MedRegPageNextCheck;
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
@@ -153,5 +187,6 @@ begin
     WriteSqliteSettings;
     WriteProjectDat;
     WriteVersionFile('full');
+    MedHandleRegistrationPostInstall('full');
   end;
 end;

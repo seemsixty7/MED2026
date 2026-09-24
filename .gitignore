@@ -29,3 +29,6 @@ installer/Output/
 # Never ship a machine connect string
 src/**/MEDDataBaseSettings.dat
 Samples/
+
+# Netlify function deps (npm install under netlify/)
+netlify/node_modules/

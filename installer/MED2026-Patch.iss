@@ -3,11 +3,15 @@
 ; Navisworks MEDProperties plugin under per-user AppData.
 ; Does NOT rewrite AutoCAD profiles, MEDDataBaseSettings.dat, Project.dat, or MED.db.
 ; PrivilegesRequired=lowest ? may fail to write C:\MED2026 if that folder is admin-owned.
+; Opt-in registration: reuse Support\MED.registration.json when present (skip wizard page).
 
 #define MyAppName "MED2026"
-#define MyAppVersion "2026.0.0924"
+#define MyAppVersion "2026.0.0924b"
 #define MyAppPublisher "Dewitt Clinton Moore"
-#define MyOutputBase "MED2026-Patch-0924a"
+#define MyOutputBase "MED2026-Patch-0924b"
+#define MedBuildDate "2026-09-24"
+#define MedGitHash "a5a57d2"
+#define MedRegisterUrl "https://mooredesign.net/.netlify/functions/med-register"
 
 [Setup]
 AppId={{8E2F6A1B-4C9D-4E07-9B53-7A1C0D2E4F68}
@@ -54,6 +58,7 @@ Source: "Support\MEDCore.lsp"; DestDir: "{app}\Support"; Flags: ignoreversion; C
 Source: "Support\MEDFunctions.lsp"; DestDir: "{app}\Support"; Flags: ignoreversion; Components: support; Check: MedSupportWritable
 Source: "Support\MED3DTrayFunctions.lsp"; DestDir: "{app}\Support"; Flags: ignoreversion; Components: support; Check: MedSupportWritable
 Source: "Support\MED.version.txt"; DestDir: "{app}\Support"; Flags: ignoreversion; Components: support; Check: MedSupportWritable
+Source: "installer\Register-MEDInstall.ps1"; Flags: dontcopy
 
 ; Always try Navis per-user AppData (writable without admin).
 Source: "installer\staging\Navis\MEDPropertiesPlugin\MEDPropertiesPlugin.dll"; DestDir: "{userappdata}\Autodesk\Navisworks Manage 2024\Plugins\MEDPropertiesPlugin"; Flags: ignoreversion; Components: navis; Check: NavisManage2024Found
@@ -64,6 +69,8 @@ var
   SupportWritableCached: Boolean;
   SupportWritableKnown: Boolean;
   WarnedUnwritable: Boolean;
+
+#include "MED-Registration.issinc"
 
 function GetEnvMed: String;
 begin
@@ -143,10 +150,30 @@ begin
   P := ExpandConstant('{app}\Support\MED.version.txt');
   Contents :=
     'version={#MyAppVersion}' + #13#10 +
-    'build_date=2026-09-24' + #13#10 +
-    'git=81b1915' + #13#10 +
+    'build_date={#MedBuildDate}' + #13#10 +
+    'git={#MedGitHash}' + #13#10 +
     'channel=patch' + #13#10;
   SaveStringToFile(P, Contents, False);
+end;
+
+procedure InitializeWizard;
+begin
+  WarnedUnwritable := False;
+  SupportWritableKnown := False;
+  MedCreateRegistrationPage;
+end;
+
+function ShouldSkipPage(PageID: Integer): Boolean;
+begin
+  Result := False;
+  if (MedRegPage <> nil) and (PageID = MedRegPage.ID) then
+  begin
+    if MedLoadExistingOptIn then
+    begin
+      MedRegSkipPage := True;
+      Result := True;
+    end;
+  end;
 end;
 
 function NextButtonClick(CurPageID: Integer): Boolean;
@@ -173,7 +200,9 @@ begin
       { Allow continue so Navis-only still works }
       Result := True;
     end;
-  end;
+  end
+  else if (MedRegPage <> nil) and (CurPageID = MedRegPage.ID) then
+    Result := MedRegPageNextCheck;
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
@@ -182,6 +211,9 @@ begin
   begin
     if WizardIsComponentSelected('support') and MedSupportWritable then
       WriteVersionFilePatch;
+    { Registration update even if only navis selected, when Support is writable enough for JSON }
+    if MedSupportWritable or MedRegHaveExisting then
+      MedHandleRegistrationPostInstall('patch');
   end;
 end;
 

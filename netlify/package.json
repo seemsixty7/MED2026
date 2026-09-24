@@ -1,0 +1,8 @@
+﻿{
+  "name": "med-mooredesign-functions",
+  "private": true,
+  "description": "MED registration Netlify functions for mooredesign.net only (not InstallHer).",
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0"
+  }
+}

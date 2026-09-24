@@ -1,7 +1,7 @@
-﻿# MED2026 updates (full vs patch)
+# MED2026 updates (full vs patch)
 
-Version scheme: **`2026.0.MMDD`** (example: `2026.0.0924`).  
-Setup filenames use the same date stamp: `MED2026-Setup-0924a`, `MED2026-Patch-0924a`.
+Version scheme: **`2026.0.MMDD`** (example: `2026.0.0924b`).  
+Setup filenames use the same date stamp: `MED2026-Setup-0924b`, `MED2026-Patch-0924b`.
 
 ## Version file
 
@@ -13,10 +13,63 @@ Fields:
 
 | Key | Meaning |
 |-----|---------|
-| `version` | Product version (`2026.0.0924`) |
+| `version` | Product version (`2026.0.0924b`) |
 | `build_date` | ISO date the installer was built |
 | `git` | Short commit hash of the tree that shipped |
 | `channel` | `full` (admin Setup) or `patch` (non-admin patch) |
+
+## Optional install registration (opt-in)
+
+Full Setup and Patch show an optional wizard page:
+
+- Checkbox: **Register this install (optional)**
+- Name + Email (enabled only when checked; light email validation)
+
+**Privacy**
+
+- Registration is **opt-in only**. Nothing is sent unless the box is checked (or a prior opt-in file already exists).
+- Payload to Moore Design: name, email, version, channel (`full`|`patch`), git hash, build date, optional machine name, timestamp.
+- No drawings, project paths, licenses, or Autodesk credentials are sent.
+- Endpoint is **MooreDesign Netlify only** (`mooredesign.net`) — not InstallHer.
+
+**Local reuse file**
+
+`{app}\Support\MED.registration.json`
+
+```json
+{
+  "optIn": true,
+  "name": "...",
+  "email": "...",
+  "firstRegistered": "ISO",
+  "lastVersion": "2026.0.0924b",
+  "lastChannel": "full|patch"
+}
+```
+
+- **Patch**: if this file exists with `optIn: true`, the wizard page is skipped and the installer POSTs an update with the new version/channel.
+- HTTP failures are logged only and **never** fail the install.
+- Configure URL via `#define MedRegisterUrl` in `installer\MED2026.iss` / `MED2026-Patch.iss` (default `https://mooredesign.net/.netlify/functions/med-register`).
+
+**Online store + local SQLite**
+
+| Store | Path / URL |
+|-------|------------|
+| Netlify Function + Blobs | `netlify/functions/med-register.js` on mooredesign.net |
+| Local SQLite copy | `Data\MEDRegistrations.db` in this repo |
+
+Sync / import (no secrets in git):
+
+```powershell
+# v1: import a downloaded JSON export (works before Netlify auth is wired)
+.\tools\Sync-MEDRegistrations.ps1 -ImportJson .\tools\samples\med-registrations-export.sample.json
+
+# After deploy: pull from MooreDesign (requires MED_EXPORT_KEY matching site env)
+$env:MED_EXPORT_KEY = '<from Netlify site env>'
+.\tools\Sync-MEDRegistrations.ps1 -Pull
+```
+
+Deploy steps for the function: `netlify\README-med-register.md`. Do **not** deploy this function to InstallHer Netlify sites.
 
 ## Full Setup (`installer\MED2026.iss`)
 
@@ -24,9 +77,10 @@ Fields:
 - Default dir: `{sd}\MED2026` (typically `C:\MED2026`)
 - Installs Support, Data, Dwg, profile setup script
 - Creates AutoCAD **MED2026** profile (via `Install-MED2026.ps1`)
-- Does **not** overwrite existing `MEDDataBaseSettings.dat` / `Project.dat`
+- Does **not** overwrite existing `MEDDataBaseSettings.dat` / `Project.dat` / `MED.registration.json`
 - Optional component **navis**: stages MEDPropertiesPlugin.dll under {app}\installer\navis\; post-setup PowerShell (logged-in user) copies it to %AppData%\Autodesk\Navisworks Manage|Simulate 2024\Plugins\MEDPropertiesPlugin\ only if Roamer.exe exists
 - Does **not** redistribute Autodesk Navisworks API DLLs
+- Optional registration page (see above)
 
 ## Patch (`installer\MED2026-Patch.iss`)
 
@@ -35,6 +89,7 @@ Fields:
 - Overwrites Support DLL + changed LISP + `MED.version.txt` **when `{app}\Support` is writable**
 - Always can install the Navisworks plugin under `%AppData%\Autodesk\...` (per-user)
 - Does **not** rewrite AutoCAD profile, `.dat` settings, or `MED.db`
+- Reuses `MED.registration.json` when opted in (skips page; POSTs version update)
 - Restart AutoCAD and Navisworks after patching
 
 ### Non-admin limit
@@ -53,11 +108,11 @@ For shops that want zero-admin updates:
 2. Distribute `MED2026-Patch-*.exe` for subsequent Support + Navis updates.
 3. Confirm `Support\MED.version.txt` shows the new `version` / `channel=patch`.
 
-## Future update tracking (not built yet)
+## Update tracking
 
-1. **Local** — `MED.version.txt` (implemented now).  
-2. **GitHub Releases** — treat [seemsixty7/MED2026](https://github.com/seemsixty7/MED2026/releases) as the source of truth for available Setup/Patch EXEs.  
-3. **Optional later** — phone-home / register install — out of scope; do not build a server for this.
+1. **Local** - `MED.version.txt` (implemented).
+2. **GitHub Releases** - [seemsixty7/MED2026](https://github.com/seemsixty7/MED2026/releases) as source of truth for Setup/Patch EXEs.
+3. **Opt-in registration** - MooreDesign Netlify function + local SQLite sync (implemented; function deploy may need Clint Netlify login).
 
 ## Build notes
 
@@ -71,4 +126,3 @@ ISCC installer\MED2026-Patch.iss
 ```
 
 If Dropbox locks `installer\Output`, compile with `/O` to `%LOCALAPPDATA%\Temp\MED2026-Output` then copy the EXEs into `installer\Output`.
-

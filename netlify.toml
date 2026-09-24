@@ -1,0 +1,11 @@
+﻿# MED registration functions for MooreDesign (mooredesign.net) only.
+# Do not link this config to InstallHer Netlify sites.
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+[build]
+  # Static site may live elsewhere; functions-only deploys work with:
+  #   netlify deploy --prod --dir=. --functions=netlify/functions
+  publish = "."

@@ -170,6 +170,11 @@ if (-not $SkipCopy) {
 
     Copy-Item -Path (Join-Path $RepoRoot "installer\MED2026-ProfileSetup.lsp") -Destination (Join-Path $supportDst "MED2026-ProfileSetup.lsp") -Force
     Copy-Item -Path (Join-Path $RepoRoot "installer\MED2026-FirstRun.scr") -Destination (Join-Path $supportDst "MED2026-FirstRun.scr") -Force -ErrorAction SilentlyContinue
+    $restoreCmd = Join-Path $RepoRoot "installer\RestoreMEDProfile.cmd"
+    if (Test-Path -LiteralPath $restoreCmd) {
+        Copy-Item -Path $restoreCmd -Destination (Join-Path $InstallDir "RestoreMEDProfile.cmd") -Force
+        Write-Log "Copied RestoreMEDProfile.cmd to $InstallDir"
+    }
 
     $seedDb = Join-Path $RepoRoot "Data\MED.db"
     if (Test-Path -LiteralPath $seedDb) {

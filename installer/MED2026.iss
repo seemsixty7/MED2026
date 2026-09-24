@@ -7,11 +7,11 @@
 ; Optional opt-in install registration -> MooreDesign Netlify (not InstallHer).
 
 #define MyAppName "MED2026"
-#define MyAppVersion "2026.0.0924g"
+#define MyAppVersion "2026.0.0924h"
 #define MyAppPublisher "Dewitt Clinton Moore"
-#define MyOutputBase "MED2026-Setup-0924g"
+#define MyOutputBase "MED2026-Setup-0924h"
 #define MedBuildDate "2026-09-24"
-#define MedGitHash "5547f83"
+#define MedGitHash "b286023"
 #define MedRegisterUrl "https://mooredesign.net/.netlify/functions/med-register"
 
 [Setup]
@@ -57,6 +57,7 @@ Source: "Data\README.txt"; DestDir: "{app}\Data"; Flags: ignoreversion; Componen
 ; Real block library. Not Samples, not a Dwgs folder. Skip leftover Csch1.
 Source: "Dwg\*"; DestDir: "{app}\Dwg"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: core; Excludes: "Csch1.dwg,csch1.dwg,CSCH1.dwg"
 Source: "installer\Install-MED2026.ps1"; DestDir: "{app}\installer"; Flags: ignoreversion; Components: core
+Source: "installer\RestoreMEDProfile.cmd"; DestDir: "{app}"; Flags: ignoreversion; Components: core
 Source: "installer\Register-MEDInstall.ps1"; DestDir: "{app}\installer"; Flags: ignoreversion; Components: core
 Source: "installer\Register-MEDInstall.ps1"; Flags: dontcopy
 Source: "installer\MED2026-ProfileSetup.lsp"; DestDir: "{app}\installer"; Flags: ignoreversion; Components: core

@@ -18,6 +18,18 @@ What it does NOT touch
 - MEDDataBaseSettings.dat, Project.dat, MED.db
 - Block library (Dwg)
 
+Safety guards
+-------------
+- Existing install required: the Support update only runs when the chosen
+  folder already contains Support\MED-DotNet.dll or Support\MED.version.txt.
+  Otherwise the wizard stops with "No MED2026 installation found at ..." -
+  run the full MED2026-Setup first, or browse to your MED2026 folder.
+  The patch never creates a Support folder. Navisworks-only still works
+  without a MED install. Silent runs (/SILENT, /VERYSILENT) exit instead.
+- Downgrade warning: if Support\MED.version.txt shows a NEWER version than
+  this patch, you are asked before Support files are downgraded (default No;
+  silent runs abort). Same version re-runs proceed as a repair.
+
 After install
 -------------
 Restart AutoCAD and Navisworks so they reload the DLL / plugin.

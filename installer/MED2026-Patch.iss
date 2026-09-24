@@ -6,11 +6,11 @@
 ; Opt-in registration: reuse Support\MED.registration.json when present (skip wizard page).
 
 #define MyAppName "MED2026"
-#define MyAppVersion "2026.0.0924e"
+#define MyAppVersion "2026.0.0924f"
 #define MyAppPublisher "Dewitt Clinton Moore"
-#define MyOutputBase "MED2026-Patch-0924e"
+#define MyOutputBase "MED2026-Patch-0924f"
 #define MedBuildDate "2026-09-24"
-#define MedGitHash "6cf0eb4"
+#define MedGitHash "cd9581a"
 #define MedRegisterUrl "https://mooredesign.net/.netlify/functions/med-register"
 
 [Setup]

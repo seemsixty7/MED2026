@@ -7,11 +7,11 @@
 ; Optional opt-in install registration -> MooreDesign Netlify (not InstallHer).
 
 #define MyAppName "MED2026"
-#define MyAppVersion "2026.0.0924e"
+#define MyAppVersion "2026.0.0924f"
 #define MyAppPublisher "Dewitt Clinton Moore"
-#define MyOutputBase "MED2026-Setup-0924e"
+#define MyOutputBase "MED2026-Setup-0924f"
 #define MedBuildDate "2026-09-24"
-#define MedGitHash "6cf0eb4"
+#define MedGitHash "cd9581a"
 #define MedRegisterUrl "https://mooredesign.net/.netlify/functions/med-register"
 
 [Setup]
@@ -69,7 +69,7 @@ Source: "installer\MED2026-FirstRun.scr"; DestDir: "{app}\Support"; Flags: ignor
 Source: "installer\staging\Navis\MEDPropertiesPlugin\MEDPropertiesPlugin.dll"; DestDir: "{app}\installer\navis\MEDPropertiesPlugin"; Flags: ignoreversion; Components: navis
 
 ; Desktop shortcut is created by Install-MED2026.ps1 (user desktop + optional
-; public) with /p MED2026 /b FirstRun.scr — one source of truth (matches Core).
+; public) with /p MED2026 /b FirstRun.scr ??? one source of truth (matches Core).
 [Run]
 ; Visible so profile clone errors stay on screen (matches Core2026; no runhidden).
 ; Must be the logged-in user so HKCU AutoCAD profiles are theirs.

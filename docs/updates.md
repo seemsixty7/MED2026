@@ -25,7 +25,7 @@ Fields:
 - Installs Support, Data, Dwg, profile setup script
 - Creates AutoCAD **MED2026** profile (via `Install-MED2026.ps1`)
 - Does **not** overwrite existing `MEDDataBaseSettings.dat` / `Project.dat`
-- Optional component **navis**: copies `MEDPropertiesPlugin.dll` to per-user AppData for Navisworks Manage/Simulate 2024 **only if** `Roamer.exe` is present
+- Optional component **navis**: stages MEDPropertiesPlugin.dll under {app}\installer\navis\; post-setup PowerShell (logged-in user) copies it to %AppData%\Autodesk\Navisworks Manage|Simulate 2024\Plugins\MEDPropertiesPlugin\ only if Roamer.exe exists
 - Does **not** redistribute Autodesk Navisworks API DLLs
 
 ## Patch (`installer\MED2026-Patch.iss`)
@@ -71,3 +71,4 @@ ISCC installer\MED2026-Patch.iss
 ```
 
 If Dropbox locks `installer\Output`, compile with `/O` to `%LOCALAPPDATA%\Temp\MED2026-Output` then copy the EXEs into `installer\Output`.
+

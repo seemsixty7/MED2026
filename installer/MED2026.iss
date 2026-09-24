@@ -55,10 +55,10 @@ Source: "installer\MED2026-ProfileSetup.lsp"; DestDir: "{app}\installer"; Flags:
 Source: "installer\MED2026-ProfileSetup.lsp"; DestDir: "{app}\Support"; Flags: ignoreversion; Components: core
 Source: "installer\MED2026-FirstRun.scr"; DestDir: "{app}\Support"; Flags: ignoreversion; Components: core
 
-; Navisworks MEDProperties plugin ? per-user Plugins folder only (no Autodesk.* API DLLs).
-; Traditional layout: folder name must equal DLL base name.
-Source: "installer\staging\Navis\MEDPropertiesPlugin\MEDPropertiesPlugin.dll"; DestDir: "{userappdata}\Autodesk\Navisworks Manage 2024\Plugins\MEDPropertiesPlugin"; Flags: ignoreversion; Components: navis; Check: NavisManage2024Found
-Source: "installer\staging\Navis\MEDPropertiesPlugin\MEDPropertiesPlugin.dll"; DestDir: "{userappdata}\Autodesk\Navisworks Simulate 2024\Plugins\MEDPropertiesPlugin"; Flags: ignoreversion; Components: navis; Check: NavisSimulate2024Found
+; Stage Navis plugin under {app}; Install-MED2026.ps1 (runasoriginaluser) copies to
+; the logged-in user's AppData so elevated Setup does not write the wrong profile.
+; No Autodesk.* API DLLs. Traditional layout: folder name = DLL base name.
+Source: "installer\staging\Navis\MEDPropertiesPlugin\MEDPropertiesPlugin.dll"; DestDir: "{app}\installer\navis\MEDPropertiesPlugin"; Flags: ignoreversion; Components: navis
 
 [Icons]
 ; Public desktop so the icon is visible even if UAC ran Setup elevated.

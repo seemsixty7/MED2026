@@ -402,7 +402,19 @@
 	
 	
 
-(defun c:Make3DTray()
+(defun c:Make3DTray( / m3dOldOsmode m3dOldError )
+	;; Running OSNAPS off for the whole export (restore on exit / error).
+	(setq m3dOldOsmode (getvar "OSMODE")
+	      m3dOldError *error*)
+	(defun *error* ( msg )
+	  (if m3dOldOsmode (setvar "OSMODE" m3dOldOsmode))
+	  (setq *error* m3dOldError)
+	  (if (and msg (/= msg "") (not (wcmatch (strcase msg t) "*break*,*cancel*,*exit*")))
+	    (princ (strcat "\nMake3DTray: " msg))
+	  )
+	  (princ)
+	)
+	(setvar "OSMODE" 0)
 	(smlayer _MED3DTRAY)
 	(command "vpoint" "1,1,1")
 	(initget "3DS Dwg Layer")
@@ -474,6 +486,10 @@
       (MEDRebuildMedPropsJsonBeside nil)
     )
   )
+
+	(setvar "OSMODE" m3dOldOsmode)
+	(setq *error* m3dOldError)
+	(princ)
 
 )
 

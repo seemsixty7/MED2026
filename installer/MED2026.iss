@@ -10,7 +10,7 @@
 #define MyAppPublisher "Dewitt Clinton Moore"
 #define MyOutputBase "MED2026-Setup-0924b"
 #define MedBuildDate "2026-09-24"
-#define MedGitHash "a5a57d2"
+#define MedGitHash "abcdc9e"
 #define MedRegisterUrl "https://mooredesign.net/.netlify/functions/med-register"
 
 [Setup]

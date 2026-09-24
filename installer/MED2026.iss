@@ -7,11 +7,11 @@
 ; Optional opt-in install registration -> MooreDesign Netlify (not InstallHer).
 
 #define MyAppName "MED2026"
-#define MyAppVersion "2026.0.0924f"
+#define MyAppVersion "2026.0.0924g"
 #define MyAppPublisher "Dewitt Clinton Moore"
-#define MyOutputBase "MED2026-Setup-0924f"
+#define MyOutputBase "MED2026-Setup-0924g"
 #define MedBuildDate "2026-09-24"
-#define MedGitHash "cd9581a"
+#define MedGitHash "5547f83"
 #define MedRegisterUrl "https://mooredesign.net/.netlify/functions/med-register"
 
 [Setup]
@@ -189,3 +189,8 @@ begin
   end;
 end;
 
+function NeedRestart(): Boolean;
+begin
+  { MED never requires reboot; ignore machine-wide PendingFileRenameOperations. }
+  Result := False;
+end;

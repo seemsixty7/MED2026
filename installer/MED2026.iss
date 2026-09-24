@@ -6,9 +6,9 @@
 ; Optional opt-in install registration -> MooreDesign Netlify (not InstallHer).
 
 #define MyAppName "MED2026"
-#define MyAppVersion "2026.0.0924c"
+#define MyAppVersion "2026.0.0924d"
 #define MyAppPublisher "Dewitt Clinton Moore"
-#define MyOutputBase "MED2026-Setup-0924c"
+#define MyOutputBase "MED2026-Setup-0924d"
 #define MedBuildDate "2026-09-24"
 #define MedGitHash "abcdc9e"
 #define MedRegisterUrl "https://mooredesign.net/.netlify/functions/med-register"

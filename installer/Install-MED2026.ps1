@@ -1,7 +1,8 @@
-﻿# MED2026 post-setup. Called hidden by Inno as the logged-in user.
+# MED2026 post-setup. Called hidden by Inno as the logged-in user.
 # Users do not run this file. It writes Project.dat / MEDDataBaseSettings.dat,
 # inserts MEDUsers, clones an AutoCAD HKCU profile named MED2026, and
 # creates a desktop shortcut if Inno did not.
+# 0924d: -LiteralPath for <<Unnamed Profile>> (Core 0916f) so TRUSTEDPATHS/Support stick.
 
 param(
     [string]$InstallDir = "C:\MED2026",
@@ -144,33 +145,87 @@ if (-not $acad) {
 } else {
     Write-Log "Found AutoCAD $($acad.Year) at $($acad.Exe)"
     $rel = Get-AcadRelease $acad.Year
+
     function Get-AcadProductIds([string]$release) {
         $ids = @()
-        foreach ($root in @(
+        foreach ($rootKey in @(
             "HKCU:\Software\Autodesk\AutoCAD\$release",
             "HKLM:\SOFTWARE\Autodesk\AutoCAD\$release"
         )) {
-            if (Test-Path $root) {
-                $ids += @(Get-ChildItem $root | Where-Object { $_.PSChildName -like "ACAD-*" } | ForEach-Object { $_.PSChildName })
+            if (Test-Path -LiteralPath $rootKey) {
+                $ids += @(Get-ChildItem -LiteralPath $rootKey -ErrorAction SilentlyContinue |
+                    Where-Object { $_.PSChildName -like "ACAD-*" } |
+                    ForEach-Object { $_.PSChildName })
             }
         }
         $ids | Select-Object -Unique
     }
-    function Set-MedProfilePaths([string]$dest) {
+
+    # Ported from Core2026 0916f: <<Unnamed Profile>> requires -LiteralPath
+    # (PowerShell treats <<>> as wildcards). Never write paths onto Unnamed itself.
+    function Get-StockAcadSupportPath([string]$acadRoot) {
+        $dirs = @(
+            (Join-Path $acadRoot "Support"),
+            (Join-Path $acadRoot "Support\en-us"),
+            (Join-Path $acadRoot "Fonts"),
+            (Join-Path $acadRoot "Help"),
+            (Join-Path $acadRoot "Express")
+        ) | Where-Object { Test-Path -LiteralPath $_ }
+        return ($dirs -join ';')
+    }
+
+    function Get-ProfileAcadPath([string]$profileKey) {
+        $general = Join-Path $profileKey "General"
+        try { return [string](Get-ItemProperty -LiteralPath $general -Name "ACAD" -ErrorAction Stop).ACAD } catch { return "" }
+    }
+
+    function Get-BestCloneSource([string]$profilesRoot) {
+        $unnamed = Join-Path $profilesRoot "<<Unnamed Profile>>"
+        if (Test-Path -LiteralPath $unnamed) {
+            Write-Log "Clone source: <<Unnamed Profile>> (current default)"
+            return $unnamed
+        }
+        $best = $null
+        $bestLen = -1
+        $names = @('Default') + @(Get-ChildItem -LiteralPath $profilesRoot -ErrorAction SilentlyContinue | ForEach-Object { $_.PSChildName })
+        foreach ($name in ($names | Select-Object -Unique)) {
+            if ($name -eq '<<Unnamed Profile>>') { continue }
+            $key = Join-Path $profilesRoot $name
+            if (-not (Test-Path -LiteralPath $key)) { continue }
+            $len = (Get-ProfileAcadPath $key).Length
+            if ($len -gt $bestLen) { $bestLen = $len; $best = $key }
+        }
+        if ($best) { Write-Log "Clone source (fallback): $best" }
+        return $best
+    }
+
+    function Set-MedProfilePaths([string]$dest, [string]$supportDstLocal, [string]$stockAcadPath) {
         $general = Join-Path $dest "General"
         $vars = Join-Path $dest "Variables"
-        New-Item -ItemType Directory -Force -Path $general, $vars | Out-Null
-        # Support search path lives on General\ACAD.
+        if (-not (Test-Path -LiteralPath $general)) { New-Item -Path $general -Force | Out-Null }
+        if (-not (Test-Path -LiteralPath $vars)) { New-Item -Path $vars -Force | Out-Null }
+
         $cur = ""
-        try { $cur = (Get-ItemProperty -Path $general -Name "ACAD" -ErrorAction Stop).ACAD } catch { $cur = "" }
-        $parts = @($cur -split ';' | Where-Object { $_ -and $_.Trim() -and ($_.Trim().TrimEnd('\') -ne $supportDst.TrimEnd('\')) })
-        New-ItemProperty -Path $general -Name "ACAD" -Value ((@($supportDst) + $parts) -join ';') -PropertyType String -Force | Out-Null
-        # AutoCAD 2024+ Trusted Locations are Variables\TRUSTEDPATHS, not General.
-        $cur = ""
-        try { $cur = (Get-ItemProperty -Path $vars -Name "TRUSTEDPATHS" -ErrorAction Stop).TRUSTEDPATHS } catch { $cur = "" }
-        $parts = @($cur -split ';' | Where-Object { $_ -and $_.Trim() -and ($_.Trim().TrimEnd('\') -ne $supportDst.TrimEnd('\')) })
-        New-ItemProperty -Path $vars -Name "TRUSTEDPATHS" -Value ((@($supportDst) + $parts) -join ';') -PropertyType String -Force | Out-Null
+        try { $cur = [string](Get-ItemProperty -LiteralPath $general -Name "ACAD" -ErrorAction Stop).ACAD } catch { $cur = "" }
+        if ([string]::IsNullOrWhiteSpace($cur) -and $stockAcadPath) {
+            $cur = $stockAcadPath
+            Write-Log "Seeded stock AutoCAD support paths into profile (was empty)"
+        }
+        $parts = @($cur -split ';' | Where-Object { $_ -and $_.Trim() -and ($_.Trim().TrimEnd('\') -ne $supportDstLocal.TrimEnd('\')) })
+        $newAcad = ((@($supportDstLocal) + $parts) -join ';')
+        New-ItemProperty -LiteralPath $general -Name "ACAD" -Value $newAcad -PropertyType String -Force | Out-Null
+
+        $curT = ""
+        try { $curT = [string](Get-ItemProperty -LiteralPath $vars -Name "TRUSTEDPATHS" -ErrorAction Stop).TRUSTEDPATHS } catch { $curT = "" }
+        $tparts = @($curT -split ';' | Where-Object { $_ -and $_.Trim() -and ($_.Trim().TrimEnd('\') -ne $supportDstLocal.TrimEnd('\')) })
+        New-ItemProperty -LiteralPath $vars -Name "TRUSTEDPATHS" -Value ((@($supportDstLocal) + $tparts) -join ';') -PropertyType String -Force | Out-Null
+        Write-Log "Set ACAD/TRUSTEDPATHS on $dest"
     }
+
+    $stock = Get-StockAcadSupportPath $acad.Root
+    Write-Log "Stock support seed length=$($stock.Length)"
+    Write-Log "NonInteractive -> Clone Unnamed into 'MED2026' (never write onto Unnamed itself)"
+
     $products = @(Get-AcadProductIds $rel)
     if (-not $products) {
         Write-Log "No ACAD-* product key for $rel. Creating MED2026 profile keys anyway."
@@ -179,23 +234,24 @@ if (-not $acad) {
     foreach ($product in $products) {
         $hkcuProduct = "HKCU:\Software\Autodesk\AutoCAD\$rel\$product"
         $profiles = Join-Path $hkcuProduct "Profiles"
-        New-Item -ItemType Directory -Force -Path $profiles | Out-Null
+        if (-not (Test-Path -LiteralPath $profiles)) {
+            New-Item -Path $profiles -Force | Out-Null
+        }
         $dest = Join-Path $profiles "MED2026"
-        if (-not (Test-Path $dest)) {
-            $src = Join-Path $profiles "<<Unnamed Profile>>"
-            if (-not (Test-Path $src)) { $src = Join-Path $profiles "Default" }
-            if (Test-Path $src) {
-                Copy-Item $src $dest -Recurse -Force
-                Write-Log "Created profile MED2026 on $product from $src"
+        if (-not (Test-Path -LiteralPath $dest)) {
+            $src = Get-BestCloneSource $profiles
+            if ($src -and (Test-Path -LiteralPath $src)) {
+                Copy-Item -LiteralPath $src -Destination $dest -Recurse -Force
+                Write-Log "Created profile MED2026 on $product from $src (ACAD len=$((Get-ProfileAcadPath $dest).Length))"
             } else {
-                New-Item -ItemType Directory -Force -Path $dest | Out-Null
-                Write-Log "Created empty profile MED2026 on $product"
+                New-Item -Path $dest -Force | Out-Null
+                Write-Log "No clone source on $product - created empty MED2026 then seeding stock paths"
             }
         } else {
-            Write-Log "Profile MED2026 already exists on $product"
+            Write-Log "Profile MED2026 already exists on $product (will patch paths)"
         }
-        Set-MedProfilePaths $dest
-        Write-Log "Wrote Variables\\TRUSTEDPATHS and General\\ACAD for $product -> $supportDst"
+        Set-MedProfilePaths $dest $supportDst $stock
+        Write-Log "Patched TRUSTEDPATHS/ACAD for $product (ACAD len=$((Get-ProfileAcadPath $dest).Length)) -> $supportDst"
     }
 
     $wsh = New-Object -ComObject WScript.Shell

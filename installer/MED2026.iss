@@ -50,6 +50,7 @@ Name: "navis"; Description: "Navisworks MEDProperties plugin (per-user AppData)"
 [Files]
 ; Core Support pack ? do not ship live .dat settings; Create if missing in [Code]
 Source: "Support\*"; DestDir: "{app}\Support"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: core; Excludes: "MEDDataBaseSettings.dat,Project.dat,*.bak,med.cuix.bak-*,MEDRibbon.cuix.bak-*,acad.rx,MEDMain.odcl,TODO-MEDMainDialogs-CSharpUI.txt,MEDMainDialogs-RedoWithCSharp.lsp,TESTICONONEINCHa.bmp,MEDDataBaseSettings.example.dat,MED.registration.json"
+; Ship catalog MED.db only. NEVER ship Data\MEDRegistrations.db (desktop roster for Jane/Clint).
 Source: "Data\MED.db"; DestDir: "{app}\Data"; Flags: ignoreversion; Components: core
 Source: "Data\README.txt"; DestDir: "{app}\Data"; Flags: ignoreversion; Components: core
 ; Real block library. Not Samples, not a Dwgs folder. Skip leftover Csch1.

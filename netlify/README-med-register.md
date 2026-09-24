@@ -1,71 +1,83 @@
-﻿# MED registration — MooreDesign Netlify only
+# MED registration — MooreDesign Netlify only
 
-**Do not deploy this to InstallHer / other Netlify teams.** Target site: **mooredesign.net** (Netlify confirmed).
+**Do not deploy this to InstallHer / other Netlify teams.** Target site: **mooredesign.net** (Netlify site id `c0e63eee-2792-470f-afd5-8b9d00f479e7`).
 
 ## Endpoint
-
-After deploy:
 
 ```text
 https://mooredesign.net/.netlify/functions/med-register
 ```
 
-(Or your MooreDesign Netlify subdomain if the custom domain path differs.)
+### Mode: email-only (no Netlify Blobs)
 
-### POST (installer)
+POST validates name + email, then delivers the registration toward `MED_REGISTER_TO` (locked: **clintmoore@mooredesign.net**).
 
-```json
-{
-  "name": "Jane Doe",
-  "email": "jane@example.com",
-  "version": "2026.0.0924b",
-  "channel": "full",
-  "git": "abc1234",
-  "buildDate": "2026-09-24",
-  "machineName": "DESKTOP-XYZ",
-  "timestamp": "2026-09-24T16:00:00-05:00"
-}
-```
-
-Upserts by normalized email into Blobs store `med-registrations`.
-
-### GET export (sync tool)
+**Subject (exact prefix for filters):**
 
 ```text
-GET /.netlify/functions/med-register?export=1
-Header: X-Med-Export-Key: <value of MED_EXPORT_KEY site env>
+[MED-REGISTER] {name} | {email} | {version} | {channel}
 ```
 
-## Deploy steps (Clint)
+**Body:** plain text with name, email, version, channel, git, buildDate, machineName, timestamp, plus a raw JSON block.
 
-1. `cd` to this MED repo (or copy `netlify/functions` + `netlify.toml` into the MooreDesign site repo).
-2. `cd netlify && npm install` (installs `@netlify/blobs`).
-3. Log into Netlify CLI as the **MooreDesign** account (not InstallHer):
-   ```powershell
-   npm i -g netlify-cli
-   netlify login
-   netlify link   # pick mooredesign / mooredesign.net site
-   ```
-4. Site env (Netlify UI → Site settings → Environment variables):
-   - `MED_EXPORT_KEY` = long random secret (for export/sync only)
-5. Enable **Netlify Blobs** on the site plan if not already (Blobs is available on most modern plans; if `getStore` fails at runtime, upgrade or enable Blobs in the Netlify UI).
-6. Deploy functions:
-   ```powershell
-   netlify deploy --prod --dir=.. --functions=functions
-   ```
-   Or add the `netlify/functions` folder to the existing MooreDesign site build and redeploy the site from its normal pipeline.
-7. Smoke-test:
-   ```powershell
-   Invoke-RestMethod -Method Post -Uri "https://mooredesign.net/.netlify/functions/med-register" `
-     -ContentType "application/json" `
-     -Body '{"name":"Test","email":"test@example.com","version":"2026.0.0924b","channel":"full","git":"dev","buildDate":"2026-09-24"}'
-   ```
-8. Update `#define MedRegisterUrl` in `installer\MED2026.iss` and `MED2026-Patch.iss` if the live URL differs from the placeholder.
+### Send path
 
-## Fallback if Blobs API is not available
+1. **Resend** — if `RESEND_API_KEY` is set on the site (optional `MED_REGISTER_FROM`).
+2. **FormSubmit ajax** — `POST https://formsubmit.co/ajax/{MED_REGISTER_TO}` with `_subject` and fields (zero-config). First mail to a new address may need a one-time confirmation click. Some serverless IPs hit Cloudflare challenges.
+3. **Netlify Forms fallback** — hidden form `med-register` on `mooredesign-site/index.html`. Function POSTs form-urlencoded to the site root. Wire a form notification email to `clintmoore@mooredesign.net` (subject/body include the `[MED-REGISTER]` subject field).
 
-If `@netlify/blobs` cannot run on the site plan, keep this function as the contract and temporarily store submissions via **Netlify Forms** (mooredesign.net already has an optional contact form) or a Git-backed JSON file written by a build plugin. Prefer Blobs for upsert-by-email.
+Installer still expects JSON `{ "ok": true }`. Delivery failure returns HTTP 502 with `{ ok: false }`; the installer already ignores registration failures.
+
+### GET (health)
+
+```text
+GET /.netlify/functions/med-register
+→ { ok, service, site, mode: "email-only", to, usage }
+```
+
+There is **no** Blobs export endpoint anymore.
+
+### Jane / Clint → local SQLite
+
+Filter inbox (or Netlify form submissions) on `[MED-REGISTER]` and apply rows into `Data\MEDRegistrations.db` on the desktop (manual, or a future Jane routine). The Sync tool’s `-Pull` export path is obsolete for live data; `-ImportJson` / `-InitDb` remain useful for local DB maintenance.
+
+Local reuse file for patch installs is unchanged: `{app}\Support\MED.registration.json`.
+
+## Site env (mooredesign production)
+
+| Var | Value |
+|-----|-------|
+| `MED_REGISTER_TO` | `clintmoore@mooredesign.net` |
+| `RESEND_API_KEY` | optional |
+| `MED_REGISTER_FROM` | optional Resend from address |
+
+`BLOBS_*` / `MED_EXPORT_KEY` may still exist from the prior Blobs path; unused by this function (harmless).
+
+## Deploy
+
+Deploy **mooredesign.net only** (publish dir + this function). Do **not** deploy to InstallHer.
+
+```bash
+netlify deploy --prod --dir=mooredesign-site --functions=netlify/functions --site=c0e63eee-2792-470f-afd5-8b9d00f479e7
+```
+
+Smoke-test:
+
+```powershell
+Invoke-RestMethod -Method Get -Uri "https://mooredesign.net/.netlify/functions/med-register"
+Invoke-RestMethod -Method Post -Uri "https://mooredesign.net/.netlify/functions/med-register" `
+  -ContentType "application/json" `
+  -Body '{"name":"Smoke Test","email":"smoke@example.com","version":"2026.0.0924b","channel":"full","git":"dev","buildDate":"2026-09-24","machineName":"smoke","timestamp":"2026-09-24T12:00:00-05:00"}'
+```
+
+Confirm `[MED-REGISTER]` mail / form submission for `clintmoore@mooredesign.net` (or complete FormSubmit’s one-time confirm if that path is used).
 
 ## Privacy
 
 Opt-in only. Payload is name, email, version, channel, git, build date, optional machine name, timestamp. No drawings, licenses, or paths beyond install metadata.
+
+## Netlify Forms note
+
+Site setting `ignore_html_forms` must be **false** so the hidden `med-register` form is registered. Email notification hook type `email` / event `submission_created` → `clintmoore@mooredesign.net` for form `med-register`.
+
+FormSubmit remains attempted first (zero-config); Netlify Functions IPs often hit Cloudflare, so production delivery typically lands on **Netlify Forms** → email notify.

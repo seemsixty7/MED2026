@@ -30,7 +30,7 @@ Full Setup and Patch show an optional wizard page:
 - Registration is **opt-in only**. Nothing is sent unless the box is checked (or a prior opt-in file already exists).
 - Payload to Moore Design: name, email, version, channel (`full`|`patch`), git hash, build date, optional machine name, timestamp.
 - No drawings, project paths, licenses, or Autodesk credentials are sent.
-- Endpoint is **MooreDesign Netlify only** (`mooredesign.net`) — not InstallHer.
+- Endpoint is **MooreDesign Netlify only** (`mooredesign.net`) - not InstallHer.
 
 **Local reuse file**
 
@@ -51,25 +51,26 @@ Full Setup and Patch show an optional wizard page:
 - HTTP failures are logged only and **never** fail the install.
 - Configure URL via `#define MedRegisterUrl` in `installer\MED2026.iss` / `MED2026-Patch.iss` (default `https://mooredesign.net/.netlify/functions/med-register`).
 
-**Online store + local SQLite**
+**Online delivery + local SQLite (email-only)**
 
-| Store | Path / URL |
+| Piece | Path / URL |
 |-------|------------|
-| Netlify Function + Blobs | `netlify/functions/med-register.js` on mooredesign.net |
+| Netlify Function (email-only) | `netlify/functions/med-register.js` on mooredesign.net |
+| Destination inbox | `MED_REGISTER_TO` = `clintmoore@mooredesign.net` |
+| Subject filter | `[MED-REGISTER] {name} \| {email} \| {version} \| {channel}` |
 | Local SQLite copy | `Data\MEDRegistrations.db` in this repo |
 
-Sync / import (no secrets in git):
+The function emails each opt-in registration (FormSubmit by default; Resend if `RESEND_API_KEY` is set). **No Netlify Blobs.** Jane/Clint apply `[MED-REGISTER]` emails into `Data\MEDRegistrations.db` manually (or a future Jane routine).
+
+Local DB helpers (import / init still useful; live `-Pull` export is obsolete):
 
 ```powershell
-# v1: import a downloaded JSON export (works before Netlify auth is wired)
+.\tools\Sync-MEDRegistrations.ps1 -InitDb
 .\tools\Sync-MEDRegistrations.ps1 -ImportJson .\tools\med-registrations-export.sample.json
-
-# After deploy: pull from MooreDesign (requires MED_EXPORT_KEY matching site env)
-$env:MED_EXPORT_KEY = '<from Netlify site env>'
-.\tools\Sync-MEDRegistrations.ps1 -Pull
 ```
 
-Deploy steps for the function: `netlify\README-med-register.md`. Do **not** deploy this function to InstallHer Netlify sites.
+Deploy steps: `netlify\README-med-register.md`. Do **not** deploy this function to InstallHer Netlify sites.
+FormSubmit may require a one-time confirmation click the first time mail is sent to `clintmoore@mooredesign.net`. Production serverless IPs often fall through to **Netlify Forms** + email notify to the same address.
 
 ## Full Setup (`installer\MED2026.iss`)
 
@@ -119,8 +120,8 @@ For shops that want zero-admin updates:
 ```text
 MSBuild src\MED-DotNet\MED-DotNet\MED-DotNet.csproj /p:Configuration=Release /p:Platform=x64
 MSBuild src\MED-Navisworks\MED-Navisworks\MED-Navisworks.csproj /p:Configuration=Release /p:Platform=x64
-copy MED-DotNet.dll → Support\
-copy MEDPropertiesPlugin.dll → installer\staging\Navis\MEDPropertiesPlugin\
+copy MED-DotNet.dll -> Support\
+copy MEDPropertiesPlugin.dll -> installer\staging\Navis\MEDPropertiesPlugin\
 ISCC installer\MED2026.iss
 ISCC installer\MED2026-Patch.iss
 ```

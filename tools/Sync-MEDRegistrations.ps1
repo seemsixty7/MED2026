@@ -3,14 +3,14 @@
   Sync MED install registrations into local SQLite (Data\MEDRegistrations.db).
 
 .DESCRIPTION
-  v1 modes:
-    -ImportJson <path>   Import a downloaded export JSON (works without Netlify auth).
-    -Pull                GET from MedRegisterUrl?export=1 using MED_EXPORT_KEY env.
-    -InitDb              Create empty schema if DB missing.
+  Live registrations are email-only from mooredesign.net (subject [MED-REGISTER]).
+  Jane/Clint apply inbox/Netlify form rows into this DB manually (or a future Jane routine).
 
-  Env (for -Pull):
-    MED_REGISTER_URL   default https://mooredesign.net/.netlify/functions/med-register
-    MED_EXPORT_KEY     must match Netlify site env MED_EXPORT_KEY
+  Local helpers still supported:
+    -ImportJson <path>   Import a JSON export / hand-built records file.
+    -InitDb              Create empty schema if DB missing.
+    -Pull                OBSOLETE for live data (Blobs export removed). Kept for
+                        compatibility; will fail against email-only health endpoint.
 
   MooreDesign / mooredesign.net only — not InstallHer.
 #>

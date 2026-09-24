@@ -172,7 +172,7 @@ if ($Pull) {
 Write-Host @"
 Usage:
   .\tools\Sync-MEDRegistrations.ps1 -InitDb
-  .\tools\Sync-MEDRegistrations.ps1 -ImportJson .\tools\samples\med-registrations-export.sample.json
+  .\tools\Sync-MEDRegistrations.ps1 -ImportJson .\tools\med-registrations-export.sample.json
   `$env:MED_EXPORT_KEY='...'; .\tools\Sync-MEDRegistrations.ps1 -Pull
 
 DB: $DbPath

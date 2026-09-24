@@ -1,0 +1,18 @@
+{
+  "ok": true,
+  "count": 1,
+  "records": [
+    {
+      "email": "sample@example.com",
+      "name": "Sample User",
+      "optIn": true,
+      "firstSeen": "2026-09-24T12:00:00-05:00",
+      "lastSeen": "2026-09-24T15:00:00-05:00",
+      "lastVersion": "2026.0.0924b",
+      "lastChannel": "full",
+      "lastGit": "deadbeef",
+      "buildDate": "2026-09-24",
+      "machineName": "SAMPLE-PC"
+    }
+  ]
+}

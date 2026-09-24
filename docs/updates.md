@@ -62,7 +62,7 @@ Sync / import (no secrets in git):
 
 ```powershell
 # v1: import a downloaded JSON export (works before Netlify auth is wired)
-.\tools\Sync-MEDRegistrations.ps1 -ImportJson .\tools\samples\med-registrations-export.sample.json
+.\tools\Sync-MEDRegistrations.ps1 -ImportJson .\tools\med-registrations-export.sample.json
 
 # After deploy: pull from MooreDesign (requires MED_EXPORT_KEY matching site env)
 $env:MED_EXPORT_KEY = '<from Netlify site env>'

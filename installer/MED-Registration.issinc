@@ -23,13 +23,47 @@ begin
   Result := T;
 end;
 
+// Basic email sanity check (no regex in Pascal Script).
+// Rules: trimmed; overall length >= 5; no spaces or tabs; exactly one @;
+// local part non-empty; domain length >= 3, contains a dot,
+// does not start or end with a dot, and has no consecutive dots.
+// Dots before the @ are allowed (e.g. first.last@example.com).
 function MedEmailLooksValid(const Email: String): Boolean;
 var
-  AtPos, DotPos: Integer;
+  E, Domain: String;
+  I, AtPos, AtCount, L: Integer;
 begin
-  AtPos := Pos('@', Email);
-  DotPos := Pos('.', Email);
-  Result := (Length(Email) >= 5) and (AtPos > 1) and (DotPos > AtPos + 1) and (DotPos < Length(Email));
+  Result := False;
+  E := Trim(Email);
+  L := Length(E);
+  if L < 5 then
+    Exit;
+  AtCount := 0;
+  AtPos := 0;
+  for I := 1 to L do
+  begin
+    if (E[I] = ' ') or (E[I] = #9) then
+      Exit;
+    if E[I] = '@' then
+    begin
+      AtCount := AtCount + 1;
+      AtPos := I;
+    end;
+  end;
+  if AtCount <> 1 then
+    Exit;
+  if AtPos < 2 then
+    Exit;
+  Domain := Copy(E, AtPos + 1, L - AtPos);
+  if Length(Domain) < 3 then
+    Exit;
+  if Pos('.', Domain) = 0 then
+    Exit;
+  if (Domain[1] = '.') or (Domain[Length(Domain)] = '.') then
+    Exit;
+  if Pos('..', Domain) > 0 then
+    Exit;
+  Result := True;
 end;
 
 function MedRegFilePath: String;

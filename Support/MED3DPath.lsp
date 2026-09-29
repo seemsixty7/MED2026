@@ -37,6 +37,9 @@
 (if (not *MED3D-METHOD*) (setq *MED3D-METHOD* "SWEEP"))       ; "SWEEP" or "PIECES"
 ;; per-run bend override: list of (handle . override), see med3d-bend-radius
 (if (not (boundp '*MED3D-BEND-OVERRIDES*)) (setq *MED3D-BEND-OVERRIDES* nil))
+;; (setq *MED3D-DEBUG* T) prints each run's path, method choice, every piece's
+;; planned start/end and the bounding box of the solid actually created.
+(if (not (boundp '*MED3D-DEBUG*)) (setq *MED3D-DEBUG* nil))
 (setq *MED3D-TOL* 1e-6       ; length tolerance (drawing units)
       *MED3D-ANGTOL* 1e-4)   ; radians; smaller deflection = straight through
 
@@ -429,6 +432,14 @@
   (cond
     ((not (setq pd (med3d-read-path ent)))
       (princ (strcat "\nMED3D: " h " skipped - not a LWPOLYLINE / 2D / 3D POLYLINE.")) nil)
+    ((progn
+       (med3d-dbg (strcat "run " h " " (cdr (assoc 0 (entget ent)))
+                          " flags " (itoa (med3d-dxf 70 (entget ent) 0))
+                          " " (itoa (length (car pd))) " vertices"
+                          (if (nth 2 pd) (strcat " normal " (med3d-ptstr (nth 2 pd))) " (3D)")
+                          (if (nth 3 pd) " closed" "")
+                          " first " (med3d-ptstr (car (car pd)))))
+       nil))
     ((not (setq od (med3d-run-od ent kind)))
       (princ (strcat "\nMED3D: " h " skipped - no OD for this " (strcase kind T) " type/size."))
       nil)
@@ -507,49 +518,144 @@
       (vla-delete c)
       (if (and reg (not (vl-catch-all-error-p reg))) (car reg)))))
 
-(defun med3d-solid-line (ms a b r lay / d len reg sol cen)
-  (setq d (med3d-unit (med3d-v- b a)) len (distance a b))
-  (if (and d (setq reg (med3d-region ms a d r lay)))
-    (progn
-      (setq sol (vl-catch-all-apply 'vlax-invoke (list ms 'AddExtrudedSolid reg len 0.0)))
-      (vla-delete reg)
-      (if (not (vl-catch-all-error-p sol))
-        (progn
-          ;; extrusion must run a -> b; move it if it went the other way
-          (setq cen (vl-catch-all-apply 'vlax-get (list sol 'Centroid)))
-          (if (and (listp cen) cen (< (med3d-dot (med3d-v- cen a) d) 0.0))
-            (vlax-invoke sol 'Move a (med3d-v+ a (med3d-vx d len))))
-          sol)))))
+;;; ------------------------------------------------------------ debug / checks
+(defun med3d-dbg (msg) (if *MED3D-DEBUG* (princ (strcat "\nMED3D dbg: " msg))))
+(defun med3d-ptstr (p)
+  (if p (strcat (rtos (car p) 2 3) "," (rtos (cadr p) 2 3) "," (rtos (caddr p) 2 3)) "nil"))
+(defun med3d-maxabs (pts / m)
+  (setq m 1.0)
+  (foreach p pts (foreach c p (if (> (abs c) m) (setq m (abs c)))))
+  m)
 
-(defun med3d-solid-arc (ms a c nn th r lay / tn reg sol cen)
+;; bounding box of a vla object -> (min max) or nil
+(defun med3d-bbox (obj / mn mx r)
+  (setq r (vl-catch-all-apply 'vla-GetBoundingBox (list obj 'mn 'mx)))
+  (if (not (vl-catch-all-error-p r))
+    (list (vlax-safearray->list mn) (vlax-safearray->list mx))))
+(defun med3d-bbstr (bb)
+  (if bb (strcat "(" (med3d-ptstr (car bb)) ")-(" (med3d-ptstr (cadr bb)) ")") "n/a"))
+(defun med3d-bb-has (bb p tol)
+  (and (<= (- (car (car bb)) tol) (car p) (+ (car (cadr bb)) tol))
+       (<= (- (cadr (car bb)) tol) (cadr p) (+ (cadr (cadr bb)) tol))
+       (<= (- (caddr (car bb)) tol) (caddr p) (+ (caddr (cadr bb)) tol))))
+
+;; Does the solid's box match a cylinder a->b of radius r? (T when no box available)
+;; Box must hold both axis ends and be no bigger than the ideal box + r per side
+;; (AutoCAD boxes of sloped solids are not always tight).
+(defun med3d-check-line (obj a b r / bb d tol ok i ext lo hi)
+  (setq bb (med3d-bbox obj)
+        d  (med3d-unit (med3d-v- b a))
+        tol (+ (* 0.02 r) (* 1e-9 (med3d-maxabs (list a b))) 1e-6))
+  (if (not bb)
+    T
+    (progn
+      (setq ok (and (med3d-bb-has bb a tol) (med3d-bb-has bb b tol)) i 0)
+      (repeat 3
+        (setq ext (* r (sqrt (max 0.0 (- 1.0 (* (nth i d) (nth i d))))))
+              lo  (- (min (nth i a) (nth i b)) ext r tol)
+              hi  (+ (max (nth i a) (nth i b)) ext r tol))
+        (if (or (< (nth i (car bb)) lo) (> (nth i (cadr bb)) hi)) (setq ok nil))
+        (setq i (1+ i)))
+      ok)))
+
+;; arc solid box must hold the arc start, end and mid point
+(defun med3d-check-arc (obj a c nn th r / bb v m tol)
+  (setq bb  (med3d-bbox obj)
+        v   (med3d-v- a c)
+        m   (med3d-v+ c (med3d-v+ (med3d-vx v (cos (/ th 2.0)))
+                                  (med3d-vx (med3d-cross nn v) (sin (/ th 2.0)))))
+        tol (+ (* 0.02 r) (* 1e-9 (med3d-maxabs (list a c))) 1e-6))
+  (or (not bb)
+      (and (med3d-bb-has bb a tol) (med3d-bb-has bb m tol)
+           (med3d-bb-has bb (med3d-v+ c (med3d-v+ (med3d-vx v (cos th)) (med3d-vx (med3d-cross nn v) (sin th)))) tol))))
+
+;;; ------------------------------------------------------------------ straights
+;; Straight a->b. 1st: AddExtrudedSolidAlongPath with a temp LINE a->b (direction
+;; and length come from the path, nothing to guess). Checked against its box;
+;; if wrong or failed: circle + _.EXTRUDE _Direction a b. (c0c08c2 used
+;; AddExtrudedSolid + a centroid flip, which cannot repair an extrusion that went
+;; sideways/vertical - the flip only handles +/- the segment direction.)
+(defun med3d-solid-line (ms a b r lay / d reg ln sol)
+  (setq d (med3d-unit (med3d-v- b a)))
+  (if d
+    (progn
+      (if (setq reg (med3d-region ms a d r lay))
+        (progn
+          (setq ln  (vl-catch-all-apply 'vlax-invoke (list ms 'AddLine a b))
+                sol (if (vl-catch-all-error-p ln)
+                      ln
+                      (vl-catch-all-apply 'vlax-invoke (list ms 'AddExtrudedSolidAlongPath reg ln))))
+          (if (not (vl-catch-all-error-p ln)) (vla-delete ln))
+          (vla-delete reg)
+          (cond
+            ((vl-catch-all-error-p sol)
+              (med3d-dbg (strcat "  AlongPath failed: " (vl-catch-all-error-message sol)))
+              (setq sol nil))
+            ((not (med3d-check-line sol a b r))
+              (med3d-dbg (strcat "  AlongPath box wrong " (med3d-bbstr (med3d-bbox sol)) " - retry EXTRUDE"))
+              (vla-delete sol)
+              (setq sol nil)))))
+      (if (not sol) (setq sol (med3d-extrude-dir a b r lay)))
+      sol)))
+
+;; fallback straight: entmake circle at a (normal a->b) + _.EXTRUDE _Direction a b
+(defun med3d-extrude-dir (a b r lay / d circ e obj)
+  (setq d (med3d-unit (med3d-v- b a)))
+  (if (entmake (list '(0 . "CIRCLE") (cons 8 lay) (cons 10 (trans a 0 d)) (cons 40 r) (cons 210 d)))
+    (progn
+      (setq circ (entlast))
+      (command "_.EXTRUDE" circ "" "_Direction" (trans a 0 1) (trans b 0 1))
+      (if (> (getvar "CMDACTIVE") 0) (command))   ; cancel if left waiting
+      (setq e (entlast))
+      (if (entget circ) (entdel circ))
+      (if (and e (not (eq e circ)) (entget e) (= (cdr (assoc 0 (entget e))) "3DSOLID"))
+        (progn
+          (setq obj (vlax-ename->vla-object e))
+          (if (not (med3d-check-line obj a b r))
+            (med3d-dbg (strcat "  EXTRUDE box still wrong " (med3d-bbstr (med3d-bbox obj)))))
+          obj)
+        (progn (med3d-dbg "  EXTRUDE _Direction made no solid") nil)))))
+
+(defun med3d-solid-arc (ms a c nn th r lay / tn reg sol)
   (setq tn (med3d-unit (med3d-cross nn (med3d-v- a c))))
   (if (and tn (setq reg (med3d-region ms a tn r lay)))
     (progn
       (setq sol (vl-catch-all-apply 'vlax-invoke (list ms 'AddRevolvedSolid reg c nn th)))
-      (if (not (vl-catch-all-error-p sol))
+      ;; wrong way round? revolve about the opposite axis
+      (if (and (not (vl-catch-all-error-p sol)) (not (med3d-check-arc sol a c nn th r)))
         (progn
-          ;; must sweep toward the tangent side; else revolve about -axis
-          (setq cen (vl-catch-all-apply 'vlax-get (list sol 'Centroid)))
-          (if (and (listp cen) cen (< (med3d-dot (med3d-v- cen c) tn) 0.0))
-            (progn
-              (vla-delete sol)
-              (setq sol (vl-catch-all-apply 'vlax-invoke
-                          (list ms 'AddRevolvedSolid reg c (med3d-vx nn -1.0) th)))))))
+          (med3d-dbg (strcat "  revolve box wrong " (med3d-bbstr (med3d-bbox sol)) " - reversing axis"))
+          (vla-delete sol)
+          (setq sol (vl-catch-all-apply 'vlax-invoke
+                      (list ms 'AddRevolvedSolid reg c (med3d-vx nn -1.0) th)))))
       (vla-delete reg)
-      (if (not (vl-catch-all-error-p sol)) sol))))
+      (cond
+        ((vl-catch-all-error-p sol)
+          (med3d-dbg (strcat "  revolve failed: " (vl-catch-all-error-message sol))) nil)
+        (T sol)))))
 
 (defun med3d-solid-sphere (ms p r / s)
   (setq s (vl-catch-all-apply 'vlax-invoke (list ms 'AddSphere p r)))
   (if (not (vl-catch-all-error-p s)) s))
 
 ;; ActiveX pieces unioned. Returns (main-ename extra-enames fails)
-(defun med3d-draw-pieces (plan lay / ms r sols s base res fails extras)
-  (setq ms (med3d-ms) r (* 0.5 (med3d-get "OD" plan)) sols nil fails 0 extras nil)
+(defun med3d-draw-pieces (plan lay / ms r sols s base res fails extras k)
+  (setq ms (med3d-ms) r (* 0.5 (med3d-get "OD" plan)) sols nil fails 0 extras nil k 0)
   (foreach p (med3d-get "PIECES" plan)
+    (setq k (1+ k))
+    (med3d-dbg (strcat "piece " (itoa k) " " (car p) " "
+                       (if (= (car p) "S")
+                         (strcat "at " (med3d-ptstr (nth 1 p)) " r " (rtos (nth 2 p) 2 3))
+                         (strcat (med3d-ptstr (nth 1 p)) " -> " (med3d-ptstr (nth 2 p))
+                                 (if (= (car p) "L")
+                                   (strcat " len " (rtos (distance (nth 1 p) (nth 2 p)) 2 3))
+                                   (strcat " ctr " (med3d-ptstr (nth 3 p)) " "
+                                           (med3d-deg (nth 5 p)) " deg"))))))
     (setq s (cond
               ((= (car p) "L") (med3d-solid-line ms (nth 1 p) (nth 2 p) r lay))
               ((= (car p) "A") (med3d-solid-arc ms (nth 1 p) (nth 3 p) (nth 4 p) (nth 5 p) r lay))
               ((= (car p) "S") (med3d-solid-sphere ms (nth 1 p) (nth 2 p)))))
+    (med3d-dbg (strcat "  solid box " (if s (med3d-bbstr (med3d-bbox s)) "NONE")))
     (if s (setq sols (cons s sols)) (setq fails (1+ fails))))
   (setq sols (reverse sols))
   (if sols
@@ -558,14 +664,17 @@
       (foreach s (cdr sols)
         (setq res (vl-catch-all-apply 'vlax-invoke (list base 'Boolean 0 s))) ; 0 = acUnion
         (if (vl-catch-all-error-p res)
-          (progn (vla-put-Layer s lay) (setq extras (cons (vlax-vla-object->ename s) extras)
-                                             fails (1+ fails)))))
+          (progn
+            (med3d-dbg (strcat "  union failed: " (vl-catch-all-error-message res)))
+            (vla-put-Layer s lay)
+            (setq extras (cons (vlax-vla-object->ename s) extras) fails (1+ fails)))))
       (vla-put-Layer base lay)
+      (med3d-dbg (strcat "run solid box " (med3d-bbstr (med3d-bbox base))))
       (list (vlax-vla-object->ename base) extras fails))
     (list nil nil fails)))
 
 ;; plane normal when every piece lies in one plane, else nil
-(defun med3d-planar-normal (plan / pcs n p0 ok d)
+(defun med3d-planar-normal (plan / pcs n p0 ok d tol)
   (setq pcs (med3d-get "PIECES" plan) n nil d nil)
   (foreach p pcs
     (if (and (not n) (= (car p) "A")) (setq n (med3d-unit (nth 4 p)))))
@@ -579,10 +688,11 @@
     (setq n (med3d-unit (med3d-cross d (if (< (abs (caddr d)) 0.9) '(0.0 0.0 1.0) '(1.0 0.0 0.0))))))
   (if n
     (progn
-      (setq p0 (nth 1 (car pcs)) ok T)
+      (setq p0  (nth 1 (car pcs)) ok T
+            tol (max 1e-6 (* 1e-9 (med3d-maxabs (mapcar 'cadr pcs)))))
       (foreach p pcs
-        (if (> (abs (med3d-dot (med3d-v- (nth 1 p) p0) n)) 1e-6) (setq ok nil))
-        (if (and (/= (car p) "S") (> (abs (med3d-dot (med3d-v- (nth 2 p) p0) n)) 1e-6)) (setq ok nil))
+        (if (> (abs (med3d-dot (med3d-v- (nth 1 p) p0) n)) tol) (setq ok nil))
+        (if (and (/= (car p) "S") (> (abs (med3d-dot (med3d-v- (nth 2 p) p0) n)) tol)) (setq ok nil))
         (if (and (= (car p) "A") (< (abs (med3d-dot (nth 4 p) n)) (- 1.0 1e-9))) (setq ok nil)))
       (if ok n))))
 
@@ -610,11 +720,14 @@
   r)
 
 ;; SWEEP one circle along the filleted centerline (planar runs, no sharp corners)
-(defun med3d-draw-sweep (plan lay / n path pc0 a tn circ sol)
-  (if (and (not (med3d-has-spheres plan))
-           (setq n (med3d-planar-normal plan))
-           (setq path (med3d-make-lw-path plan n lay)))
-    (progn
+(defun med3d-draw-sweep (plan lay / n path pc0 a tn circ sol typ)
+  (cond
+    ((med3d-has-spheres plan) (med3d-dbg "method PIECES: run has sphere corners (flag/kink)") nil)
+    ((not (setq n (med3d-planar-normal plan))) (med3d-dbg "method PIECES: run is not planar") nil)
+    ((not (setq path (med3d-make-lw-path plan n lay)))
+      (med3d-dbg "method PIECES: could not entmake the LWPOLYLINE centerline") nil)
+    (T
+      (med3d-dbg (strcat "method SWEEP: plane normal " (med3d-ptstr n)))
       (setq pc0 (car (med3d-get "PIECES" plan))
             a   (nth 1 pc0)
             tn  (if (= (car pc0) "L")
@@ -624,14 +737,22 @@
                      (cons 40 (* 0.5 (med3d-get "OD" plan))) (cons 210 tn)))
       (setq circ (entlast))
       ;; MOde SOlid so a surface is never made (SWEEP remembers the mode)
-      (vl-catch-all-apply 'vl-cmdf (list "_.SWEEP" "_MO" "_SO" circ "" path))
+      (command "_.SWEEP" "_MO" "_SO" circ "" path)
+      (if (> (getvar "CMDACTIVE") 0) (command))   ; cancel if left waiting
       (setq sol (entlast))
       (if (entget path) (entdel path))
       (if (entget circ) (entdel circ))
-      (if (and sol (not (eq sol circ)) (not (eq sol path)) (entget sol))
-        (if (= (cdr (assoc 0 (entget sol))) "3DSOLID")
-          (progn (vla-put-Layer (vlax-ename->vla-object sol) lay) sol)
-          (progn (entdel sol) nil))))))
+      (setq typ (if (and sol (entget sol)) (cdr (assoc 0 (entget sol)))))
+      (cond
+        ((or (null typ) (eq sol circ) (eq sol path))
+          (med3d-dbg "SWEEP made nothing - falling back to PIECES") nil)
+        ((/= typ "3DSOLID")
+          (med3d-dbg (strcat "SWEEP made a " typ " - deleted, falling back to PIECES"))
+          (entdel sol) nil)
+        (T
+          (vla-put-Layer (vlax-ename->vla-object sol) lay)
+          (med3d-dbg (strcat "SWEEP solid box " (med3d-bbstr (med3d-bbox (vlax-ename->vla-object sol)))))
+          sol)))))
 
 ;; draw one entity: returns (solid plan) or nil
 (defun med3d-run (ent kind / plan lay sol res extras)
@@ -685,13 +806,38 @@
   (list '(-4 . "<OR") '(0 . "LWPOLYLINE") '(0 . "POLYLINE") '(-4 . "OR>") (list -3 (list app))))
 
 ;;; ------------------------------------------------------------------ commands
-(defun med3d-pick (kind tag / ss ok)
+;; kind of a run from its xdata; pref wins when both are present
+(defun med3d-kind-of (e pref / cn cb)
+  (setq cn (xdataget e _CONDUIT) cb (xdataget e _CABLE))
+  (cond
+    ((and cn cb) pref)
+    (cn "CONDUIT")
+    (cb "CABLE")))
+
+;; M3D / C3D: select polylines (no xdata filter, so nothing vanishes silently),
+;; convert each by its own xdata (conduit or cable), and say why any is skipped.
+(defun med3d-pick (kind tag / ss ok i e k n)
   (med3d-begin tag)
   (princ (strcat "\nSelect MED " (strcase kind T) " runs: "))
-  (if (setq ss (ssget (med3d-filter (if (= kind "CABLE") _CABLE _CONDUIT))))
+  (if (setq ss (ssget '((-4 . "<OR") (0 . "LWPOLYLINE") (0 . "POLYLINE") (-4 . "OR>"))))
     (progn
-      (setq ok (med3d-run-ss ss kind))
-      (princ (strcat "\n" tag ": " (itoa ok) " of " (itoa (sslength ss)) " run(s) converted."))
+      (setq ok 0 n 0 i 0)
+      (repeat (sslength ss)
+        (setq e (ssname ss i) k (med3d-kind-of e kind))
+        (cond
+          ((not k)
+            (princ (strcat "\n" tag ": " (cdr (assoc 5 (entget e))) " ("
+                           (cdr (assoc 0 (entget e))) ") has no MED_CONDUIT / MED_CABLE xdata - skipped.")))
+          (T
+            (setq n (1+ n))
+            (if (/= k kind)
+              (princ (strcat "\n" tag ": " (cdr (assoc 5 (entget e))) " is a " (strcase k T)
+                             " run - converted as " (strcase k T) ".")))
+            (if (med3d-run e k) (setq ok (1+ ok)))))
+        (setq i (1+ i)))
+      (princ (strcat "\n" tag ": " (itoa ok) " of " (itoa n) " MED run(s) converted"
+                     (if (< n (sslength ss)) (strcat ", " (itoa (- (sslength ss) n)) " polyline(s) without MED data") "")
+                     "."))
       (if (> ok 0) (MEDRebuildMedPropsJsonBeside nil))))
   (med3d-end))
 

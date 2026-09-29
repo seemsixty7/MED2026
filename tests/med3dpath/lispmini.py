@@ -254,10 +254,14 @@ class Interp:
                     for e in x[2:]: r = self.eval(e)
                 return r
             if h == 'FOREACH':
-                r = None
-                for it in aslist(self.eval(x[2])):
-                    self.set(x[1], it)
-                    for e in x[3:]: r = self.eval(e)
+                r = None; lst = aslist(self.eval(x[2]))
+                self.frames.append({x[1]: None})   # AutoLISP: the foreach symbol is local
+                try:
+                    for it in lst:
+                        self.frames[-1][x[1]] = it
+                        for e in x[3:]: r = self.eval(e)
+                finally:
+                    self.frames.pop()
                 return r
         f = self.eval(h) if isinstance(h, list) else self.lookup(h)
         if f is None: raise LispError(f"undefined function {h}")

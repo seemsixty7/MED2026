@@ -8,13 +8,16 @@
 - `Data\seed\*.csv` + `MedODSeed.cs`: at NETLOAD MED-DotNet creates `MEDConduitOD` (SQLite or SQL Server) and fills missing rows / blank CABLE USER3 only. Existing installs get the data from the patch without replacing `MED.db`.
 - `med_conduit_od` (`MEDFunctions.lsp`): OD lookup by conduit type + trade size with fallback to the old `getsize` steel-pipe OD.
 - **`Support\MED3DPath.lsp`: one 3D solid per conduit or cable run** (loaded by MEDCore). `M3D` / `MAKE3DCONDUIT` (conduit), new `C3D` / `MAKE3DCABLE` (cable), `MED3DPLAN` (corner table). LWPOLYLINE, 2D and 3D POLYLINE; bends at 5 × OD (`med3d-bend-radius`, per-run override hook); tangents allocated so neighbouring bends never overlap; corners that cannot fit are left sharp with a sphere and flagged (message + marker on `MED_3DFLAG`). SWEEP along a computed filleted centerline for planar runs, ActiveX pieces + union otherwise. Corner list exposed for future fittings. See `docs/3d.md`.
-- `tests/med3dpath` (geometry desk test through a mini AutoLISP interpreter) and `tests/autocad/MED3DPathTest.lsp` (sample runs in AutoCAD).
+- `*MED3D-DEBUG*`: set to T for a per-run / per-piece trace (planned start/end, solid bounding box, SWEEP vs PIECES and why). See `docs/3d.md`.
+- `tests/med3dpath` (geometry desk test through a mini AutoLISP interpreter; `test_med3d_acad.py` with a mock AutoCAD checks LW / 2D / 3D polylines with OCS normals end to end) and `tests/autocad/MED3DPathTest.lsp` (sample runs in AutoCAD).
 
 ### Changed
 - `MAKE3DCONDUIT` / `M3D` size conduit solids by conduit type (e.g. EMT is now 0.706" at 1/2", not 0.840"). Same result as before when the table/row is missing.
 - Vertical conduit solids use the OD instead of the nominal trade size.
 - MEDTYPE: USER3 header shows `OD (in)` for Cable (`User3 / OD (in)` on All).
 - Patch installer also ships `Support\MED3DCON.lsp`, `Support\MED3DPath.lsp` and `Data\seed\*.csv` (still never `MED.db` or `med.spc`).
+- M3D / C3D straights (feature/3dpath test): made with `AddExtrudedSolidAlongPath` along a temporary LINE and checked by bounding box, with `_.EXTRUDE _Direction` as fallback. The earlier `AddExtrudedSolid` + centroid flip could leave straights misplaced or short. SWEEP planar test uses a relative tolerance (large coordinates) and SWEEP failures are no longer silent under debug.
+- M3D / C3D select any LWPOLYLINE / POLYLINE and say why one is skipped (no MED xdata) instead of silently filtering it out; a run carrying the other kind's xdata is converted as that kind.
 - The 2012 commands in `MED3DCON.lsp` are renamed `M3DOLD` / `MAKE3DCONDUITOLD`; `M3D` and `MAKE3DCONDUIT` now come from `MED3DPath.lsp`.
 
 ### Fixed

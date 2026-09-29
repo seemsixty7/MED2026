@@ -68,6 +68,10 @@ namespace MEDDotNet
 
     {
 
+        // ITEM_GRP holds cable types like "Residential Cable" (17 chars); was truncated to 12 on CSV import.
+
+        const int ItemGrpMaxLen = 40;
+
         static readonly string[] TypeValues = { "CONDUIT", "CABLE", "TRAY", "FITTING", "EQUIP" };
 
         static readonly string[] Cols =
@@ -336,6 +340,10 @@ namespace MEDDotNet
 
             _loading = true;
 
+            // Retry OD seed if it could not run at NETLOAD (no-op once done).
+
+            MedODSeed.EnsureReady();
+
             try
 
             {
@@ -406,7 +414,7 @@ namespace MEDDotNet
 
             SetHeader("USER2", "User2", 70);
 
-            SetHeader("USER3", "User3", 70);
+            SetHeader("USER3", "User3 / OD (in)", 70);
 
             SetHeader("USER4", "User4", 70);
 
@@ -502,7 +510,41 @@ namespace MEDDotNet
 
             }
 
+            UpdateUser3Header(type);
+
             UpdateStatus();
+
+        }
+
+
+
+        // USER3 holds cable OD in inches for CABLE rows (EQUIP: original code for project remap).
+
+        // Conduit OD lives in MEDConduitOD (per trade size), not USER3.
+
+        void UpdateUser3Header(string type)
+
+        {
+
+            if (_grid == null || !_grid.Columns.Contains("USER3"))
+
+                return;
+
+            string header;
+
+            if (type == "CABLE")
+
+                header = "OD (in)";
+
+            else if (type == null)
+
+                header = "User3 / OD (in)";
+
+            else
+
+                header = "User3";
+
+            _grid.Columns["USER3"].HeaderText = header;
 
         }
 
@@ -773,7 +815,7 @@ namespace MEDDotNet
                             ProcessSQL.AddParam(cmd, "@t", itemType);
                             ProcessSQL.AddParam(cmd, "@c", code);
                             ProcessSQL.AddParam(cmd, "@d", Trunc(desc, 100));
-                            ProcessSQL.AddParam(cmd, "@g", Db(Get(cells, map, "ITEM_GRP"), 12));
+                            ProcessSQL.AddParam(cmd, "@g", Db(Get(cells, map, "ITEM_GRP"), ItemGrpMaxLen));
                             ProcessSQL.AddParam(cmd, "@k1", Db(Get(cells, map, "ITEMKEY1"), 20));
                             ProcessSQL.AddParam(cmd, "@k2", Db(Get(cells, map, "ITEMKEY2"), 20));
                             ProcessSQL.AddParam(cmd, "@k3", Db(Get(cells, map, "ITEMKEY3"), 20));

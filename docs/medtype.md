@@ -19,7 +19,7 @@ MEDTYPE catalog grid. *Screenshot still needed — do not invent one. `docs/imag
 | ITEMDESC | Description | Catalog text |
 | ITEM_GRP | Group | Cable Type for the Cable palette. Details: grouping. No group → detail does not appear in `DETAIL` / `LTG` / … |
 | ITEMKEY1–4 | Key1–4 | Details: number, drawing, block/slide, layer set. See [database.md](database.md) |
-| USER1–4 | User1–4 | Details: DETNUM fill, insert function, sort. Tray USER1 = section length (ft) for reporting |
+| USER1–4 | User1–4 | Details: DETNUM fill, insert function, sort. Tray USER1 = section length (ft) for reporting. USER3 header reads **OD (in)** when the filter is Cable (cable outside diameter, inches), **User3 / OD (in)** on All |
 
 Type filter: All / Conduit / Cable / Tray / Fitting / Equipment. Find box matches description, code, Key1, and group.
 
@@ -32,6 +32,7 @@ Type filter: All / Conduit / Cable / Tray / Fitting / Equipment. Find box matche
 - Export CSV writes the **current filter**.
 - Import CSV **upserts** on ITEMTYPE+ITEMCODE. CSV must have those two columns.
 - `EQUIPMENT` in a CSV type cell normalizes to `EQUIP`.
+- Import keeps up to 40 characters of ITEM_GRP (older builds cut it to 12, e.g. `Residential Cable` → `Residential `). Keys / User columns stay at 20.
 
 Do not treat this as a day-to-day drafting command. Set the catalog up, then draw. Details are the usual mid-job add.
 

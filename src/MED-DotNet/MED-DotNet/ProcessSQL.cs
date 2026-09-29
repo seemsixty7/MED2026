@@ -80,6 +80,28 @@ namespace MEDDotNet
             }
         }
 
+        /// <summary>
+        /// Folder of the SQLite database file (Data Source=...), or null for SQL Server / unparsable.
+        /// </summary>
+        internal static string SqliteDataDirectory()
+        {
+            try
+            {
+                if (!IsSqlite)
+                    return null;
+                SQLiteConnectionStringBuilder b = new SQLiteConnectionStringBuilder(ReadConnectString());
+                string ds = b.DataSource;
+                if (string.IsNullOrWhiteSpace(ds))
+                    return null;
+                ds = Environment.ExpandEnvironmentVariables(ds.Trim().Trim('"'));
+                return Path.GetDirectoryName(Path.GetFullPath(ds));
+            }
+            catch (System.Exception)
+            {
+                return null;
+            }
+        }
+
         static DbConnection GetConnection()
         {
             string cs = ReadConnectString();

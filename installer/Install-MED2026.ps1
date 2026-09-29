@@ -180,6 +180,13 @@ if (-not $SkipCopy) {
     if (Test-Path -LiteralPath $seedDb) {
         Copy-Item $seedDb (Join-Path $dataDst "MED.db") -Force
     }
+    # OD seed CSVs (MED-DotNet fills MEDConduitOD / CABLE USER3 blanks from these at load).
+    $seedSrc = Join-Path $RepoRoot "Data\seed"
+    if (Test-Path -LiteralPath $seedSrc) {
+        $seedDst = Join-Path $dataDst "seed"
+        New-Item -ItemType Directory -Path $seedDst -Force | Out-Null
+        Copy-Item -Path (Join-Path $seedSrc "*.csv") -Destination $seedDst -Force
+    }
 } else {
     Write-Log "SkipCopy: using files already under $InstallDir (Inno unpacked)"
     $acadLsp = Join-Path $supportDst "ACAD.LSP"

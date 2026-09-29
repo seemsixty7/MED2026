@@ -17,6 +17,10 @@ namespace MEDDotNet
             // Idempotent MEDUsers.LastProject migration + restore _MEDPROJECT from LastProject.
             try { MedUserProject.EnsureReady(true); }
             catch (System.Exception) { }
+
+            // Idempotent OD data: MEDConduitOD table + CABLE USER3 (OD in) from Data\seed\*.csv.
+            try { MedODSeed.EnsureReady(); }
+            catch (System.Exception) { }
         }
 
         public void Terminate()

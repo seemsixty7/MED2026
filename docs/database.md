@@ -28,6 +28,7 @@ The 2012 guide used Access / FoxPro `.dbf` (`MEDTYPE.dbf`, `PROJECT.dbf`) and `M
 | MEDProject | BOM extract. Empty at install. Written at runtime by `BOM`. |
 | Layers1 | Layer standards. Seeded. `LOADLAYERS` reads this. |
 | MEDUsers | Seed is empty. Installer inserts the current Windows login (`UserType=User`). |
+| MEDConduitOD | Conduit outside diameter by conduit type + trade size. Seeded. Created at runtime if missing (see below). |
 
 Same split as the 2012 guide: `MEDType` is the warehouse; `MEDProject` is what this drawing used. Entity xdata stores the code (and sizes/tags). The description is looked up in `MEDType` by type+code.
 
@@ -51,10 +52,33 @@ Edit with [MEDTYPE](medtype.md), not a desktop database tool.
 | ITEMKEY4 | ITEMKEY4 | Details: layer-set name from `med.spc` |
 | USER1 | USER1 | Details: value for a `DETNUM` attribute if the block has one. Tray: section length in feet (reporting; MED does not auto-cut tray to this) |
 | USER2 | USER2 | Details: insert function name (usually `opt_eq_ins`) |
-| USER3 | USER3 | Unused |
+| USER3 | USER3 | EQUIP: original equipment code kept by the project remap (`MEDRemapEQCodeToProjectCode`). CABLE: cable outside diameter in inches, stored as numeric text (e.g. `0.624`). Blank = not sourced. Other types: unused |
 | USER4 | USER4 | Detail sort order in the insert dialog |
 
 Adding catalog rows is not a day-to-day drafting command. Set the project catalog up, then draw. Details are the usual exception — they get added through a job.
+
+## Conduit / cable OD
+
+`MEDConduitOD` (primary key `ConduitCode` + `TradeSize`):
+
+| Column | Meaning |
+| --- | --- |
+| ConduitCode | CONDUIT `ITEMCODE` in `MEDType` (1 Rigid Steel, 2 PVC-coated rigid, 3 Rigid non-metallic, 4 EMT, 5 ENT, 6 IMC, 7 PVC-coated flexible) |
+| ConduitDesc | Copy of the CONDUIT `ITEMDESC` for readability only (lookups use the code) |
+| TradeSize | Trade size text: `1/2`, `3/4`, `1`, `1-1/4`, … |
+| TradeSizeDec | Trade size as a number (0.5, 1.25, …). Matches the conduit xdata size (`#ITEMSIZE`) |
+| OD_in | Outside diameter, inches. NULL = unknown (falls back) |
+| Source | Data sheet / standard the value came from |
+
+`MAKE3DCONDUIT` / `M3D` (and the vertical-conduit solids) size the solid with `med_conduit_od` (`MEDFunctions.lsp`): table value for the conduit's code + size, otherwise the old steel-pipe OD from `getsize`. Without the table, horizontal conduit output is unchanged.
+
+Seed values ship in `Data\seed\conduit_od.csv` (conduit) and `Data\seed\cable_od_sources.csv` (CABLE `USER3`, with the source per row). At NETLOAD (and when MEDTYPE opens) MED-DotNet (`MedODSeed.cs`):
+
+1. Creates `MEDConduitOD` if missing (SQLite or SQL Server syntax).
+2. Inserts seed rows that are missing; fills `OD_in` only where it is NULL. Values you edited are never overwritten.
+3. Sets CABLE `USER3` only where it is blank **and** `ITEMDESC` still matches the seed row.
+
+The patch installer ships the two CSVs, not `MED.db`. Edit ODs in the table / MEDTYPE, not in the CSVs (CSV edits only reach blanks). `tools\build_od_seed.py` regenerates the CSVs and the seed `MED.db` from the transcribed data-sheet tables.
 
 `MEDDBBACKUP` / `MEDDBRESTORE` write/read a CSV snapshot of `MEDType` under the MED directory (`MEDTYPE-DB-Backup.csv`). That is the 2026 stand-in for dumping the catalog. It is not `MEDPACK`.
 

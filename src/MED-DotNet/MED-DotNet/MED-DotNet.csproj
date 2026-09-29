@@ -97,6 +97,7 @@
     </Compile>
     <Compile Include="MedShowBomForm.cs" />
     <Compile Include="MedUserProject.cs" />
+    <Compile Include="MedODSeed.cs" />
     <Compile Include="MedScaleChoice.cs" />
     <Compile Include="MedTypeForm.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

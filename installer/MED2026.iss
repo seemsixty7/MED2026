@@ -54,6 +54,8 @@ Source: "Support\*"; DestDir: "{app}\Support"; Flags: ignoreversion recursesubdi
 ; Ship catalog MED.db only. NEVER ship Data\MEDRegistrations.db (desktop roster for Jane/Clint).
 Source: "Data\MED.db"; DestDir: "{app}\Data"; Flags: ignoreversion; Components: core
 Source: "Data\README.txt"; DestDir: "{app}\Data"; Flags: ignoreversion; Components: core
+; OD seed data (conduit OD table + cable OD for MEDType.USER3). MED-DotNet applies blanks-only at load.
+Source: "Data\seed\*.csv"; DestDir: "{app}\Data\seed"; Flags: ignoreversion; Components: core
 ; Real block library. Not Samples, not a Dwgs folder. Skip leftover Csch1.
 Source: "Dwg\*"; DestDir: "{app}\Dwg"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: core; Excludes: "Csch1.dwg,csch1.dwg,CSCH1.dwg"
 Source: "installer\Install-MED2026.ps1"; DestDir: "{app}\installer"; Flags: ignoreversion; Components: core

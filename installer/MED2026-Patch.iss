@@ -1,7 +1,8 @@
 ; MED2026 non-admin patch installer
-; Updates Support (MED-DotNet + changed LISP + MED.version.txt) and optional
+; Updates Support (MED-DotNet + changed LISP + MED.version.txt), Data\seed\*.csv, and optional
 ; Navisworks MEDProperties plugin under per-user AppData.
-; Does NOT rewrite AutoCAD profiles, MEDDataBaseSettings.dat, Project.dat, or MED.db.
+; Does NOT rewrite AutoCAD profiles, MEDDataBaseSettings.dat, Project.dat, med.spc, or MED.db.
+; OD data reaches existing MED.db via MED-DotNet (MedODSeed) reading Data\seed at load (fills blanks only).
 ; PrivilegesRequired=lowest ? may fail to write C:\MED2026 if that folder is admin-owned.
 ; Opt-in registration: reuse Support\MED.registration.json when present (skip wizard page).
 ; Guards: Support update requires an existing MED install ({app}\Support\MED-DotNet.dll or
@@ -59,6 +60,10 @@ Source: "Support\MED-DotNet.dll"; DestDir: "{app}\Support"; Flags: ignoreversion
 Source: "Support\MEDCore.lsp"; DestDir: "{app}\Support"; Flags: ignoreversion; Components: support; Check: MedSupportWritable
 Source: "Support\MEDFunctions.lsp"; DestDir: "{app}\Support"; Flags: ignoreversion; Components: support; Check: MedSupportWritable
 Source: "Support\MED3DTrayFunctions.lsp"; DestDir: "{app}\Support"; Flags: ignoreversion; Components: support; Check: MedSupportWritable
+Source: "Support\MED3DCON.lsp"; DestDir: "{app}\Support"; Flags: ignoreversion; Components: support; Check: MedSupportWritable
+; OD seed CSVs only (never Data\MED.db / MEDRegistrations.db, never Support\med.spc).
+Source: "Data\seed\conduit_od.csv"; DestDir: "{app}\Data\seed"; Flags: ignoreversion; Components: support; Check: MedDataSeedWritable
+Source: "Data\seed\cable_od_sources.csv"; DestDir: "{app}\Data\seed"; Flags: ignoreversion; Components: support; Check: MedDataSeedWritable
 Source: "Support\MED.version.txt"; DestDir: "{app}\Support"; Flags: ignoreversion; Components: support; Check: MedSupportWritable
 Source: "installer\Register-MEDInstall.ps1"; Flags: dontcopy
 
@@ -253,6 +258,12 @@ begin
   SupportWritableCached := ProbeSupportWritable(SupportDir);
   SupportWritableKnown := True;
   Result := SupportWritableCached;
+end;
+
+{ Data\seed goes under {app}\Data (must already exist = real install) and needs Support writable too. }
+function MedDataSeedWritable: Boolean;
+begin
+  Result := MedSupportWritable and ProbeSupportWritable(ExpandConstant('{app}\Data'));
 end;
 
 procedure WriteVersionFilePatch;

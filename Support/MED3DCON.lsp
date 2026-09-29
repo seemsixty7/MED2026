@@ -46,6 +46,8 @@
 	       conrot (dxf 50 conentdata)
 	       condata (xdataget conent _CONDUIT)
 	       consize (nth 2 condata)
+	       ;; OD for the solid diameter (bend radius stays based on nominal consize)
+	       conod   (med_conduit_od (nth 3 condata) consize)
 	       condist (nth 4 condata)
 	       vertdata(vtrayxdataget conent)
 	       bend1m  (nth 1 vertdata)
@@ -68,11 +70,11 @@
 	      (princ "\nAbout to run the 3d process")
 	      (if (= condir -1)
 	        (progn
-	          (mk3dvconbend conpt1 benddir consize benrad nil)
+	          (mk3dvconbend conpt1 benddir (if conod conod consize) benrad nil)
 	          (MEDStamp3DFromBom (entlast) conent "CONDUIT" nil)
 	        )
 	        (progn
-	          (mk3dvconbend conpt1 benddir consize benrad T)
+	          (mk3dvconbend conpt1 benddir (if conod conod consize) benrad T)
 	          (MEDStamp3DFromBom (entlast) conent "CONDUIT" nil)
 	        )
 	      )
@@ -85,7 +87,7 @@
 	 )
 	 (princ "\nAbout to run 3d conduit segment")
         (setq mk3dcondist (* condist condir))
-        (mk3dconvertical conpt1 mk3dcondist consize)
+        (mk3dconvertical conpt1 mk3dcondist (if conod conod consize))
 	 ;; MEDProperties CONDUIT on vertical segment solid
 	 (MEDStamp3DFromBom (entlast) conent "CONDUIT" nil)
 	 (setq cnt (1+ cnt))
@@ -187,7 +189,9 @@
   )
   (setq curcondata (xdataget plent _CONDUIT)
 	consize    (nth 2 curcondata)
-	actualsize (nth 1 (getsize nil (rtos consize 4)))
+	;; OD by conduit type (ITEMCODE) + trade size from MEDConduitOD;
+	;; falls back to getsize steel-pipe OD when no table/row.
+	actualsize (med_conduit_od (nth 3 curcondata) consize)
   )
   
   (if (= (dxf 0 pentdata) "POLYLINE")
@@ -303,6 +307,7 @@
 )
 
 (defun c:make3dConduit()
+  (setq _MEDCONDUITOD_CACHE nil) ; re-read MEDConduitOD each run
   (smlayer _MED3DCONDUIT)
   (command "vpoint" "1,1,1")
   (initget "3DS Dwg Layer")

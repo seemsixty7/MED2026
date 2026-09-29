@@ -2445,6 +2445,55 @@
   GT_INFO
 )	  
 
+;; Conduit outside diameter (inches) by conduit type + trade size.
+;; Looks up MEDConduitOD (ConduitCode = CONDUIT ITEMCODE, TradeSizeDec = xdata size).
+;; Falls back to the steel-pipe OD in getsize when the table, the row, or OD_in is
+;; missing, so results are identical to the old behavior without the table.
+;; Results are cached per session in _MEDCONDUITOD_CACHE (set it to nil to reload).
+(defun med_conduit_od (mco_code mco_size / mco_key mco_hit mco_od mco_res mco_val mco_gs)
+  (setq mco_gs (if (numberp mco_size) (getsize nil (rtos mco_size 4))))
+  (setq mco_od nil)
+  (if (and (numberp mco_code) (> mco_code 0) (numberp mco_size) (> mco_size 0.0))
+    (progn
+      (setq mco_key (list (fix mco_code) (rtos mco_size 2 4)))
+      (if (setq mco_hit (assoc mco_key _MEDCONDUITOD_CACHE))
+        (setq mco_od (cdr mco_hit))
+        ;; Only query (and cache) once MED-DotNet is loaded; otherwise fall back silently.
+        (if (and MED-DotNet-Ready (MED-DotNet-Ready))
+          (progn
+            (setq mco_res
+              (vl-catch-all-apply 'MEDProcessSQLStatement
+                (list (strcat "SELECT OD_in FROM MEDConduitOD WHERE ConduitCode="
+                              (itoa (fix mco_code))
+                              " AND ABS(TradeSizeDec-(" (rtos mco_size 2 4) "))<0.001"
+                              " AND OD_in IS NOT NULL"))))
+            (if (and mco_res
+                     (not (vl-catch-all-error-p mco_res))
+                     (listp mco_res)
+                     (>= (length mco_res) 2)
+                     (listp (cadr mco_res)))
+              (progn
+                (setq mco_val (car (cadr mco_res)))
+                (if (= (type mco_val) 'STR)
+                  (setq mco_val (atof mco_val))
+                )
+                (if (and (numberp mco_val) (> mco_val 0.0))
+                  (setq mco_od (float mco_val))
+                )
+              )
+            )
+            (setq _MEDCONDUITOD_CACHE (cons (cons mco_key mco_od) _MEDCONDUITOD_CACHE))
+          )
+        )
+      )
+    )
+  )
+  (if mco_od
+    mco_od
+    (nth 1 mco_gs)
+  )
+)
+
 ;; function sets the linetype to specified argument passed
 ;; if nil sets linetype to bylayer
 

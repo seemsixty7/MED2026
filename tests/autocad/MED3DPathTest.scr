@@ -1,0 +1,3 @@
+(load "MED3DPathTest.lsp")
+MED3DPATHTEST
+_.VPOINT 1,1,1

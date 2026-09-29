@@ -1,4 +1,7 @@
 ;;This is the right version
+;; 2012 conduit 3D code, kept for comparison. M3D / MAKE3DCONDUIT now live in
+;; MED3DPath.lsp (loaded by MEDCore); the old commands are M3DOLD / MAKE3DCONDUITOLD.
+(vl-load-com)
 (defun gplen (gpt1 gpt2 gpbul)
   (setq	gpang	(* 4 (atan gpbul))
 	gpchord	(distance gpt1 gpt2)
@@ -10,25 +13,142 @@
   gprtlen
 )
 
-(defun mk3dcon(mkpt1 mkpt2 csize)
-  (setq	actgenang (angle mkpt1 mkpt2))
-  (cirmake mkpt1 csize)
-  (setq mycir (entlast)
-	mycirdata (entget mycir)
-	3dold (assoc 210 mycirdata)
-	3dnew (cons 210 (list 0.0 -1.0 -1.8369e-016))
- 	mycirdata (subst 3dnew 3dold mycirdata)
-	mycirdata (entmod mycirdata)
-	)
-  (setq	mycirpt (assoc 10 mycirdata)
-	frompoint (trans (append (list (cadr mycirpt) (caddr mycirpt))   (list (cadddr mycirpt))) mycir 0)
-	movetopoint (dxf 10 (entget mycir))
+;; Straight conduit segment mkpt1 -> mkpt2 (WCS points, 2D or 3D), csize = RADIUS.
+;; entmake the circle with its normal (210) along the segment, then EXTRUDE along
+;; that direction. Works for sloped 3D segments too.
+;; Old stream (command "extrude" c "" p1 p2 "") was written for AutoCAD <= 2006
+;; (height as 2 points, then a taper-angle prompt eaten by the trailing "").
+;; Since 2007 there is no taper prompt, so the extra "" re-issued EXTRUDE and
+;; every later (command ...) was fed into the wrong prompt.
+(defun mk3dcon (mkpt1 mkpt2 csize / mkn mklast)
+  (setq mkpt1 (m3d-pt3 mkpt1)
+        mkpt2 (m3d-pt3 mkpt2)
   )
-  (command "move" mycir "" frompoint movetopoint)
-  (command "rotate" mycir "" movetopoint (angtos (+ actgenang  (* PI 0.5)) 0 8))
-	   
-  (command "extrude" mycir "" mkpt1 mkpt2 "" )
- 
+  (if (and (numberp csize) (> csize 0.0) (setq mkn (m3d-unitvec mkpt1 mkpt2)))
+    (progn
+      (setq mklast (entlast))
+      (entmake (list '(0 . "CIRCLE")
+                     (cons 10 (trans mkpt1 0 mkn))
+                     (cons 40 csize)
+                     (cons 210 mkn)))
+      (if (not (eq mklast (entlast)))
+        (command "_.EXTRUDE" (entlast) ""
+                 "_Direction" (trans mkpt1 0 1) (trans mkpt2 0 1))
+      )
+    )
+  )
+)
+
+;; 3D point (adds Z 0.0 to 2D points)
+(defun m3d-pt3 (p)
+  (if (caddr p) p (list (car p) (cadr p) 0.0))
+)
+
+;; unit vector p1 -> p2, nil for zero length
+(defun m3d-unitvec (p1 p2 / d)
+  (setq d (distance p1 p2))
+  (if (> d 1e-8)
+    (mapcar '(lambda (a b) (/ (- b a) d)) p1 p2)
+  )
+)
+
+;; Solids for a heavy POLYLINE (2D or 3D) with MED_CONDUIT xdata.
+;; 2D: straights + bulge arcs (arcs assume OCS = WCS, same as the LWPOLYLINE branch).
+;; 3D: straights, plus a sphere at each interior vertex so sharp corners have no gap
+;;     (real bends for 3D paths are the CABTest-based rewrite, not this patch).
+(defun m3d-heavy-pline (hpent hpdata hprad / hflg his3d helev hv hvd hpts hbuls
+                                              hi hp1 hp2 hbul har hcpt hlast hms)
+  (setq hflg (dxf 70 hpdata))
+  (if (= 0 (logand hflg 80)) ; skip polygon meshes (16) and polyface meshes (64)
+    (progn
+      (setq his3d (= 8 (logand hflg 8))
+            helev (caddr (dxf 10 hpdata))
+            hv    (entnext hpent)
+      )
+      (if (not helev) (setq helev 0.0))
+      (while (and hv (/= (dxf 0 (setq hvd (entget hv))) "SEQEND"))
+        (if (= 0 (logand (dxf 70 hvd) 16)) ; skip spline frame control points
+          (setq hpts  (cons (dxf 10 hvd) hpts)
+                hbuls (cons (if (dxf 42 hvd) (dxf 42 hvd) 0.0) hbuls)
+          )
+        )
+        (setq hv (entnext hv))
+      )
+      (setq hpts  (reverse hpts)
+            hbuls (reverse hbuls)
+      )
+      (if (and hpts (= 1 (logand hflg 1))) ; closed
+        (setq hpts (append hpts (list (car hpts))))
+      )
+      ;; 3D polyline vertices are WCS; 2D vertices are OCS at the polyline elevation
+      (setq hpts (mapcar '(lambda (p)
+                            (if his3d
+                              (m3d-pt3 p)
+                              (trans (list (car p) (cadr p) helev) hpent 0)))
+                         hpts))
+      (setq hi 0)
+      (while (< (1+ hi) (length hpts))
+        (setq hp1   (nth hi hpts)
+              hp2   (nth (1+ hi) hpts)
+              hbul  (nth hi hbuls)
+              hlast (entlast)
+        )
+        (if (> (distance hp1 hp2) 1e-8)
+          (if (and (not his3d) hbul (/= hbul 0.0))
+            (progn
+              (setq har  (getangleradius hp1 hp2 hbul)
+                    hcpt (polar hp1 (+ (angle hp1 hp2) (nth 2 har)) (nth 1 har))
+                    hcpt (list (car hcpt) (cadr hcpt) (caddr hp1))
+              )
+              (mk3dconbend hp1 hp2 hcpt hprad (nth 3 har))
+            )
+            (progn
+              (mk3dcon hp1 hp2 hprad)
+              (if (and his3d (> hi 0))
+                (progn
+                  (if (not (eq hlast (entlast)))
+                    (MEDStamp3DFromBom (entlast) hpent "CONDUIT" nil)
+                  )
+                  (setq hlast (entlast)
+                        hms   (vla-get-ModelSpace (vla-get-ActiveDocument (vlax-get-acad-object))))
+                  (vl-catch-all-apply 'vla-AddSphere (list hms (vlax-3d-point hp1) hprad))
+                )
+              )
+            )
+          )
+        )
+        (if (not (eq hlast (entlast)))
+          (MEDStamp3DFromBom (entlast) hpent "CONDUIT" nil)
+        )
+        (setq hi (1+ hi))
+      )
+    )
+    (princ "\nM3D: polygon/polyface mesh skipped.")
+  )
+)
+
+;; OSMODE / CMDECHO off for the whole run, restored on exit or error.
+(defun m3d-begin ()
+  (setq m3dOldOsmode  (getvar "OSMODE")
+        m3dOldCmdecho (getvar "CMDECHO")
+        m3dOldError   *error*)
+  (defun *error* (msg)
+    (m3d-end)
+    (if (and msg (/= msg "") (not (wcmatch (strcase msg t) "*break*,*cancel*,*exit*")))
+      (princ (strcat "\nMake3DConduit: " msg))
+    )
+    (princ)
+  )
+  (setvar "OSMODE" 0)
+  (setvar "CMDECHO" 0)
+)
+(defun m3d-end ()
+  (if m3dOldOsmode  (setvar "OSMODE" m3dOldOsmode))
+  (if m3dOldCmdecho (setvar "CMDECHO" m3dOldCmdecho))
+  (setq *error* m3dOldError
+        m3dOldOsmode nil
+        m3dOldCmdecho nil
+        m3dOldError nil)
 )
 
 (defun VerticalConduitDriver ()
@@ -104,7 +224,7 @@
   (setq mycir (entlast)
 	mycirdata (entget mycir)
   )
-  (command "extrude" mycir "" mkvdist "" )
+  (command "_.EXTRUDE" mycir "" mkvdist)
  )
 
   
@@ -211,9 +331,14 @@
 	      mode1 (entget (entnext (dxf -1 mode)))
 	)
       )
+      ;; 2D heavy and 3D POLYLINE were only measured, never drawn (since 2012).
+      (if (numberp actualsize)
+        (m3d-heavy-pline plent pentdata (* actualsize 0.5))
+        (princ "\nM3D: no OD for this conduit type/size, skipped.")
+      )
     )
     (progn
-      (if (= (dxf 0 pentdata) "LWPOLYLINE")
+      (if (and (= (dxf 0 pentdata) "LWPOLYLINE") (numberp actualsize))
 	(progn
 
 	  (setq	mklwptbulist
@@ -301,13 +426,23 @@
   (cirmake (polar pt1 angtocenter rad) 0.5)
 )
 
-(defun c:m3d()
-  (setq ent (car (entsel)))
-  (ThreeDeeConduitDriver ent)
+(defun c:M3DOLD( / ent)
+  (setq _MEDCONDUITOD_CACHE nil)
+  (if (and (setq ent (car (entsel "\nSelect MED conduit polyline: ")))
+           (xdataget ent _CONDUIT))
+    (progn
+      (m3d-begin)
+      (ThreeDeeConduitDriver ent)
+      (m3d-end)
+    )
+    (princ "\nNot a MED conduit.")
+  )
+  (princ)
 )
 
-(defun c:make3dConduit()
+(defun c:Make3DConduitOld()
   (setq _MEDCONDUITOD_CACHE nil) ; re-read MEDConduitOD each run
+  (m3d-begin)
   (smlayer _MED3DCONDUIT)
   (command "vpoint" "1,1,1")
   (initget "3DS Dwg Layer")
@@ -372,7 +507,8 @@
       (prompt "\nUse the PLAN command to return to plan view:")
     )
   )
-    
+  (m3d-end)
+  (princ)
 )
 
 

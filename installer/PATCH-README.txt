@@ -7,7 +7,8 @@ rights when the install folder is writable by your account.
 What it updates
 ---------------
 - Support\MED-DotNet.dll
-- Support\MEDCore.lsp, MEDFunctions.lsp, MED3DTrayFunctions.lsp, MED3DCON.lsp
+- Support\MEDCore.lsp, MEDFunctions.lsp, MED3DTrayFunctions.lsp, MED3DCON.lsp,
+  MED3DPath.lsp
 - Data\seed\conduit_od.csv, Data\seed\cable_od_sources.csv (OD seed data;
   MED-DotNet creates/fills MEDConduitOD and blank CABLE USER3 values in your
   existing database at load - it never replaces MED.db or overwrites values)

@@ -61,6 +61,7 @@ Source: "Support\MEDCore.lsp"; DestDir: "{app}\Support"; Flags: ignoreversion; C
 Source: "Support\MEDFunctions.lsp"; DestDir: "{app}\Support"; Flags: ignoreversion; Components: support; Check: MedSupportWritable
 Source: "Support\MED3DTrayFunctions.lsp"; DestDir: "{app}\Support"; Flags: ignoreversion; Components: support; Check: MedSupportWritable
 Source: "Support\MED3DCON.lsp"; DestDir: "{app}\Support"; Flags: ignoreversion; Components: support; Check: MedSupportWritable
+Source: "Support\MED3DPath.lsp"; DestDir: "{app}\Support"; Flags: ignoreversion; Components: support; Check: MedSupportWritable
 ; OD seed CSVs only (never Data\MED.db / MEDRegistrations.db, never Support\med.spc).
 Source: "Data\seed\conduit_od.csv"; DestDir: "{app}\Data\seed"; Flags: ignoreversion; Components: support; Check: MedDataSeedWritable
 Source: "Data\seed\cable_od_sources.csv"; DestDir: "{app}\Data\seed"; Flags: ignoreversion; Components: support; Check: MedDataSeedWritable

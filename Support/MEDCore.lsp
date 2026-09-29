@@ -69,6 +69,10 @@
 (load "MEDTag.lsp")      ;Checked 02/05/2022
 (load "medutil.lsp")     ;Checked 02/05/2022
 (load "MED3DMisc.lsp")   ;Checked 02/05/2022
+;; M3D, C3D, MAKE3DCONDUIT, MAKE3DCABLE (defuns only; a load error must not stop MEDCore)
+(if (findfile "MED3DPath.lsp")
+  (if (vl-catch-all-error-p (vl-catch-all-apply (quote load) (list "MED3DPath.lsp")))
+    (princ "\nMED3DPath.lsp failed to load; APPLOAD it to see the error.")))
 (load "med.spc")         ;Checked 02/05/2022
 
 (if (/= (getvar "USERR2") 0.0)

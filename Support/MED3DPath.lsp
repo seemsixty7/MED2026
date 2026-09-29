@@ -46,7 +46,7 @@
 
 (princ "\rLoading MED3DPath...")
 (vl-load-com)
-(setq *MED3D-VERSION* "2026-09-29 r6 (feature/3dpath)")
+(setq *MED3D-VERSION* "2026-09-29 r7 (feature/3dpath)")
 
 ;;; ------------------------------------------------------------------ settings
 (if (not *MED3D-BEND-FACTOR*) (setq *MED3D-BEND-FACTOR* 5.0))  ; conduit R = factor x OD
@@ -1166,21 +1166,29 @@
   (med3d-end))
 
 (defun med3d-make3d-all-cmd () (med3d-make3d-all))
-(setq c:MEDMake3D med3d-make3d-all-cmd)
+(defun c:MEDMake3D () (med3d-make3d-all-cmd))
 
 ;;; ------------------------------------------------------- command ownership
 ;; M3D / C3D / MAKE3DCONDUIT / MAKE3DCABLE are bound to the med3d-cmd-* functions
 ;; here, so a later (load "MED3DCON") with the 2012 defuns cannot keep them.
 ;; Returns the list of names that had to be taken back (not counting first load).
+;; Commands must be created with DEFUN for AutoCAD to register them as command
+;; names (a SETQ'd c: symbol is callable from LISP but is not a command).
+;; Each wrapper's defun result is kept in *MED3D-OWN-<name>* so ownership can be
+;; tested with EQ; if another file redefined the name it is re-defun'd here.
 (defun med3d-claim-commands (quiet / bad)
-  (if (not (eq c:M3D med3d-cmd-m3d))
-    (setq bad (if c:M3D (cons "M3D" bad) bad) c:M3D med3d-cmd-m3d))
-  (if (not (eq c:C3D med3d-cmd-c3d))
-    (setq bad (if c:C3D (cons "C3D" bad) bad) c:C3D med3d-cmd-c3d))
-  (if (not (eq c:Make3DConduit med3d-cmd-make3dconduit))
-    (setq bad (if c:Make3DConduit (cons "MAKE3DCONDUIT" bad) bad) c:Make3DConduit med3d-cmd-make3dconduit))
-  (if (not (eq c:Make3DCable med3d-cmd-make3dcable))
-    (setq bad (if c:Make3DCable (cons "MAKE3DCABLE" bad) bad) c:Make3DCable med3d-cmd-make3dcable))
+  (if (or (null c:M3D) (not (eq c:M3D *MED3D-OWN-M3D*)))
+    (setq bad (if c:M3D (cons "M3D" bad) bad)
+          *MED3D-OWN-M3D* (defun c:M3D () (med3d-cmd-m3d))))
+  (if (or (null c:C3D) (not (eq c:C3D *MED3D-OWN-C3D*)))
+    (setq bad (if c:C3D (cons "C3D" bad) bad)
+          *MED3D-OWN-C3D* (defun c:C3D () (med3d-cmd-c3d))))
+  (if (or (null c:Make3DConduit) (not (eq c:Make3DConduit *MED3D-OWN-MKCON*)))
+    (setq bad (if c:Make3DConduit (cons "MAKE3DCONDUIT" bad) bad)
+          *MED3D-OWN-MKCON* (defun c:Make3DConduit () (med3d-cmd-make3dconduit))))
+  (if (or (null c:Make3DCable) (not (eq c:Make3DCable *MED3D-OWN-MKCAB*)))
+    (setq bad (if c:Make3DCable (cons "MAKE3DCABLE" bad) bad)
+          *MED3D-OWN-MKCAB* (defun c:Make3DCable () (med3d-cmd-make3dcable))))
   (if (and bad (not quiet))
     (princ (strcat "\nMED3DPath: " (med3d-join (reverse bad) ", ")
                    " had been redefined by another file (old MED3DCON.lsp?) - MED3DPath "
@@ -1207,11 +1215,11 @@
 (defun med3d-owner (f g) (if (eq f g) "MED3DPath" (if f "OTHER FILE (old MED3DCON.lsp?)" "not defined")))
 (defun c:MED3DVER ()
   (princ (strcat "\nMED3DPath " *MED3D-VERSION*
-                 "\n  M3D           : " (med3d-owner c:M3D med3d-cmd-m3d)
-                 "\n  C3D           : " (med3d-owner c:C3D med3d-cmd-c3d)
-                 "\n  MAKE3DCONDUIT : " (med3d-owner c:Make3DConduit med3d-cmd-make3dconduit)
-                 "\n  MAKE3DCABLE   : " (med3d-owner c:Make3DCable med3d-cmd-make3dcable)
-                 "\n  MEDMAKE3D     : " (med3d-owner c:MEDMake3D med3d-make3d-all-cmd)
+                 "\n  M3D           : " (med3d-owner c:M3D *MED3D-OWN-M3D*)
+                 "\n  C3D           : " (med3d-owner c:C3D *MED3D-OWN-C3D*)
+                 "\n  MAKE3DCONDUIT : " (med3d-owner c:Make3DConduit *MED3D-OWN-MKCON*)
+                 "\n  MAKE3DCABLE   : " (med3d-owner c:Make3DCable *MED3D-OWN-MKCAB*)
+                 "\n  MEDMAKE3D     : " (if c:MEDMake3D "MED3DPath" "not defined")
                  "\n  tray worker   : " (if med3d-tray-build "med3d-tray-build (MED3DTrayFunctions.lsp)" "not loaded - MEDMAKE3D would skip tray")
                  "\n  debug         : " (if (med3d-debug-on) "on" "off")
                  "\n  support path MED3DPath.lsp: " (if (findfile "MED3DPath.lsp") (findfile "MED3DPath.lsp") "not found")

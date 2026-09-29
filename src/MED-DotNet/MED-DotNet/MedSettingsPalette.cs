@@ -10,13 +10,15 @@ namespace MEDDotNet
     public class MedSettingsCommands
     {
         [CommandMethod("MEDSETTINGS")]
-        public void ShowMedSettings()
+        public void ShowMedSettings() { MedDebug.Run("MEDSETTINGS", ShowMedSettingsCore); }
+        void ShowMedSettingsCore()
         {
             MedSettingsPalette.Show();
         }
 
         [CommandMethod("MEDSET")]
-        public void ShowMedSet()
+        public void ShowMedSet() { MedDebug.Run("MEDSET", ShowMedSetCore); }
+        void ShowMedSetCore()
         {
             MedSettingsPalette.Show();
         }

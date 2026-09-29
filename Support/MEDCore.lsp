@@ -127,3 +127,5 @@
 
 )
 
+;; Global MED debug flag (MED-DotNet MEDDEBUG command); nil if MED-DotNet is not loaded.
+(setq *MED-DEBUG* (if med-debug-p (med-debug-p) nil))

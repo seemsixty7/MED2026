@@ -45,8 +45,12 @@
 (if (not *MED3D-METHOD*) (setq *MED3D-METHOD* "SWEEP"))       ; "SWEEP" or "PIECES"
 ;; per-run bend override: list of (handle . override), see med3d-bend-radius
 (if (not (boundp '*MED3D-BEND-OVERRIDES*)) (setq *MED3D-BEND-OVERRIDES* nil))
-;; (setq *MED3D-DEBUG* T) prints each run's path, method choice, every piece's
-;; planned start/end and the bounding box of the solid actually created.
+;; Debug output: each run's path, method choice, every piece's planned
+;; start/end and the bounding box of the solid actually created.
+;;   *MED3D-DEBUG* nil (default) -> follow the global MED debug flag
+;;                                  (MEDDEBUG command / *MED-DEBUG* / (med-debug-p))
+;;   (setq *MED3D-DEBUG* T)      -> always on for MED3DPath
+;;   (setq *MED3D-DEBUG* "OFF")  -> always off for MED3DPath, even if MEDDEBUG is on
 (if (not (boundp '*MED3D-DEBUG*)) (setq *MED3D-DEBUG* nil))
 ;; vertices closer than factor x OD to the previous kept vertex are dropped
 ;; (tiny jogs / near-duplicate vertices in 3D polylines would otherwise leave a
@@ -602,7 +606,16 @@
       (if (and reg (not (vl-catch-all-error-p reg))) (car reg)))))
 
 ;;; ------------------------------------------------------------ debug / checks
-(defun med3d-dbg (msg) (if *MED3D-DEBUG* (princ (strcat "\nMED3D dbg: " msg))))
+;; T when MED3DPath debug output is on (see *MED3D-DEBUG* above)
+(defun med3d-debug-on (/ r)
+  (cond ((equal *MED3D-DEBUG* "OFF") nil)
+        (*MED3D-DEBUG* T)
+        (*MED-DEBUG* T)
+        ((and med-debug-p
+              (not (vl-catch-all-error-p
+                     (setq r (vl-catch-all-apply 'med-debug-p nil)))))
+         r)))
+(defun med3d-dbg (msg) (if (med3d-debug-on) (princ (strcat "\nMED3D dbg: " msg))))
 (defun med3d-ptstr (p)
   (if p (strcat (rtos (car p) 2 3) "," (rtos (cadr p) 2 3) "," (rtos (caddr p) 2 3)) "nil"))
 (defun med3d-maxabs (pts / m)

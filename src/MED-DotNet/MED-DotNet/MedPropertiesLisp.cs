@@ -18,7 +18,8 @@ namespace MEDDotNet
     public class MedPropertiesLisp
     {
         [LispFunction("MED-SetMedProperties")]
-        public static ResultBuffer SetMedProperties(ResultBuffer args)
+        public static ResultBuffer SetMedProperties(ResultBuffer args) { return MedDebug.Lisp("MED-SetMedProperties", () => SetMedPropertiesCore(args)); }
+        static ResultBuffer SetMedPropertiesCore(ResultBuffer args)
         {
             if (args == null)
                 return null;
@@ -58,7 +59,8 @@ namespace MEDDotNet
         /// Upsert sidecar JSON only (entity already has XData, e.g. written by LISP).
         /// </summary>
         [LispFunction("MED-UpsertMedPropertiesJson")]
-        public static ResultBuffer UpsertMedPropertiesJson(ResultBuffer args)
+        public static ResultBuffer UpsertMedPropertiesJson(ResultBuffer args) { return MedDebug.Lisp("MED-UpsertMedPropertiesJson", () => UpsertMedPropertiesJsonCore(args)); }
+        static ResultBuffer UpsertMedPropertiesJsonCore(ResultBuffer args)
         {
             if (args == null)
                 return null;
@@ -95,7 +97,8 @@ namespace MEDDotNet
         }
 
         [LispFunction("MED-RebuildMedPropertiesJson")]
-        public static ResultBuffer RebuildMedPropertiesJsonLisp(ResultBuffer args)
+        public static ResultBuffer RebuildMedPropertiesJsonLisp(ResultBuffer args) { return MedDebug.Lisp("MED-RebuildMedPropertiesJson", () => RebuildMedPropertiesJsonLispCore(args)); }
+        static ResultBuffer RebuildMedPropertiesJsonLispCore(ResultBuffer args)
         {
             int n = RebuildCurrentDocument(true);
             return new ResultBuffer(new TypedValue((int)LispDataType.Int32, n));
@@ -106,7 +109,8 @@ namespace MEDDotNet
         /// so {export}.medprops.json matches handles inside the exported file, not the source drawing.
         /// </summary>
         [LispFunction("MED-RebuildMedPropertiesJsonForFile")]
-        public static ResultBuffer RebuildMedPropertiesJsonForFile(ResultBuffer args)
+        public static ResultBuffer RebuildMedPropertiesJsonForFile(ResultBuffer args) { return MedDebug.Lisp("MED-RebuildMedPropertiesJsonForFile", () => RebuildMedPropertiesJsonForFileCore(args)); }
+        static ResultBuffer RebuildMedPropertiesJsonForFileCore(ResultBuffer args)
         {
             Document doc = AcadApp.DocumentManager.MdiActiveDocument;
             Editor ed = doc != null ? doc.Editor : null;
@@ -123,14 +127,16 @@ namespace MEDDotNet
         }
 
         [CommandMethod("MEDREBUILDMEDPROPSJSON")]
-        public void RebuildMedPropertiesJsonCommand()
+        public void RebuildMedPropertiesJsonCommand() { MedDebug.Run("MEDREBUILDMEDPROPSJSON", RebuildMedPropertiesJsonCommandCore); }
+        void RebuildMedPropertiesJsonCommandCore()
         {
             RebuildCurrentDocument(true);
         }
 
         /// <summary>Alias command name closer to the lisp symbol.</summary>
         [CommandMethod("MED-RebuildMedPropertiesJson")]
-        public void RebuildMedPropertiesJsonCommandAlias()
+        public void RebuildMedPropertiesJsonCommandAlias() { MedDebug.Run("MED-RebuildMedPropertiesJson", RebuildMedPropertiesJsonCommandAliasCore); }
+        void RebuildMedPropertiesJsonCommandAliasCore()
         {
             RebuildCurrentDocument(true);
         }
@@ -170,8 +176,10 @@ namespace MEDDotNet
             }
             catch (System.Exception ex)
             {
-                if (writeMessage && ed != null)
-                    ed.WriteMessage("\nMED-RebuildMedPropertiesJson failed: {0}", ex.Message);
+                if (writeMessage)
+                    MedDebug.Error("MED-RebuildMedPropertiesJson", ex);
+                else
+                    MedDebug.Warn("MED-RebuildMedPropertiesJson", ex);
             }
             return count;
         }
@@ -220,14 +228,17 @@ namespace MEDDotNet
             }
             catch (System.Exception ex)
             {
-                if (writeMessage && ed != null)
-                    ed.WriteMessage("\nMED-RebuildMedPropertiesJsonForFile failed: {0}", ex.Message);
+                if (writeMessage)
+                    MedDebug.Error("MED-RebuildMedPropertiesJsonForFile", ex);
+                else
+                    MedDebug.Warn("MED-RebuildMedPropertiesJsonForFile", ex);
             }
             return count;
         }
 
         [LispFunction("MED-GetMedProperties")]
-        public static ResultBuffer GetMedProperties(ResultBuffer args)
+        public static ResultBuffer GetMedProperties(ResultBuffer args) { return MedDebug.Lisp("MED-GetMedProperties", () => GetMedPropertiesCore(args)); }
+        static ResultBuffer GetMedPropertiesCore(ResultBuffer args)
         {
             if (args == null)
                 return null;

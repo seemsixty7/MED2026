@@ -14,31 +14,36 @@ namespace MEDDotNet
     public class MedPropertiesCommands
     {
         [CommandMethod("MEDCHG", CommandFlags.UsePickSet | CommandFlags.Redraw)]
-        public void ShowMedChg()
+        public void ShowMedChg() { MedDebug.Run("MEDCHG", ShowMedChgCore); }
+        void ShowMedChgCore()
         {
             MedPropertiesPalette.Show();
         }
 
         [CommandMethod("MEDPROPERTIES", CommandFlags.UsePickSet | CommandFlags.Redraw)]
-        public void ShowMedProperties()
+        public void ShowMedProperties() { MedDebug.Run("MEDPROPERTIES", ShowMedPropertiesCore); }
+        void ShowMedPropertiesCore()
         {
             MedPropertiesPalette.Show();
         }
 
         [CommandMethod("MEDPROPS", CommandFlags.UsePickSet | CommandFlags.Redraw)]
-        public void ShowMedProps()
+        public void ShowMedProps() { MedDebug.Run("MEDPROPS", ShowMedPropsCore); }
+        void ShowMedPropsCore()
         {
             MedPropertiesPalette.Show();
         }
 
         [CommandMethod("MEDRECORDS", CommandFlags.UsePickSet)]
-        public void EditRecords()
+        public void EditRecords() { MedDebug.Run("MEDRECORDS", EditRecordsCore); }
+        void EditRecordsCore()
         {
             MedPropertiesPalette.EditSelectedEntity();
         }
 
         [CommandMethod("MEDXDEDIT", CommandFlags.UsePickSet)]
-        public void EditXd()
+        public void EditXd() { MedDebug.Run("MEDXDEDIT", EditXdCore); }
+        void EditXdCore()
         {
             MedPropertiesPalette.EditSelectedEntity();
         }
@@ -245,7 +250,7 @@ namespace MEDDotNet
             }
             catch (System.Exception ex)
             {
-                doc.Editor.WriteMessage("\nMED Properties: " + ex.Message);
+                MedDebug.Error("MED Properties", ex);
             }
             finally
             {
@@ -330,7 +335,7 @@ namespace MEDDotNet
             }
             catch (System.Exception ex)
             {
-                doc.Editor.WriteMessage("\nMED Records: " + ex.Message);
+                MedDebug.Error("MED Records", ex);
                 return;
             }
             if (recs.Count == 0)

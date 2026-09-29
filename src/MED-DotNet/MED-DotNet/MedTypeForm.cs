@@ -40,7 +40,9 @@ namespace MEDDotNet
 
         [CommandMethod("MEDTYPE")]
 
-        public void ShowType()
+        public void ShowType() { MedDebug.Run("MEDTYPE", ShowTypeCore); }
+
+        void ShowTypeCore()
 
         {
 
@@ -52,7 +54,9 @@ namespace MEDDotNet
 
         [CommandMethod("MEDTYPES")]
 
-        public void ShowTypes()
+        public void ShowTypes() { MedDebug.Run("MEDTYPES", ShowTypesCore); }
+
+        void ShowTypesCore()
 
         {
 
@@ -372,7 +376,7 @@ namespace MEDDotNet
 
             {
 
-                MessageBox.Show(this, ex.Message, "MED Type");
+                MessageBox.Show(this, MedDebug.UiText("MED Type", ex), "MED Type");
 
             }
 
@@ -644,7 +648,7 @@ namespace MEDDotNet
 
             {
 
-                MessageBox.Show(this, ex.Message, "MED Type save");
+                MessageBox.Show(this, MedDebug.UiText("MED Type save", ex), "MED Type save");
 
                 return false;
 
@@ -722,7 +726,7 @@ namespace MEDDotNet
 
             {
 
-                MessageBox.Show(this, ex.Message, "MED Type export");
+                MessageBox.Show(this, MedDebug.UiText("MED Type export", ex), "MED Type export");
 
             }
 
@@ -842,7 +846,7 @@ namespace MEDDotNet
 
             {
 
-                MessageBox.Show(this, ex.Message, "MED Type import");
+                MessageBox.Show(this, MedDebug.UiText("MED Type import", ex), "MED Type import");
 
             }
 

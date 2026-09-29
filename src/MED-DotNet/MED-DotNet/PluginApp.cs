@@ -12,15 +12,17 @@ namespace MEDDotNet
         {
             Document doc = Application.DocumentManager.MdiActiveDocument;
             if (doc != null)
-                doc.Editor.WriteMessage("\nMED-DotNet loaded. CABLE / CABLEPALETTE for cables, MEDCHG / MEDPROPERTIES for entity xdata, MEDSETTINGS for defaults, MEDCHG-CLASSIC for the old DCL, ProcessSQLStatementNET for SQL.");
+                doc.Editor.WriteMessage("\nMED-DotNet loaded. CABLE / CABLEPALETTE for cables, MEDCHG / MEDPROPERTIES for entity xdata, MEDSETTINGS for defaults, MEDCHG-CLASSIC for the old DCL, ProcessSQLStatementNET for SQL, MEDDEBUG for debug mode"
+                    + (MedDebug.Enabled ? " (debug is " + MedDebug.Level + ", log " + MedDebug.LogPath + ")." : "."));
+            MedDebug.Startup();
 
             // Idempotent MEDUsers.LastProject migration + restore _MEDPROJECT from LastProject.
             try { MedUserProject.EnsureReady(true); }
-            catch (System.Exception) { }
+            catch (System.Exception ex) { MedDebug.Warn("startup: MEDUsers.LastProject", ex); }
 
             // Idempotent OD data: MEDConduitOD table + CABLE USER3 (OD in) from Data\seed\*.csv.
             try { MedODSeed.EnsureReady(); }
-            catch (System.Exception) { }
+            catch (System.Exception ex) { MedDebug.Warn("startup: OD seed", ex); }
         }
 
         public void Terminate()
@@ -30,7 +32,7 @@ namespace MEDDotNet
         [LispFunction("ProcessSQLStatementNET")]
         public static ResultBuffer ProcessSQLStatementNet(ResultBuffer resbufin)
         {
-            return ProcessSQL.ProcessSQLStatementNet(resbufin);
+            return MedDebug.Lisp("ProcessSQLStatementNET", () => ProcessSQL.ProcessSQLStatementNet(resbufin));
         }
     }
 }

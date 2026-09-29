@@ -10,8 +10,11 @@
 - **`Support\MED3DPath.lsp`: one 3D solid per conduit or cable run** (loaded by MEDCore). `M3D` / `MAKE3DCONDUIT` (conduit), new `C3D` / `MAKE3DCABLE` (cable), `MED3DPLAN` (corner table). LWPOLYLINE, 2D and 3D POLYLINE; bends at 5 × OD (`med3d-bend-radius`, per-run override hook); tangents allocated so neighbouring bends never overlap; corners that cannot fit are left sharp with a sphere and flagged (message + marker on `MED_3DFLAG`). SWEEP along a computed filleted centerline for planar runs, ActiveX pieces + union otherwise. Corner list exposed for future fittings. See `docs/3d.md`.
 - `*MED3D-DEBUG*`: set to T for a per-run / per-piece trace (planned start/end, solid bounding box, SWEEP vs PIECES and why). See `docs/3d.md`.
 - `tests/med3dpath` (geometry desk test through a mini AutoLISP interpreter; `test_med3d_acad.py` with a mock AutoCAD checks LW / 2D / 3D polylines with OCS normals end to end) and `tests/autocad/MED3DPathTest.lsp` (sample runs in AutoCAD).
+- **MED debug mode** (MED-DotNet). New `MEDDEBUG` command (On / Off / Verbose / Status), saved per user in `HKCU\Software\MooreDesign\MED2026` (`DebugLevel`). Logs go to `%LOCALAPPDATA%\MED2026\logs\med-YYYYMMDD.log`: errors are always logged, debug notes only when debug is on, and files are kept 7 days. LISP can read the level with `(med-debug-p)`, `(med-debug-level)`, `(med-debug-log ...)`, `*MED-DEBUG*` and `*MED-DEBUG-LEVEL*`. MED commands and LISP functions are guarded, so an exception is reported instead of reaching AutoCAD. See `docs/debug.md`.
 
 ### Changed
+- `ProcessSQLStatementNET`: `n row(s)`, `No Rows` and `n row(s) affected` are only shown when `MEDDEBUG` is Verbose (and `*MED-SQL-QUIET*` is not set). Errors show one line normally; with debug on they add the exception type, inner exceptions, SQL text and stack trace.
+- MED3DPath `*MED3D-DEBUG*` defaults to following the global MED debug flag. `T` forces the trace on and `"OFF"` forces it off.
 - `MAKE3DCONDUIT` / `M3D` size conduit solids by conduit type (e.g. EMT is now 0.706" at 1/2", not 0.840"). Same result as before when the table/row is missing.
 - Vertical conduit solids use the OD instead of the nominal trade size.
 - MEDTYPE: USER3 header shows `OD (in)` for Cable (`User3 / OD (in)` on All).

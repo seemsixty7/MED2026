@@ -17,19 +17,22 @@ namespace MEDDotNet
     public class MedShowBomCommands
     {
         [CommandMethod("MEDSHOWBOM")]
-        public void ShowBomDetail()
+        public void ShowBomDetail() { MedDebug.Run("MEDSHOWBOM", ShowBomDetailCore); }
+        void ShowBomDetailCore()
         {
             MedShowBomForm.ShowBom(false);
         }
 
         [CommandMethod("MEDSHOW")]
-        public void ShowBomAlias()
+        public void ShowBomAlias() { MedDebug.Run("MEDSHOW", ShowBomAliasCore); }
+        void ShowBomAliasCore()
         {
             MedShowBomForm.ShowBom(false);
         }
 
         [CommandMethod("MEDSHOWSUM")]
-        public void ShowBomSummary()
+        public void ShowBomSummary() { MedDebug.Run("MEDSHOWSUM", ShowBomSummaryCore); }
+        void ShowBomSummaryCore()
         {
             MedShowBomForm.ShowBom(true);
         }
@@ -222,7 +225,7 @@ namespace MEDDotNet
             }
             catch (System.Exception ex)
             {
-                _status.Text = "Copy failed: " + ex.Message;
+                _status.Text = "Copy failed: " + MedDebug.Status("MEDSHOWBOM copy", ex);
             }
         }
 
@@ -247,7 +250,7 @@ namespace MEDDotNet
                 }
                 catch (System.Exception ex)
                 {
-                    _status.Text = "Export failed: " + ex.Message;
+                    _status.Text = "Export failed: " + MedDebug.Status("MEDSHOWBOM export", ex);
                 }
             }
         }
@@ -400,7 +403,7 @@ namespace MEDDotNet
             }
             catch (System.Exception ex)
             {
-                _status.Text = "Query failed: " + ex.Message;
+                _status.Text = "Query failed: " + MedDebug.Status("MEDSHOWBOM query", ex);
                 _grid.DataSource = null;
                 return;
             }

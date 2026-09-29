@@ -41,9 +41,10 @@ namespace MEDDotNet
                     }
                     _done = true;
                 }
-                catch (System.Exception)
+                catch (System.Exception ex)
                 {
                     // DB may be unavailable at early load; next call retries.
+                    MedDebug.Warn("OD seed (MEDConduitOD / CABLE USER3)", ex);
                 }
             }
         }

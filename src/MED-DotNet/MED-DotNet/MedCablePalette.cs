@@ -11,25 +11,29 @@ namespace MEDDotNet
     public class MedCableCommands
     {
         [CommandMethod("CABLEPALETTE")]
-        public void ShowCablePalette()
+        public void ShowCablePalette() { MedDebug.Run("CABLEPALETTE", ShowCablePaletteCore); }
+        void ShowCablePaletteCore()
         {
             MedCablePalette.Show();
         }
 
         [CommandMethod("CABLESET")]
-        public void ShowCableSet()
+        public void ShowCableSet() { MedDebug.Run("CABLESET", ShowCableSetCore); }
+        void ShowCableSetCore()
         {
             MedCablePalette.Show();
         }
 
         [CommandMethod("MEDCABLE")]
-        public void Cable()
+        public void Cable() { MedDebug.Run("MEDCABLE", CableCore); }
+        void CableCore()
         {
             MedCablePalette.Show();
         }
 
         [LispFunction("MED-CableApplyLayer")]
-        public static ResultBuffer CableApplyLayer(ResultBuffer unused)
+        public static ResultBuffer CableApplyLayer(ResultBuffer unused) { return MedDebug.Lisp("MED-CableApplyLayer", () => CableApplyLayerCore(unused)); }
+        static ResultBuffer CableApplyLayerCore(ResultBuffer unused)
         {
             MedCablePalette.ApplyLayerFromCabCode();
             return null;

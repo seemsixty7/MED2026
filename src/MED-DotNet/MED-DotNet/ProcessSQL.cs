@@ -207,12 +207,13 @@ namespace MEDDotNet
                         DataTable dt = new DataTable();
                         adapter.Fill(dt);
                         bool quiet = SqlQuiet(doc);
+                        MedDebug.Note("SQL " + (quiet ? "(quiet) " : "") + dt.Rows.Count + " row(s): " + query);
                         if (dt.Rows.Count == 0)
                         {
-                            if (!quiet) ed.WriteMessage("\nMED-DotNet: No Rows");
+                            if (!quiet) MedDebug.Verbose("No Rows");
                             return null;
                         }
-                        if (!quiet) ed.WriteMessage("\nMED-DotNet: " + dt.Rows.Count + " row(s)");
+                        if (!quiet) MedDebug.Verbose(dt.Rows.Count + " row(s)");
                         result.Add(new TypedValue((int)LispDataType.ListBegin));
                         result.Add(new TypedValue((int)LispDataType.ListBegin));
                         foreach (DataColumn dc in dt.Columns)
@@ -234,14 +235,15 @@ namespace MEDDotNet
                 {
                     cmd.CommandText = query;
                     int n = cmd.ExecuteNonQuery();
-                    ed.WriteMessage("\nMED-DotNet: " + n + " row(s) affected");
+                    MedDebug.Note("SQL " + n + " row(s) affected: " + query);
+                    MedDebug.Verbose(n + " row(s) affected");
                     result.Add(new TypedValue((int)LispDataType.Int32, n));
                     return result;
                 }
             }
             catch (System.Exception ex)
             {
-                ed.WriteMessage("\nMED-DotNet: " + ex.Message);
+                MedDebug.Error("SQL", ex, query);
                 return null;
             }
             finally

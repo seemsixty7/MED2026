@@ -40,6 +40,10 @@
 ;; (setq *MED3D-DEBUG* T) prints each run's path, method choice, every piece's
 ;; planned start/end and the bounding box of the solid actually created.
 (if (not (boundp '*MED3D-DEBUG*)) (setq *MED3D-DEBUG* nil))
+;; vertices closer than factor x OD to the previous kept vertex are dropped
+;; (tiny jogs / near-duplicate vertices in 3D polylines would otherwise leave a
+;; segment too short for any bend and force spheres at both its corners)
+(if (not *MED3D-DUP-FACTOR*) (setq *MED3D-DUP-FACTOR* 0.1))
 (setq *MED3D-TOL* 1e-6       ; length tolerance (drawing units)
       *MED3D-ANGTOL* 1e-4)   ; radians; smaller deflection = straight through
 
@@ -129,15 +133,19 @@
 
 ;; pts: WCS points, buls: bulge per vertex, nrm: WCS normal (2D) or nil (3D).
 ;; Returns (segs closed) or nil when fewer than 2 distinct points.
-(defun med3d-build-segs (pts buls nrm closed / i np nb ni n segs p q b arc)
-  (setq i 0 np nil nb nil ni nil)
+(defun med3d-build-segs (pts buls nrm closed / i np nb ni n segs p q b arc dt)
+  (setq i 0 np nil nb nil ni nil
+        dt (if (and (numberp *MED3D-DUP-TOL*) (> *MED3D-DUP-TOL* *MED3D-TOL*)) *MED3D-DUP-TOL* *MED3D-TOL*))
   (foreach p pts
-    (if (and np (< (distance p (car np)) *MED3D-TOL*))
-      (setq nb (cons (nth i buls) (cdr nb)))          ; zero-length segment dropped
+    (if (and np (< (distance p (car np)) dt))
+      (progn                                          ; (near) zero-length segment dropped
+        (if (> (distance p (car np)) *MED3D-TOL*)
+          (setq *MED3D-DROPPED* (cons (list i (distance p (car np))) *MED3D-DROPPED*)))
+        (setq nb (cons (nth i buls) (cdr nb))))
       (setq np (cons p np) nb (cons (nth i buls) nb) ni (cons i ni)))
     (setq i (1+ i)))
   (setq np (reverse np) nb (reverse nb) ni (reverse ni))
-  (if (and (> (length np) 2) (< (distance (car np) (car (reverse np))) *MED3D-TOL*))
+  (if (and (> (length np) 2) (< (distance (car np) (car (reverse np))) dt))
     (setq np (reverse (cdr (reverse np)))
           nb (reverse (cdr (reverse nb)))
           ni (reverse (cdr (reverse ni)))
@@ -295,8 +303,10 @@
 ;; Pure geometry: WCS vertices -> plan alist
 ;;   ("SEGS" ...) ("CORNERS" ...) ("PIECES" ...) ("CLOSED" . flag) ("OD" . od) ("R" . R)
 ;; pieces: ("L" A B) | ("A" A B C N th) | ("S" P radius), in path order.
-(defun med3d-plan (pts buls nrm closed od kind override / bs segs R joints al stats avails rs corners i st th d1 d2 tt pin pout n1 c nn pieces k cs ce d a b)
-  (setq bs (med3d-build-segs pts buls nrm closed))
+(defun med3d-plan (pts buls nrm closed od kind override / *MED3D-DUP-TOL* bs segs R joints al stats avails rs corners i st th d1 d2 tt pin pout n1 c nn pieces k cs ce d a b)
+  (setq *MED3D-DUP-TOL* (* *MED3D-DUP-FACTOR* od)
+        *MED3D-DROPPED* nil
+        bs (med3d-build-segs pts buls nrm closed))
   (if (and bs (car bs))
     (progn
       (setq segs   (car bs)
@@ -480,8 +490,27 @@
   (entmake (list '(0 . "TEXT") (cons 8 lay) (cons 10 (med3d-v+ v (list s s 0.0))) (cons 40 od)
                  (cons 1 (strcat "3D FLAG " h " v" (itoa (1+ idx)))))))
 
+(defun med3d-corner-reason (c)
+  (cond
+    ((= (med3d-get "STATUS" c) "FITTED")
+      (strcat "fits: tangent " (rtos (med3d-get "NEED" c) 2 3) " <= available " (rtos (med3d-get "AVAIL" c) 2 3)))
+    ((= (med3d-get "STATUS" c) "KINK") "non-tangent joint at a drawn arc")
+    ((> (med3d-get "NEED" c) 1e90) "reversal (run doubles back)")
+    (T (strcat "tangent " (rtos (med3d-get "NEED" c) 2 3) " > available "
+               (rtos (max 0.0 (med3d-get "AVAIL" c)) 2 3)
+               " (segment too short or shared with a neighbouring bend)"))))
+
 (defun med3d-report-flags (plan / h od st)
   (setq h (med3d-get "HANDLE" plan) od (med3d-get "OD" plan))
+  (foreach d (reverse *MED3D-DROPPED*)
+    (med3d-dbg (strcat "vertex " (itoa (1+ (car d))) " dropped: only " (rtos (cadr d) 2 4)
+                       " from the previous vertex (< " (rtos *MED3D-DUP-FACTOR* 2 2) " x OD)")))
+  (med3d-dbg (strcat (itoa (length (med3d-get "CORNERS" plan))) " corner(s), R " (rtos (med3d-get "R" plan) 2 3)
+                     ", OD " (rtos od 2 3)))
+  (foreach c (med3d-get "CORNERS" plan)
+    (med3d-dbg (strcat "corner at vertex " (itoa (1+ (med3d-get "INDEX" c))) " "
+                       (med3d-ptstr (med3d-get "VERTEX" c)) " bend " (med3d-deg (med3d-get "ANGLE" c))
+                       " deg: " (med3d-get "STATUS" c) " - " (med3d-corner-reason c))))
   (foreach c (med3d-get "CORNERS" plan)
     (setq st (med3d-get "STATUS" c))
     (cond
@@ -558,16 +587,35 @@
         (setq i (1+ i)))
       ok)))
 
-;; arc solid box must hold the arc start, end and mid point
-(defun med3d-check-arc (obj a c nn th r / bb v m tol)
+;; point on the arc: a rotated about axis nn (through c) by angle ang
+(defun med3d-arc-pt (a c nn ang / v)
+  (setq v (med3d-v- a c))
+  (med3d-v+ c (med3d-v+ (med3d-vx v (cos ang)) (med3d-vx (med3d-cross nn v) (sin ang)))))
+
+;; Does the solid's box match a bend a -> (about nn through c, angle th), tube radius r?
+;; Box must hold the arc start, middle and end, and must not stick out more than
+;; r (+ r slack for loose boxes) past the ideal arc box. Rejects a bend revolved the
+;; wrong way, a ball, or a full torus. (T when no box available)
+(defun med3d-check-arc (obj a c nn th r / bb tol ok k q lo hi i)
   (setq bb  (med3d-bbox obj)
-        v   (med3d-v- a c)
-        m   (med3d-v+ c (med3d-v+ (med3d-vx v (cos (/ th 2.0)))
-                                  (med3d-vx (med3d-cross nn v) (sin (/ th 2.0)))))
         tol (+ (* 0.02 r) (* 1e-9 (med3d-maxabs (list a c))) 1e-6))
-  (or (not bb)
-      (and (med3d-bb-has bb a tol) (med3d-bb-has bb m tol)
-           (med3d-bb-has bb (med3d-v+ c (med3d-v+ (med3d-vx v (cos th)) (med3d-vx (med3d-cross nn v) (sin th)))) tol))))
+  (if (not bb)
+    T
+    (progn
+      (setq ok (and (med3d-bb-has bb a tol)
+                    (med3d-bb-has bb (med3d-arc-pt a c nn (/ th 2.0)) tol)
+                    (med3d-bb-has bb (med3d-arc-pt a c nn th) tol))
+            lo (med3d-pt3 a) hi (med3d-pt3 a) k 1)
+      (repeat 16
+        (setq q  (med3d-arc-pt a c nn (* th (/ k 16.0)))
+              lo (mapcar 'min lo q) hi (mapcar 'max hi q) k (1+ k)))
+      (setq i 0)
+      (repeat 3
+        (if (or (< (nth i (car bb)) (- (nth i lo) r r tol))
+                (> (nth i (cadr bb)) (+ (nth i hi) r r tol)))
+          (setq ok nil))
+        (setq i (1+ i)))
+      ok)))
 
 ;;; ------------------------------------------------------------------ straights
 ;; Straight a->b. 1st: AddExtrudedSolidAlongPath with a temp LINE a->b (direction
@@ -616,23 +664,50 @@
           obj)
         (progn (med3d-dbg "  EXTRUDE _Direction made no solid") nil)))))
 
-(defun med3d-solid-arc (ms a c nn th r lay / tn reg sol)
+(defun med3d-solid-arc (ms a c nn th r lay / tn reg arc sol res try note)
   (setq tn (med3d-unit (med3d-cross nn (med3d-v- a c))))
   (if (and tn (setq reg (med3d-region ms a tn r lay)))
     (progn
-      (setq sol (vl-catch-all-apply 'vlax-invoke (list ms 'AddRevolvedSolid reg c nn th)))
-      ;; wrong way round? revolve about the opposite axis
-      (if (and (not (vl-catch-all-error-p sol)) (not (med3d-check-arc sol a c nn th r)))
-        (progn
-          (med3d-dbg (strcat "  revolve box wrong " (med3d-bbstr (med3d-bbox sol)) " - reversing axis"))
-          (vla-delete sol)
-          (setq sol (vl-catch-all-apply 'vlax-invoke
-                      (list ms 'AddRevolvedSolid reg c (med3d-vx nn -1.0) th)))))
+      ;; 1st: extrude the profile along a temp ARC in the bend plane (same call that
+      ;;      makes the straights; the arc carries plane, centre and sweep)
+      ;; 2nd/3rd: AddRevolvedSolid about +nn, then -nn.
+      ;; Each result must pass the box check; first one that passes is kept.
+      (foreach try '("PATH" "REV+" "REV-")
+        (if (not res)
+          (progn
+            (setq sol (cond
+                        ((= try "PATH")
+                          (if (setq arc (med3d-temp-arc ms a c nn th lay))
+                            (progn
+                              (setq sol (vl-catch-all-apply 'vlax-invoke (list ms 'AddExtrudedSolidAlongPath reg arc)))
+                              (vla-delete arc)
+                              sol)
+                            (progn (setq note "temp ARC failed") nil)))
+                        ((= try "REV+") (vl-catch-all-apply 'vlax-invoke (list ms 'AddRevolvedSolid reg c nn th)))
+                        (T (vl-catch-all-apply 'vlax-invoke (list ms 'AddRevolvedSolid reg c (med3d-vx nn -1.0) th)))))
+            (cond
+              ((null sol))
+              ((vl-catch-all-error-p sol)
+                (med3d-dbg (strcat "  bend " try " failed: " (vl-catch-all-error-message sol))))
+              ((med3d-check-arc sol a c nn th r)
+                (setq res sol)
+                (if (/= try "PATH") (med3d-dbg (strcat "  bend made by " try))))
+              (T
+                (med3d-dbg (strcat "  bend " try " box wrong " (med3d-bbstr (med3d-bbox sol))))
+                (vla-delete sol))))))
       (vla-delete reg)
-      (cond
-        ((vl-catch-all-error-p sol)
-          (med3d-dbg (strcat "  revolve failed: " (vl-catch-all-error-message sol))) nil)
-        (T sol)))))
+      (if (not res) (med3d-dbg "  bend: no method gave a correct solid - piece left out"))
+      res)))
+
+;; temp ARC (vla object) centre c, axis nn, from a sweeping th (right hand about nn)
+(defun med3d-temp-arc (ms a c nn th lay / oc oa sa)
+  (setq nn (med3d-unit nn)
+        oc (trans c 0 nn)
+        oa (trans a 0 nn)
+        sa (atan (- (cadr oa) (cadr oc)) (- (car oa) (car oc))))
+  (if (entmake (list '(0 . "ARC") (cons 8 lay) (cons 10 oc) (cons 40 (distance a c))
+                     (cons 50 sa) (cons 51 (+ sa th)) (cons 210 nn)))
+    (vlax-ename->vla-object (entlast))))
 
 (defun med3d-solid-sphere (ms p r / s)
   (setq s (vl-catch-all-apply 'vlax-invoke (list ms 'AddSphere p r)))

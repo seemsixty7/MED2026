@@ -214,6 +214,8 @@ class Interp:
                 if '/' in args:
                     k = args.index('/'); params, locs = args[:k], args[k + 1:]
                 else: params, locs = args, []
+                if any(v in ('T', 'NIL', 'PI') for v in params + locs):
+                    raise LispError(f'{name}: T / NIL / PI cannot be an argument or local (AutoLISP protects them)')
                 self.g[name] = Func(params, locs, body, name); return name
             if h == 'LAMBDA':
                 args = x[1] or []

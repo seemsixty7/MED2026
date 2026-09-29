@@ -48,6 +48,9 @@ class Ent:
 class Mock:
     def __init__(self, interp, extrude_semantics='normal', od=1.163):
         self.L = interp; self.ents = []; self.log = []; self.stamps = []; self.errors = []
+        # failure model: 'ball' = AddRevolvedSolid about a non-vertical axis revolves
+        # the profile about its own diameter (gives a ball at the bend start)
+        self.revolve_model = 'exact'
         self.extrude_semantics = extrude_semantics; self.od = od
         self.vars = {'OSMODE': 39, 'CMDECHO': 1, 'CLAYER': '0', 'CMDACTIVE': 0}
         g = interp.g
@@ -117,7 +120,17 @@ class Mock:
         if m == 'ADDLINE':
             ln = Ent('LINE', None, {'a': list(a[0]), 'b': list(a[1])}); self.ents.append(ln); return ln
         if m == 'ADDEXTRUDEDSOLIDALONGPATH':
-            reg, ln = a; g = reg.geom; dd = v_unit(v_sub(ln.geom['b'], ln.geom['a']))
+            reg, ln = a; g = reg.geom
+            if ln.typ == 'ARC':
+                n = v_unit(list(dxf(ln.ed, 210) or [0, 0, 1])); oc = list(dxf(ln.ed, 10)) + [0.0] * 3
+                R = dxf(ln.ed, 40); sa = dxf(ln.ed, 50); ea = dxf(ln.ed, 51)
+                sw = (ea - sa) % (2 * math.pi)
+                st = ocs2wcs([oc[0] + R * math.cos(sa), oc[1] + R * math.sin(sa), oc[2]], n); cw = ocs2wcs(oc[:3], n)
+                tn = v_unit(v_cross(n, v_sub(st, cw)))
+                if abs(abs(v_dot(g['n'], tn)) - 1) > 1e-9: self.errors.append('AlongPath(ARC) profile not perpendicular to arc start')
+                if math.dist(g['center'], st) > 1e-6 * max(1, max(map(abs, st))): self.errors.append('AlongPath(ARC) profile not at arc start')
+                return self.new_solid([('TOR', st, cw, n, sw, g['r'])])
+            dd = v_unit(v_sub(ln.geom['b'], ln.geom['a']))
             if abs(abs(v_dot(g['n'], dd)) - 1) > 1e-9: self.errors.append('AlongPath profile not perpendicular to path')
             if math.dist(g['center'], ln.geom['a']) > 1e-6 * max(1, max(map(abs, g['center']))): self.errors.append('AlongPath profile not at path start')
             return self.new_solid([('CYL', g['center'], v_add(g['center'], v_sub(ln.geom['b'], ln.geom['a'])), g['r'])])
@@ -128,6 +141,8 @@ class Mock:
         if m == 'ADDREVOLVEDSOLID':
             reg, c, ax, th = a; g = reg.geom; axu = v_unit(list(ax))
             if abs(v_dot(g['n'], axu)) > 1e-9 or abs(v_dot(v_sub(g['center'], list(c)), axu)) > 1e-6: self.errors.append('revolve axis not in profile plane')
+            if self.revolve_model == 'ball' and abs(axu[2]) < 0.999:
+                return self.new_solid([('SPH', g['center'], g['r'])])
             return self.new_solid([('TOR', g['center'], list(c), v_unit(list(ax)), th, g['r'])])
         if m == 'ADDSPHERE':
             return self.new_solid([('SPH', list(a[0]), a[1])])

@@ -158,6 +158,18 @@ CASES = [
     ('3D sloped', mk_3d([[0, 0, 100], [120, 0, 100], [120, 96, 60], [300, 96, 60], [300, 200, 140]])),
     ('3D planar vertical', mk_3d([[0, 50, 0], [120, 50, 0], [120, 50, 96], [300, 50, 96]])),
 ]
+# Clint's 4a1d703 test shape: lead-in, then a tilted triangle loop with long legs
+LA, LB, LC = [1200, 0, 120], [3600, 400, 240], [2000, 2600, 60]
+LOOP = [[0, -48, 120], LA, LB, LC, LA]
+JOG = 0.05   # near-duplicate vertex (vertical jog) at every corner
+LOOP_JOG = [LOOP[0]] + [q for p in LOOP[1:] for q in (p, [p[0], p[1], p[2] + JOG])]
+CASES += [
+    ('3D lead-in + tilted triangle loop (back to A)', mk_3d(LOOP)),
+    ('3D tilted triangle loop, closed flag', mk_3d(LOOP[1:4], True)),
+    ('3D loop with 0.05 jogs at corners', mk_3d(LOOP_JOG)),
+]
+def jog_clean(mk):   # expectation for the jog case: the jog vertices are gone
+    e, w, b, n, c = mk_3d(LOOP_JOG)(mk); return e, [[float(x) for x in p] for p in LOOP], [0.0] * len(LOOP), n, c
 
 if __name__ == '__main__':
     print('--- PIECES (ActiveX), AddExtrudedSolid-free straights')
@@ -173,9 +185,16 @@ if __name__ == '__main__':
             mk.invoke = inv; mk.L.g['VLAX-INVOKE'] = inv
             return b(mk)
         run_case(nm + ' / EXTRUDE fallback', broken, 'PIECES')
+    print('--- 3D loop (Clint 4a1d703): corners must all be FITTED bends, no spheres')
+    for nm, bld in [(CASES[10][0], CASES[10][1]), (CASES[11][0], CASES[11][1]), ('3D loop with jogs (jog vertices dropped)', jog_clean)]:
+        for model in ('exact', 'ball'):
+            def with_model(mk, bld=bld, model=model):
+                mk.revolve_model = model; return bld(mk)
+            mk = run_case(f'{nm} / revolve {model}', with_model, 'PIECES')
+            if mk.log and any('FLAG' in l or 'sphere' in l for l in mk.log): check(nm, False, 'flag/sphere reported')
     print('--- SWEEP')
     for nm, b in CASES:
-        exp = 'PIECES' if nm.startswith('3D sloped') else 'SWEEP'
+        exp = 'PIECES' if nm.startswith(('3D sloped', '3D lead-in', '3D loop with')) else 'SWEEP'   # non-planar
         run_case(nm + ' / sweep', b, 'SWEEP', exp)
     # c0c08c2 demonstration (informational, not a failure of the new code)
     old = os.path.join(os.path.dirname(__file__), 'old_c0c08c2.lsp')
@@ -185,6 +204,18 @@ if __name__ == '__main__':
         run_case('c0c08c2 2D heavy +Z', mk_heavy(OCS, BUL, [0, 0, 1], 60), 'PIECES', lsp=old, semantics='wcsz')
         demo = fails[len(keep):]; del fails[len(keep):]
         for f in demo: print('     ' + f)
+    old4 = os.path.join(os.path.dirname(__file__), 'old_4a1d703.lsp')
+    if os.path.exists(old4):
+        print('--- 4a1d703 on the 3D loop (demo of the two ways to get balls at every corner)')
+        keep = list(fails)
+        for nm, bld, model, extra in [('4a1d703 loop, revolve ball model', CASES[10][1], 'ball', None),
+                                      ('4a1d703 loop with 0.05 jogs', jog_clean, 'exact', None)]:
+            def with_model(mk, bld=bld, model=model):
+                mk.revolve_model = model; return bld(mk)
+            mk = run_case(nm, with_model, 'PIECES', lsp=old4, quiet=True)
+            got = fails[len(keep):]; del fails[len(keep):]
+            print(f'     {nm}: {len(got)} mismatch(es); ' + (got[0][:150] if got else ''))
+            print('       ' + ' | '.join(l.strip() for l in mk.log if 'FLAG' in l or 'box wrong' in l)[:300])
     print(f'\n{len(fails)} failure(s)')
     for f in fails: print('  ' + f)
     sys.exit(1 if fails else 0)

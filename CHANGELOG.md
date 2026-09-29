@@ -17,6 +17,7 @@
 - MEDTYPE: USER3 header shows `OD (in)` for Cable (`User3 / OD (in)` on All).
 - Patch installer also ships `Support\MED3DCON.lsp`, `Support\MED3DPath.lsp` and `Data\seed\*.csv` (still never `MED.db` or `med.spc`).
 - M3D / C3D straights (feature/3dpath test): made with `AddExtrudedSolidAlongPath` along a temporary LINE and checked by bounding box, with `_.EXTRUDE _Direction` as fallback. The earlier `AddExtrudedSolid` + centroid flip could leave straights misplaced or short. SWEEP planar test uses a relative tolerance (large coordinates) and SWEEP failures are no longer silent under debug.
+- M3D / C3D bends (3D runs came out as balls at every corner): bends are extruded along a temporary ARC in the bend plane, with AddRevolvedSolid ±axis as fallbacks, and kept only if the box matches the bend (start, middle, end, no larger than the ideal). Vertices closer than 0.1 × OD to the previous one are dropped. Debug prints each corner's status and reason.
 - M3D / C3D select any LWPOLYLINE / POLYLINE and say why one is skipped (no MED xdata) instead of silently filtering it out; a run carrying the other kind's xdata is converted as that kind.
 - The 2012 commands in `MED3DCON.lsp` are renamed `M3DOLD` / `MAKE3DCONDUITOLD`; `M3D` and `MAKE3DCONDUIT` now come from `MED3DPath.lsp`.
 

@@ -11,6 +11,9 @@
 ;;;   E 3D, 8" jog              : v2 FLAGGED, v3 FITTED          1 sphere + 1 marker
 ;;;   F LW closed 48" square    : v2 v3 v4 v1 FITTED             closed ring
 ;;;   G cable 3D (code 3)       : v2 FITTED (needs MEDType USER3 for code 3)
+;;;   H 3D lead-in + tilted loop: v2 v3 v4 v5 FITTED              4 bends, no spheres
+;;;   I as H, 0.05" jogs        : jog vertices dropped (debug), same as H
+;;; (setq *MED3D-DEBUG* T) first for the per-corner / per-piece trace.
 
 (defun med3dt-lw (pts closed elev / ed)
   (setq ed (list '(0 . "LWPOLYLINE") '(100 . "AcDbEntity") '(8 . "MED3DTEST") '(100 . "AcDbPolyline")
@@ -74,6 +77,15 @@
                     1 2.0 "T3D-F") "CONDUIT")
   (med3dt-go "G cable 3D (cable code 3)"
     (med3dt-cable (med3dt-3d '((1000.0 800.0 0.0) (1100.0 800.0 0.0) (1100.0 900.0 50.0))) 3 "T3D-G") "CABLE")
+  (med3dt-go "H 3D lead-in + tilted triangle loop (EMT 1in) - 4 bends, no spheres"
+    (med3dt-conduit (med3dt-3d '((1400.0 0.0 120.0) (1500.0 0.0 120.0) (1700.0 40.0 150.0)
+                                 (1560.0 200.0 90.0) (1500.0 0.0 120.0)))
+                    4 1.0 "T3D-H") "CONDUIT")
+  (med3dt-go "I as H with 0.05in jogs at the corners - jogs dropped, 4 bends"
+    (med3dt-conduit (med3dt-3d '((1400.0 300.0 120.0) (1500.0 300.0 120.0) (1500.0 300.0 120.05)
+                                 (1700.0 340.0 150.0) (1700.0 340.0 150.05) (1560.0 500.0 90.0)
+                                 (1560.0 500.0 90.05) (1500.0 300.0 120.0)))
+                    4 1.0 "T3D-I") "CONDUIT")
   (med3d-end)
   (command "_.ZOOM" "_E")
   (princ "\n\nMED3DPATHTEST done. Solids: MED_3DCONDUIT / MED_3DCABLE, flags: MED_3DFLAG.")

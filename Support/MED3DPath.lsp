@@ -5,6 +5,10 @@
 ;;;   C3D            cable runs you select     -> one 3DSOLID per run on MED_3DCABLE
 ;;;   MAKE3DCONDUIT  every MED_CONDUIT run     -> Dwg / Layer output like MAKE3DTRAY
 ;;;   MAKE3DCABLE    every MED_CABLE run       -> Dwg / Layer output like MAKE3DTRAY
+;;;   MEDMAKE3D      tray + tray fittings (MED3DTrayFunctions, med3d-tray-build),
+;;;                  then every conduit run, then every cable run -> one prompt
+;;;                  [Dwg/Layer]: one combined DWG + one .medprops.json sidecar,
+;;;                  or all solids left on their layers; prints a summary
 ;;;   MED3DPLAN      print the corner table of one run (no solids)
 ;;;   MED3DVER       print this file's version and who owns the commands
 ;;; The 2012 code stays in MED3DCON.lsp as M3DOLD / MAKE3DCONDUITOLD.
@@ -34,10 +38,15 @@
 ;;;   INDEX (0-based source vertex) VERTEX ANGLE RADIUS TANGENT PTIN PTOUT CENTER
 ;;;   NORMAL TIN TOUT STATUS ("FITTED" "FLAGGED" "KINK") NEED AVAIL SEGIN SEGOUT.
 ;;;   Each run drawn by a command is also kept in *MED3D-LAST-PLANS*.
+;;; Workers (no prompts; wrap in med3d-begin / med3d-end):
+;;;   (med3d-path-build-all kind) -> converts every MED run of kind, returns
+;;;     (("KIND" . k) ("RUNS" . n) ("OK" . n) ("SOLIDS" enames...) ("FLAGGED" . n)
+;;;      ("SKIPPED" (handle kind reason) ...))
+;;;   (med3d-tray-build) in MED3DTrayFunctions.lsp -> (tray-solids fitting-solids skipped)
 
 (princ "\rLoading MED3DPath...")
 (vl-load-com)
-(setq *MED3D-VERSION* "2026-09-29 r5 (feature/3dpath)")
+(setq *MED3D-VERSION* "2026-09-29 r6 (feature/3dpath)")
 
 ;;; ------------------------------------------------------------------ settings
 (if (not *MED3D-BEND-FACTOR*) (setq *MED3D-BEND-FACTOR* 5.0))  ; conduit R = factor x OD
@@ -494,12 +503,18 @@
       (if (setq xd (xdataget ent _CABLE))
         (med3d-cable-od (med3d-num (nth 3 xd)))))))
 
+;; skipped run: print why, remember it for the MEDMAKE3D summary; returns nil
+(defun med3d-skip (h kind reason)
+  (princ (strcat "\nMED3D: " h " skipped - " reason "."))
+  (setq *MED3D-SKIPS* (cons (list h kind reason) *MED3D-SKIPS*))
+  nil)
+
 ;; plan for one entity without drawing (for fittings); nil if skipped
 (defun med3d-plan-ent (ent kind / pd od h plan)
   (setq h (cdr (assoc 5 (entget ent))))
   (cond
     ((not (setq pd (med3d-read-path ent)))
-      (princ (strcat "\nMED3D: " h " skipped - not a LWPOLYLINE / 2D / 3D POLYLINE.")) nil)
+      (med3d-skip h kind "not a LWPOLYLINE / 2D / 3D POLYLINE"))
     ((progn
        (med3d-dbg (strcat "run " h " " (cdr (assoc 0 (entget ent)))
                           " flags " (itoa (med3d-dxf 70 (entget ent) 0))
@@ -509,11 +524,10 @@
                           " first " (med3d-ptstr (car (car pd)))))
        nil))
     ((not (setq od (med3d-run-od ent kind)))
-      (princ (strcat "\nMED3D: " h " skipped - no OD for this " (strcase kind T) " type/size."))
-      nil)
+      (med3d-skip h kind (strcat "no OD for this " (strcase kind T) " type/size")))
     ((not (setq plan (med3d-plan (nth 0 pd) (nth 1 pd) (nth 2 pd) (nth 3 pd) od kind
                                  (cdr (assoc h *MED3D-BEND-OVERRIDES*)))))
-      (princ (strcat "\nMED3D: " h " skipped - fewer than 2 distinct points.")) nil)
+      (med3d-skip h kind "fewer than 2 distinct points"))
     (T (append (list (cons "HANDLE" h) (cons "KIND" kind) (cons "ENT" ent)) plan))))
 
 ;;; -------------------------------------------------------------------- layers
@@ -909,9 +923,16 @@
         (princ (strcat "\nMED3D: run " (med3d-get "HANDLE" plan) " - "
                        (itoa (caddr res)) " piece(s) failed or would not union.")))
       (foreach s (if sol (cons sol extras) extras)
-        (MEDStamp3DFromBom s ent kind nil))
+        (MEDStamp3DFromBom s ent kind nil)
+        (setq *MED3D-BUILT* (cons s *MED3D-BUILT*)))
+      (foreach c (med3d-get "CORNERS" plan)
+        (if (= (med3d-get "STATUS" c) "FLAGGED") (setq *MED3D-FLAGGED* (1+ *MED3D-FLAGGED*))))
       (setq *MED3D-LAST-PLANS* (cons (append plan (list (cons "SOLID" sol))) *MED3D-LAST-PLANS*))
+      (if (not sol) (med3d-skip (med3d-get "HANDLE" plan) kind "no solid created (every piece failed)"))
       (if sol (list sol plan)))))
+
+;; counters filled by med3d-run / med3d-skip (reset by med3d-path-build-all)
+(if (not (numberp *MED3D-FLAGGED*)) (setq *MED3D-FLAGGED* 0))
 
 (defun med3d-run-ss (ss kind / i ok)
   (setq i 0 ok 0)
@@ -988,7 +1009,28 @@
 (defun med3d-cmd-m3d () (med3d-pick "CONDUIT" "M3D"))
 (defun med3d-cmd-c3d () (med3d-pick "CABLE" "C3D"))
 
-(defun med3d-export (kind tag / lay ss ok sols fmt fname)
+;; live entities of a list (UNION / cleanup may have erased some)
+(defun med3d-live (l / r)
+  (foreach e l (if (and e (entget e)) (setq r (cons e r))))
+  (reverse r))
+
+;; Worker shared by MAKE3DCONDUIT / MAKE3DCABLE / MEDMAKE3D: convert every MED
+;; run of kind in the drawing. No prompts and no sysvar handling (callers wrap it
+;; in med3d-begin / med3d-end). Returns
+;;   (("KIND" . kind) ("RUNS" . n) ("OK" . n) ("SOLIDS" ename ...) ("FLAGGED" . n)
+;;    ("SKIPPED" (handle kind reason) ...))
+(defun med3d-path-build-all (kind / ss ok)
+  (setq *MED3D-BUILT* nil *MED3D-SKIPS* nil *MED3D-FLAGGED* 0
+        ss (ssget "_X" (med3d-filter (if (= kind "CABLE") _CABLE _CONDUIT)))
+        ok (if ss (med3d-run-ss ss kind) 0))
+  (med3d-dbg (strcat "build-all " kind ": " (itoa ok) " of " (itoa (if ss (sslength ss) 0))
+                     " run(s), " (itoa (length *MED3D-BUILT*)) " solid(s), "
+                     (itoa *MED3D-FLAGGED*) " flagged corner(s)"))
+  (list (cons "KIND" kind) (cons "RUNS" (if ss (sslength ss) 0)) (cons "OK" ok)
+        (cons "SOLIDS" (med3d-live (reverse *MED3D-BUILT*))) (cons "FLAGGED" *MED3D-FLAGGED*)
+        (cons "SKIPPED" (reverse *MED3D-SKIPS*))))
+
+(defun med3d-export (kind tag / lay res ok sols fmt fname)
   (med3d-begin tag)
   (setq *MED3D-LAST-PLANS* nil
         lay (med3d-ensure-layer (med3d-layer-info kind)))
@@ -997,9 +1039,9 @@
   (initget "Dwg Layer")
   (setq fmt (getkword (strcat "\n" tag " output to [Dwg/Layer] <Dwg>: ")))
   (if (not fmt) (setq fmt "Dwg"))
-  (setq ss (ssget "_X" (med3d-filter (if (= kind "CABLE") _CABLE _CONDUIT)))
-        ok (if ss (med3d-run-ss ss kind) 0))
-  (princ (strcat "\n" tag ": " (itoa ok) " of " (itoa (if ss (sslength ss) 0)) " run(s) converted."))
+  (setq res (med3d-path-build-all kind)
+        ok  (med3d-get "OK" res))
+  (princ (strcat "\n" tag ": " (itoa ok) " of " (itoa (med3d-get "RUNS" res)) " run(s) converted."))
   (setq sols (ssget "_X" (list '(0 . "3DSOLID") (cons 8 lay))))
   (cond
     ((not sols) (princ "\nNo solids to export."))
@@ -1020,6 +1062,111 @@
 
 (defun med3d-cmd-make3dconduit () (med3d-export "CONDUIT" "MAKE3DCONDUIT"))
 (defun med3d-cmd-make3dcable () (med3d-export "CABLE" "MAKE3DCABLE"))
+
+;;; ------------------------------------------------------------------ MEDMAKE3D
+;; run one stage worker without letting its error stop the other stages;
+;; returns the worker's result, or nil (and records why) on error
+(defun med3d-stage (name fn args / r)
+  (setq r (vl-catch-all-apply fn args))
+  ;; Esc / cancel stops the whole command (-> *error* -> med3d-end)
+  (if (and (vl-catch-all-error-p r)
+           (wcmatch (strcase (vl-catch-all-error-message r) T) "*cancel*,*break*,*quit*"))
+    (exit))
+  (if (vl-catch-all-error-p r)
+    (progn
+      (princ (strcat "\nMEDMAKE3D: " name " stage failed: " (vl-catch-all-error-message r)))
+      (setq *MED3D-STAGE-ERRORS* (cons (list "-" name (strcat "stage failed: " (vl-catch-all-error-message r)))
+                                       *MED3D-STAGE-ERRORS*))
+      nil)
+    r))
+
+(defun med3d-sscat (l / ss)
+  (setq ss (ssadd))
+  (foreach e l (ssadd e ss))
+  (if (> (sslength ss) 0) ss))
+
+(defun med3d-summary-line (label n what)
+  (princ (strcat "\n  " label (itoa n) " " what)))
+
+;; MEDMAKE3D: tray (+ fittings) via the MAKE3DTRAY worker, then conduit, then
+;; cable via med3d-path-build-all; one [Dwg/Layer] prompt; one combined DWG +
+;; one .medprops.json sidecar (Dwg) or solids left in place (Layer).
+(defun med3d-make3d-all ( / fmt tray traysols fitsols con cab skips flagged all ss fname n)
+  (med3d-begin "MEDMAKE3D")
+  (setq *MED3D-LAST-PLANS* nil *MED3D-STAGE-ERRORS* nil)
+  (med3d-clear-flags)
+  (if _MED3DTRAY (vl-catch-all-apply 'smlayer (list _MED3DTRAY)))   ; as MAKE3DTRAY
+  (command "_.VPOINT" "1,1,1")
+  (initget "Dwg Layer")
+  (setq fmt (getkword "\nMEDMAKE3D output to [Dwg/Layer] <Dwg>: "))
+  (if (not fmt) (setq fmt "Dwg"))
+  ;; 1. tray + tray fittings (MED3DTrayFunctions.lsp, auto-loaded by MEDCore)
+  (if (not med3d-tray-build)
+    (vl-catch-all-apply 'load (list "MED3DTrayFunctions.lsp")))
+  (cond
+    ((not med3d-tray-build)
+      (setq *MED3D-STAGE-ERRORS*
+             (cons (list "-" "TRAY" "MED3DTrayFunctions.lsp not loaded - tray stage skipped") *MED3D-STAGE-ERRORS*)))
+    ((setq tray (med3d-stage "TRAY" 'med3d-tray-build nil)))
+    (T (vl-catch-all-apply 'command (list "_.UCS" "_W"))))   ; tray failed part-way: back to World
+  (setq traysols (med3d-live (nth 0 tray)) fitsols (med3d-live (nth 1 tray)))
+  (med3d-dbg (strcat "MEDMAKE3D tray stage: " (itoa (length traysols)) " tray, "
+                     (itoa (length fitsols)) " fitting solid(s)"))
+  ;; 2. conduit, 3. cable
+  (setq con (med3d-stage "CONDUIT" 'med3d-path-build-all (list "CONDUIT")))
+  (setq cab (med3d-stage "CABLE" 'med3d-path-build-all (list "CABLE")))
+  (setq skips   (append (nth 2 tray) (med3d-get "SKIPPED" con) (med3d-get "SKIPPED" cab)
+                        (reverse *MED3D-STAGE-ERRORS*))
+        flagged (+ (if con (med3d-get "FLAGGED" con) 0) (if cab (med3d-get "FLAGGED" cab) 0))
+        all     (med3d-live (append traysols fitsols (med3d-get "SOLIDS" con) (med3d-get "SOLIDS" cab)))
+        ss      (med3d-sscat all))
+  ;; output
+  (cond
+    ((not ss) (princ "\nMEDMAKE3D: no solids created - nothing to export."))
+    ((= fmt "Dwg")
+      (setq fname (getfiled "Select file name for MEDMAKE3D output" (getvar "DWGPREFIX") "dwg" 1))
+      (if fname
+        (progn
+          (if (findfile fname)
+            (command "_.-WBLOCK" fname "_Y" "")
+            (command "_.-WBLOCK" fname ""))
+          (command "0,0,0" ss "")
+          (command "_.PLAN" "")
+          ;; one sidecar beside the combined DWG (handles are in that file)
+          (if (findfile fname) (MEDRebuildMedPropsJsonBeside fname)))
+        (princ "\nMEDMAKE3D: no file chosen - solids left in the drawing.")))
+    (T
+      (prompt "\nUse the PLAN command to return to plan view.")
+      (MEDRebuildMedPropsJsonBeside nil)))
+  ;; summary
+  (princ "\nMEDMAKE3D summary:")
+  (med3d-summary-line "Tray          : " (length traysols) "solid(s)")
+  (med3d-summary-line "Tray fittings : " (length fitsols) "solid(s)")
+  (med3d-summary-line "Conduit       : " (length (med3d-get "SOLIDS" con))
+    (strcat "solid(s) from " (itoa (if con (med3d-get "OK" con) 0)) " of "
+            (itoa (if con (med3d-get "RUNS" con) 0)) " run(s)"))
+  (med3d-summary-line "Cable         : " (length (med3d-get "SOLIDS" cab))
+    (strcat "solid(s) from " (itoa (if cab (med3d-get "OK" cab) 0)) " of "
+            (itoa (if cab (med3d-get "RUNS" cab) 0)) " run(s)"))
+  (med3d-summary-line "Flagged corners: " flagged
+    (if (> flagged 0) (strcat "(markers on " (car (med3d-flag-layer)) ")") ""))
+  (med3d-summary-line "Skipped       : " (length skips) "")
+  (foreach k skips
+    (princ (strcat "\n    " (nth 0 k) " " (strcase (nth 1 k) T) ": " (nth 2 k))))
+  (princ (strcat "\n  Output        : "
+                 (cond ((not ss) "none")
+                       ((= fmt "Layer") "left on their layers in this drawing")
+                       (fname (strcat fname " (+ .medprops.json)"))
+                       (T "none (no file chosen)"))))
+  (if med-debug-log
+    (vl-catch-all-apply 'med-debug-log
+      (list (strcat "MEDMAKE3D " fmt ": tray " (itoa (length traysols)) ", fittings " (itoa (length fitsols))
+                    ", conduit " (itoa (length (med3d-get "SOLIDS" con))) ", cable " (itoa (length (med3d-get "SOLIDS" cab)))
+                    ", flagged " (itoa flagged) ", skipped " (itoa (length skips))))))
+  (med3d-end))
+
+(defun med3d-make3d-all-cmd () (med3d-make3d-all))
+(setq c:MEDMake3D med3d-make3d-all-cmd)
 
 ;;; ------------------------------------------------------- command ownership
 ;; M3D / C3D / MAKE3DCONDUIT / MAKE3DCABLE are bound to the med3d-cmd-* functions
@@ -1064,6 +1211,9 @@
                  "\n  C3D           : " (med3d-owner c:C3D med3d-cmd-c3d)
                  "\n  MAKE3DCONDUIT : " (med3d-owner c:Make3DConduit med3d-cmd-make3dconduit)
                  "\n  MAKE3DCABLE   : " (med3d-owner c:Make3DCable med3d-cmd-make3dcable)
+                 "\n  MEDMAKE3D     : " (med3d-owner c:MEDMake3D med3d-make3d-all-cmd)
+                 "\n  tray worker   : " (if med3d-tray-build "med3d-tray-build (MED3DTrayFunctions.lsp)" "not loaded - MEDMAKE3D would skip tray")
+                 "\n  debug         : " (if (med3d-debug-on) "on" "off")
                  "\n  support path MED3DPath.lsp: " (if (findfile "MED3DPath.lsp") (findfile "MED3DPath.lsp") "not found")
                  "\n  support path MED3DCON.lsp : " (if (findfile "MED3DCON.lsp") (findfile "MED3DCON.lsp") "not found")))
   (princ))
@@ -1093,5 +1243,5 @@
 (med3d-claim-commands T)
 (med3d-install-reactor)
 (princ (strcat "Done.\nMED3DPath " *MED3D-VERSION*
-               " loaded: M3D C3D MAKE3DCONDUIT MAKE3DCABLE MED3DPLAN MED3DVER"))
+               " loaded: M3D C3D MAKE3DCONDUIT MAKE3DCABLE MEDMAKE3D MED3DPLAN MED3DVER"))
 (princ)

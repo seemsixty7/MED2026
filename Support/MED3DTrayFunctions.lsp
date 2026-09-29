@@ -402,6 +402,61 @@
 	
 	
 
+;; 3DSOLIDs created after entity mark (all entities when mark is nil), still alive
+(defun MEDNew3DSolidsAfter (mark / e out)
+  (setq e (if mark (entnext mark) (entnext)))
+  (while e
+    (if (= (cdr (assoc 0 (entget e))) "3DSOLID") (setq out (cons e out)))
+    (setq e (entnext e)))
+  (reverse out))
+
+;; Non-interactive tray worker shared by MAKE3DTRAY and MEDMAKE3D (MED3DPath.lsp).
+;; Converts every MED_TRAY run and every MED_FITTING outline in the drawing with
+;; the same per-entity code MAKE3DTRAY always used (layer, geometry unchanged),
+;; then resets the UCS to World. No prompts, no sysvar handling (callers do that).
+;; Returns (tray-solids fitting-solids skipped); skipped = ((handle kind reason) ...)
+(defun med3d-tray-build ( / mark new traysols fitsols skipped)
+	(setq 3douttray (ssget "x" (list (list -3 (list "MED_TRAY")))))
+	(if 3douttray
+	  (progn
+	    (setq trayoutnum (sslength 3douttray)
+	   trayoutcnt 0
+	    )
+	    (while (< trayoutcnt trayoutnum)
+	    	  (setq trayent (ssname 3douttray trayoutcnt)
+	    	        mark    (entlast))
+	    	  (MEDSet3DTrayLayer trayent)
+	    	  (MEDConvertTrayto3d trayent)
+	    	  (if (setq new (MEDNew3DSolidsAfter mark))
+	    	    (setq traysols (append traysols new))
+	    	    (setq skipped (cons (list (cdr (assoc 5 (entget trayent))) "TRAY" "no solid created") skipped)))
+	    	  (setq trayoutcnt (1+ trayoutcnt))
+	    )
+	  )
+	)
+	(setq 3douttray (ssget "x" (list (list -3 (list "MED_FITTING")))))
+	(if 3douttray
+	   (progn
+	     (setq trayoutnum (sslength 3douttray)
+	     	   trayoutcnt 0
+	     )
+	     (while (< trayoutcnt trayoutnum)
+	     	 (setq trayent (ssname 3douttray trayoutcnt)
+	     	       mark    (entlast))
+	     	 (MEDSet3DTrayLayer trayent)
+	     	 (MEDConvertTrayFittingsTo3D trayent)
+	     	 (if (setq new (MEDNew3DSolidsAfter mark))
+	     	   (setq fitsols (append fitsols new))
+	     	   (setq skipped (cons (list (cdr (assoc 5 (entget trayent))) "FITTING"
+	     	                             "no solid created (not an elbow / tee / cross / reducer outline)") skipped)))
+	     	 (setq trayoutcnt (1+ trayoutcnt))
+	     )
+	   )
+	 )
+	(command "UCS" "")
+	(list traysols fitsols (reverse skipped))
+)
+
 (defun c:Make3DTray( / m3dOldOsmode m3dOldError )
 	;; Running OSNAPS off for the whole export (restore on exit / error).
 	(setq m3dOldOsmode (getvar "OSMODE")
@@ -422,35 +477,8 @@
 	(if (not outputformat)
 	  (setq outputformat "Dwg")
 	)
-	(setq 3douttray (ssget "x" (list (list -3 (list "MED_TRAY")))))
-	(if 3douttray
-	  (progn
-	    (setq trayoutnum (sslength 3douttray)
-	   trayoutcnt 0
-	    )
-	    (while (< trayoutcnt trayoutnum)
-	    	  (setq trayent (ssname 3douttray trayoutcnt))
-	    	  (MEDSet3DTrayLayer trayent)
-	    	  (MEDConvertTrayto3d trayent)
-	    	  (setq trayoutcnt (1+ trayoutcnt))
-	    )
-	  )
-	)
-	(setq 3douttray (ssget "x" (list (list -3 (list "MED_FITTING")))))
-	(if 3douttray
-	   (progn
-	     (setq trayoutnum (sslength 3douttray)
-	     	   trayoutcnt 0
-	     )
-	     (while (< trayoutcnt trayoutnum)
-	     	 (setq trayent (ssname 3douttray trayoutcnt))
-	     	 (MEDSet3DTrayLayer trayent)
-	     	 (MEDConvertTrayFittingsTo3D trayent)
-	     	 (setq trayoutcnt (1+ trayoutcnt))
-	     )
-	   )
-	 )
-	(command "UCS" "")
+	;; tray runs + tray fittings -> 3D (shared with MEDMAKE3D), UCS back to World
+	(med3d-tray-build)
 	(cond
     ((= outputformat "3DS")
       (Prompt "\nMake3dtray will export to 3ds file:")

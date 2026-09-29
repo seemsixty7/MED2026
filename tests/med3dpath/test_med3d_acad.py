@@ -46,6 +46,62 @@ def heavy(mk, ocs_pts, buls, n, elev, flag=0, closed=False):
     mk.entmake([Pair(0, 'SEQEND'), Pair(8, 'E-COND')])
     e.xdata['MED_CONDUIT'] = ['MED_CONDUIT', 'C2', '1', 3]; return e
 
+# ------------------------------------------------------- MEDMAKE3D harness
+class SS:
+    def __init__(self, items=None): self.items = list(items or [])
+TRAY_LSP = os.path.join(ROOT, 'Support', 'MED3DTrayFunctions.lsp')
+
+def make3d_session(fmt, tray_file=False):
+    """Mock drawing with 1 good + 1 no-OD conduit run, 1 cable run; the tray worker
+    is a stub that makes 2 tray + 1 fitting solids and reports one skipped fitting."""
+    L, mk = session()
+    if tray_file: L.load(TRAY_LSP)
+    L.g['*MED3D-DEBUG*'] = None
+    calls, cmds, sidecars, tray_sols = [], [], [], []
+    def ssget(*a):
+        if not a or a[0] != '_X' and a[0] != 'x' and a[0] != 'X': return None
+        flt = a[-1]; app = None; typ = None
+        for it in flt or []:
+            if isinstance(it, list) and it and it[0] == -3: app = it[1][0]
+            if isinstance(it, Pair) and it.car == 0 and it.cdr == '3DSOLID': typ = '3DSOLID'
+            if isinstance(it, Pair) and it.car == 8 and typ is None and app is None: return None   # flag layer
+        if app:
+            got = [e for e in mk.ents if not e.deleted and app in e.xdata]
+        elif typ:
+            got = [e for e in mk.ents if not e.deleted and e.typ == '3DSOLID']
+        else: return None
+        return SS(got) if got else None
+    def tray_build():
+        calls.append(('TRAY',))
+        for _ in range(3): tray_sols.append(mk.new_solid([]))
+        mk.command('UCS', '')
+        return [tray_sols[:2], tray_sols[2:], [['FIT9', 'FITTING', 'no solid created (not an elbow / tee / cross / reducer outline)']]]
+    real_run = L.g['MED3D-PATH-BUILD-ALL']
+    def build_all(kind):
+        calls.append((kind,)); return L.apply(real_run, [kind])
+    def command(*a):
+        cmds.append(list(a)); return mk.command(*a)
+    L.g.update({
+        'SSGET': ssget, 'SSNAME': lambda ss, i: ss.items[i] if i < len(ss.items) else None,
+        'SSLENGTH': lambda ss: len(ss.items), 'SSADD': lambda e=None, ss=None: (ss.items.append(e) or ss) if ss else SS(),
+        'INITGET': lambda *a: None, 'GETKWORD': lambda p: fmt, 'GETFILED': lambda *a: 'C:/proj/combined.dwg',
+        'FINDFILE': lambda f: f, 'SMLAYER': lambda li: None, 'COMMAND': command, 'VL-CMDF': command,
+        'MEDREBUILDMEDPROPSJSONBESIDE': lambda p: sidecars.append(p), 'MED3D-TRAY-BUILD': tray_build,
+        'MED3D-PATH-BUILD-ALL': build_all, 'ARXLOAD': lambda *a: None, 'PROMPT': mk.princ,
+        '_MED3DTRAY': ['MED_3DTRAY', 'BLUE', 'CONTINUOUS'], '*ERROR*': 'ORIG-ERR',
+        'MED3D-CABLEOD-CACHE*': None,
+    })
+    # med3d-begin clears the OD caches, so give cable code 3 an OD through the lookup
+    L.g['MED3D-CABLE-OD'] = lambda code: 0.5 if code == 3 else None
+    ods = {'1': 1.163}
+    L.g['MED_CONDUIT_OD'] = lambda c, sz: ods.get(f'{sz:g}') if isinstance(sz, float) else ods.get(str(sz))
+    L.g['MED3D-PRELOAD-OD'] = lambda kind: None
+    e = lw(mk, OCS, BUL, [0, 0, 1], 0)                                   # conduit, OD found
+    e = lw(mk, OCS, BUL, [0, 0, 1], 0); e.xdata['MED_CONDUIT'] = ['MED_CONDUIT', 'C9', '7', 3]   # no OD
+    e = lw(mk, OCS, BUL, [0, 0, 1], 0); del e.xdata['MED_CONDUIT']
+    e.xdata['MED_CABLE'] = ['MED_CABLE', 'K1', '1', 3]                   # cable
+    return L, mk, calls, cmds, sidecars, tray_sols
+
 # ------------------------------------------------------------ expectations
 def expected_plan(L, wpts, buls, n, closed):
     return L.apply(Sym('MED3D-PLAN'), [wpts, buls, v_unit(n) if n else None, True if closed else None,
@@ -248,6 +304,57 @@ if __name__ == '__main__':
     check('quiet', all(qt is True for _, qt in sql), 'SELECT not run with *MED-SQL-QUIET* T')
     check('quiet restored', not L.g.get('*MED-SQL-QUIET*'), '*MED-SQL-QUIET* left set')
     print(f'ok   ownership + OD preload ({len(sql)} SELECT for 4 runs, ODs {ods})' if len(fails) == 0 else 'FAIL ownership / OD preload')
+    print('--- MEDMAKE3D orchestration (tray stub -> conduit -> cable, one combined output)')
+    for fmt in ('Dwg', 'Layer'):
+        n0 = len(fails); mk3 = make3d_session(fmt)
+        L, mk, calls, cmds, sidecars, tray_sols = mk3
+        L.apply(L.g['C:MEDMAKE3D'], [])
+        order = [c[0] for c in calls]
+        check(f'make3d {fmt} order', order[:1] == ['TRAY'] and order.index('CONDUIT') < order.index('CABLE'),
+              f'stage order {order}')
+        wb = [c for c in cmds if str(c[0]).upper() == '_.-WBLOCK']
+        sel = [c for c in cmds if c and c[0] == '0,0,0']
+        live = [e for e in mk.ents if e.typ == '3DSOLID' and not e.deleted]
+        if fmt == 'Dwg':
+            check('make3d one wblock', len(wb) == 1 and len(sel) == 1, f'{len(wb)} WBLOCK, {len(sel)} selections')
+            got = set(sel[0][1].items) if sel else set()
+            check('make3d combined', got == set(live) and all(t in got for t in tray_sols) and len(got) >= 5,
+                  f'WBLOCK selection {sorted(e.id for e in got)} vs solids {sorted(e.id for e in live)}')
+            check('make3d one sidecar', sidecars == ['C:/proj/combined.dwg'], f'sidecars {sidecars}')
+        else:
+            check('make3d layer no wblock', not wb, 'WBLOCK in Layer mode')
+            check('make3d layer sidecar', sidecars == [None], f'sidecars {sidecars}')
+        summary = ' '.join(mk.log[mk.log.index(next(l for l in mk.log if 'MEDMAKE3D summary' in l)):]) \
+            if any('MEDMAKE3D summary' in l for l in mk.log) else ''
+        for want in ('Tray          : 2', 'Tray fittings : 1', 'Conduit       : 1 solid(s) from 1 of 2',
+                     'Cable         : 1 solid(s) from 1 of 1', 'Skipped       : 2', 'FIT9 fitting', 'no OD for this conduit'):
+            check(f'make3d {fmt} summary', want in summary, f'missing "{want}" in summary: {summary[:400]}')
+        check(f'make3d {fmt} sysvars', mk.vars['OSMODE'] == 39 and mk.vars['CMDECHO'] == 1, f'{mk.vars}')
+        check(f'make3d {fmt} error restored', L.g.get('*ERROR*') == 'ORIG-ERR', '*error* not restored')
+        print(f'{"ok  " if len(fails) == n0 else "FAIL"} MEDMAKE3D {fmt}: stages {order}, '
+              f'{len(wb)} WBLOCK, sidecars {sidecars}')
+    # MAKE3DTRAY goes through the same worker
+    n0 = len(fails); L, mk, calls, cmds, sidecars, tray_sols = make3d_session('Dwg', tray_file=True)
+    L.apply(L.g['C:MAKE3DTRAY'], [])
+    check('make3dtray worker', [c[0] for c in calls] == ['TRAY'], f'calls {calls}')
+    check('make3dtray sidecar', sidecars == ['C:/proj/combined.dwg'], f'sidecars {sidecars}')
+    print(f'{"ok  " if len(fails) == n0 else "FAIL"} MAKE3DTRAY uses med3d-tray-build ({calls})')
+    # the real tray worker: new-solid tracking and skipped fittings
+    n0 = len(fails); L, mk, calls, cmds, sidecars, tray_sols = make3d_session('Dwg', tray_file=True)
+    trays = [mk.new_solid([]) for _ in range(2)]
+    for t in trays: t.typ = 'LWPOLYLINE'; t.xdata['MED_TRAY'] = ['MED_TRAY']
+    fits = [mk.new_solid([]) for _ in range(2)]
+    for f in fits: f.typ = 'LWPOLYLINE'; f.xdata['MED_FITTING'] = ['MED_FITTING']
+    made = []
+    def conv(e): s_ = mk.new_solid([]); made.append(s_); return s_
+    L.load(TRAY_LSP)          # real med3d-tray-build back (make3d_session stubbed it)
+    L.g.update({'MEDSET3DTRAYLAYER': lambda e: None, 'MEDCONVERTTRAYTO3D': conv,
+                'MEDCONVERTTRAYFITTINGSTO3D': lambda e: conv(e) if e is fits[0] else None})
+    res = L.apply(Sym('MED3D-TRAY-BUILD'), [])
+    ok = (res[0] == made[:2] and res[1] == made[2:3] and len(res[2]) == 1
+          and res[2][0][0] == f'H{fits[1].id}' and res[2][0][1] == 'FITTING')
+    check('tray worker', ok, f'{res}')
+    print(f'{"ok  " if len(fails) == n0 else "FAIL"} med3d-tray-build: 2 tray + 1 fitting solid, 1 fitting skipped')
     old4 = os.path.join(os.path.dirname(__file__), 'old_4a1d703.lsp')
     if os.path.exists(old4):
         print('--- 4a1d703 on the 3D loop (demo of the two ways to get balls at every corner)')

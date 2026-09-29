@@ -568,3 +568,8 @@
   
 	
 (princ "Version 1.02")
+
+;; Loaded after MED3DPath.lsp (e.g. APPLOAD)? This file defines only M3DOLD /
+;; MAKE3DCONDUITOLD, but make sure M3D / MAKE3DCONDUIT stay MED3DPath's.
+(if med3d-claim-commands (med3d-claim-commands T))
+(princ)

@@ -166,6 +166,22 @@ namespace MEDDotNet
             cmd.Parameters.Add(p);
         }
 
+        // LISP callers that do many lookups (MED3DPath OD lookups) set *MED-SQL-QUIET*
+        // to T around their SELECTs to drop the "n row(s)" / "No Rows" chatter.
+        // Errors are still printed. Unset / nil = old behavior.
+        static bool SqlQuiet(Document doc)
+        {
+            try
+            {
+                object v = doc.GetLispSymbol("*MED-SQL-QUIET*");
+                return v != null && !(v is bool && !(bool)v);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         [LispFunction("ProcessSQLStatementNET")]
         public static ResultBuffer ProcessSQLStatementNet(ResultBuffer resbufin)
         {
@@ -190,12 +206,13 @@ namespace MEDDotNet
                     {
                         DataTable dt = new DataTable();
                         adapter.Fill(dt);
+                        bool quiet = SqlQuiet(doc);
                         if (dt.Rows.Count == 0)
                         {
-                            ed.WriteMessage("\nMED-DotNet: No Rows");
+                            if (!quiet) ed.WriteMessage("\nMED-DotNet: No Rows");
                             return null;
                         }
-                        ed.WriteMessage("\nMED-DotNet: " + dt.Rows.Count + " row(s)");
+                        if (!quiet) ed.WriteMessage("\nMED-DotNet: " + dt.Rows.Count + " row(s)");
                         result.Add(new TypedValue((int)LispDataType.ListBegin));
                         result.Add(new TypedValue((int)LispDataType.ListBegin));
                         foreach (DataColumn dc in dt.Columns)

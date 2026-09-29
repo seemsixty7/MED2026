@@ -10,7 +10,7 @@
 ;;;   D 3D, 3" jog              : v2 FLAGGED, v3 FLAGGED         2 spheres + 2 markers
 ;;;   E 3D, 8" jog              : v2 FLAGGED, v3 FITTED          1 sphere + 1 marker
 ;;;   F LW closed 48" square    : v2 v3 v4 v1 FITTED             closed ring
-;;;   G cable 3D (code 3)       : v2 FITTED (needs MEDType USER3 for code 3)
+;;;   G cable 3D (code 3)       : v2 FITTED, R = 7 x cable OD (needs MEDType USER3 for code 3)
 ;;;   H 3D lead-in + tilted loop: v2 v3 v4 v5 FITTED              4 bends, no spheres
 ;;;   I as H, 0.05" jogs        : jog vertices dropped (debug), same as H
 ;;; (setq *MED3D-DEBUG* T) first for the per-corner / per-piece trace.

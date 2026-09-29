@@ -6,14 +6,20 @@
 ;;;   MAKE3DCONDUIT  every MED_CONDUIT run     -> Dwg / Layer output like MAKE3DTRAY
 ;;;   MAKE3DCABLE    every MED_CABLE run       -> Dwg / Layer output like MAKE3DTRAY
 ;;;   MED3DPLAN      print the corner table of one run (no solids)
+;;;   MED3DVER       print this file's version and who owns the commands
 ;;; The 2012 code stays in MED3DCON.lsp as M3DOLD / MAKE3DCONDUITOLD.
+;;; Load order: MEDCore loads this file last among the MED files. If an old,
+;;; unrenamed MED3DCON.lsp (2012 c:M3D / c:MAKE3DCONDUIT) is loaded later, the
+;;; command names are taken back: med3d-claim-commands runs at the end of this
+;;; file, from the new MED3DCON.lsp, and (lisp reactor) just before M3D, C3D,
+;;; MAKE3DCONDUIT or MAKE3DCABLE starts.
 ;;;
 ;;; Paths: LWPOLYLINE, 2D heavy POLYLINE (bulges kept as drawn), 3D POLYLINE.
 ;;;   Vertices go to WCS with trans (OCS + elevation). Meshes are skipped.
 ;;; OD: conduit = med_conduit_od (MED_CONDUIT code + trade size);
 ;;;     cable   = MEDType.USER3 for the MED_CABLE code. No OD = run skipped.
 ;;; Bends: every corner between two straights gets a fillet of radius
-;;;   (med3d-bend-radius kind od override) = 5 x OD by default. Tangent
+;;;   (med3d-bend-radius kind od override) = 5 x OD conduit, 7 x OD cable. Tangent
 ;;;   T = R*tan(theta/2) is pulled back from both straights. Tangents at the two
 ;;;   ends of a straight may use the whole straight between them (sum <= length).
 ;;;   A corner that cannot fit is left sharp, closed with a sphere of the OD, and
@@ -31,9 +37,11 @@
 
 (princ "\rLoading MED3DPath...")
 (vl-load-com)
+(setq *MED3D-VERSION* "2026-09-29 r5 (feature/3dpath)")
 
 ;;; ------------------------------------------------------------------ settings
-(if (not *MED3D-BEND-FACTOR*) (setq *MED3D-BEND-FACTOR* 5.0))  ; R = factor x OD
+(if (not *MED3D-BEND-FACTOR*) (setq *MED3D-BEND-FACTOR* 5.0))  ; conduit R = factor x OD
+(if (not *MED3D-CABLE-BEND-FACTOR*) (setq *MED3D-CABLE-BEND-FACTOR* 7.0))  ; cable R = factor x OD
 (if (not *MED3D-METHOD*) (setq *MED3D-METHOD* "SWEEP"))       ; "SWEEP" or "PIECES"
 ;; per-run bend override: list of (handle . override), see med3d-bend-radius
 (if (not (boundp '*MED3D-BEND-OVERRIDES*)) (setq *MED3D-BEND-OVERRIDES* nil))
@@ -72,14 +80,16 @@
 (defun med3d-get (key alist) (cdr (assoc key alist)))
 
 ;;; --------------------------------------------------------------- bend radius
-;; Single place for bend radius rules. kind "CONDUIT" | "CABLE" (same rule today).
-;; override: nil -> *MED3D-BEND-FACTOR* x OD; number -> that radius;
+;; Single place for bend radius rules. kind "CONDUIT" | "CABLE".
+;; override: nil -> *MED3D-BEND-FACTOR* (5) x OD for conduit,
+;;           *MED3D-CABLE-BEND-FACTOR* (7) x OD for cable; number -> that radius;
 ;;           ("FACTOR" . n) -> n x OD. Later: per-bend lists, long-radius tables.
 (defun med3d-bend-radius (kind od override)
   (cond
     ((and (numberp override) (> override 0.0)) (float override))
     ((and (listp override) (= (car override) "FACTOR") (numberp (cdr override)))
       (* (cdr override) od))
+    ((= kind "CABLE") (* *MED3D-CABLE-BEND-FACTOR* od))
     (T (* *MED3D-BEND-FACTOR* od))))
 
 ;;; ------------------------------------------------------------------ segments
@@ -405,6 +415,39 @@
 
 (defun med3d-num (v) (cond ((numberp v) v) ((= (type v) 'STR) (atof v)) (T nil)))
 
+;; SELECT through MED-DotNet with *MED-SQL-QUIET* = T (MED-DotNet then skips its
+;; "n row(s)" line). Returns the result list or nil (also on error).
+(defun med3d-sql (sql / old res)
+  (if (and MED-DotNet-Ready (MED-DotNet-Ready))
+    (progn
+      (setq old *MED-SQL-QUIET* *MED-SQL-QUIET* T
+            res (vl-catch-all-apply 'MEDProcessSQLStatement (list sql))
+            *MED-SQL-QUIET* old)
+      (if (and res (not (vl-catch-all-error-p res)) (listp res)) res))))
+
+;; One SELECT per command for all conduit ODs / all cable ODs (instead of one per
+;; type+size), stored in the caches med_conduit_od / med3d-cable-od read.
+(defun med3d-preload-od (kind / res k s v)
+  (cond
+    ((and (= kind "CONDUIT") (not *MED3D-OD-PRELOADED*))
+      (if (setq res (med3d-sql "SELECT ConduitCode, TradeSizeDec, OD_in FROM MEDConduitOD WHERE OD_in IS NOT NULL"))
+        (progn
+          (foreach row (cdr res)
+            (setq k (med3d-num (nth 0 row)) s (med3d-num (nth 1 row)) v (med3d-num (nth 2 row)))
+            (if (and k s v (> v 0.0))
+              (setq _MEDCONDUITOD_CACHE
+                     (cons (cons (list (fix k) (rtos s 2 4)) (float v)) _MEDCONDUITOD_CACHE))))
+          (setq *MED3D-OD-PRELOADED* T))))
+    ((and (= kind "CABLE") (not *MED3D-CABLEOD-PRELOADED*))
+      (if (setq res (med3d-sql "SELECT ITEMCODE, USER3 FROM MEDType WHERE ITEMTYPE='CABLE'"))
+        (progn
+          (foreach row (cdr res)
+            (setq k (med3d-num (nth 0 row)) v (med3d-num (nth 1 row)))
+            (if k
+              (setq *MED3D-CABLEOD-CACHE*
+                     (cons (cons (fix k) (if (and v (> v 0.0)) (float v))) *MED3D-CABLEOD-CACHE*))))
+          (setq *MED3D-CABLEOD-PRELOADED* T))))))
+
 ;; cable OD (inches) from MEDType.USER3, cached per run of a command
 (defun med3d-cable-od (code / key hit res val)
   (if (and (numberp code) (> code 0))
@@ -414,11 +457,11 @@
         (cdr hit)
         (if (and MED-DotNet-Ready (MED-DotNet-Ready))
           (progn
-            (setq res (vl-catch-all-apply 'MEDProcessSQLStatement
-                        (list (strcat "SELECT USER3 FROM MEDType WHERE ITEMTYPE='CABLE' AND ITEMCODE="
-                                      (itoa key)))))
-            (if (and res (not (vl-catch-all-error-p res)) (listp res)
-                     (>= (length res) 2) (listp (cadr res)))
+            (setq res (if *MED3D-CABLEOD-PRELOADED*
+                        nil          ; not in the preloaded table = no row
+                        (med3d-sql (strcat "SELECT USER3 FROM MEDType WHERE ITEMTYPE='CABLE' AND ITEMCODE="
+                                           (itoa key)))))
+            (if (and res (>= (length res) 2) (listp (cadr res)))
               (setq val (car (cadr res))))
             (if (= (type val) 'STR) (setq val (atof val)))
             (if (not (and (numberp val) (> val 0.0))) (setq val nil))
@@ -427,11 +470,22 @@
 
 ;; xdata layouts (xdataget): conduit (app tag size code dist msr),
 ;; cable (app tag size code rtag dist msr)
-(defun med3d-run-od (ent kind / xd)
+(defun med3d-run-od (ent kind / xd code size key old res)
+  (med3d-preload-od kind)
   (cond
     ((= kind "CONDUIT")
       (if (setq xd (xdataget ent _CONDUIT))
-        (med_conduit_od (med3d-num (nth 3 xd)) (med3d-num (nth 2 xd)))))
+        (progn
+          (setq code (med3d-num (nth 3 xd)) size (med3d-num (nth 2 xd)))
+          ;; preloaded and not in the table: cache the miss so med_conduit_od falls
+          ;; back to getsize without its own query (same result, no extra SELECT)
+          (if (and *MED3D-OD-PRELOADED* code size (> code 0) (> size 0.0)
+                   (not (assoc (setq key (list (fix code) (rtos size 2 4))) _MEDCONDUITOD_CACHE)))
+            (setq _MEDCONDUITOD_CACHE (cons (cons key nil) _MEDCONDUITOD_CACHE)))
+          (setq old *MED-SQL-QUIET* *MED-SQL-QUIET* T
+                res (vl-catch-all-apply 'med_conduit_od (list code size))
+                *MED-SQL-QUIET* old)
+          (if (not (vl-catch-all-error-p res)) res))))
     ((= kind "CABLE")
       (if (setq xd (xdataget ent _CABLE))
         (med3d-cable-od (med3d-num (nth 3 xd)))))))
@@ -859,7 +913,9 @@
         *MED3D-OLDERR* *error*
         *MED3D-TAG*    tag
         _MEDCONDUITOD_CACHE nil
-        *MED3D-CABLEOD-CACHE* nil)
+        *MED3D-CABLEOD-CACHE* nil
+        *MED3D-OD-PRELOADED* nil
+        *MED3D-CABLEOD-PRELOADED* nil)
   (defun *error* (msg)
     (med3d-end)
     (if (and msg (/= msg "") (not (wcmatch (strcase msg T) "*break*,*cancel*,*exit*")))
@@ -916,8 +972,8 @@
       (if (> ok 0) (MEDRebuildMedPropsJsonBeside nil))))
   (med3d-end))
 
-(defun c:M3D () (med3d-pick "CONDUIT" "M3D"))
-(defun c:C3D () (med3d-pick "CABLE" "C3D"))
+(defun med3d-cmd-m3d () (med3d-pick "CONDUIT" "M3D"))
+(defun med3d-cmd-c3d () (med3d-pick "CABLE" "C3D"))
 
 (defun med3d-export (kind tag / lay ss ok sols fmt fname)
   (med3d-begin tag)
@@ -949,8 +1005,55 @@
       (MEDRebuildMedPropsJsonBeside nil)))
   (med3d-end))
 
-(defun c:Make3DConduit () (med3d-export "CONDUIT" "MAKE3DCONDUIT"))
-(defun c:Make3DCable () (med3d-export "CABLE" "MAKE3DCABLE"))
+(defun med3d-cmd-make3dconduit () (med3d-export "CONDUIT" "MAKE3DCONDUIT"))
+(defun med3d-cmd-make3dcable () (med3d-export "CABLE" "MAKE3DCABLE"))
+
+;;; ------------------------------------------------------- command ownership
+;; M3D / C3D / MAKE3DCONDUIT / MAKE3DCABLE are bound to the med3d-cmd-* functions
+;; here, so a later (load "MED3DCON") with the 2012 defuns cannot keep them.
+;; Returns the list of names that had to be taken back (not counting first load).
+(defun med3d-claim-commands (quiet / bad)
+  (if (not (eq c:M3D med3d-cmd-m3d))
+    (setq bad (if c:M3D (cons "M3D" bad) bad) c:M3D med3d-cmd-m3d))
+  (if (not (eq c:C3D med3d-cmd-c3d))
+    (setq bad (if c:C3D (cons "C3D" bad) bad) c:C3D med3d-cmd-c3d))
+  (if (not (eq c:Make3DConduit med3d-cmd-make3dconduit))
+    (setq bad (if c:Make3DConduit (cons "MAKE3DCONDUIT" bad) bad) c:Make3DConduit med3d-cmd-make3dconduit))
+  (if (not (eq c:Make3DCable med3d-cmd-make3dcable))
+    (setq bad (if c:Make3DCable (cons "MAKE3DCABLE" bad) bad) c:Make3DCable med3d-cmd-make3dcable))
+  (if (and bad (not quiet))
+    (princ (strcat "\nMED3DPath: " (med3d-join (reverse bad) ", ")
+                   " had been redefined by another file (old MED3DCON.lsp?) - MED3DPath "
+                   *MED3D-VERSION* " version restored.")))
+  bad)
+(defun med3d-join (l sep / r)
+  (foreach x l (setq r (if r (strcat r sep x) x)))
+  (if r r ""))
+
+;; lisp reactor: re-claim just before one of our commands is evaluated
+(defun med3d-lisp-will-start (rea args / s)
+  (if (and args (= (type (car args)) 'STR))
+    (progn
+      (setq s (strcase (car args)))
+      (if (wcmatch s "(C:M3D)*,(C:C3D)*,(C:MAKE3DCONDUIT)*,(C:MAKE3DCABLE)*")
+        (med3d-claim-commands nil)))))
+(defun med3d-install-reactor ()
+  (if (and vlr-lisp-reactor
+           (not (and *MED3D-LISP-REACTOR* (vlr-added-p *MED3D-LISP-REACTOR*))))
+    (setq *MED3D-LISP-REACTOR*
+           (vl-catch-all-apply 'vlr-lisp-reactor
+             (list nil '((:vlr-lispWillStart . med3d-lisp-will-start)))))))
+
+(defun med3d-owner (f g) (if (eq f g) "MED3DPath" (if f "OTHER FILE (old MED3DCON.lsp?)" "not defined")))
+(defun c:MED3DVER ()
+  (princ (strcat "\nMED3DPath " *MED3D-VERSION*
+                 "\n  M3D           : " (med3d-owner c:M3D med3d-cmd-m3d)
+                 "\n  C3D           : " (med3d-owner c:C3D med3d-cmd-c3d)
+                 "\n  MAKE3DCONDUIT : " (med3d-owner c:Make3DConduit med3d-cmd-make3dconduit)
+                 "\n  MAKE3DCABLE   : " (med3d-owner c:Make3DCable med3d-cmd-make3dcable)
+                 "\n  support path MED3DPath.lsp: " (if (findfile "MED3DPath.lsp") (findfile "MED3DPath.lsp") "not found")
+                 "\n  support path MED3DCON.lsp : " (if (findfile "MED3DCON.lsp") (findfile "MED3DCON.lsp") "not found")))
+  (princ))
 
 ;; corner table of one run, no solids
 (defun med3d-print-plan (plan)
@@ -974,5 +1077,8 @@
         (princ "\nNot a MED conduit/cable run with an OD."))))
   (princ))
 
-(princ "Done.")
+(med3d-claim-commands T)
+(med3d-install-reactor)
+(princ (strcat "Done.\nMED3DPath " *MED3D-VERSION*
+               " loaded: M3D C3D MAKE3DCONDUIT MAKE3DCABLE MED3DPLAN MED3DVER"))
 (princ)

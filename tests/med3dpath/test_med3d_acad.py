@@ -204,6 +204,50 @@ if __name__ == '__main__':
         run_case('c0c08c2 2D heavy +Z', mk_heavy(OCS, BUL, [0, 0, 1], 60), 'PIECES', lsp=old, semantics='wcsz')
         demo = fails[len(keep):]; del fails[len(keep):]
         for f in demo: print('     ' + f)
+    print('--- cable run: bend radius 7 x OD')
+    L, mk = session()
+    e = lw(mk, OCS, BUL, [0, 0, 1], 0); e.xdata['MED_CABLE'] = ['MED_CABLE', 'K1', '1', 3]
+    L.g['*MED3D-CABLEOD-CACHE*'] = [Pair(3, 0.5)]
+    res = L.apply(Sym('MED3D-RUN'), [e, 'CABLE'])
+    rc = get(res[1], 'R') if res else None
+    check('cable R', rc is not None and abs(rc - 3.5) < 1e-12, f'cable R {rc}, expected 7 x 0.5')
+    print(f'{"ok  " if rc and abs(rc - 3.5) < 1e-12 else "FAIL"} cable run R = {rc} (OD 0.5)')
+    print('--- command ownership (old MED3DCON loaded later) and quiet OD lookups')
+    L, mk = session()
+    check('banner', any('MED3DPath 2026' in l and 'MAKE3DCONDUIT' in l for l in mk.log), 'no load banner')
+    old_fn = lambda: 'OLD 2012'
+    L.g['C:MAKE3DCONDUIT'] = old_fn; L.g['C:M3D'] = old_fn          # (load "MED3DCON") 2012 version
+    L.apply(Sym('MED3D-LISP-WILL-START'), [None, ['(C:MAKE3DCONDUIT)']])
+    check('claim', L.g['C:MAKE3DCONDUIT'] is L.g['MED3D-CMD-MAKE3DCONDUIT'] and L.g['C:M3D'] is L.g['MED3D-CMD-M3D'],
+          'old commands not taken back')
+    check('claim msg', any('had been redefined' in l for l in mk.log), 'no redefinition message')
+    n0 = len(mk.log); L.apply(Sym('MED3D-LISP-WILL-START'), [None, ['(C:MAKE3DCONDUIT)']])
+    check('claim quiet', not any('redefined' in l for l in mk.log[n0:]), 'message repeated when nothing changed')
+    # OD lookups: one quiet SELECT per command, no per-run queries
+    sql = []
+    def fake_sql(q):
+        sql.append((q, L.g.get('*MED-SQL-QUIET*')))
+        if 'MEDConduitOD' in q and 'ConduitCode,' in q:
+            return [['ConduitCode', 'TradeSizeDec', 'OD_in'], [3, 1.0, 1.163], [3, 0.75, 0.922]]
+        return None
+    def fake_conduit_od(code, size):
+        key = [int(code), f'{size:.4f}']
+        for it in L.g.get('_MEDCONDUITOD_CACHE') or []:
+            if car(it) == key: return cdr(it) if cdr(it) else 1.315
+        fake_sql('SELECT OD_in FROM MEDConduitOD WHERE ...'); return 1.315
+    L.g['MED-DOTNET-READY'] = lambda: True; L.g['MEDPROCESSSQLSTATEMENT'] = fake_sql
+    L.g['MED_CONDUIT_OD'] = fake_conduit_od
+    L.apply(Sym('MED3D-BEGIN'), ['M3D'])
+    ods = []
+    for size in ('1', '0.75', '1', '2'):
+        e = lw(mk, OCS, BUL, [0, 0, 1], 0); e.xdata['MED_CONDUIT'] = ['MED_CONDUIT', 'C', size, 3]
+        ods.append(L.apply(Sym('MED3D-RUN-OD'), [e, 'CONDUIT']))
+    L.apply(Sym('MED3D-END'), [])
+    check('od values', ods == [1.163, 0.922, 1.163, 1.315], f'ODs {ods}')
+    check('one select', len(sql) == 1, f'{len(sql)} SELECTs: {[q for q, _ in sql]}')
+    check('quiet', all(qt is True for _, qt in sql), 'SELECT not run with *MED-SQL-QUIET* T')
+    check('quiet restored', not L.g.get('*MED-SQL-QUIET*'), '*MED-SQL-QUIET* left set')
+    print(f'ok   ownership + OD preload ({len(sql)} SELECT for 4 runs, ODs {ods})' if len(fails) == 0 else 'FAIL ownership / OD preload')
     old4 = os.path.join(os.path.dirname(__file__), 'old_4a1d703.lsp')
     if os.path.exists(old4):
         print('--- 4a1d703 on the 3D loop (demo of the two ways to get balls at every corner)')

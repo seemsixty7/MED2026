@@ -16,10 +16,10 @@ def get(alist, key):
         if car(it) == key: return to_py(cdr(it))
     return None
 
-def plan(pts, buls=None, nrm=None, closed=False, od=1.163, override=None):
+def plan(pts, buls=None, nrm=None, closed=False, od=1.163, override=None, kind='CONDUIT'):
     pts = [[float(c) for c in (p if len(p) == 3 else (p[0], p[1], 0.0))] for p in pts]
     buls = [float(b) for b in (buls or [0.0] * len(pts))]
-    return L.apply(Sym('MED3D-PLAN'), [pts, buls, nrm, True if closed else None, od, 'CONDUIT', override])
+    return L.apply(Sym('MED3D-PLAN'), [pts, buls, nrm, True if closed else None, od, kind, override])
 
 def sub(a, b): return [x - y for x, y in zip(a, b)]
 def add(a, b): return [x + y for x, y in zip(a, b)]
@@ -174,6 +174,13 @@ p13 = plan([(0,0),(100,0),(100,100)], override=24.0)
 check('override', abs(get(p13,'R') - 24.0) < 1e-12, 'fixed R')
 p13b = plan([(0,0),(100,0),(100,100)], override=Pair('FACTOR', 8.0))
 check('override', abs(get(p13b,'R') - 8*od) < 1e-12, 'factor R')
+# 14 default bend radius: conduit 5 x OD, cable 7 x OD (override still wins)
+check('radius', abs(get(plan([(0,0),(100,0),(100,100)]),'R') - 5*od) < 1e-12, 'conduit R != 5 x OD')
+check('radius', abs(get(plan([(0,0),(100,0),(100,100)], kind='CABLE'),'R') - 7*od) < 1e-12, 'cable R != 7 x OD')
+check('radius', abs(get(plan([(0,0),(100,0),(100,100)], kind='CABLE', override=Pair('FACTOR', 5.0)),'R') - 5*od) < 1e-12, 'cable override')
+# a 90 deg corner on a 7" leg: fits at 5 x OD (T 5.815) but not at 7 x OD (T 8.141)
+case('cable 7xOD flags short leg', plan([(0,0),(7,0),(7,50)], kind='CABLE'), [(1,'FLAGGED')])
+case('conduit 5xOD fits short leg', plan([(0,0),(7,0),(7,50)]), [(1,'FITTED')])
 
 for r in results:
     print(f'{r[0]:34s} {str(r[1]):70s} pieces={r[2]:14s} len={r[3]}')

@@ -312,6 +312,8 @@ SOURCES += [
      "printed p.81-82", "UNY iron: A overall length, B maximum diameter."),
     ("CH6F-EYS-2020", "Crouse-Hinds series EYS / EZS sealing fittings catalog page", "Eaton", "2020", URL_EYS, "",
      "printed p.113-114", "EYS: a overall length, b body diameter, tr turning radius (conduit axis to the pour-boss face; 3-1/2 - 6 with cover removed) -> D_in."),
+    ("CLINT-EYD-PROFILE", "EYD side profile sketch (Clint Moore, estimated 2-1/2 in size)", "Moore Design (MED)", "2026-09-30", "", "",
+     "-", "APPROX: shape only, no dimensions. MED3DFittings r8 scales the EYD features below the body (lower chamber, drain pad, 45 deg drain, 45 deg plug boss on the chamfered corner) from this profile: 200 x 93 profile units = published a x b of each EYD row (the profile's ratio 2.15 matches the 2-1/2 EYD 7.5 / 3.5)."),
     ("CH6F-EYD", "Crouse-Hinds series EYD / EZD drain seals catalog page (specification sheet copy)", "Eaton", "n.d.", URL_EYD, "",
      "EYD dimension table", "a overall length, b body diameter, tr turning radius (conduit axis to the pour-boss face; 1-1/4 - 4 with cover removed) -> D_in."),
     ("CH-CP269-2006", "Crouse-Hinds Myers hubs (ST) and conduit hubs (MHUB), CP-269 / CP-270", "Cooper Crouse-Hinds", "2006",
@@ -505,7 +507,8 @@ def parse_tables2():
                       "Published": "; ".join("%s=%s" % (k, txt[k]) for k, _ in lmap)})
             for k, col in lmap:
                 r[col + "_in"] = fmt(frac(txt[k]))
-            r["Notes"] = "; ".join(x for x in [series + " (" + mat + ")", NOTES2.get((form, sh, ts), "")] if x)
+            r["Notes"] = "; ".join(x for x in [series + " (" + mat + ")", NOTES2.get((form, sh, ts), ""),
+                                               "shape below the body approx, scaled from CLINT-EYD-PROFILE" if sh == "EYD" else ""] if x)
             out.append(r)
             if sh == "CPL":
                 cpl[ts] = (frac(txt["len"]), frac(txt["od"]))

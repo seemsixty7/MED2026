@@ -183,10 +183,10 @@ check('stale-r5-c', res[1] == 'CREATED' and old.props['Name'] == 'MED_CB_RGD_F7_
 old = mk.invoke('BLOCKS', 'Add', [0.0, 0.0, 0.0], 'MED_CB_RGD_F7_TB_5-00_PH'); old.props['Comments'] = 'MEDCB geom r5'
 res = to_py(call(L, 'medcb-ensure-block', 'F7', 'TB', 5.0))
 check('stale-r5-ph', res == ['MED_CB_RGD_F7_TB_5-00_PH', 'PLACEHOLDER'] and old.props['Name'] == 'MED_CB_RGD_F7_TB_5-00_PH_PRE_R6', f'{res} {old.props}')
-# r7: per-shape revision - EYS / EYD blocks tagged r6 are renamed _PRE_R7 and rebuilt
-# (tag r7); other r6 blocks are left alone
+# r7 / r8: per-shape revisions - EYS blocks older than r7 are renamed _PRE_R7, EYD blocks
+# older than r8 _PRE_R8, and rebuilt; other r6 blocks are left alone
 check('tag-for', call(L, 'medcb-tag-for', 'MED_CB_RGD_CH_EYS_1-00') == 'MEDCB geom r7'
-      and call(L, 'medcb-tag-for', 'MED_CB_RGD_CH_EYD_2-00_PH') == 'MEDCB geom r7'
+      and call(L, 'medcb-tag-for', 'MED_CB_RGD_CH_EYD_2-00_PH') == 'MEDCB geom r8'
       and call(L, 'medcb-tag-for', 'MED_CB_RGD_F7_LB_1-00') == 'MEDCB geom r6'
       and call(L, 'medcb-name-shape', 'MED_CB_RGD_CH_RE_1-00X0-75') == 'RE' and call(L, 'medcb-name-shape', 'OTHER') == '')
 old = mk.invoke('BLOCKS', 'Add', [0.0, 0.0, 0.0], 'MED_CB_RGD_CH_EYS_1-00'); old.props['Comments'] = 'MEDCB geom r6'
@@ -198,9 +198,13 @@ check('r6-uny-kept', to_py(call(L, 'medcb-ensure-block', 'CH', 'UNY', 1.0))[1] =
 old.props['Comments'] = ''
 old = mk.invoke('BLOCKS', 'Add', [0.0, 0.0, 0.0], 'MED_CB_RGD_CH_EYD_1-00'); old.props['Comments'] = 'MEDCB geom r5'
 res = to_py(call(L, 'medcb-ensure-block', 'CH', 'EYD', 1.0))
-check('stale-r5-eyd', res[1] == 'CREATED' and old.props['Name'] == 'MED_CB_RGD_CH_EYD_1-00_PRE_R7', f'{res} {old.props}')
+check('stale-r5-eyd', res[1] == 'CREATED' and old.props['Name'] == 'MED_CB_RGD_CH_EYD_1-00_PRE_R8', f'{res} {old.props}')
+old = mk.invoke('BLOCKS', 'Add', [0.0, 0.0, 0.0], 'MED_CB_RGD_CH_EYD_2-00'); old.props['Comments'] = 'MEDCB geom r7'
+res = to_py(call(L, 'medcb-ensure-block', 'CH', 'EYD', 2.0))
+check('stale-r7-eyd', res[1] == 'CREATED' and old.props['Name'] == 'MED_CB_RGD_CH_EYD_2-00_PRE_R8'
+      and mk.blocks['MED_CB_RGD_CH_EYD_2-00'].props.get('Comments') == 'MEDCB geom r8', f'{res} {old.props}')
 # Clint's block rule: every entity of every generated block on layer 0, ByLayer
-gen = {k: v for k, v in mk.blocks.items() if v.props.get('Comments') in ('MEDCB geom r6', 'MEDCB geom r7')}
+gen = {k: v for k, v in mk.blocks.items() if v.props.get('Comments') in ('MEDCB geom r6', 'MEDCB geom r7', 'MEDCB geom r8')}
 check('bylayer-blocks', len(gen) >= 7 and not bylayer_ok(gen), str(bylayer_ok(gen)[:3]))
 check('bylayer-inserts', all(i.props.get('Color') == 256 and i.props.get('Lineweight') == -1 for i in mk.inserts), str([i.props for i in mk.inserts][:2]))
 

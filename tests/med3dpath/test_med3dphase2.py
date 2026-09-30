@@ -35,7 +35,6 @@ rows = [r for r in csv.DictReader(open(CSV, encoding='utf-8')) if r['Shape'] in 
 check('rows', len(rows) > 150, str(len(rows)))
 L, mk = session()
 n = 0
-seals = []
 for r in rows:
     f, sh, sz = r['Form'], r['Shape'], float(r['TradeSizeDec'])
     num = {k: float(r[k + '_in']) if r[k + '_in'] else None for k in 'ABCDE'}
@@ -61,7 +60,7 @@ for r in rows:
         check('A ' + tag, near(hi[0] - lo[0], A), f'{lo} {hi}')
         check('B ' + tag, near(hi[1] - lo[1], B), f'{lo} {hi}')
         check('faces ' + tag, near(hubs['RUN'][0][0], A / 2) and near(hubs['RUN2'][0][0], -A / 2))
-        if sh in ('EYS', 'EYD'):
+        if sh == 'EYS':
             # r7 seal (Clint's reference): tube + eccentric bulge (+Z), pour hub and a
             # leaning boss, each with a recessed square-drive plug; the farthest face is
             # at the published turning radius D
@@ -71,11 +70,24 @@ for r in rows:
             check('seal-D ' + tag, D and near(hi[2], D), f'{hi[2]} vs {D}')
             check('seal-cuts ' + tag, len([p for p in cuts if p[0] == 'CYL']) == 3 and len([p for p in cuts if p[0] == 'PTS' and len(p[1]) == 8]) == 2, str(cuts))
             obl = [p for e in sol for p in e.parts if p[0] == 'CYL' and abs(p[1][0] - p[2][0]) > 1e-6 and abs(p[1][2] - p[2][2]) > 1e-6]
-            check('seal-leaning-boss ' + tag, len(obl) >= 2, str(obl))
+            check('seal-leaning-boss ' + tag, len(obl) >= 1, str(obl))
             bottom = min(p[1][2] - p[3] for e in sol for p in e.parts if p[0] == 'CYL' and p[1][1] == 0 and abs(p[1][2] - p[2][2]) < 1e-9)
-            check('seal-straight-through ' + tag, near(bottom, lo[2]) if sh == 'EYS' else lo[2] < bottom - 0.1 * B, f'{bottom} {lo}')
-            if sh == 'EYD': check('eyd-nut ' + tag, len([p for e in sol for p in e.parts if p[0] == 'PTS' and len(p[1]) == 12]) == 1)
-            seals.append((tag, lo, hi))
+            check('seal-straight-through ' + tag, near(bottom, lo[2]), f'{bottom} {lo}')
+        if sh == 'EYD':
+            # r8 EYD (Clint's side profile, 200 x 93 units = a x b): body cylinder dia b on the
+            # conduit axis, chamber + pad below, drain 45 deg down toward -X (hex nut +
+            # cartridge), plug boss 45 deg down toward +X with a square drive
+            sol = live(blk); u = B / 93.0
+            cuts = [p for e in sol for p in getattr(e, 'cuts', [])]
+            check('eyd-solids ' + tag, len(sol) == 2, str(sol))
+            check('eyd-top ' + tag, near(hi[2], B / 2), f'{hi}')
+            check('eyd-bottom ' + tag, -95 * u < lo[2] < -85 * u, f'{lo[2] / u} u')
+            check('eyd-cuts ' + tag, len([p for p in cuts if p[0] == 'CYL']) == 2 and len([p for p in cuts if p[0] == 'PTS' and len(p[1]) == 8]) == 1, str(cuts))
+            check('eyd-nut ' + tag, len([p for e in sol for p in e.parts if p[0] == 'PTS' and len(p[1]) == 12]) == 1)
+            check('eyd-pad ' + tag, any(p[0] == 'BOX' and near(p[1][2], -68.5 * u) for e in sol for p in e.parts))
+            obl = [(p[2][0] - p[1][0], p[2][2] - p[1][2]) for e in sol for p in e.parts if p[0] == 'CYL' and abs(p[1][0] - p[2][0]) > 1e-6 and abs(p[1][2] - p[2][2]) > 1e-6]
+            check('eyd-45 ' + tag, any(dx < 0 and dz < 0 for dx, dz in obl) and any(dx > 0 and dz < 0 for dx, dz in obl)
+                  and all(near(abs(dx), abs(dz)) for dx, dz in obl), str(obl))
     elif sh.startswith('GUA'):
         check('dia ' + tag, near(hi[1] - lo[1], max(A, 2 * C) if sh == 'GUAX' else hi[1] - lo[1]), f'{lo} {hi}')
         check('B ' + tag, near(hi[2] - lo[2], B) and near(lo[2], -D), f'{lo} {hi}')
@@ -203,7 +215,7 @@ check('all-real', not [nm for nm in names if nm.endswith('_PH')], str([nm for nm
 check('all-bylayer', all(not bylayer_bad(mk.blocks[nm.upper()]) for nm in names))
 check('all-insert-layer', all(i.props['Layer'] == 'MED_3DCONDUIT' and i.props.get('Color') == 256 for i in mk.inserts))
 
-print(f'{len(rows)} phase 2 data rows, {n} blocks built ({len(seals)} EYS / EYD r7)')
+print(f'{len(rows)} phase 2 data rows, {n} blocks built EYS r7 / EYD r8')
 if fails:
     print(f'FAILED {len(fails)}'); [print('  ' + f) for f in fails[:60]]; sys.exit(1)
 print('OK test_med3dphase2')

@@ -37,6 +37,8 @@
 ;;;   LL / LR) are renamed <name>_PRE_R6 on first use and rebuilt; PURGE them later.
 ;;;   r7: EYS / EYD were reworked, so only their blocks carry "MEDCB geom r7"
 ;;;   (*MEDCB-SHAPE-TAGS*); an older EYS / EYD block is renamed <name>_PRE_R7.
+;;;   r8: EYD reworked again from Clint's side profile - tag "MEDCB geom r8", older
+;;;   EYD blocks are renamed <name>_PRE_R8.
 ;;;   Created only when not already in the drawing (an existing definition is never
 ;;;   redefined). No data -> placeholder box on layer MED_3DFLAG in a block named
 ;;;   <name>_PH (the real name stays free for when data is added).
@@ -53,8 +55,8 @@
 ;;;   r6: X / GUAX  RUN +X, RUN2 -X, BRANCH +Y, BRANCH2 -Y;  GUAL RUN +X, BRANCH +Y;
 ;;;     GUAT = T;  LBD / BLB / LBY = LB (LBY: round cover on the 45 deg corner toward
 ;;;     -X +Z);  BT = T;  BC = C;  BUB RUN +X, RUN2 -X (hub faces; the hubs slope 45 deg
-;;;     down to them);  UNY / EYS / EYD RUN +X, RUN2 -X (EYS / EYD r7: bulge and pour
-;;;     hub +Z, leaning boss toward +X; EYD drain down toward +X);  PLGR / PLGS RUN +X (plug at -X);  HUB RUN +X, wall face at X = 0;
+;;;     down to them);  UNY / EYS / EYD RUN +X, RUN2 -X (EYS r7: bulge and pour hub
+;;;     +Z, leaning boss toward +X; EYD r8: pad, drain (-X) and plug boss (+X) below);  PLGR / PLGS RUN +X (plug at -X);  HUB RUN +X, wall face at X = 0;
 ;;;     RE RUN +X (small size), RUN2 -X (large size).
 ;;;   LL / LR (r5, per Clint - r4 had them swapped): with the cover up (+Z) and the RUN
 ;;;   (end) hub east (+X), an LL's side hub points north (+Y) and an LR's south (-Y).
@@ -78,7 +80,7 @@
 
 (princ "\rLoading MED3DFittings...")
 (vl-load-com)
-(setq *MEDCB-VERSION* "2026-09-30 r7 (feature/3dpath)")
+(setq *MEDCB-VERSION* "2026-09-30 r8 (feature/3dpath)")
 ;; Block definitions carry this tag in their Comments; one made by an older revision
 ;; (no / another tag) is renamed <name>_PRE_R6 out of the way and rebuilt (existing
 ;; definitions are otherwise never redefined). r5: LL / LR hub convention (Clint);
@@ -91,7 +93,7 @@
 ;; renamed <name>_PRE_R7 and rebuilt, every other r6 block stays as it is.
 ;;   (shape tag stale-suffix)
 (setq *MEDCB-SHAPE-TAGS* '(("EYS" "MEDCB geom r7" "_PRE_R7")    ; r7 seal rework (Clint)
-                           ("EYD" "MEDCB geom r7" "_PRE_R7")))
+                           ("EYD" "MEDCB geom r8" "_PRE_R8")))  ; r8 EYD profile (Clint)
 ;; r6: every modelled shape. Classic Condulet bodies (Form 7 / 8, Mark 9) first - the
 ;; MEDCBTEST row - then the phase 2 bodies and the inline fittings.
 (setq *MEDCB-CLASSIC* '("LB" "LR" "LL" "T" "TB" "C" "X"))
@@ -451,7 +453,7 @@
   (medcb-h "RUN2" (list (/ a -2.0) 0.0 0.0) '(-1.0 0.0 0.0))
   (medcb-prims-geom "UNY" nil))
 
-;; EYS / EYD sealing fitting (r7, after Clint's reference model of the real fitting).
+;; EYS sealing fitting (r7, after Clint's reference model of the real fitting).
 ;; Published: a overall length, b body width, D turning radius (conduit axis to the
 ;; farthest face; Eaton EYS p.114 / EYD table). The rest is estimated from the catalog
 ;; drawings and Clint's reference (approx):
@@ -464,9 +466,9 @@
 ;;     its own square-drive plug (the face square to its axis, so slanted);
 ;;   - 1-1/4 and up: pour hub face at D; 1/2 - 1 (the catalog's angled body): the
 ;;     leaning boss reaches D, the pour hub stays short (0.3 b above the bulge);
-;;   - EYD adds the drain: a boss 45 deg down toward +X, hex nut and cartridge.
+;;   (EYD: see medcb-geom-eyd, r8.)
 ;; Body solid: tube, rings, bulge, hubs minus the plug seats; second solid: plugs minus
-;; the square drives (+ EYD nut / cartridge). RUN faces +/-a/2, axis = X (as r6).
+;; the square drives. RUN faces +/-a/2, axis = X (as r6).
 (defun medcb-geom-seal (shape a b tr hod sz / prims hubs r rt rr lr zc xp rp hp zp th u rs ls xs ct zt xt
                                              rd dn ld xd pl s2 bt x0 x1)
   (setq r (/ b 2.0) s2 *MEDCB-R2*
@@ -506,18 +508,51 @@
   (medcb-p (list "CYL" "CUT" (medcb-v+ ct (medcb-vx u (- (* 1.2 pl)))) (medcb-v+ ct (medcb-vx u 0.01)) (* 0.72 rs)))
   (medcb-p (list "CYL" "COVER" (medcb-v+ ct (medcb-vx u (- (* 1.2 pl)))) (medcb-v+ ct (medcb-vx u (* -0.03 b))) (* 0.71 rs)))
   (medcb-p (list "PRISM" "CUTC" (medcb-v+ ct (medcb-vx u (- (* 0.8 pl)))) ct (* 0.42 rs) 4))
-  ;; EYD drain: boss 45 deg down toward +X, hex nut, cartridge
-  (if (= shape "EYD")
-    (progn
-      (setq rd (* 0.15 b) dn (list s2 0.0 (- s2)) ld (/ (+ rt (* 0.1 b)) s2) xd (* -0.05 a))
-      (if (> (+ xd (* (+ ld (* 0.42 b)) s2) (* 0.7 rd)) (- (/ a 2.0) lr))
-        (setq xd (- (/ a 2.0) lr (* (+ ld (* 0.42 b)) s2) (* 0.7 rd))))
-      (medcb-p (list "CYL" "BODY" (list xd 0.0 0.0) (medcb-v+ (list xd 0.0 0.0) (medcb-vx dn ld)) rd))
-      (medcb-p (list "PRISM" "COVER" (medcb-v+ (list xd 0.0 0.0) (medcb-vx dn ld)) (medcb-v+ (list xd 0.0 0.0) (medcb-vx dn (+ ld (* 0.1 b)))) (* 1.25 rd) 6))
-      (medcb-p (list "CYL" "COVER" (medcb-v+ (list xd 0.0 0.0) (medcb-vx dn (+ ld (* 0.1 b)))) (medcb-v+ (list xd 0.0 0.0) (medcb-vx dn (+ ld (* 0.42 b)))) (* 0.7 rd)))))
   (medcb-h "RUN" (list (/ a 2.0) 0.0 0.0) '(1.0 0.0 0.0))
   (medcb-h "RUN2" (list (/ a -2.0) 0.0 0.0) '(-1.0 0.0 0.0))
   (medcb-prims-geom shape nil))
+
+;; EYD drain sealing fitting (r8, from Clint's 2D side profile of an EYD he estimates
+;; at 2-1/2"; its length / height ratio 2.15 matches the published 2-1/2 EYD a / b =
+;; 7.5 / 3.5). Published: a overall length (X), b body diameter (Y, Z). Everything below
+;; the body is scaled from that profile (approx, SourceId CLINT-EYD-PROFILE): profile
+;; units u, the body is 200 u long and 93 u high; along X 1 u = a/200 from the middle,
+;; heights, widths and the angled parts 1 u = b/93.
+;;   - body: a cylinder a long, dia b, the conduit axis on its axis, bored to the
+;;     conduit OD (the profile's rounded rectangle; the hubs are inside the ends);
+;;   - lower chamber below the body (X -68 .. +58 u, bottom 62.5 u below the axis),
+;;     with a flat drain / plug pad along its bottom (X -33 .. +17 u, 6 u thick);
+;;   - drain fitting off the lower left, 45 deg down toward -X: boss, hex nut and
+;;     cartridge (ending about 89 u below the axis);
+;;   - short boss off the lower right on the chamfered corner, 45 deg down toward +X,
+;;     with a recessed plug and a square drive.
+;; Body solid: body, chamber, pad, bosses minus bore / plug seat; second solid: plug
+;; (minus its square drive), drain nut + cartridge. RUN faces +/-a/2 (as r6 / r7).
+(defun medcb-geom-eyd (a b sz / prims hubs sx u r rc zc s2 dl dr p0 p1 cm)
+  (setq sx (/ a 200.0) u (/ b 93.0) r (/ b 2.0) s2 *MEDCB-R2*
+        rc (* 36.0 u) zc (- (* -62.5 u) (- rc))   ; chamber: bottom at -62.5 u
+        dl (list (- s2) 0.0 (- s2))                 ; drain direction (lower left)
+        dr (list s2 0.0 (- s2)))                    ; plug boss direction (lower right)
+  ;; body + bore
+  (medcb-p (list "CYL" "BODY" (list (/ a -2.0) 0.0 0.0) (list (/ a 2.0) 0.0 0.0) r))
+  (medcb-p (list "CYL" "CUT" (list (- (/ a -2.0) 0.01) 0.0 0.0) (list (+ (/ a 2.0) 0.01) 0.0 0.0) (min (* 0.95 r) (/ (medcb-cod sz) 2.0))))
+  ;; lower chamber (eccentric, down) and the flat pad under it
+  (medcb-p (list "CYL" "BODY" (list (* -68.0 sx) 0.0 zc) (list (* 58.0 sx) 0.0 zc) rc))
+  (medcb-p (list "BOX" "BODY" (list (* -33.0 sx) (* -20.0 u) (* -68.5 u)) (list (* 17.0 sx) (* 20.0 u) (* -58.0 u))))
+  ;; drain: boss, hex nut, cartridge (start inside the chamber)
+  (setq p0 (list (* -34.0 sx) 0.0 (* -62.0 u)))      ; profile point -> block
+  (medcb-p (list "CYL" "BODY" (medcb-v+ p0 (medcb-vx dl (* -4.0 u))) (medcb-v+ p0 (medcb-vx dl (* 10.0 u))) (* 6.0 u)))
+  (medcb-p (list "PRISM" "COVER" (medcb-v+ p0 (medcb-vx dl (* 10.0 u))) (medcb-v+ p0 (medcb-vx dl (* 16.0 u))) (* 7.5 u) 6))
+  (medcb-p (list "CYL" "COVER" (medcb-v+ p0 (medcb-vx dl (* 16.0 u))) (medcb-v+ p0 (medcb-vx dl (* 38.0 u))) (* 4.5 u)))
+  ;; plug boss on the chamfered corner: axis square to the chamfer, face cm
+  (setq p1 (list (* 54.0 sx) 0.0 (* -60.5 u)) cm (medcb-v+ p1 (medcb-vx dr (* 8.0 u))))
+  (medcb-p (list "CYL" "BODY" (medcb-v+ p1 (medcb-vx dr (* -14.0 u))) cm (* 10.0 u)))
+  (medcb-p (list "CYL" "CUT" (medcb-v+ cm (medcb-vx dr (* -3.0 u))) (medcb-v+ cm (medcb-vx dr 0.01)) (* 7.0 u)))
+  (medcb-p (list "CYL" "COVER" (medcb-v+ cm (medcb-vx dr (* -3.0 u))) (medcb-v+ cm (medcb-vx dr (* -0.8 u))) (* 6.9 u)))
+  (medcb-p (list "PRISM" "CUTC" (medcb-v+ cm (medcb-vx dr (* -2.0 u))) cm (* 3.5 u) 4))
+  (medcb-h "RUN" (list (/ a 2.0) 0.0 0.0) '(1.0 0.0 0.0))
+  (medcb-h "RUN2" (list (/ a -2.0) 0.0 0.0) '(-1.0 0.0 0.0))
+  (medcb-prims-geom "EYD" nil))
 
 ;; plugged coupling (approx; A coupling length, B coupling OD, PLGR C recess, PLGS
 ;; C square head, D head height): the conduit end is at the origin, half-way into the
@@ -605,7 +640,8 @@
           ((member shape '("GUAL" "GUAT" "GUAX")) (medcb-geom-gua shape a b c d e hod hl s1))
           ((= shape "BUB") (medcb-geom-bub a b c d e hod s1))
           ((= shape "UNY") (medcb-geom-uny a b))
-          ((member shape '("EYS" "EYD")) (medcb-geom-seal shape a b d hod s1))
+          ((= shape "EYS") (medcb-geom-seal shape a b d hod s1))
+          ((= shape "EYD") (medcb-geom-eyd a b s1))
           ((member shape '("PLGR" "PLGS")) (medcb-geom-plug shape a b c d))
           ((= shape "HUB") (medcb-geom-hub form a b c d e))
           ((= shape "RE") (medcb-geom-re a b c d sz))))

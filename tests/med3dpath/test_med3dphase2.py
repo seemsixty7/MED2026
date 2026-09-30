@@ -26,6 +26,30 @@ DIRS = {'LBD': {'RUN': X, 'BACK': neg(Z)}, 'BLB': {'RUN': X, 'BACK': neg(Z)}, 'L
 def bylayer_bad(blk):
     return [e.props for e in live(blk) if not (e.props.get('Layer') == '0' and e.props.get('Color') == 256
             and str(e.props.get('Linetype', '')).upper() == 'BYLAYER' and e.props.get('Lineweight') == -1)]
+# Clint's GUA reference DWGs (C:\\Users\\moore\\Dropbox\\Development\\3DFittings, measured
+# per solid with accoreconsole; the same for GUAL / GUAT / GUAX): trade size ->
+# (hub face from the centre, bottom z, top z incl. lugs / bar, hub OD, body dia);
+# z from the hub axis
+GUA_REF = {'1/2': (2.125, -0.625, 1.6875, 1.25, 2.5), '3/4': (2.125, -0.75, 1.5625, 1.5, 2.5),
+           '1': (2.75, -0.875, 1.9375, 1.75, 3.5), '1-1/4': (3.125, -1.094, 2.094, 2.1875, 4.25),
+           '1-1/2': (3.9375, -1.281, 3.682, 2.5625, 5.75), '2': (3.9375, -1.5, 3.463, 3.0, 5.75)}
+def part_rmax(p, n=2000):
+    """farthest distance from the X axis of a part (CYL: both end rims sampled; PTS: points)"""
+    if p[0] == 'PTS': return max(math.hypot(q[1], q[2]) for q in p[1])
+    if p[0] == 'BOX': return max(math.hypot(y, z) for y in (p[1][1], p[2][1]) for z in (p[1][2], p[2][2]))
+    a, b, r = p[1], p[2], p[3]
+    w = [y - x for x, y in zip(a, b)]; L = math.sqrt(sum(c * c for c in w)); w = [c / L for c in w]
+    t = [0.0, 1.0, 0.0] if abs(w[1]) < 0.9 else [1.0, 0.0, 0.0]
+    e1 = [w[1] * t[2] - w[2] * t[1], w[2] * t[0] - w[0] * t[2], w[0] * t[1] - w[1] * t[0]]
+    m = math.sqrt(sum(c * c for c in e1)); e1 = [c / m for c in e1]
+    e2 = [w[1] * e1[2] - w[2] * e1[1], w[2] * e1[0] - w[0] * e1[2], w[0] * e1[1] - w[1] * e1[0]]
+    best = 0.0
+    for c in (a, b):
+        for i in range(n):
+            f = 2 * math.pi * i / n
+            q = [c[k] + r * (math.cos(f) * e1[k] + math.sin(f) * e2[k]) for k in range(3)]
+            best = max(best, math.hypot(q[1], q[2]))
+    return best
 def span(blk):
     parts = [p for e in live(blk) for p in e.parts]
     return bbox(parts)
@@ -60,38 +84,51 @@ for r in rows:
         check('A ' + tag, near(hi[0] - lo[0], A), f'{lo} {hi}')
         check('B ' + tag, near(hi[1] - lo[1], B), f'{lo} {hi}')
         check('faces ' + tag, near(hubs['RUN'][0][0], A / 2) and near(hubs['RUN2'][0][0], -A / 2))
-        if sh == 'EYS':
-            # r7 seal (Clint's reference): tube + eccentric bulge (+Z), pour hub and a
-            # leaning boss, each with a recessed square-drive plug; the farthest face is
-            # at the published turning radius D
+        if sh in ('EYS', 'EYD'):
+            # r9 (Clint): EYS - tube + eccentric bulge (+Z), pour hub and a leaning boss, each
+            # with a recessed square-drive plug; NOTHING goes past the published turning radius
+            # D (axis to the farthest point, rim corners included) and the farthest point
+            # reaches it. EYD - the same body mirrored to -Z (large opening down), its plug a
+            # special plug with an ECD drain threaded in, pointing straight down; only the ECD
+            # may go past D.
             sol = live(blk)
             cuts = [p for e in sol for p in getattr(e, 'cuts', [])]
+            parts = [p for e in sol for p in e.parts]
+            ecd = [p for p in parts if (p[0] == 'PTS' and len(p[1]) == 12) or (p[0] == 'CYL' and near(p[3], 0.31))] if sh == 'EYD' else []
+            bparts = [p for p in parts if p not in ecd]
+            rmax = max(part_rmax(p) for p in bparts)
             check('seal-solids ' + tag, len(sol) == 2, str(sol))
-            check('seal-D ' + tag, D and near(hi[2], D), f'{hi[2]} vs {D}')
-            check('seal-cuts ' + tag, len([p for p in cuts if p[0] == 'CYL']) == 3 and len([p for p in cuts if p[0] == 'PTS' and len(p[1]) == 8]) == 2, str(cuts))
-            obl = [p for e in sol for p in e.parts if p[0] == 'CYL' and abs(p[1][0] - p[2][0]) > 1e-6 and abs(p[1][2] - p[2][2]) > 1e-6]
+            check('seal-within-D ' + tag, D and rmax <= D + 1e-6, f'{rmax} vs {D}')
+            check('seal-reaches-D ' + tag, D and rmax >= D - 0.031 * B, f'{rmax} vs {D}')
+            obl = [p for p in parts if p[0] == 'CYL' and abs(p[1][0] - p[2][0]) > 1e-6 and abs(p[1][2] - p[2][2]) > 1e-6]
             check('seal-leaning-boss ' + tag, len(obl) >= 1, str(obl))
-            bottom = min(p[1][2] - p[3] for e in sol for p in e.parts if p[0] == 'CYL' and p[1][1] == 0 and abs(p[1][2] - p[2][2]) < 1e-9)
-            check('seal-straight-through ' + tag, near(bottom, lo[2]), f'{bottom} {lo}')
-        if sh == 'EYD':
-            # r8 EYD (Clint's side profile, 200 x 93 units = a x b): body cylinder dia b on the
-            # conduit axis, chamber + pad below, drain 45 deg down toward -X (hex nut +
-            # cartridge), plug boss 45 deg down toward +X with a square drive
-            sol = live(blk); u = B / 93.0
-            cuts = [p for e in sol for p in getattr(e, 'cuts', [])]
-            check('eyd-solids ' + tag, len(sol) == 2, str(sol))
-            check('eyd-top ' + tag, near(hi[2], B / 2), f'{hi}')
-            check('eyd-bottom ' + tag, -95 * u < lo[2] < -85 * u, f'{lo[2] / u} u')
-            check('eyd-cuts ' + tag, len([p for p in cuts if p[0] == 'CYL']) == 2 and len([p for p in cuts if p[0] == 'PTS' and len(p[1]) == 8]) == 1, str(cuts))
-            check('eyd-nut ' + tag, len([p for e in sol for p in e.parts if p[0] == 'PTS' and len(p[1]) == 12]) == 1)
-            check('eyd-pad ' + tag, any(p[0] == 'BOX' and near(p[1][2], -68.5 * u) for e in sol for p in e.parts))
-            obl = [(p[2][0] - p[1][0], p[2][2] - p[1][2]) for e in sol for p in e.parts if p[0] == 'CYL' and abs(p[1][0] - p[2][0]) > 1e-6 and abs(p[1][2] - p[2][2]) > 1e-6]
-            check('eyd-45 ' + tag, any(dx < 0 and dz < 0 for dx, dz in obl) and any(dx > 0 and dz < 0 for dx, dz in obl)
-                  and all(near(abs(dx), abs(dz)) for dx, dz in obl), str(obl))
+            if sh == 'EYS':
+                check('seal-cuts ' + tag, len([p for p in cuts if p[0] == 'CYL']) == 3 and len([p for p in cuts if p[0] == 'PTS' and len(p[1]) == 8]) == 2, str(cuts))
+                bottom = min(p[1][2] - p[3] for p in parts if p[0] == 'CYL' and p[1][1] == 0 and abs(p[1][2] - p[2][2]) < 1e-9)
+                check('seal-straight-through ' + tag, near(bottom, lo[2]), f'{bottom} {lo}')
+                check('seal-up ' + tag, hi[2] > B / 2 and all(p[1][2] >= -1e-9 and p[2][2] >= -1e-9 for p in obl), f'{hi}')
+            else:
+                check('eyd-cuts ' + tag, len([p for p in cuts if p[0] == 'CYL']) == 3 and len([p for p in cuts if p[0] == 'PTS' and len(p[1]) == 8]) == 1, str(cuts))
+                check('eyd-down ' + tag, lo[2] < -B / 2 and hi[2] < B / 2 and all(p[1][2] <= 1e-9 and p[2][2] <= 1e-9 for p in obl), f'{lo} {hi}')
+                cyl = [p for p in ecd if p[0] == 'CYL']
+                check('eyd-ecd ' + tag, len(ecd) == 2 and len(cyl) == 1 and near(cyl[0][1][0], cyl[0][2][0])
+                      and near(min(cyl[0][2][2], cyl[0][1][2]), lo[2]), str(ecd))
+                check('eyd-ecd-plug ' + tag, all(near(c, cyl[0][1][0]) for p in ecd if p[0] == 'PTS' for c in [sum(q[0] for q in p[1]) / 12]), str(ecd))
     elif sh.startswith('GUA'):
-        check('dia ' + tag, near(hi[1] - lo[1], max(A, 2 * C) if sh == 'GUAX' else hi[1] - lo[1]), f'{lo} {hi}')
-        check('B ' + tag, near(hi[2] - lo[2], B) and near(lo[2], -D), f'{lo} {hi}')
-        check('C ' + tag, all(near(math.sqrt(sum(c * c for c in hubs[k][0])), C) for k in hubs), str(hubs))
+        # r9: tuned to Clint's reference DWGs (3DFittings GUA?4A 4B 6C 7D 9E 9F, measured
+        # solid by solid): hub face, bottom, top (lugs / bar), hub OD, body dia
+        ref = GUA_REF.get(r['TradeSize'])
+        check('gua-ref ' + tag, ref is not None)
+        if ref:
+            face, zb, zt, hod, dia = ref
+            t2 = 0.02
+            check('gua-face ' + tag, all(near(math.sqrt(sum(c * c for c in hubs[k][0])), face, t2) for k in hubs), str(hubs))
+            check('gua-z ' + tag, near(lo[2], zb, t2) and near(hi[2], zt, t2), f'{lo} {hi} vs {zb} {zt}')
+            cyl = [p for e in live(blk) for p in e.parts if p[0] == 'CYL']
+            check('gua-dia ' + tag, any(near(2 * p[3], dia, t2) and near(p[1][0], 0) and near(p[1][1], 0) for p in cyl), str(cyl))
+            hc = [p for p in cyl if abs(p[1][2] - p[2][2]) < 1e-9]
+            check('gua-hub ' + tag, len(hc) == len(hubs) and all(near(2 * p[3], hod, t2) for p in hc), str(hc))
+            check('gua-span ' + tag, near(hi[0], face, t2) and near(hi[1], face, t2), f'{hi}')
     elif sh == 'BUB':
         check('A ' + tag, near(hi[0] - lo[0], A, 1e-4), f'{hi[0] - lo[0]} vs {A}')
         check('B ' + tag, near(hi[2] - lo[2], B, 1e-4), f'{hi[2] - lo[2]} vs {B}')
@@ -215,7 +252,7 @@ check('all-real', not [nm for nm in names if nm.endswith('_PH')], str([nm for nm
 check('all-bylayer', all(not bylayer_bad(mk.blocks[nm.upper()]) for nm in names))
 check('all-insert-layer', all(i.props['Layer'] == 'MED_3DCONDUIT' and i.props.get('Color') == 256 for i in mk.inserts))
 
-print(f'{len(rows)} phase 2 data rows, {n} blocks built EYS r7 / EYD r8')
+print(f'{len(rows)} phase 2 data rows, {n} blocks built EYS / EYD / GUA r9')
 if fails:
     print(f'FAILED {len(fails)}'); [print('  ' + f) for f in fails[:60]]; sys.exit(1)
 print('OK test_med3dphase2')

@@ -132,7 +132,7 @@ The symbols are hub ticks: short bars across the conduit where a hub is.
 | M21 | Fittings>Lbd L; ribbon LBD Fitting; image menu LBD Fitting | 2 | LBD (r6, CH 2006 1F p.13): LB orientation on its side along the long leg |
 | M22 | Fittings>Lbd R; ribbon LBD Fitting; image menu LBD Fitting | 2 | LBD on its side, opposite presentation (r6 builder) |
 | M23 | Fittings>Lby; ribbon LBY Fitting; image menu Lby | 2 | LBY (r6, CH 2006 1F p.16): LB logic, symmetrical legs; COVER token = body +Z (the round cover sits on the 45 deg corner between body +Z and -X) |
-| M24 | Fittings>Gual; image menu Gual Fitting | 2 | GUAL (r6, Eaton 3F p.55): face up, legs symmetrical (hub faces at c from the centre) |
+| M24 | Fittings>Gual; image menu Gual Fitting | 2 | GUAL (r9, tuned to Clint's reference DWGs): face up, legs symmetrical (hub faces at a/2 + hub length from the centre) |
 | M25 | Fittings>Guat; image menu Guat Fitting | 2 | GUAT: tee logic, face up; 1guat -90 deg offset like 1tee (branch = symbol +X) |
 | M26 | Fittings>Guax; image menu Guax Fitting | 2 | GUAX: X logic, face up |
 | M27 | Fittings>Gualside | 2 | GUAL side view: tilted -90 deg about X - branch down, cover toward +Y (same for GUAT side) |
@@ -141,8 +141,8 @@ The symbols are hub ticks: short bars across the conduit where a hub is.
 | M31 | code changed to Mogul BLB (MEDCHG) | 2 | Mogul BLB (r6, CH 2006 1F p.14): larger LB on its side |
 | M32 | LB turn with only one leg drawn | 2 | LB on 1lbl with one leg drawn: on its side toward the symbol's short leg (opening sideways, not up) |
 | M33 | Fittings>Union; image menu Union | 2 | union (r6, Eaton UNY): coupling-like; conduit trimmed / extended to the union faces (menu break 2.25 in at 48 > half the union) |
-| M34 | Fittings>Seal; image menu Seal | 2 | EYS seal (r7): inline, bulge + pour hub up, leaning boss toward +X; conduit continuous (no menu break) |
-| M35 | Fittings>Seal-Drn; image menu Seal-Drain | 2 | EYD seal with drain (r8): Clint's side profile - body dia b + chamber and pad below; drain 45 deg down toward -X; plug boss 45 deg down toward +X |
+| M34 | Fittings>Seal; image menu Seal | 2 | EYS seal (r7 / r9): inline, bulge + pour hub up, leaning boss toward +X, nothing past the catalog turning radius; conduit continuous (no menu break) |
+| M35 | Fittings>Seal-Drn; image menu Seal-Drain | 2 | EYD seal with drain (r9): the EYS body with the large opening down (within the turning radius) + ECD drain in a special plug, straight down |
 | M36 | Fittings>Plug-Rec / Plug-SqH; image menu plugs | 2 | plugged coupling (r6, approx): coupling centred on the conduit end, recessed plug at -X |
 | M37 | Fittings>Hub; image menu Hub | 2 | conduit hub (r6, CH MHUB): wall face at the insert point, conduit extended to the hub face (menu break 3 in at 48) |
 | M38 | Fittings>Reducer; image menu Reducer | 8 | reducer (r6, approx): large coupling -X (RUN2), head sticks out, small end +X (RUN); reduce-to size from #ITEM_ALT; the 4.38 in menu break on +X (0.09125 x 48, medblck.dat) is extended to the head |
@@ -168,9 +168,9 @@ Clint's notes are kept in the table; the last two columns say what was built and
 | M20 | X (cross) | logic tracks; add the X builder | X: two run hubs on X, two branch hubs on Y, cover up; codes 80 / 81 / 82 (F7 / F8 / M9) | CH1F-2022 printed p.13 (Form 8 / Mark 9 X; F8 X 1-1/2 `c` kept as printed) |
 | M21, M22 | LBD | LB with a bigger body and a better bend radius for cables; on its side like the LB | LB geometry with the LBD letters; code 39 (CH) | CH1F-2006 section 1F p.13 (CH LBD 1" `e` kept as printed) |
 | M23 | LBY | LB logic, symmetrical legs (easier) | own builder: round body with LB hubs (RUN, BACK) at 90°, legs symmetrical, round cover on the 45° corner opposite the hubs; code 41 | CH1F-2006 p.16 (a / b read as hub-face distances; body internals derived) |
-| M24 | GUAL | face up; GUA legs typically symmetrical | round box, cover up, hubs at `c` from the centre; code 141 | Eaton 3F GUA page p.55 (CH3F-GUA-2024); cover / hub OD derived |
-| M25 | GUAT | tee logic, face up | as GUAL + third hub; `1guat` -90° offset like `1tee`; code 142 | CH3F-GUA-2024 |
-| M26 | GUAX | X logic, legs the same, face up | four hubs; code 143 | CH3F-GUA-2024 |
+| M24 | GUAL | face up; GUA legs typically symmetrical | round box, cover (full-diameter disc + lugs) up, bored hubs, faces at a/2 + hub length; code 141 | CH3F-GUA-2024 (a, HubLen); 3D proportions **tuned to Clint's reference DWGs** (`CLINT-GUA-DWG`, r9) |
+| M25 | GUAT | tee logic, face up | as GUAL + third hub; `1guat` -90° offset like `1tee`; code 142 | CH3F-GUA-2024; tuned to Clint's reference DWGs (r9) |
+| M26 | GUAX | X logic, legs the same, face up | four hubs; code 143 | CH3F-GUA-2024; tuned to Clint's reference DWGs (r9) |
 | M27 | GUAL side view | LL / LR-like; the face can lie either way - be consistent | `1gualsid`: tilted -90° about X - branch down, cover toward +Y | CH3F-GUA-2024 |
 | M28 | GUAT side view | branch assumed down / away; face either way, consistent | `1guatsid`: same tilt as GUAL side | CH3F-GUA-2024 |
 | M29 | BUB | a 45° body; face up at the insertion point | body with the two hubs at 45° down (oblique cylinders); planner treats the hub faces as horizontal; code 94 (Mogul) | CH1F-2006 p.15 (internals derived) |
@@ -178,8 +178,8 @@ Clint's notes are kept in the table; the last two columns say what was built and
 | M41 | Mogul BT | - | T geometry; code 18 | CH1F-2006 p.15 |
 | M42 | Mogul BC | - | C geometry; code 53 | CH1F-2006 p.14 |
 | M33 | Union (UNY) | coupling-like; the menu break may be longer than the union - extend the conduit to the union faces | inline body; conduit trimmed / extended to the faces (on-axis guard in MED3DPath r12); code 72 | CH5F-UNY-2022 printed p.82 |
-| M34 | Seal (EYS) | sealing fitting; draw function; r7: "massage to look like they are" + reference model | r7: straight-through bored tube, plain hub rings, eccentric bulge up, large short pour hub + leaning boss, both with recessed square-drive plugs; code 61 | CH6F-EYS-2020 printed p.114 (a, b, turning radius D); shape details **approx** |
-| M35 | Seal with drain (EYD) | draw function | r8: after Clint's side profile - body cylinder dia `b` on the conduit axis, lower chamber with a flat drain / plug pad, drain 45° down toward −X (boss, hex nut, cartridge), short plug boss 45° down toward +X on the chamfered corner; code 64 | CH6F-EYD table (a, b; EYD 1" `b` kept as printed; `D` not used by r8); everything below the body **approx**, scaled from `CLINT-EYD-PROFILE` |
+| M34 | Seal (EYS) | sealing fitting; draw function; r7: "massage to look like they are" + reference model | r7: straight-through bored tube, plain hub rings, eccentric bulge up, large short pour hub + leaning boss, both with recessed square-drive plugs; r9: every part (rim corners included) within the turning radius D at every size; code 61 | CH6F-EYS-2020 printed p.114 (a, b, turning radius D); shape details **approx** |
+| M35 | Seal with drain (EYD) | draw function | r9 (Clint): exactly the EYS body, mirrored so the large opening is the lower one (bulge, pour hub, leaning boss −Z, within D); its plug is a special plug with an ECD drain threaded in, pointing straight down (−Z); code 64 | CH6F-EYD table (a, b, turning radius D; EYD 1" `b` kept as printed); ECD11 per `EATON-ECD11` (1.56 in long, 0.88 in; hex / body split **approx**); body details **approx**; `CLINT-EYD-PROFILE` = proportion reference only |
 | M36, M44 | Plug | a coupling with a plug (recessed or extruded) | coupling on the conduit end + recessed (PLGR, code 100) or square-head (PLGS, code 101) plug | **approx**: Wheatland coupling (WH-ECN-2017) + ANSI C80.1 OD; the CH PLG page has no dimensions |
 | M37 | Hub | Myers-style or plain conduit hub: same logic, different dimensions - middle ground, or a separate Myers block | two blocks: CH conduit hub (code 120) and Myers ST (code 121); wall face at the insert point | CH-CP269-2006 (MHUB letters a b c d x, Myers ST A B C D K) |
 | M38 | Reducer | recessed, sticks out a little to show it's there; one size to another | coupling on the large conduit + head sticking out + small conduit; reduce-to size from the fitting's alt size (else one size down, with a note); code 103 | **approx**: Wheatland coupling + C80.1 OD |

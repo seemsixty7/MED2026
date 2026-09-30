@@ -15,6 +15,7 @@ See [docs/README.md](docs/README.md).
 - [Database](docs/database.md)
 - [Drawing setup](docs/setup.md)
 - [Commands](docs/commands.md)
+- [Command reference (A-Z)](docs/command-reference.md), [AutoLISP reference](docs/lisp-reference.md), [3D guide](docs/3d-guide.md)
 - C# UI: [MEDTYPE](docs/medtype.md), [MEDSETTINGS](docs/medsettings.md), [Cable palette](docs/cable.md), [MEDCHG](docs/medchg.md), [MEDRECORDS](docs/medrecords.md), [MEDSHOWBOM](docs/medshowbom.md)
 - Draw: [conduit](docs/conduit.md), [tray](docs/tray.md), [cable](docs/cable.md), [details](docs/detail.md), [two-line conduit](docs/detail-conduit.md), [tagging](docs/tagging.md), [3D](docs/3d.md), [utilities](docs/utilities.md)
 

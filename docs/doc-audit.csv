@@ -1,0 +1,852 @@
+name,type,file,line,documented_before,doc_location_before,documented_now,doc_location_now,notes
+C:2AWAY,command,Support\medcon.lsp,299,Y,docs/commands.md docs/detail-conduit.md,Y,docs/command-reference.md#2away ; docs/lisp/medcon.md,
+C:2BREAK,command,Support\medcon.lsp,158,Y,docs/commands.md docs/detail-conduit.md,Y,docs/command-reference.md#2break ; docs/lisp/medcon.md,
+C:2LCON,command,Support\medcon.lsp,164,Y,docs/commands.md docs/detail-conduit.md docs/README.md,Y,docs/command-reference.md#2lcon ; docs/lisp/medcon.md,
+C:2LFLEX,command,Support\medcon.lsp,170,Y,docs/commands.md docs/detail-conduit.md,Y,docs/command-reference.md#2lflex ; docs/lisp/medcon.md,
+C:2LINE,command,Support\medwire.lsp,80,Y,docs/commands.md docs/utilities.md docs/overview.md,Y,docs/command-reference.md#2line ; docs/lisp/medwire.md,
+C:2TOWARD,command,Support\medcon.lsp,305,Y,docs/commands.md docs/detail-conduit.md,Y,docs/command-reference.md#2toward ; docs/lisp/medcon.md,
+C:3DJBOX,command,Support\MED3DMisc.lsp,9,Y,docs/commands.md docs/3d.md,Y,docs/command-reference.md#3djbox ; docs/lisp/MED3DMisc.md,
+C:3LINE,command,Support\medwire.lsp,104,Y,docs/commands.md docs/utilities.md docs/overview.md,Y,docs/command-reference.md#3line ; docs/lisp/medwire.md,
+C:ABL,command,Support\medtag.lsp,83,Y,docs/tagging.md docs/commands.md,Y,docs/command-reference.md#abl ; docs/lisp/medtag.md,
+C:AC,command,Support\medtext.lsp,362,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#ac ; docs/lisp/medtext.md,
+C:ACX,command,Support\medtext.lsp,331,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#acx ; docs/lisp/medtext.md,
+C:ADDRE,command,Support\QKEY.lsp,712,Y,docs/commands.md,Y,docs/command-reference.md#addre ; docs/lisp/QKEY.md,
+C:AL,command,Support\MEDCommands.lsp,170,Y,docs/tagging.md docs/commands.md,Y,docs/command-reference.md#al ; docs/lisp/MEDCommands.md,
+C:ALEAD,command,Support\MEDCommands.lsp,159,Y,docs/tagging.md docs/commands.md,Y,docs/command-reference.md#alead ; docs/lisp/MEDCommands.md,
+C:APP,command,Support\QKEY.lsp,1510,N,,Y,docs/command-reference.md#app ; docs/lisp/QKEY.md,
+C:ATADD,command,Support\medtext.lsp,751,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#atadd ; docs/lisp/medtext.md,
+C:ATC,command,Support\QKEY.lsp,1750,N,,Y,docs/command-reference.md#atc ; docs/lisp/QKEY.md,
+C:ATLSC,command,Support\QKEY.lsp,1251,N,,Y,docs/command-reference.md#atlsc ; docs/lisp/QKEY.md,
+C:ATRSC,command,Support\QKEY.lsp,1254,N,,Y,docs/command-reference.md#atrsc ; docs/lisp/QKEY.md,
+C:ATTCOPY,command,Support\medtext.lsp,1113,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#attcopy ; docs/lisp/medtext.md,
+C:ATTLAY,command,Support\QKEY.lsp,470,N,,Y,docs/command-reference.md#attlay ; docs/lisp/QKEY.md,
+C:ATTROT,command,Support\QKEY.lsp,518,N,,Y,docs/command-reference.md#attrot ; docs/lisp/QKEY.md,
+C:B1,command,Support\MEDCommands.lsp,187,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#b1 ; docs/lisp/MEDCommands.md,
+C:B2,command,Support\MEDCommands.lsp,190,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#b2 ; docs/lisp/MEDCommands.md,
+C:B3,command,Support\MEDCommands.lsp,193,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#b3 ; docs/lisp/MEDCommands.md,
+C:BC,command,Support\QKEY.lsp,1747,Y,docs/3d.md docs/3d-fitting-matrix.md docs/database.md,Y,docs/command-reference.md#bc ; docs/lisp/QKEY.md,
+C:BF,command,Support\QKEY.lsp,57,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#bf ; docs/lisp/QKEY.md,
+C:BLDIST,command,Support\medsetup.lsp,191,Y,docs/setup.md docs/commands.md,Y,docs/command-reference.md#bldist ; docs/lisp/medsetup.md,
+C:BLDSTL,command,Support\medutil.lsp,558,N,,Y,docs/command-reference.md#bldstl ; docs/lisp/medutil.md,
+C:BLK2BYL,command,Support\QKEY.lsp,1779,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#blk2byl ; docs/lisp/QKEY.md,
+C:BLKREINS,command,Support\medutil.lsp,686,Y,docs/utilities.md,Y,docs/command-reference.md#blkreins ; docs/lisp/medutil.md,
+C:BN,command,Support\medutil.lsp,299,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#bn ; docs/lisp/medutil.md,
+C:BOM,command,Support\MEDCommands.lsp,872,Y,docs/medshowbom.md docs/commands.md docs/conduit.md docs/database.md docs/tray.md docs/utilities.md docs/medsettings.md docs/detail.md docs/README.md docs/debug.md docs/overview.md README.md,Y,docs/command-reference.md#bom ; docs/lisp/MEDCommands.md,
+C:BOXCLOUD,command,Support\medtag.lsp,413,Y,docs/tagging.md docs/commands.md,Y,docs/command-reference.md#boxcloud ; docs/lisp/medtag.md,
+C:BRACKET,command,Support\medtag.lsp,96,Y,docs/tagging.md docs/commands.md,Y,docs/command-reference.md#bracket ; docs/lisp/medtag.md,
+C:C3D,command,Support\MED3DPath.lsp,1337,Y,docs/3d.md docs/debug.md,Y,docs/command-reference.md#c3d ; docs/lisp/MED3DPath.md,
+C:CABLE,command,Support\medcable.lsp,37,Y,docs/cable.md docs/commands.md docs/3d.md docs/database.md docs/medtype.md docs/medsettings.md docs/README.md README.md,Y,docs/command-reference.md#cable ; docs/lisp/medcable.md,
+C:CC,command,Support\QKEY.lsp,45,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#cc ; docs/lisp/QKEY.md,previously listed by name only (no description)
+C:CD,command,Support\MEDCommands.lsp,197,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#cd ; docs/lisp/MEDCommands.md,
+C:CF,command,Support\QKEY.lsp,757,Y,docs/commands.md docs/tray.md,Y,docs/command-reference.md#cf ; docs/lisp/QKEY.md,
+C:CHAN30,command,Support\medtray.lsp,243,Y,docs/commands.md docs/tray.md,Y,docs/command-reference.md#chan30 ; docs/lisp/medtray.md,previously listed by name only (no description)
+C:CHAN45,command,Support\medtray.lsp,237,N,,Y,docs/command-reference.md#chan45 ; docs/lisp/medtray.md,
+C:CHAN60,command,Support\medtray.lsp,231,N,,Y,docs/command-reference.md#chan60 ; docs/lisp/medtray.md,
+C:CHAN90,command,Support\medtray.lsp,249,Y,docs/commands.md docs/tray.md,Y,docs/command-reference.md#chan90 ; docs/lisp/medtray.md,previously listed by name only (no description)
+C:CHANCROSS,command,Support\medtray.lsp,221,Y,docs/commands.md docs/tray.md,Y,docs/command-reference.md#chancross ; docs/lisp/medtray.md,previously listed by name only (no description)
+C:CHANDN,command,Support\MEDCableTray.lsp,1911,Y,docs/commands.md docs/tray.md,Y,docs/command-reference.md#chandn ; docs/lisp/MEDCableTray.md,previously listed by name only (no description)
+C:CHANNEL,command,Support\medtray.lsp,108,Y,docs/commands.md docs/tray.md docs/updates.md,Y,docs/command-reference.md#channel ; docs/lisp/medtray.md,
+C:CHANOFF,command,Support\medtray.lsp,255,Y,docs/commands.md docs/tray.md,Y,docs/command-reference.md#chanoff ; docs/lisp/medtray.md,previously listed by name only (no description)
+C:CHANTEE,command,Support\medtray.lsp,217,Y,docs/commands.md docs/tray.md,Y,docs/command-reference.md#chantee ; docs/lisp/medtray.md,previously listed by name only (no description)
+C:CHANUP,command,Support\MEDCableTray.lsp,1919,Y,docs/commands.md docs/tray.md,Y,docs/command-reference.md#chanup ; docs/lisp/MEDCableTray.md,previously listed by name only (no description)
+C:CHANV90,command,Support\medtray.lsp,225,Y,docs/commands.md docs/tray.md,Y,docs/command-reference.md#chanv90 ; docs/lisp/medtray.md,previously listed by name only (no description)
+C:CHGSIZE,command,Support\MEDCommands.lsp,406,Y,docs/medchg.md docs/commands.md docs/conduit.md docs/README.md,Y,docs/command-reference.md#chgsize ; docs/lisp/MEDCommands.md,
+C:CHGTAG,command,Support\MEDCommands.lsp,983,Y,docs/tagging.md docs/commands.md,Y,docs/command-reference.md#chgtag ; docs/lisp/MEDCommands.md,
+C:CL,command,Support\medutil.lsp,312,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#cl ; docs/lisp/medutil.md,
+C:CLOUD,command,Support\medtag.lsp,38,Y,docs/tagging.md docs/commands.md,Y,docs/command-reference.md#cloud ; docs/lisp/medtag.md,
+C:CN,command,Support\QKEY.lsp,763,Y,docs/commands.md docs/tray.md,Y,docs/command-reference.md#cn ; docs/lisp/QKEY.md,
+C:COM,command,Support\meddetl.lsp,204,Y,docs/commands.md docs/detail.md,Y,docs/command-reference.md#com ; docs/lisp/meddetl.md,
+C:CONDUIT,command,Support\medcon.lsp,2,Y,docs/commands.md docs/conduit.md docs/3d.md docs/database.md docs/medtype.md docs/detail-conduit.md docs/medsettings.md docs/README.md README.md,Y,docs/command-reference.md#conduit ; docs/lisp/medcon.md,
+C:CONFIX,command,Support\medcon.lsp,192,Y,docs/commands.md docs/detail-conduit.md,Y,docs/command-reference.md#confix ; docs/lisp/medcon.md,
+C:CONSIZE,command,Support\medcon.lsp,114,Y,docs/commands.md docs/conduit.md docs/detail-conduit.md docs/medsettings.md,Y,docs/command-reference.md#consize ; docs/lisp/medcon.md,
+C:CT,command,Support\medtext.lsp,299,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#ct ; docs/lisp/medtext.md,
+C:CTAG,command,Support\QKEY.lsp,204,Y,docs/tagging.md docs/commands.md docs/conduit.md docs/README.md,Y,docs/command-reference.md#ctag ; docs/lisp/QKEY.md,
+C:CTEDIT,command,Support\medtext.lsp,375,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#ctedit ; docs/lisp/medtext.md,
+C:CUT,command,Support\medtag.lsp,19,Y,docs/tagging.md docs/commands.md,Y,docs/command-reference.md#cut ; docs/lisp/medtag.md,
+C:CW,command,Support\QKEY.lsp,43,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#cw ; docs/lisp/QKEY.md,previously listed by name only (no description)
+C:CX,command,Support\medtext.lsp,658,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#cx ; docs/lisp/medtext.md,
+C:DD,command,Support\QKEY.lsp,65,Y,docs/setup.md docs/commands.md docs/utilities.md,Y,docs/command-reference.md#dd ; docs/lisp/QKEY.md,
+C:DDMEDLIST,command,Support\MEDCommands.lsp,617,Y,docs/commands.md docs/conduit.md docs/tray.md,Y,docs/command-reference.md#ddmedlist ; docs/lisp/MEDCommands.md,
+C:DEFINE,command,Support\medcon.lsp,38,Y,docs/commands.md docs/conduit.md,Y,docs/command-reference.md#define ; docs/lisp/medcon.md,
+C:DETAG,command,Support\QKEY.lsp,1242,Y,docs/tagging.md docs/commands.md docs/detail.md docs/README.md,Y,docs/command-reference.md#detag ; docs/lisp/QKEY.md,
+C:DETAG2,command,Support\QKEY.lsp,1246,Y,docs/tagging.md docs/commands.md docs/detail.md,Y,docs/command-reference.md#detag2 ; docs/lisp/QKEY.md,
+C:DETAGUPD,command,Support\MEDCommands.lsp,842,Y,docs/tagging.md docs/commands.md docs/detail.md,Y,docs/command-reference.md#detagupd ; docs/lisp/MEDCommands.md,
+C:DETAIL,command,Support\meddetl.lsp,2,Y,docs/commands.md docs/database.md docs/medtype.md docs/detail.md docs/README.md,Y,docs/command-reference.md#detail ; docs/lisp/meddetl.md,
+C:EC,command,Support\QKEY.lsp,41,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#ec ; docs/lisp/QKEY.md,previously listed by name only (no description)
+C:EM,command,Support\medutil.lsp,339,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#em ; docs/lisp/medutil.md,
+C:ESOLID,command,Support\MED3DCON.lsp,562,Y,docs/commands.md docs/3d.md docs/README.md,Y,docs/command-reference.md#esolid ; docs/lisp/MED3DCON.md,file not loaded by MEDCore; duplicate: also defined in Support\medtray.lsp:1322; replaced at load time by Support\medtray.lsp:1322
+C:ESOLID,command,Support\medtray.lsp,1322,Y,docs/commands.md docs/3d.md docs/README.md,Y,docs/command-reference.md#esolid ; docs/lisp/medtray.md,duplicate: also defined in Support\MED3DCON.lsp:562; this definition loads last and wins
+C:EW,command,Support\QKEY.lsp,39,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#ew ; docs/lisp/QKEY.md,previously listed by name only (no description)
+C:F0,command,Support\QKEY.lsp,1691,N,,Y,docs/command-reference.md#f0 ; docs/lisp/QKEY.md,
+C:FC,command,Support\medcon.lsp,78,Y,docs/commands.md docs/conduit.md,Y,docs/command-reference.md#fc ; docs/lisp/medcon.md,
+C:FD,command,Support\medtext.lsp,2,Y,docs/setup.md docs/commands.md docs/utilities.md,Y,docs/command-reference.md#fd ; docs/lisp/medtext.md,
+C:FL,command,Support\medutil.lsp,253,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#fl ; docs/lisp/medutil.md,
+C:FLEX,command,Support\medcon.lsp,95,Y,docs/commands.md docs/conduit.md,Y,docs/command-reference.md#flex ; docs/lisp/medcon.md,
+C:GL,command,Support\MEDCommands.lsp,174,Y,docs/tagging.md docs/commands.md,Y,docs/command-reference.md#gl ; docs/lisp/MEDCommands.md,
+C:GLEAD,command,Support\MEDCommands.lsp,163,Y,docs/tagging.md docs/commands.md,Y,docs/command-reference.md#glead ; docs/lisp/MEDCommands.md,
+C:GND,command,Support\meddetl.lsp,189,Y,docs/commands.md docs/detail.md docs/README.md,Y,docs/command-reference.md#gnd ; docs/lisp/meddetl.md,
+C:GR,command,Support\medtag.lsp,125,Y,docs/tagging.md docs/commands.md,Y,docs/command-reference.md#gr ; docs/lisp/medtag.md,
+C:GRAB,command,Support\MEDCommands.lsp,166,Y,docs/tagging.md docs/commands.md,Y,docs/command-reference.md#grab ; docs/lisp/MEDCommands.md,
+C:HAND,command,Support\QKEY.lsp,1754,Y,docs/utilities.md,Y,docs/command-reference.md#hand ; docs/lisp/QKEY.md,
+C:HDTAG,command,Support\medtag.lsp,190,Y,docs/tagging.md docs/commands.md,Y,docs/command-reference.md#hdtag ; docs/lisp/medtag.md,
+C:HDTAGOLD,command,Support\medtag.lsp,305,Y,docs/tagging.md,Y,docs/command-reference.md#hdtagold ; docs/lisp/medtag.md,
+C:HUBS,command,Support\MEDCommands.lsp,553,Y,docs/commands.md docs/detail-conduit.md,Y,docs/command-reference.md#hubs ; docs/lisp/MEDCommands.md,
+C:IL,command,Support\medutil.lsp,652,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#il ; docs/lisp/medutil.md,
+C:INS,command,Support\meddetl.lsp,198,Y,docs/commands.md docs/detail.md docs/README.md,Y,docs/command-reference.md#ins ; docs/lisp/meddetl.md,
+C:IOD,command,Support\MEDDim.lsp,78,Y,docs/utilities.md,Y,docs/command-reference.md#iod ; docs/lisp/MEDDim.md,
+C:ISOLATE,command,Support\MEDCommands.lsp,326,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#isolate ; docs/lisp/MEDCommands.md,
+C:IT,command,Support\QKEY.lsp,1673,Y,docs/tagging.md docs/commands.md,Y,docs/command-reference.md#it ; docs/lisp/QKEY.md,
+C:ITAGA,command,Support\QKEY.lsp,1479,Y,docs/tagging.md docs/commands.md,Y,docs/command-reference.md#itaga ; docs/lisp/QKEY.md,
+C:ITAGE,command,Support\QKEY.lsp,1476,Y,docs/tagging.md docs/commands.md,Y,docs/command-reference.md#itage ; docs/lisp/QKEY.md,
+C:ITAGT,command,Support\QKEY.lsp,1482,Y,docs/tagging.md docs/commands.md,Y,docs/command-reference.md#itagt ; docs/lisp/QKEY.md,
+C:JBX,command,Support\meddetl.lsp,207,Y,docs/commands.md docs/detail.md,Y,docs/command-reference.md#jbx ; docs/lisp/meddetl.md,
+C:LB,command,Support\medutil.lsp,156,Y,docs/commands.md docs/3d.md docs/3d-fitting-matrix.md docs/database.md docs/medtype.md docs/utilities.md,Y,docs/command-reference.md#lb ; docs/lisp/medutil.md,
+C:LBREAK,command,Support\medutil.lsp,6,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#lbreak ; docs/lisp/medutil.md,
+C:LINKPREFIX,command,Support\medutil.lsp,788,Y,docs/utilities.md,Y,docs/command-reference.md#linkprefix ; docs/lisp/medutil.md,
+C:LINKPREFIXATT,command,Support\medutil.lsp,829,Y,docs/utilities.md,Y,docs/command-reference.md#linkprefixatt ; docs/lisp/medutil.md,
+C:LINKVALUE,command,Support\medutil.lsp,860,Y,docs/utilities.md,Y,docs/command-reference.md#linkvalue ; docs/lisp/medutil.md,
+C:LISP,command,Support\medutil.lsp,288,Y,docs/medshowbom.md docs/commands.md docs/3d.md docs/utilities.md docs/updates.md docs/README.md docs/debug.md docs/overview.md,Y,docs/command-reference.md#lisp ; docs/lisp/medutil.md,
+C:LOADLAYERS,command,Support\MEDCommands.lsp,2,Y,docs/commands.md docs/database.md docs/utilities.md,Y,docs/command-reference.md#loadlayers ; docs/lisp/MEDCommands.md,
+C:LOADTXT,command,Support\med.spc,167,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#loadtxt ; docs/lisp/med-spc.md,"duplicate: also defined in Support\medtext.lsp:1136; med.spc loads last in MEDCore, so this one wins"
+C:LOADTXT,command,Support\medtext.lsp,1136,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#loadtxt ; docs/lisp/medtext.md,duplicate: also defined in Support\med.spc:167; replaced at load time by the med.spc version
+C:LOOPIT,command,Support\QKEY.lsp,1331,N,,Y,docs/command-reference.md#loopit ; docs/lisp/QKEY.md,
+C:LT,command,Support\medutil.lsp,359,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#lt ; docs/lisp/medutil.md,
+C:LTG,command,Support\meddetl.lsp,192,Y,docs/commands.md docs/database.md docs/medtype.md docs/detail.md docs/README.md,Y,docs/command-reference.md#ltg ; docs/lisp/meddetl.md,
+C:M3D,command,Support\MED3DPath.lsp,1334,Y,docs/commands.md docs/3d.md docs/database.md docs/debug.md,Y,docs/command-reference.md#m3d ; docs/lisp/MED3DPath.md,
+C:M3DOLD,command,Support\MED3DCON.lsp,429,Y,docs/3d.md,Y,docs/command-reference.md#m3dold ; docs/lisp/MED3DCON.md,previously listed by name only (no description); file not loaded by MEDCore
+C:MAKE3DCABLE,command,Support\MED3DPath.lsp,1343,Y,docs/3d.md,Y,docs/command-reference.md#make3dcable ; docs/lisp/MED3DPath.md,
+C:MAKE3DCONDUIT,command,Support\MED3DPath.lsp,1340,Y,docs/commands.md docs/3d.md docs/database.md,Y,docs/command-reference.md#make3dconduit ; docs/lisp/MED3DPath.md,
+C:MAKE3DCONDUITOLD,command,Support\MED3DCON.lsp,443,Y,docs/3d.md,Y,docs/command-reference.md#make3dconduitold ; docs/lisp/MED3DCON.md,previously listed by name only (no description); file not loaded by MEDCore
+C:MAKE3DTRAY,command,Support\MED3DTrayFunctions.lsp,464,Y,docs/commands.md docs/3d.md docs/tray.md docs/README.md,Y,docs/command-reference.md#make3dtray ; docs/lisp/MED3DTrayFunctions.md,
+C:MB,command,Support\medtag.lsp,330,Y,docs/tagging.md docs/commands.md,Y,docs/command-reference.md#mb ; docs/lisp/medtag.md,
+C:MB1,command,Support\medtag.lsp,374,Y,docs/tagging.md docs/commands.md,Y,docs/command-reference.md#mb1 ; docs/lisp/medtag.md,
+C:MBL,command,Support\medtag.lsp,142,Y,docs/tagging.md docs/commands.md,Y,docs/command-reference.md#mbl ; docs/lisp/medtag.md,
+C:MC,command,Support\QKEY.lsp,49,Y,docs/tagging.md docs/medchg.md docs/commands.md docs/utilities.md docs/README.md,Y,docs/command-reference.md#mc ; docs/lisp/QKEY.md,duplicate: also defined in Support\QKEY.lsp:706; replaced at load time by Support\QKEY.lsp:706
+C:MC,command,Support\QKEY.lsp,706,Y,docs/tagging.md docs/medchg.md docs/commands.md docs/utilities.md docs/README.md,Y,docs/command-reference.md#mc ; docs/lisp/QKEY.md,duplicate: also defined in Support\QKEY.lsp:49; this definition loads last and wins
+C:MCABLE,command,Support\QKEY.lsp,160,Y,docs/cable.md docs/commands.md docs/conduit.md,Y,docs/command-reference.md#mcable ; docs/lisp/QKEY.md,
+C:MCON,command,Support\QKEY.lsp,75,Y,docs/commands.md docs/conduit.md,Y,docs/command-reference.md#mcon ; docs/lisp/QKEY.md,
+C:MED,command,Support\medchg.lsp,1209,Y,docs/tagging.md docs/cable.md docs/setup.md docs/medchg.md docs/medrecords.md docs/commands.md docs/conduit.md docs/install.md docs/3d.md docs/3d-fitting-matrix.md docs/database.md docs/tray.md docs/utilities.md docs/medsettings.md docs/updates.md docs/detail.md docs/README.md docs/debug.md docs/overview.md README.md src/MED-DotNet/README.md,Y,docs/command-reference.md#med ; docs/lisp/medchg.md,
+C:MED2026SETUP,command,Support\MED2026-ProfileSetup.lsp,160,Y,docs/commands.md docs/install.md README.md,Y,docs/command-reference.md#med2026setup ; docs/lisp/MED2026-ProfileSetup.md,file not loaded by MEDCore
+C:MED3DPATHTEST,command,tests\autocad\MED3DPathTest.lsp,54,Y,docs/3d.md,Y,docs/command-reference.md#med3dpathtest ; docs/lisp/test-MED3DPathTest.md,previously listed by name only (no description); file not loaded by MEDCore
+C:MED3DPLAN,command,Support\MED3DPath.lsp,1394,Y,docs/3d.md,Y,docs/command-reference.md#med3dplan ; docs/lisp/MED3DPath.md,
+C:MED3DVER,command,Support\MED3DPath.lsp,1368,Y,docs/3d.md,Y,docs/command-reference.md#med3dver ; docs/lisp/MED3DPath.md,
+C:MEDBLOCKINSERT,command,Support\medinser.lsp,10,Y,docs/commands.md docs/3d-fitting-matrix.md,Y,docs/command-reference.md#medblockinsert ; docs/lisp/medinser.md,
+C:MEDCBALL,command,Support\MED3DFittings.lsp,1020,Y,docs/3d.md,Y,docs/command-reference.md#medcball ; docs/lisp/MED3DFittings.md,
+C:MEDCBDATA,command,Support\MED3DFittings.lsp,1081,Y,docs/3d.md,Y,docs/command-reference.md#medcbdata ; docs/lisp/MED3DFittings.md,
+C:MEDCBGRID,command,tests\autocad\MEDCBGrid.lsp,155,Y,docs/3d.md docs/3d-fitting-matrix.md,Y,docs/command-reference.md#medcbgrid ; docs/lisp/test-MEDCBGrid.md,file not loaded by MEDCore
+C:MEDCBINS,command,Support\MED3DFittings.lsp,971,Y,docs/3d.md,Y,docs/command-reference.md#medcbins ; docs/lisp/MED3DFittings.md,
+C:MEDCBTEST,command,Support\MED3DFittings.lsp,992,Y,docs/3d.md,Y,docs/command-reference.md#medcbtest ; docs/lisp/MED3DFittings.md,
+C:MEDCBVER,command,Support\MED3DFittings.lsp,1095,Y,docs/3d.md,Y,docs/command-reference.md#medcbver ; docs/lisp/MED3DFittings.md,
+C:MEDCHG-CLASSIC,command,Support\medchg.lsp,2,Y,docs/medchg.md docs/commands.md docs/README.md,Y,docs/command-reference.md#medchg-classic ; docs/lisp/medchg.md,
+C:MEDCOPY,command,Support\QKEY.lsp,91,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#medcopy ; docs/lisp/QKEY.md,
+C:MEDDBBACKUP,command,Support\MEDCommands.lsp,917,Y,docs/commands.md docs/database.md,Y,docs/command-reference.md#meddbbackup ; docs/lisp/MEDCommands.md,
+C:MEDDBRESTORE,command,Support\MEDCommands.lsp,945,Y,docs/commands.md docs/database.md,Y,docs/command-reference.md#meddbrestore ; docs/lisp/MEDCommands.md,
+C:MEDDETAIL,command,Support\med.mnl,18,Y,docs/commands.md docs/detail-conduit.md docs/overview.md,Y,docs/command-reference.md#meddetail ; docs/lisp/med-mnl.md,
+C:MEDDIMSETUP,command,Support\MEDDim.lsp,51,Y,docs/utilities.md,Y,docs/command-reference.md#meddimsetup ; docs/lisp/MEDDim.md,
+C:MEDFIND,command,Support\QKEY.lsp,1533,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#medfind ; docs/lisp/QKEY.md,
+C:MEDLINE,command,Support\medwire.lsp,61,Y,docs/commands.md docs/utilities.md docs/overview.md,Y,docs/command-reference.md#medline ; docs/lisp/medwire.md,
+C:MEDLIST,command,Support\MEDCommands.lsp,19,Y,docs/commands.md docs/conduit.md docs/database.md docs/tray.md docs/README.md,Y,docs/command-reference.md#medlist ; docs/lisp/MEDCommands.md,
+C:MEDMAKE3D,command,Support\MED3DPath.lsp,1321,Y,docs/3d.md docs/3d-fitting-matrix.md docs/database.md docs/medtype.md,Y,docs/command-reference.md#medmake3d ; docs/lisp/MED3DPath.md,
+C:MEDMENU,command,Support\med.mnl,8,N,,Y,docs/command-reference.md#medmenu ; docs/lisp/med-mnl.md,
+C:MEDPLAN,command,Support\med.mnl,15,Y,docs/commands.md docs/conduit.md docs/overview.md,Y,docs/command-reference.md#medplan ; docs/lisp/med-mnl.md,
+C:MEDSTRIP,command,Support\MEDCommands.lsp,388,Y,docs/medshowbom.md docs/commands.md docs/conduit.md docs/tray.md docs/detail.md,Y,docs/command-reference.md#medstrip ; docs/lisp/MEDCommands.md,
+C:MEDWIRING,command,Support\med.mnl,21,Y,docs/commands.md docs/utilities.md docs/overview.md,Y,docs/command-reference.md#medwiring ; docs/lisp/med-mnl.md,
+C:MEQUIP,command,Support\QKEY.lsp,176,Y,docs/commands.md docs/conduit.md,Y,docs/command-reference.md#mequip ; docs/lisp/QKEY.md,
+C:MFIT,command,Support\QKEY.lsp,183,Y,docs/commands.md docs/conduit.md,Y,docs/command-reference.md#mfit ; docs/lisp/QKEY.md,
+C:MSC,command,Support\meddetl.lsp,210,Y,docs/commands.md docs/detail.md,Y,docs/command-reference.md#msc ; docs/lisp/meddetl.md,
+C:MT,command,Support\medtext.lsp,965,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#mt ; docs/lisp/medtext.md,
+C:MTRAY,command,Support\QKEY.lsp,144,Y,docs/commands.md docs/conduit.md,Y,docs/command-reference.md#mtray ; docs/lisp/QKEY.md,
+C:MW,command,Support\QKEY.lsp,47,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#mw ; docs/lisp/QKEY.md,previously listed by name only (no description)
+C:MYTEST,command,Support\MED3DCON.lsp,411,Y,docs/commands.md docs/3d.md,Y,docs/command-reference.md#mytest ; docs/lisp/MED3DCON.md,previously listed by name only (no description); file not loaded by MEDCore; developer test command
+C:OFF2CON,command,Support\QKEY.lsp,1702,N,,Y,docs/command-reference.md#off2con ; docs/lisp/QKEY.md,
+C:PAR,command,Support\QKEY.lsp,1489,Y,docs/utilities.md,Y,docs/command-reference.md#par ; docs/lisp/QKEY.md,
+C:PB,command,Support\QKEY.lsp,1319,N,,Y,docs/command-reference.md#pb ; docs/lisp/QKEY.md,
+C:PBOX,command,Support\medutil.lsp,481,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#pbox ; docs/lisp/medutil.md,
+C:PLANMOTOR,command,Support\QKEY.lsp,1024,Y,docs/commands.md,Y,docs/command-reference.md#planmotor ; docs/lisp/QKEY.md,
+C:PLMAKE,command,Support\medutil.lsp,385,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#plmake ; docs/lisp/medutil.md,
+C:PLWIDE,command,Support\medutil.lsp,405,Y,docs/utilities.md,Y,docs/command-reference.md#plwide ; docs/lisp/medutil.md,
+C:PTRAYOFF,command,Support\MEDCableTray.lsp,1485,Y,docs/commands.md docs/tray.md,Y,docs/command-reference.md#ptrayoff ; docs/lisp/MEDCableTray.md,
+C:PW,command,Support\medutil.lsp,402,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#pw ; docs/lisp/medutil.md,
+C:PWR,command,Support\meddetl.lsp,195,Y,docs/commands.md docs/detail.md docs/README.md,Y,docs/command-reference.md#pwr ; docs/lisp/meddetl.md,
+C:QC,command,Support\QKEY.lsp,191,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#qc ; docs/lisp/QKEY.md,
+C:QE,command,Support\QKEY.lsp,1418,N,,Y,docs/command-reference.md#qe ; docs/lisp/QKEY.md,
+C:QTA,command,Support\QKEY.lsp,1470,N,,Y,docs/command-reference.md#qta ; docs/lisp/QKEY.md,
+C:QTE,command,Support\QKEY.lsp,1467,N,,Y,docs/command-reference.md#qte ; docs/lisp/QKEY.md,
+C:QTR,command,Support\QKEY.lsp,1473,N,,Y,docs/command-reference.md#qtr ; docs/lisp/QKEY.md,
+C:QTT,command,Support\QKEY.lsp,1486,N,,Y,docs/command-reference.md#qtt ; docs/lisp/QKEY.md,
+C:QVTEST,command,Support\MED3DTrayFunctions.lsp,295,Y,docs/commands.md docs/3d.md,Y,docs/command-reference.md#qvtest ; docs/lisp/MED3DTrayFunctions.md,previously listed by name only (no description); developer test command
+C:RC,command,Support\QKEY.lsp,53,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#rc ; docs/lisp/QKEY.md,previously listed by name only (no description)
+C:REFDWG,command,Support\QKEY.lsp,914,Y,docs/utilities.md,Y,docs/command-reference.md#refdwg ; docs/lisp/QKEY.md,
+C:RT,command,Support\medtext.lsp,255,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#rt ; docs/lisp/medtext.md,
+C:RUN3DCABLE,command,Support\medcable.lsp,44,Y,docs/cable.md docs/commands.md docs/3d.md,Y,docs/command-reference.md#run3dcable ; docs/lisp/medcable.md,
+C:RW,command,Support\QKEY.lsp,51,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#rw ; docs/lisp/QKEY.md,previously listed by name only (no description)
+C:SECT,command,Support\MEDCommands.lsp,303,Y,docs/tagging.md docs/commands.md docs/tray.md,Y,docs/command-reference.md#sect ; docs/lisp/MEDCommands.md,duplicate: also defined in Support\medtag.lsp:2; replaced at load time by Support\medtag.lsp:2
+C:SECT,command,Support\medtag.lsp,2,Y,docs/tagging.md docs/commands.md docs/tray.md,Y,docs/command-reference.md#sect ; docs/lisp/medtag.md,duplicate: also defined in Support\MEDCommands.lsp:303; this definition loads last and wins
+C:SECTD,command,Support\MEDCommands.lsp,321,Y,docs/tagging.md docs/commands.md,Y,docs/command-reference.md#sectd ; docs/lisp/MEDCommands.md,
+C:SETLIM,command,Support\medsetup.lsp,338,Y,docs/setup.md docs/commands.md,Y,docs/command-reference.md#setlim ; docs/lisp/medsetup.md,
+C:SETLINK,command,Support\medutil.lsp,894,Y,docs/utilities.md,Y,docs/command-reference.md#setlink ; docs/lisp/medutil.md,
+C:SETLINKSUM,command,Support\medutil.lsp,931,Y,docs/utilities.md,Y,docs/command-reference.md#setlinksum ; docs/lisp/medutil.md,
+C:SETPLOT,command,Support\medsetup.lsp,254,Y,docs/setup.md docs/commands.md,Y,docs/command-reference.md#setplot ; docs/lisp/medsetup.md,
+C:SETUP,command,Support\medsetup.lsp,75,Y,docs/setup.md docs/commands.md docs/install.md docs/3d-fitting-matrix.md docs/medsettings.md docs/README.md docs/overview.md README.md,Y,docs/command-reference.md#setup ; docs/lisp/medsetup.md,
+C:SHOWFIELDCODE,command,Support\medutil.lsp,967,Y,docs/utilities.md,Y,docs/command-reference.md#showfieldcode ; docs/lisp/medutil.md,
+C:SL,command,Support\medutil.lsp,525,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#sl ; docs/lisp/medutil.md,
+C:SORT,command,Support\QKEY.lsp,1345,N,,Y,docs/command-reference.md#sort ; docs/lisp/QKEY.md,
+C:ST,command,Support\QKEY.lsp,55,Y,docs/commands.md docs/3d.md docs/3d-fitting-matrix.md docs/utilities.md,Y,docs/command-reference.md#st ; docs/lisp/QKEY.md,
+C:STRUT,command,Support\MEDCableTray.lsp,1447,Y,docs/commands.md docs/tray.md,Y,docs/command-reference.md#strut ; docs/lisp/MEDCableTray.md,
+C:STRUT1,command,Support\QKEY.lsp,1118,Y,docs/commands.md,Y,docs/command-reference.md#strut1 ; docs/lisp/QKEY.md,
+C:T1,command,Support\MEDCommands.lsp,178,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#t1 ; docs/lisp/MEDCommands.md,
+C:T1THIN,command,Support\QKEY.lsp,1784,N,,Y,docs/command-reference.md#t1thin ; docs/lisp/QKEY.md,
+C:T2,command,Support\MEDCommands.lsp,181,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#t2 ; docs/lisp/MEDCommands.md,
+C:T3,command,Support\MEDCommands.lsp,184,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#t3 ; docs/lisp/MEDCommands.md,
+C:TAKEOFF,command,Support\QKEY.lsp,1145,N,,Y,docs/command-reference.md#takeoff ; docs/lisp/QKEY.md,
+C:TELEV,command,Support\QKEY.lsp,1833,Y,docs/commands.md,Y,docs/command-reference.md#telev ; docs/lisp/QKEY.md,
+C:TEST,command,Support\medtray.lsp,1279,Y,docs/commands.md,Y,docs/command-reference.md#test ; docs/lisp/medtray.md,previously listed by name only (no description); developer test command
+C:TJ,command,Support\medtext.lsp,528,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#tj ; docs/lisp/medtext.md,
+C:TM,command,Support\medutil.lsp,535,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#tm ; docs/lisp/medutil.md,
+C:TRAY,command,Support\MEDCableTray.lsp,10,Y,docs/commands.md docs/database.md docs/tray.md docs/medtype.md README.md,Y,docs/command-reference.md#tray ; docs/lisp/MEDCableTray.md,
+C:TRAY30,command,Support\medtray.lsp,18,Y,docs/commands.md docs/tray.md,Y,docs/command-reference.md#tray30 ; docs/lisp/medtray.md,
+C:TRAY45,command,Support\medtray.lsp,14,Y,docs/commands.md docs/tray.md,Y,docs/command-reference.md#tray45 ; docs/lisp/medtray.md,
+C:TRAY60,command,Support\medtray.lsp,10,Y,docs/commands.md docs/tray.md,Y,docs/command-reference.md#tray60 ; docs/lisp/medtray.md,
+C:TRAY90,command,Support\MEDCableTray.lsp,275,Y,docs/commands.md docs/tray.md,Y,docs/command-reference.md#tray90 ; docs/lisp/MEDCableTray.md,
+C:TRAYBLIND,command,Support\QKEY.lsp,1066,Y,docs/commands.md docs/tray.md,Y,docs/command-reference.md#trayblind ; docs/lisp/QKEY.md,
+C:TRAYCON,command,Support\QKEY.lsp,253,Y,docs/commands.md docs/tray.md,Y,docs/command-reference.md#traycon ; docs/lisp/QKEY.md,
+C:TRAYCROSS,command,Support\MEDCableTray.lsp,652,Y,docs/commands.md docs/tray.md,Y,docs/command-reference.md#traycross ; docs/lisp/MEDCableTray.md,
+C:TRAYDN,command,Support\MEDCableTray.lsp,1899,Y,docs/commands.md docs/tray.md,Y,docs/command-reference.md#traydn ; docs/lisp/MEDCableTray.md,
+C:TRAYDROP,command,Support\QKEY.lsp,1062,Y,docs/commands.md docs/tray.md,Y,docs/command-reference.md#traydrop ; docs/lisp/QKEY.md,
+C:TRAYEG,command,Support\QKEY.lsp,290,Y,docs/commands.md docs/tray.md,Y,docs/command-reference.md#trayeg ; docs/lisp/QKEY.md,
+C:TRAYEP,command,Support\QKEY.lsp,286,Y,docs/commands.md docs/tray.md docs/detail.md,Y,docs/command-reference.md#trayep ; docs/lisp/QKEY.md,
+C:TRAYFITTEST,command,Support\MED3DTrayFunctions.lsp,310,Y,docs/commands.md docs/3d.md,Y,docs/command-reference.md#trayfittest ; docs/lisp/MED3DTrayFunctions.md,previously listed by name only (no description); developer test command
+C:TRAYFIX,command,Support\MEDCableTray.lsp,1033,Y,docs/medchg.md docs/commands.md docs/tray.md,Y,docs/command-reference.md#trayfix ; docs/lisp/MEDCableTray.md,
+C:TRAYHANG,command,Support\QKEY.lsp,1055,Y,docs/commands.md docs/tray.md docs/detail.md,Y,docs/command-reference.md#trayhang ; docs/lisp/QKEY.md,
+C:TRAYHD,command,Support\QKEY.lsp,295,Y,docs/commands.md docs/tray.md docs/detail.md,Y,docs/command-reference.md#trayhd ; docs/lisp/QKEY.md,
+C:TRAYHINGE,command,Support\QKEY.lsp,1314,Y,docs/commands.md docs/tray.md,Y,docs/command-reference.md#trayhinge ; docs/lisp/QKEY.md,
+C:TRAYLRRETEST,command,Support\MED3DTrayFunctions.lsp,846,N,,Y,docs/command-reference.md#traylrretest ; docs/lisp/MED3DTrayFunctions.md,developer test command
+C:TRAYOFF,command,Support\MEDCableTray.lsp,1064,Y,docs/commands.md docs/tray.md,Y,docs/command-reference.md#trayoff ; docs/lisp/MEDCableTray.md,
+C:TRAYRE,command,Support\MEDCableTray.lsp,789,Y,docs/commands.md docs/tray.md,Y,docs/command-reference.md#trayre ; docs/lisp/MEDCableTray.md,
+C:TRAYREL,command,Support\medtray.lsp,2,Y,docs/commands.md docs/tray.md,Y,docs/command-reference.md#trayrel ; docs/lisp/medtray.md,
+C:TRAYRER,command,Support\medtray.lsp,6,Y,docs/commands.md docs/tray.md,Y,docs/command-reference.md#trayrer ; docs/lisp/medtray.md,
+C:TRAYRETEST,command,Support\MED3DTrayFunctions.lsp,820,N,,Y,docs/command-reference.md#trayretest ; docs/lisp/MED3DTrayFunctions.md,developer test command
+C:TRAYSIZE,command,Support\medtray.lsp,22,Y,docs/commands.md docs/tray.md,Y,docs/command-reference.md#traysize ; docs/lisp/medtray.md,
+C:TRAYTEE,command,Support\MEDCableTray.lsp,532,Y,docs/commands.md docs/tray.md,Y,docs/command-reference.md#traytee ; docs/lisp/MEDCableTray.md,
+C:TRAYTEERE,command,Support\MEDCableTray.lsp,1594,Y,docs/commands.md docs/tray.md,Y,docs/command-reference.md#trayteere ; docs/lisp/MEDCableTray.md,
+C:TRAYTEETEST,command,Support\MED3DTrayFunctions.lsp,647,N,,Y,docs/command-reference.md#trayteetest ; docs/lisp/MED3DTrayFunctions.md,developer test command
+C:TRAYTEST,command,Support\MED3DTrayFunctions.lsp,21,Y,docs/commands.md docs/3d.md,Y,docs/command-reference.md#traytest ; docs/lisp/MED3DTrayFunctions.md,previously listed by name only (no description); developer test command
+C:TRAYUP,command,Support\MEDCableTray.lsp,1905,Y,docs/commands.md docs/tray.md,Y,docs/command-reference.md#trayup ; docs/lisp/MEDCableTray.md,
+C:TRAYV90,command,Support\MEDCableTray.lsp,1225,Y,docs/commands.md docs/tray.md,Y,docs/command-reference.md#trayv90 ; docs/lisp/MEDCableTray.md,
+C:TRY,command,Support\meddetl.lsp,201,Y,docs/commands.md docs/detail.md docs/README.md,Y,docs/command-reference.md#try ; docs/lisp/meddetl.md,
+C:TSTRIP,command,Support\medwire.lsp,2,Y,docs/commands.md docs/utilities.md docs/overview.md,Y,docs/command-reference.md#tstrip ; docs/lisp/medwire.md,
+C:TTAG,command,Support\QKEY.lsp,1565,Y,docs/tagging.md docs/commands.md docs/tray.md docs/README.md,Y,docs/command-reference.md#ttag ; docs/lisp/QKEY.md,
+C:TTAGS,command,Support\QKEY.lsp,1789,Y,docs/tagging.md docs/commands.md docs/tray.md,Y,docs/command-reference.md#ttags ; docs/lisp/QKEY.md,
+C:UIL,command,Support\medutil.lsp,675,Y,docs/utilities.md,Y,docs/command-reference.md#uil ; docs/lisp/medutil.md,
+C:UNISOLATE,command,Support\MEDCommands.lsp,373,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#unisolate ; docs/lisp/MEDCommands.md,
+C:UNJ,command,Support\MEDCommands.lsp,523,Y,docs/detail-conduit.md,Y,docs/command-reference.md#unj ; docs/lisp/MEDCommands.md,
+C:UPCASE,command,Support\medtext.lsp,231,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#upcase ; docs/lisp/medtext.md,
+C:UT,command,Support\medtext.lsp,635,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#ut ; docs/lisp/medtext.md,
+C:VA,command,Support\QKEY.lsp,35,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#va ; docs/lisp/QKEY.md,previously listed by name only (no description)
+C:VR,command,Support\QKEY.lsp,37,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#vr ; docs/lisp/QKEY.md,previously listed by name only (no description)
+C:VTRAY,command,Support\medtray.lsp,98,Y,docs/commands.md docs/tray.md,Y,docs/command-reference.md#vtray ; docs/lisp/medtray.md,
+C:VTRAY30,command,Support\medtray.lsp,201,Y,docs/commands.md docs/tray.md,Y,docs/command-reference.md#vtray30 ; docs/lisp/medtray.md,
+C:VTRAY45,command,Support\medtray.lsp,185,Y,docs/commands.md docs/tray.md,Y,docs/command-reference.md#vtray45 ; docs/lisp/medtray.md,
+C:VTRAY60,command,Support\medtray.lsp,169,Y,docs/commands.md docs/tray.md,Y,docs/command-reference.md#vtray60 ; docs/lisp/medtray.md,
+C:VTRAY90,command,Support\MEDCableTray.lsp,283,Y,docs/commands.md docs/tray.md,Y,docs/command-reference.md#vtray90 ; docs/lisp/MEDCableTray.md,
+C:VTRAYOFF,command,Support\medtray.lsp,712,Y,docs/commands.md docs/tray.md,Y,docs/command-reference.md#vtrayoff ; docs/lisp/medtray.md,
+C:WBL,command,Support\QKEY.lsp,503,N,,Y,docs/command-reference.md#wbl ; docs/lisp/QKEY.md,
+C:WIRES,command,Support\QKEY.lsp,824,Y,docs/tagging.md docs/commands.md,Y,docs/command-reference.md#wires ; docs/lisp/QKEY.md,
+C:XT,command,Support\medtext.lsp,159,Y,docs/setup.md docs/commands.md docs/utilities.md,Y,docs/command-reference.md#xt ; docs/lisp/medtext.md,
+C:ZD,command,Support\QKEY.lsp,27,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#zd ; docs/lisp/QKEY.md,previously listed by name only (no description)
+C:ZE,command,Support\QKEY.lsp,33,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#ze ; docs/lisp/QKEY.md,previously listed by name only (no description)
+C:ZP,command,Support\QKEY.lsp,29,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#zp ; docs/lisp/QKEY.md,previously listed by name only (no description)
+C:ZV,command,Support\QKEY.lsp,31,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#zv ; docs/lisp/QKEY.md,previously listed by name only (no description)
+C:ZW,command,Support\QKEY.lsp,25,Y,docs/commands.md docs/utilities.md,Y,docs/command-reference.md#zw ; docs/lisp/QKEY.md,previously listed by name only (no description)
+*error*,function,Support\MED3DCON.lsp,135,N,,Y,docs/lisp/MED3DCON.md#error,"file not loaded by MEDCore; duplicate: also defined in Support\MED3DFittings.lsp:963, Support\MED3DPath.lsp:1080, Support\MED3DTrayFunctions.lsp:468, Support\MEDFunctions.lsp:921, Support\MEDFunctions.lsp:2816; replaced at load time by Support\MED3DFittings.lsp:963"
+*error*,function,Support\MED3DFittings.lsp,963,N,,Y,docs/lisp/MED3DFittings.md#error,"duplicate: also defined in Support\MED3DCON.lsp:135, Support\MED3DPath.lsp:1080, Support\MED3DTrayFunctions.lsp:468, Support\MEDFunctions.lsp:921, Support\MEDFunctions.lsp:2816; this definition loads last and wins"
+*error*,function,Support\MED3DPath.lsp,1080,N,,Y,docs/lisp/MED3DPath.md#error,"duplicate: also defined in Support\MED3DCON.lsp:135, Support\MED3DFittings.lsp:963, Support\MED3DTrayFunctions.lsp:468, Support\MEDFunctions.lsp:921, Support\MEDFunctions.lsp:2816; replaced at load time by Support\MED3DFittings.lsp:963"
+*error*,function,Support\MED3DTrayFunctions.lsp,468,N,,Y,docs/lisp/MED3DTrayFunctions.md#error,"duplicate: also defined in Support\MED3DCON.lsp:135, Support\MED3DFittings.lsp:963, Support\MED3DPath.lsp:1080, Support\MEDFunctions.lsp:921, Support\MEDFunctions.lsp:2816; replaced at load time by Support\MED3DFittings.lsp:963"
+*error*,function,Support\MEDFunctions.lsp,921,N,,Y,docs/lisp/MEDFunctions.md#error,"duplicate: also defined in Support\MED3DCON.lsp:135, Support\MED3DFittings.lsp:963, Support\MED3DPath.lsp:1080, Support\MED3DTrayFunctions.lsp:468, Support\MEDFunctions.lsp:2816; replaced at load time by Support\MED3DFittings.lsp:963"
+*error*,function,Support\MEDFunctions.lsp,2816,N,,Y,docs/lisp/MEDFunctions.md#error,"duplicate: also defined in Support\MED3DCON.lsp:135, Support\MED3DFittings.lsp:963, Support\MED3DPath.lsp:1080, Support\MED3DTrayFunctions.lsp:468, Support\MEDFunctions.lsp:921; replaced at load time by Support\MED3DFittings.lsp:963"
+3dtrayang,function,Support\medtray.lsp,1180,N,,Y,docs/lisp/medtray.md#3dtrayang,
+add_app,function,Support\medchg.lsp,46,N,,Y,docs/lisp/medchg.md#add_app,
+add_tag_list,function,Support\medchg.lsp,1065,N,,Y,docs/lisp/medchg.md#add_tag_list,
+addatrib,function,Support\MEDFunctions.lsp,2876,N,,Y,docs/lisp/MEDFunctions.md#addatrib,no references found (possibly dead)
+addvtraydata,function,Support\MEDFunctions.lsp,1043,N,,Y,docs/lisp/MEDFunctions.md#addvtraydata,
+app_chg_lst,function,Support\medchg.lsp,382,N,,Y,docs/lisp/medchg.md#app_chg_lst,
+atsched,function,Support\QKEY.lsp,1258,N,,Y,docs/lisp/QKEY.md#atsched,
+attachfitting,function,Support\MEDFunctions.lsp,1581,N,,Y,docs/lisp/MEDFunctions.md#attachfitting,
+attmod,function,Support\MEDFunctions.lsp,2032,N,,Y,docs/lisp/MEDFunctions.md#attmod,
+be,function,Support\MEDFunctions.lsp,2079,N,,Y,docs/lisp/MEDFunctions.md#be,
+between,function,Support\MEDFunctions.lsp,2097,N,,Y,docs/lisp/MEDFunctions.md#between,TODO: confirm with Clint
+bld_3dpline_ptlist,function,Support\MEDFunctions.lsp,1196,N,,Y,docs/lisp/MEDFunctions.md#bld_3dpline_ptlist,no references found (possibly dead)
+bld_app,function,Support\MEDBuildXData.lsp,2,N,,Y,docs/lisp/MEDBuildXData.md#bld_app,
+bld_cable,function,Support\MEDBuildXData.lsp,143,N,,Y,docs/lisp/MEDBuildXData.md#bld_cable,
+bld_conduit,function,Support\MEDBuildXData.lsp,122,N,,Y,docs/lisp/MEDBuildXData.md#bld_conduit,
+bld_data_list,function,Support\MEDDatabase.lsp,52,N,,Y,docs/lisp/MEDDatabase.md#bld_data_list,
+bld_dtl_list,function,Support\MEDFunctions.lsp,816,N,,Y,docs/lisp/MEDFunctions.md#bld_dtl_list,
+bld_equip,function,Support\MEDBuildXData.lsp,203,N,,Y,docs/lisp/MEDBuildXData.md#bld_equip,
+bld_fitting,function,Support\MEDBuildXData.lsp,178,N,,Y,docs/lisp/MEDBuildXData.md#bld_fitting,
+bld_list,function,Support\medchg.lsp,1175,N,,Y,docs/lisp/medchg.md#bld_list,
+bld_lw_ptlist,function,Support\MEDFunctions.lsp,1180,N,,Y,docs/lisp/MEDFunctions.md#bld_lw_ptlist,
+bld_tray,function,Support\MEDBuildXData.lsp,160,N,,Y,docs/lisp/MEDBuildXData.md#bld_tray,
+bldcodelst,function,Support\medchg.lsp,352,N,,Y,docs/lisp/medchg.md#bldcodelst,
+break_out,function,Support\MEDFunctions.lsp,1058,N,,Y,docs/lisp/MEDFunctions.md#break_out,
+brk_rot,function,Support\MEDFunctions.lsp,2633,Y,docs/3d-fitting-matrix.md,Y,docs/lisp/MEDFunctions.md#brk_rot,
+cab_ins,function,Support\medinser.lsp,542,N,,Y,docs/lisp/medinser.md#cab_ins,
+chg_edit_alt,function,Support\medchg.lsp,715,N,,Y,docs/lisp/medchg.md#chg_edit_alt,
+chg_edit_code,function,Support\medchg.lsp,768,N,,Y,docs/lisp/medchg.md#chg_edit_code,
+chg_edit_dist,function,Support\medchg.lsp,754,N,,Y,docs/lisp/medchg.md#chg_edit_dist,
+chg_edit_dpth,function,Support\medchg.lsp,734,N,,Y,docs/lisp/medchg.md#chg_edit_dpth,
+chg_edit_msr,function,Support\medchg.lsp,785,N,,Y,docs/lisp/medchg.md#chg_edit_msr,
+chg_edit_rtag,function,Support\medchg.lsp,663,N,,Y,docs/lisp/medchg.md#chg_edit_rtag,
+chg_edit_size,function,Support\medchg.lsp,678,N,,Y,docs/lisp/medchg.md#chg_edit_size,
+chg_edit_tag,function,Support\medchg.lsp,660,N,,Y,docs/lisp/medchg.md#chg_edit_tag,
+chg_edit_text,function,Support\medchg.lsp,781,N,,Y,docs/lisp/medchg.md#chg_edit_text,
+chg_ent_ltype,function,Support\MEDFunctions.lsp,1332,N,,Y,docs/lisp/MEDFunctions.md#chg_ent_ltype,
+chg_tray_pl_wdth,function,Support\MEDCableTray.lsp,60,N,,Y,docs/lisp/MEDCableTray.md#chg_tray_pl_wdth,duplicate: also defined in Support\MEDFunctions.lsp:1323; this definition loads last and wins
+chg_tray_pl_wdth,function,Support\MEDFunctions.lsp,1323,N,,Y,docs/lisp/MEDFunctions.md#chg_tray_pl_wdth,duplicate: also defined in Support\MEDCableTray.lsp:60; replaced at load time by Support\MEDCableTray.lsp:60
+chopspace,function,Support\MEDFunctions.lsp,1216,N,,Y,docs/lisp/MEDFunctions.md#chopspace,
+cirmake,function,Support\MED3DCON.lsp,284,N,,Y,docs/lisp/MED3DCON.md#cirmake,file not loaded by MEDCore
+clookup,function,Support\MEDFunctions.lsp,176,N,,Y,docs/lisp/MEDFunctions.md#clookup,duplicate: also defined in Support\MEDFunctions.lsp:2349; replaced at load time by Support\MEDFunctions.lsp:2349
+clookup,function,Support\MEDFunctions.lsp,2349,N,,Y,docs/lisp/MEDFunctions.md#clookup,duplicate: also defined in Support\MEDFunctions.lsp:176; this definition loads last and wins
+cntrlsta,function,Support\QKEY.lsp,1038,N,,Y,docs/lisp/QKEY.md#cntrlsta,no references found (possibly dead)
+dblchck,function,Support\MEDFunctions.lsp,1852,N,,Y,docs/lisp/MEDFunctions.md#dblchck,
+dblins,function,Support\medcon.lsp,260,N,,Y,docs/lisp/medcon.md#dblins,
+dcon_ins,function,Support\medinser.lsp,339,N,,Y,docs/lisp/medinser.md#dcon_ins,
+detailtag,function,Support\QKEY.lsp,1151,N,,Y,docs/lisp/QKEY.md#detailtag,
+dfitt_ins,function,Support\medinser.lsp,401,N,,Y,docs/lisp/medinser.md#dfitt_ins,
+do_request,function,Support\meddetl.lsp,114,N,,Y,docs/lisp/meddetl.md#do_request,
+DrawTrayVerticalX,function,Support\MEDCableTray.lsp,1480,N,,Y,docs/lisp/MEDCableTray.md#drawtrayverticalx,no references found (possibly dead)
+DrawVerticalTray,function,Support\MEDCableTray.lsp,1293,N,,Y,docs/lisp/MEDCableTray.md#drawverticaltray,
+DrawVerticalTrayFitting,function,Support\MEDCableTray.lsp,1358,N,,Y,docs/lisp/MEDCableTray.md#drawverticaltrayfitting,
+dxf,function,Support\MEDFunctions.lsp,170,N,,Y,docs/lisp/MEDFunctions.md#dxf,
+edadd,function,Support\medtext.lsp,468,N,,Y,docs/lisp/medtext.md#edadd,
+entlist,function,Support\medutil.lsp,248,N,,Y,docs/lisp/medutil.md#entlist,no references found (possibly dead)
+eqp_ins,function,Support\medinser.lsp,197,N,,Y,docs/lisp/medinser.md#eqp_ins,
+feedset,function,Support\MEDFunctions.lsp,2622,N,,Y,docs/lisp/MEDFunctions.md#feedset,
+FixDetailResultList,function,Support\MEDFunctions.lsp,778,N,,Y,docs/lisp/MEDFunctions.md#fixdetailresultlist,
+FixMEDDetailResultList,function,Support\MEDFunctions.lsp,800,N,,Y,docs/lisp/MEDFunctions.md#fixmeddetailresultlist,
+gen_ins,function,Support\medinser.lsp,212,N,,Y,docs/lisp/medinser.md#gen_ins,
+geninst,function,Support\QKEY.lsp,416,N,,Y,docs/lisp/QKEY.md#geninst,no references found (possibly dead)
+get_bl_data,function,Support\medinser.lsp,495,N,,Y,docs/lisp/medinser.md#get_bl_data,
+get_con_dist,function,Support\medinser.lsp,276,N,,Y,docs/lisp/medinser.md#get_con_dist,duplicate: also defined in tests\autocad\MEDCBGrid.lsp:173; this definition loads last and wins
+get_con_dist,function,tests\autocad\MEDCBGrid.lsp,173,N,,Y,docs/lisp/test-MEDCBGrid.md#get_con_dist,file not loaded by MEDCore; duplicate: also defined in Support\medinser.lsp:276; replaced at load time by Support\medinser.lsp:276
+get_con_tag,function,Support\MEDFunctions.lsp,1350,N,,Y,docs/lisp/MEDFunctions.md#get_con_tag,
+get_tray_data,function,Support\MEDCableTray.lsp,296,N,,Y,docs/lisp/MEDCableTray.md#get_tray_data,duplicate: also defined in Support\medtray.lsp:486; this definition loads last and wins
+get_tray_data,function,Support\medtray.lsp,486,N,,Y,docs/lisp/medtray.md#get_tray_data,duplicate: also defined in Support\MEDCableTray.lsp:296; replaced at load time by Support\MEDCableTray.lsp:296
+getalias,function,Support\medutil.lsp,588,N,,Y,docs/lisp/medutil.md#getalias,
+getangleradius,function,Support\MED3DCON.lsp,399,N,,Y,docs/lisp/MED3DCON.md#getangleradius,file not loaded by MEDCore
+getatvals,function,Support\MEDFunctions.lsp,1704,N,,Y,docs/lisp/MEDFunctions.md#getatvals,
+getblockentityhandle,function,Support\MEDFunctions.lsp,845,N,,Y,docs/lisp/MEDFunctions.md#getblockentityhandle,
+getColorNumber,function,Support\MEDFunctions.lsp,2,N,,Y,docs/lisp/MEDFunctions.md#getcolornumber,
+getdettags,function,Support\MEDFunctions.lsp,1616,N,,Y,docs/lisp/MEDFunctions.md#getdettags,
+GetDimStyleVariable,function,Support\MEDDim.lsp,2,N,,Y,docs/lisp/MEDDim.md#getdimstylevariable,no references found (possibly dead)
+getdwgnm,function,Support\QKEY.lsp,1001,N,,Y,docs/lisp/QKEY.md#getdwgnm,
+getfromcodelist,function,Support\medchg.lsp,304,N,,Y,docs/lisp/medchg.md#getfromcodelist,
+getindxfromcode,function,Support\medchg.lsp,325,N,,Y,docs/lisp/medchg.md#getindxfromcode,
+getinst,function,Support\QKEY.lsp,404,N,,Y,docs/lisp/QKEY.md#getinst,no references found (possibly dead)
+getlit,function,Support\QKEY.lsp,451,N,,Y,docs/lisp/QKEY.md#getlit,no references found (possibly dead)
+getmainent,function,Support\medtext.lsp,1129,N,,Y,docs/lisp/medtext.md#getmainent,
+getmeddir,function,Support\MEDCore.lsp,7,N,,Y,docs/lisp/MEDCore.md#getmeddir,
+getmedlistdata,function,Support\MEDCommands.lsp,701,N,,Y,docs/lisp/MEDCommands.md#getmedlistdata,
+getschedule,function,Support\QKEY.lsp,1762,N,,Y,docs/lisp/QKEY.md#getschedule,
+getsize,function,Support\MEDFunctions.lsp,2395,Y,docs/database.md,Y,docs/lisp/MEDFunctions.md#getsize,
+gplen,function,Support\MED3DCON.lsp,5,N,,Y,docs/lisp/MED3DCON.md#gplen,file not loaded by MEDCore
+grldr,function,Support\medtext.lsp,1049,N,,Y,docs/lisp/medtext.md#grldr,no references found (possibly dead)
+grnd_ins,function,Support\QKEY.lsp,658,N,,Y,docs/lisp/QKEY.md#grnd_ins,no references found (possibly dead)
+grndins,function,Support\QKEY.lsp,568,N,,Y,docs/lisp/QKEY.md#grndins,no references found (possibly dead)
+grtag,function,Support\QKEY.lsp,616,N,,Y,docs/lisp/QKEY.md#grtag,no references found (possibly dead)
+icon_ins,function,Support\medinser.lsp,311,N,,Y,docs/lisp/medinser.md#icon_ins,
+ifitt_ins,function,Support\medinser.lsp,232,N,,Y,docs/lisp/medinser.md#ifitt_ins,
+ins_border,function,Support\medsetup.lsp,70,N,,Y,docs/lisp/medsetup.md#ins_border,
+insblk,function,Support\MEDFunctions.lsp,2519,N,,Y,docs/lisp/MEDFunctions.md#insblk,
+itag,function,Support\QKEY.lsp,1447,N,,Y,docs/lisp/QKEY.md#itag,
+jbhub,function,Support\meddetl.lsp,218,N,,Y,docs/lisp/meddetl.md#jbhub,
+linemake,function,Support\medutil.lsp,639,N,,Y,docs/lisp/medutil.md#linemake,
+listtoggle,function,Support\MEDFunctions.lsp,1546,N,,Y,docs/lisp/MEDFunctions.md#listtoggle,
+ltback,function,Support\MEDFunctions.lsp,2500,N,,Y,docs/lisp/MEDFunctions.md#ltback,
+m3d-begin,function,Support\MED3DCON.lsp,131,N,,Y,docs/lisp/MED3DCON.md#m3d-begin,file not loaded by MEDCore
+m3d-end,function,Support\MED3DCON.lsp,145,N,,Y,docs/lisp/MED3DCON.md#m3d-end,file not loaded by MEDCore
+m3d-heavy-pline,function,Support\MED3DCON.lsp,59,N,,Y,docs/lisp/MED3DCON.md#m3d-heavy-pline,file not loaded by MEDCore
+m3d-pt3,function,Support\MED3DCON.lsp,43,N,,Y,docs/lisp/MED3DCON.md#m3d-pt3,file not loaded by MEDCore
+m3d-unitvec,function,Support\MED3DCON.lsp,48,N,,Y,docs/lisp/MED3DCON.md#m3d-unitvec,file not loaded by MEDCore
+m3dconduitfit,function,Support\MED3DCON.lsp,515,N,,Y,docs/lisp/MED3DCON.md#m3dconduitfit,file not loaded by MEDCore
+m3dtray,function,Support\medtray.lsp,764,N,,Y,docs/lisp/medtray.md#m3dtray,no references found (possibly dead)
+m3dtrayfit,function,Support\medtray.lsp,926,N,,Y,docs/lisp/medtray.md#m3dtrayfit,no references found (possibly dead)
+m3dvtrayfit,function,Support\medtray.lsp,1133,N,,Y,docs/lisp/medtray.md#m3dvtrayfit,
+make_cross,function,Support\medtray.lsp,1048,N,,Y,docs/lisp/medtray.md#make_cross,
+make_elbow,function,Support\medtray.lsp,972,N,,Y,docs/lisp/medtray.md#make_elbow,
+make_re,function,Support\medtray.lsp,1105,N,,Y,docs/lisp/medtray.md#make_re,
+make_relr,function,Support\medtray.lsp,1240,N,,Y,docs/lisp/medtray.md#make_relr,
+make_tee,function,Support\medtray.lsp,1006,N,,Y,docs/lisp/medtray.md#make_tee,
+makeleader,function,Support\MEDFunctions.lsp,854,N,,Y,docs/lisp/MEDFunctions.md#makeleader,
+maketray,function,Support\MEDCableTray.lsp,364,N,,Y,docs/lisp/MEDCableTray.md#maketray,duplicate: also defined in Support\medtray.lsp:288; this definition loads last and wins
+maketray,function,Support\medtray.lsp,288,N,,Y,docs/lisp/medtray.md#maketray,duplicate: also defined in Support\MEDCableTray.lsp:364; replaced at load time by Support\MEDCableTray.lsp:364
+matchtxtprops,function,Support\MEDFunctions.lsp,1557,N,,Y,docs/lisp/MEDFunctions.md#matchtxtprops,duplicate: also defined in Support\medtext.lsp:1025; replaced at load time by Support\medtext.lsp:1025
+matchtxtprops,function,Support\medtext.lsp,1025,N,,Y,docs/lisp/medtext.md#matchtxtprops,duplicate: also defined in Support\MEDFunctions.lsp:1557; this definition loads last and wins
+mcbg-brk,function,tests\autocad\MEDCBGrid.lsp,82,N,,Y,docs/lisp/test-MEDCBGrid.md#mcbg-brk,file not loaded by MEDCore
+mcbg-conduit,function,tests\autocad\MEDCBGrid.lsp,88,N,,Y,docs/lisp/test-MEDCBGrid.md#mcbg-conduit,file not loaded by MEDCore
+mcbg-csv,function,tests\autocad\MEDCBGrid.lsp,65,N,,Y,docs/lisp/test-MEDCBGrid.md#mcbg-csv,file not loaded by MEDCore
+mcbg-csv-line,function,tests\autocad\MEDCBGrid.lsp,54,N,,Y,docs/lisp/test-MEDCBGrid.md#mcbg-csv-line,file not loaded by MEDCore
+mcbg-dir,function,tests\autocad\MEDCBGrid.lsp,81,N,,Y,docs/lisp/test-MEDCBGrid.md#mcbg-dir,file not loaded by MEDCore
+mcbg-fitting,function,tests\autocad\MEDCBGrid.lsp,126,N,,Y,docs/lisp/test-MEDCBGrid.md#mcbg-fitting,file not loaded by MEDCore
+mcbg-get,function,tests\autocad\MEDCBGrid.lsp,78,N,,Y,docs/lisp/test-MEDCBGrid.md#mcbg-get,file not loaded by MEDCore
+mcbg-legs,function,tests\autocad\MEDCBGrid.lsp,99,N,,Y,docs/lisp/test-MEDCBGrid.md#mcbg-legs,file not loaded by MEDCore
+mcbg-mirrored-q,function,tests\autocad\MEDCBGrid.lsp,32,N,,Y,docs/lisp/test-MEDCBGrid.md#mcbg-mirrored-q,file not loaded by MEDCore
+mcbg-pt,function,tests\autocad\MEDCBGrid.lsp,83,N,,Y,docs/lisp/test-MEDCBGrid.md#mcbg-pt,file not loaded by MEDCore
+mcbg-reduce-to,function,tests\autocad\MEDCBGrid.lsp,148,N,,Y,docs/lisp/test-MEDCBGrid.md#mcbg-reduce-to,file not loaded by MEDCore
+mcbg-scale,function,tests\autocad\MEDCBGrid.lsp,37,N,,Y,docs/lisp/test-MEDCBGrid.md#mcbg-scale,file not loaded by MEDCore
+mcbg-split,function,tests\autocad\MEDCBGrid.lsp,48,N,,Y,docs/lisp/test-MEDCBGrid.md#mcbg-split,file not loaded by MEDCore
+mcbg-text,function,tests\autocad\MEDCBGrid.lsp,119,N,,Y,docs/lisp/test-MEDCBGrid.md#mcbg-text,file not loaded by MEDCore
+med-cable-draw,function,Support\medcable.lsp,3,Y,docs/cable.md,Y,docs/lisp/medcable.md#med-cable-draw,
+MED-DotNet-Ready,function,Support\CSharpAdd.lsp,4,N,,Y,docs/lisp/CSharpAdd.md#med-dotnet-ready,duplicate: also defined in Support\MEDDatabase.lsp:11; replaced at load time by Support\MEDDatabase.lsp:11
+MED-DotNet-Ready,function,Support\MEDDatabase.lsp,11,N,,Y,docs/lisp/MEDDatabase.md#med-dotnet-ready,duplicate: also defined in Support\CSharpAdd.lsp:4; this definition loads last and wins
+MED-DotNet-Startup,function,Support\CSharpAdd.lsp,42,N,,Y,docs/lisp/CSharpAdd.md#med-dotnet-startup,
+MED-EnsureDotNet,function,Support\MEDDatabase.lsp,14,N,,Y,docs/lisp/MEDDatabase.md#med-ensuredotnet,
+MED-GetSym,function,Support\CSharpAdd.lsp,52,N,,Y,docs/lisp/CSharpAdd.md#med-getsym,
+MED-NetLoad,function,Support\CSharpAdd.lsp,8,N,,Y,docs/lisp/CSharpAdd.md#med-netload,
+MED-SetSym,function,Support\CSharpAdd.lsp,53,N,,Y,docs/lisp/CSharpAdd.md#med-setsym,
+MED2026-ClearEnterpriseIfOurs,function,Support\MED2026-ProfileSetup.lsp,74,N,,Y,docs/lisp/MED2026-ProfileSetup.md#med2026-clearenterpriseifours,file not loaded by MEDCore
+MED2026-EnsureSettings,function,Support\MED2026-ProfileSetup.lsp,25,N,,Y,docs/lisp/MED2026-ProfileSetup.md#med2026-ensuresettings,file not loaded by MEDCore
+MED2026-EnsureSupportPath,function,Support\MED2026-ProfileSetup.lsp,65,N,,Y,docs/lisp/MED2026-ProfileSetup.md#med2026-ensuresupportpath,file not loaded by MEDCore
+MED2026-EnsureTrusted,function,Support\MED2026-ProfileSetup.lsp,43,N,,Y,docs/lisp/MED2026-ProfileSetup.md#med2026-ensuretrusted,file not loaded by MEDCore
+MED2026-FilesPref,function,Support\MED2026-ProfileSetup.lsp,21,N,,Y,docs/lisp/MED2026-ProfileSetup.md#med2026-filespref,file not loaded by MEDCore
+MED2026-FixShortcut,function,Support\MED2026-ProfileSetup.lsp,126,N,,Y,docs/lisp/MED2026-ProfileSetup.md#med2026-fixshortcut,file not loaded by MEDCore
+MED2026-LoadMedMenu,function,Support\MED2026-ProfileSetup.lsp,116,N,,Y,docs/lisp/MED2026-ProfileSetup.md#med2026-loadmedmenu,file not loaded by MEDCore
+MED2026-MedGroupLoaded,function,Support\MED2026-ProfileSetup.lsp,109,N,,Y,docs/lisp/MED2026-ProfileSetup.md#med2026-medgrouploaded,file not loaded by MEDCore
+MED2026-Root,function,Support\MED2026-ProfileSetup.lsp,11,N,,Y,docs/lisp/MED2026-ProfileSetup.md#med2026-root,file not loaded by MEDCore
+MED2026-StripRunOnce,function,Support\MED2026-ProfileSetup.lsp,149,N,,Y,docs/lisp/MED2026-ProfileSetup.md#med2026-striprunonce,file not loaded by MEDCore
+MED2026-SupportRoot,function,Support\MED2026-ProfileSetup.lsp,17,N,,Y,docs/lisp/MED2026-ProfileSetup.md#med2026-supportroot,file not loaded by MEDCore
+MED2026-UnloadRibbon,function,Support\MED2026-ProfileSetup.lsp,101,N,,Y,docs/lisp/MED2026-ProfileSetup.md#med2026-unloadribbon,file not loaded by MEDCore
+med3d-acos,function,Support\MED3DPath.lsp,101,N,,Y,docs/lisp/MED3DPath.md#med3d-acos,
+med3d-allocate,function,Support\MED3DPath.lsp,296,N,,Y,docs/lisp/MED3DPath.md#med3d-allocate,
+med3d-arc-pt,function,Support\MED3DPath.lsp,797,N,,Y,docs/lisp/MED3DPath.md#med3d-arc-pt,
+med3d-avail,function,Support\MED3DPath.lsp,282,N,,Y,docs/lisp/MED3DPath.md#med3d-avail,
+med3d-bb-has,function,Support\MED3DPath.lsp,772,N,,Y,docs/lisp/MED3DPath.md#med3d-bb-has,
+med3d-bbox,function,Support\MED3DPath.lsp,766,N,,Y,docs/lisp/MED3DPath.md#med3d-bbox,
+med3d-bbstr,function,Support\MED3DPath.lsp,770,N,,Y,docs/lisp/MED3DPath.md#med3d-bbstr,
+med3d-begin,function,Support\MED3DPath.lsp,1072,N,,Y,docs/lisp/MED3DPath.md#med3d-begin,
+med3d-bend-radius,function,Support\MED3DPath.lsp,115,Y,docs/3d.md,Y,docs/lisp/MED3DPath.md#med3d-bend-radius,
+med3d-build-segs,function,Support\MED3DPath.lsp,174,N,,Y,docs/lisp/MED3DPath.md#med3d-build-segs,
+med3d-bulge-arc,function,Support\MED3DPath.lsp,142,N,,Y,docs/lisp/MED3DPath.md#med3d-bulge-arc,
+med3d-cable-od,function,Support\MED3DPath.lsp,581,N,,Y,docs/lisp/MED3DPath.md#med3d-cable-od,
+med3d-check-arc,function,Support\MED3DPath.lsp,805,N,,Y,docs/lisp/MED3DPath.md#med3d-check-arc,
+med3d-check-line,function,Support\MED3DPath.lsp,780,N,,Y,docs/lisp/MED3DPath.md#med3d-check-line,
+med3d-claim-commands,function,Support\MED3DPath.lsp,1331,N,,Y,docs/lisp/MED3DPath.md#med3d-claim-commands,
+med3d-clear-flags,function,Support\MED3DPath.lsp,727,N,,Y,docs/lisp/MED3DPath.md#med3d-clear-flags,
+med3d-cmd-c3d,function,Support\MED3DPath.lsp,1137,N,,Y,docs/lisp/MED3DPath.md#med3d-cmd-c3d,
+med3d-cmd-m3d,function,Support\MED3DPath.lsp,1136,N,,Y,docs/lisp/MED3DPath.md#med3d-cmd-m3d,
+med3d-cmd-make3dcable,function,Support\MED3DPath.lsp,1191,N,,Y,docs/lisp/MED3DPath.md#med3d-cmd-make3dcable,
+med3d-cmd-make3dconduit,function,Support\MED3DPath.lsp,1190,N,,Y,docs/lisp/MED3DPath.md#med3d-cmd-make3dconduit,
+med3d-conflict,function,Support\MED3DPath.lsp,287,N,,Y,docs/lisp/MED3DPath.md#med3d-conflict,
+med3d-corner-by,function,Support\MED3DPath.lsp,417,N,,Y,docs/lisp/MED3DPath.md#med3d-corner-by,
+med3d-corner-reason,function,Support\MED3DPath.lsp,684,N,,Y,docs/lisp/MED3DPath.md#med3d-corner-reason,
+med3d-cross,function,Support\MED3DPath.lsp,91,N,,Y,docs/lisp/MED3DPath.md#med3d-cross,
+med3d-dbg,function,Support\MED3DPath.lsp,757,N,,Y,docs/lisp/MED3DPath.md#med3d-dbg,
+med3d-debug-on,function,Support\MED3DPath.lsp,749,N,,Y,docs/lisp/MED3DPath.md#med3d-debug-on,
+med3d-deg,function,Support\MED3DPath.lsp,670,N,,Y,docs/lisp/MED3DPath.md#med3d-deg,
+med3d-dot,function,Support\MED3DPath.lsp,90,N,,Y,docs/lisp/MED3DPath.md#med3d-dot,
+med3d-draw-pieces,function,Support\MED3DPath.lsp,923,N,,Y,docs/lisp/MED3DPath.md#med3d-draw-pieces,
+med3d-draw-sweep,function,Support\MED3DPath.lsp,1004,N,,Y,docs/lisp/MED3DPath.md#med3d-draw-sweep,
+med3d-dxf,function,Support\MED3DPath.lsp,504,N,,Y,docs/lisp/MED3DPath.md#med3d-dxf,
+med3d-end,function,Support\MED3DPath.lsp,1088,N,,Y,docs/lisp/MED3DPath.md#med3d-end,
+med3d-ensure-layer,function,Support\MED3DPath.lsp,658,N,,Y,docs/lisp/MED3DPath.md#med3d-ensure-layer,
+med3d-export,function,Support\MED3DPath.lsp,1160,N,,Y,docs/lisp/MED3DPath.md#med3d-export,
+med3d-extrude-dir,function,Support\MED3DPath.lsp,856,N,,Y,docs/lisp/MED3DPath.md#med3d-extrude-dir,
+med3d-filter,function,Support\MED3DPath.lsp,1097,N,,Y,docs/lisp/MED3DPath.md#med3d-filter,
+med3d-fit-at,function,Support\MED3DPath.lsp,355,N,,Y,docs/lisp/MED3DPath.md#med3d-fit-at,
+med3d-fit-joints,function,Support\MED3DPath.lsp,376,N,,Y,docs/lisp/MED3DPath.md#med3d-fit-joints,
+med3d-fit-lens,function,Support\MED3DPath.lsp,405,N,,Y,docs/lisp/MED3DPath.md#med3d-fit-lens,
+med3d-fit-on-axis,function,Support\MED3DPath.lsp,344,N,,Y,docs/lisp/MED3DPath.md#med3d-fit-on-axis,
+med3d-fit-trim,function,Support\MED3DPath.lsp,368,N,,Y,docs/lisp/MED3DPath.md#med3d-fit-trim,
+med3d-flag-at,function,Support\MED3DPath.lsp,673,N,,Y,docs/lisp/MED3DPath.md#med3d-flag-at,
+med3d-flag-layer,function,Support\MED3DPath.lsp,655,N,,Y,docs/lisp/MED3DPath.md#med3d-flag-layer,
+med3d-flag-marker,function,Support\MED3DPath.lsp,681,N,,Y,docs/lisp/MED3DPath.md#med3d-flag-marker,
+med3d-get,function,Support\MED3DPath.lsp,108,N,,Y,docs/lisp/MED3DPath.md#med3d-get,
+med3d-has-spheres,function,Support\MED3DPath.lsp,999,N,,Y,docs/lisp/MED3DPath.md#med3d-has-spheres,
+med3d-install-reactor,function,Support\MED3DPath.lsp,1360,N,,Y,docs/lisp/MED3DPath.md#med3d-install-reactor,
+med3d-join,function,Support\MED3DPath.lsp,1349,N,,Y,docs/lisp/MED3DPath.md#med3d-join,
+med3d-joints,function,Support\MED3DPath.lsp,210,N,,Y,docs/lisp/MED3DPath.md#med3d-joints,
+med3d-kind-of,function,Support\MED3DPath.lsp,1102,N,,Y,docs/lisp/MED3DPath.md#med3d-kind-of,
+med3d-layer-info,function,Support\MED3DPath.lsp,650,N,,Y,docs/lisp/MED3DPath.md#med3d-layer-info,
+med3d-len,function,Support\MED3DPath.lsp,95,N,,Y,docs/lisp/MED3DPath.md#med3d-len,
+med3d-lisp-will-start,function,Support\MED3DPath.lsp,1354,N,,Y,docs/lisp/MED3DPath.md#med3d-lisp-will-start,
+med3d-live,function,Support\MED3DPath.lsp,1140,N,,Y,docs/lisp/MED3DPath.md#med3d-live,
+med3d-make-lw-path,function,Support\MED3DPath.lsp,981,N,,Y,docs/lisp/MED3DPath.md#med3d-make-lw-path,
+med3d-make3d-all,function,Support\MED3DPath.lsp,1223,N,,Y,docs/lisp/MED3DPath.md#med3d-make3d-all,
+med3d-make3d-all-cmd,function,Support\MED3DPath.lsp,1320,N,,Y,docs/lisp/MED3DPath.md#med3d-make3d-all-cmd,
+med3d-maxabs,function,Support\MED3DPath.lsp,760,N,,Y,docs/lisp/MED3DPath.md#med3d-maxabs,
+med3d-merge-collinear,function,Support\MED3DPath.lsp,154,N,,Y,docs/lisp/MED3DPath.md#med3d-merge-collinear,
+med3d-ms,function,Support\MED3DPath.lsp,734,N,,Y,docs/lisp/MED3DPath.md#med3d-ms,
+med3d-num,function,Support\MED3DPath.lsp,545,N,,Y,docs/lisp/MED3DPath.md#med3d-num,
+med3d-owner,function,Support\MED3DPath.lsp,1367,N,,Y,docs/lisp/MED3DPath.md#med3d-owner,
+med3d-path-build-all,function,Support\MED3DPath.lsp,1149,Y,docs/3d.md,Y,docs/lisp/MED3DPath.md#med3d-path-build-all,
+med3d-pick,function,Support\MED3DPath.lsp,1111,N,,Y,docs/lisp/MED3DPath.md#med3d-pick,
+med3d-plan,function,Support\MED3DPath.lsp,424,N,,Y,docs/lisp/MED3DPath.md#med3d-plan,
+med3d-plan-ent,function,Support\MED3DPath.lsp,629,Y,docs/3d.md,Y,docs/lisp/MED3DPath.md#med3d-plan-ent,
+med3d-planar-normal,function,Support\MED3DPath.lsp,958,N,,Y,docs/lisp/MED3DPath.md#med3d-planar-normal,
+med3d-preload-od,function,Support\MED3DPath.lsp,559,N,,Y,docs/lisp/MED3DPath.md#med3d-preload-od,
+med3d-print-plan,function,Support\MED3DPath.lsp,1382,N,,Y,docs/lisp/MED3DPath.md#med3d-print-plan,
+med3d-pt3,function,Support\MED3DPath.lsp,99,N,,Y,docs/lisp/MED3DPath.md#med3d-pt3,
+med3d-ptstr,function,Support\MED3DPath.lsp,758,N,,Y,docs/lisp/MED3DPath.md#med3d-ptstr,
+med3d-read-path,function,Support\MED3DPath.lsp,508,N,,Y,docs/lisp/MED3DPath.md#med3d-read-path,
+med3d-region,function,Support\MED3DPath.lsp,737,N,,Y,docs/lisp/MED3DPath.md#med3d-region,
+med3d-report-flags,function,Support\MED3DPath.lsp,696,N,,Y,docs/lisp/MED3DPath.md#med3d-report-flags,
+med3d-rtos,function,Support\MED3DPath.lsp,669,N,,Y,docs/lisp/MED3DPath.md#med3d-rtos,
+med3d-run,function,Support\MED3DPath.lsp,1040,N,,Y,docs/lisp/MED3DPath.md#med3d-run,
+med3d-run-od,function,Support\MED3DPath.lsp,602,N,,Y,docs/lisp/MED3DPath.md#med3d-run-od,
+med3d-run-ss,function,Support\MED3DPath.lsp,1064,N,,Y,docs/lisp/MED3DPath.md#med3d-run-ss,
+med3d-seg-i1,function,Support\MED3DPath.lsp,126,N,,Y,docs/lisp/MED3DPath.md#med3d-seg-i1,
+med3d-seg-len,function,Support\MED3DPath.lsp,127,N,,Y,docs/lisp/MED3DPath.md#med3d-seg-len,
+med3d-seg-tin,function,Support\MED3DPath.lsp,131,N,,Y,docs/lisp/MED3DPath.md#med3d-seg-tin,
+med3d-seg-tout,function,Support\MED3DPath.lsp,135,N,,Y,docs/lisp/MED3DPath.md#med3d-seg-tout,
+med3d-set-nth,function,Support\MED3DPath.lsp,104,N,,Y,docs/lisp/MED3DPath.md#med3d-set-nth,
+med3d-skip,function,Support\MED3DPath.lsp,623,N,,Y,docs/lisp/MED3DPath.md#med3d-skip,
+med3d-solid-arc,function,Support\MED3DPath.lsp,873,N,,Y,docs/lisp/MED3DPath.md#med3d-solid-arc,
+med3d-solid-line,function,Support\MED3DPath.lsp,832,N,,Y,docs/lisp/MED3DPath.md#med3d-solid-line,
+med3d-solid-sphere,function,Support\MED3DPath.lsp,918,N,,Y,docs/lisp/MED3DPath.md#med3d-solid-sphere,
+med3d-sql,function,Support\MED3DPath.lsp,549,N,,Y,docs/lisp/MED3DPath.md#med3d-sql,
+med3d-sscat,function,Support\MED3DPath.lsp,1210,N,,Y,docs/lisp/MED3DPath.md#med3d-sscat,
+med3d-stage,function,Support\MED3DPath.lsp,1196,N,,Y,docs/lisp/MED3DPath.md#med3d-stage,
+med3d-summary-line,function,Support\MED3DPath.lsp,1215,N,,Y,docs/lisp/MED3DPath.md#med3d-summary-line,
+med3d-tan,function,Support\MED3DPath.lsp,103,N,,Y,docs/lisp/MED3DPath.md#med3d-tan,
+med3d-temp-arc,function,Support\MED3DPath.lsp,909,N,,Y,docs/lisp/MED3DPath.md#med3d-temp-arc,
+med3d-tray-build,function,Support\MED3DTrayFunctions.lsp,418,Y,docs/3d.md,Y,docs/lisp/MED3DTrayFunctions.md#med3d-tray-build,
+med3d-trim-at,function,Support\MED3DPath.lsp,271,N,,Y,docs/lisp/MED3DPath.md#med3d-trim-at,
+med3d-unit,function,Support\MED3DPath.lsp,96,N,,Y,docs/lisp/MED3DPath.md#med3d-unit,
+med3d-v+,function,Support\MED3DPath.lsp,87,N,,Y,docs/lisp/MED3DPath.md#med3d-v,
+med3d-v-,function,Support\MED3DPath.lsp,88,N,,Y,docs/lisp/MED3DPath.md#med3d-v-,
+med3d-vcover,function,Support\MED3DPath.lsp,261,N,,Y,docs/lisp/MED3DPath.md#med3d-vcover,
+med3d-vcover-run,function,Support\MED3DPath.lsp,236,N,,Y,docs/lisp/MED3DPath.md#med3d-vcover-run,
+med3d-vx,function,Support\MED3DPath.lsp,89,N,,Y,docs/lisp/MED3DPath.md#med3d-vx,
+med3dt-2d,function,tests\autocad\MED3DPathTest.lsp,26,N,,Y,docs/lisp/test-MED3DPathTest.md#med3dt-2d,file not loaded by MEDCore
+med3dt-3d,function,tests\autocad\MED3DPathTest.lsp,36,N,,Y,docs/lisp/test-MED3DPathTest.md#med3dt-3d,file not loaded by MEDCore
+med3dt-cable,function,tests\autocad\MED3DPathTest.lsp,46,N,,Y,docs/lisp/test-MED3DPathTest.md#med3dt-cable,file not loaded by MEDCore
+med3dt-conduit,function,tests\autocad\MED3DPathTest.lsp,45,N,,Y,docs/lisp/test-MED3DPathTest.md#med3dt-conduit,file not loaded by MEDCore
+med3dt-go,function,tests\autocad\MED3DPathTest.lsp,48,N,,Y,docs/lisp/test-MED3DPathTest.md#med3dt-go,file not loaded by MEDCore
+med3dt-lw,function,tests\autocad\MED3DPathTest.lsp,18,N,,Y,docs/lisp/test-MED3DPathTest.md#med3dt-lw,file not loaded by MEDCore
+med_brk_out,function,Support\MEDFunctions.lsp,1914,N,,Y,docs/lisp/MEDFunctions.md#med_brk_out,
+med_conduit_od,function,Support\MEDFunctions.lsp,2453,Y,docs/3d.md docs/database.md,Y,docs/lisp/MEDFunctions.md#med_conduit_od,
+MED_cur_set,function,Support\MEDCore.lsp,87,N,,Y,docs/lisp/MEDCore.md#med_cur_set,"duplicate: also defined in Support\MEDFunctions.lsp:2788; MEDCore defines this stub AFTER loading MEDFunctions.lsp, so the stub wins; TODO: confirm with Clint"
+med_cur_set,function,Support\MEDFunctions.lsp,2788,N,,Y,docs/lisp/MEDFunctions.md#med_cur_set,duplicate: also defined in Support\MEDCore.lsp:87; replaced by that stub (MEDCore defines it after loading this file)
+med_detail,function,Support\MEDFunctions.lsp,826,N,,Y,docs/lisp/MEDFunctions.md#med_detail,
+med_getdesc,function,Support\MEDDatabase.lsp,42,N,,Y,docs/lisp/MEDDatabase.md#med_getdesc,
+med_reset,function,Support\MEDFunctions.lsp,2832,N,,Y,docs/lisp/MEDFunctions.md#med_reset,
+med_ret_ok,function,Support\MEDFunctions.lsp,2845,N,,Y,docs/lisp/MEDFunctions.md#med_ret_ok,
+med_tan,function,Support\MEDFunctions.lsp,220,N,,Y,docs/lisp/MEDFunctions.md#med_tan,
+med_text,function,Support\MEDCommands.lsp,113,N,,Y,docs/lisp/MEDCommands.md#med_text,
+med_verify,function,Support\MEDFunctions.lsp,2857,N,,Y,docs/lisp/MEDFunctions.md#med_verify,no references found (possibly dead); TODO: confirm with Clint
+medblkins,function,Support\medinser.lsp,6,Y,docs/3d-fitting-matrix.md,Y,docs/lisp/medinser.md#medblkins,
+MEDBuild3DTrayBase,function,Support\MED3DTrayFunctions.lsp,67,N,,Y,docs/lisp/MED3DTrayFunctions.md#medbuild3dtraybase,
+MEDBuild3DTrayBaseFromOutline,function,Support\MED3DTrayFunctions.lsp,639,N,,Y,docs/lisp/MED3DTrayFunctions.md#medbuild3dtraybasefromoutline,
+MEDBuild3DTrayFitBase,function,Support\MED3DTrayFunctions.lsp,368,N,,Y,docs/lisp/MED3DTrayFunctions.md#medbuild3dtrayfitbase,
+MEDBuild3DTrayFitFlange,function,Support\MED3DTrayFunctions.lsp,195,N,,Y,docs/lisp/MED3DTrayFunctions.md#medbuild3dtrayfitflange,duplicate: also defined in Support\MED3DTrayFunctions.lsp:240; replaced at load time by Support\MED3DTrayFunctions.lsp:240
+MEDBuild3DTrayFitFlange,function,Support\MED3DTrayFunctions.lsp,240,N,,Y,docs/lisp/MED3DTrayFunctions.md#medbuild3dtrayfitflange,duplicate: also defined in Support\MED3DTrayFunctions.lsp:195; this definition loads last and wins
+MEDBuild3DTrayFlange,function,Support\MED3DTrayFunctions.lsp,92,N,,Y,docs/lisp/MED3DTrayFunctions.md#medbuild3dtrayflange,duplicate: also defined in Support\MED3DTrayFunctions.lsp:140; replaced at load time by Support\MED3DTrayFunctions.lsp:140
+MEDBuild3DTrayFlange,function,Support\MED3DTrayFunctions.lsp,140,N,,Y,docs/lisp/MED3DTrayFunctions.md#medbuild3dtrayflange,duplicate: also defined in Support\MED3DTrayFunctions.lsp:92; this definition loads last and wins
+MEDBuild3DTrayFlangeFromEntity,function,Support\MED3DTrayFunctions.lsp,672,N,,Y,docs/lisp/MED3DTrayFunctions.md#medbuild3dtrayflangefromentity,
+medcb-2d-offset,function,Support\MED3DFittings.lsp,1262,N,,Y,docs/lisp/MED3DFittings.md#medcb-2d-offset,
+medcb-add-box,function,Support\MED3DFittings.lsp,812,N,,Y,docs/lisp/MED3DFittings.md#medcb-add-box,
+medcb-add-cyl,function,Support\MED3DFittings.lsp,737,N,,Y,docs/lisp/MED3DFittings.md#medcb-add-cyl,
+medcb-add-prism,function,Support\MED3DFittings.lsp,759,N,,Y,docs/lisp/MED3DFittings.md#medcb-add-prism,
+medcb-add-slot,function,Support\MED3DFittings.lsp,721,N,,Y,docs/lisp/MED3DFittings.md#medcb-add-slot,
+medcb-alt-tilts,function,Support\MED3DFittings.lsp,1346,N,,Y,docs/lisp/MED3DFittings.md#medcb-alt-tilts,
+medcb-app,function,Support\MED3DFittings.lsp,1169,N,,Y,docs/lisp/MED3DFittings.md#medcb-app,
+medcb-ask-form,function,Support\MED3DFittings.lsp,939,N,,Y,docs/lisp/MED3DFittings.md#medcb-ask-form,
+medcb-ask-shape,function,Support\MED3DFittings.lsp,926,N,,Y,docs/lisp/MED3DFittings.md#medcb-ask-shape,
+medcb-ask-size,function,Support\MED3DFittings.lsp,949,N,,Y,docs/lisp/MED3DFittings.md#medcb-ask-size,
+medcb-begin,function,Support\MED3DFittings.lsp,959,N,,Y,docs/lisp/MED3DFittings.md#medcb-begin,
+medcb-block-current,function,Support\MED3DFittings.lsp,881,N,,Y,docs/lisp/MED3DFittings.md#medcb-block-current,
+medcb-block-name,function,Support\MED3DFittings.lsp,153,N,,Y,docs/lisp/MED3DFittings.md#medcb-block-name,
+medcb-body-layer,function,Support\MED3DFittings.lsp,788,N,,Y,docs/lisp/MED3DFittings.md#medcb-body-layer,
+medcb-body-of,function,Support\MED3DFittings.lsp,1391,N,,Y,docs/lisp/MED3DFittings.md#medcb-body-of,
+medcb-brk-list,function,Support\MED3DFittings.lsp,1367,N,,Y,docs/lisp/MED3DFittings.md#medcb-brk-list,
+medcb-brk-max,function,Support\MED3DFittings.lsp,1355,N,,Y,docs/lisp/MED3DFittings.md#medcb-brk-max,
+medcb-brk-tol,function,Support\MED3DFittings.lsp,1387,N,,Y,docs/lisp/MED3DFittings.md#medcb-brk-tol,
+medcb-build-block,function,Support\MED3DFittings.lsp,831,N,,Y,docs/lisp/MED3DFittings.md#medcb-build-block,
+medcb-bylayer,function,Support\MED3DFittings.lsp,801,N,,Y,docs/lisp/MED3DFittings.md#medcb-bylayer,
+medcb-bylayer-props,function,Support\MED3DFittings.lsp,805,N,,Y,docs/lisp/MED3DFittings.md#medcb-bylayer-props,
+medcb-clean,function,Support\MED3DFittings.lsp,1181,N,,Y,docs/lisp/MED3DFittings.md#medcb-clean,
+medcb-cod,function,Support\MED3DFittings.lsp,322,N,,Y,docs/lisp/MED3DFittings.md#medcb-cod,
+medcb-collect,function,Support\MED3DFittings.lsp,1480,Y,docs/3d.md,Y,docs/lisp/MED3DFittings.md#medcb-collect,
+medcb-conduit-od,function,Support\MED3DFittings.lsp,313,N,,Y,docs/lisp/MED3DFittings.md#medcb-conduit-od,
+medcb-conduit-runs,function,Support\MED3DFittings.lsp,1328,N,,Y,docs/lisp/MED3DFittings.md#medcb-conduit-runs,
+medcb-cos-tol,function,Support\MED3DFittings.lsp,1281,N,,Y,docs/lisp/MED3DFittings.md#medcb-cos-tol,
+medcb-csv-path,function,Support\MED3DFittings.lsp,235,N,,Y,docs/lisp/MED3DFittings.md#medcb-csv-path,
+medcb-csv-split,function,Support\MED3DFittings.lsp,208,N,,Y,docs/lisp/MED3DFittings.md#medcb-csv-split,
+medcb-db-has-table,function,Support\MED3DFittings.lsp,284,N,,Y,docs/lisp/MED3DFittings.md#medcb-db-has-table,
+medcb-db-kind,function,Support\MED3DFittings.lsp,268,N,,Y,docs/lisp/MED3DFittings.md#medcb-db-kind,
+medcb-desc-key,function,Support\MED3DFittings.lsp,1196,N,,Y,docs/lisp/MED3DFittings.md#medcb-desc-key,
+medcb-doc,function,Support\MED3DFittings.lsp,711,N,,Y,docs/lisp/MED3DFittings.md#medcb-doc,
+medcb-dot,function,Support\MED3DFittings.lsp,1164,N,,Y,docs/lisp/MED3DFittings.md#medcb-dot,
+medcb-dxy,function,Support\MED3DFittings.lsp,1168,N,,Y,docs/lisp/MED3DFittings.md#medcb-dxy,
+medcb-end,function,Support\MED3DFittings.lsp,967,N,,Y,docs/lisp/MED3DFittings.md#medcb-end,
+medcb-ensure-block,function,Support\MED3DFittings.lsp,887,Y,docs/3d.md,Y,docs/lisp/MED3DFittings.md#medcb-ensure-block,
+medcb-ensure-body,function,Support\MED3DFittings.lsp,1516,N,,Y,docs/lisp/MED3DFittings.md#medcb-ensure-body,
+medcb-ensure-ph,function,Support\MED3DFittings.lsp,1511,N,,Y,docs/lisp/MED3DFittings.md#medcb-ensure-ph,
+medcb-find,function,Support\MED3DFittings.lsp,307,N,,Y,docs/lisp/MED3DFittings.md#medcb-find,
+medcb-fit-rec,function,Support\MED3DFittings.lsp,1506,N,,Y,docs/lisp/MED3DFittings.md#medcb-fit-rec,
+medcb-fit-tol,function,Support\MED3DFittings.lsp,1282,N,,Y,docs/lisp/MED3DFittings.md#medcb-fit-tol,
+medcb-fitcat,function,Support\MED3DFittings.lsp,1224,N,,Y,docs/lisp/MED3DFittings.md#medcb-fitcat,
+medcb-flag-layer,function,Support\MED3DFittings.lsp,779,N,,Y,docs/lisp/MED3DFittings.md#medcb-flag-layer,
+medcb-frac,function,Support\MED3DFittings.lsp,158,N,,Y,docs/lisp/MED3DFittings.md#medcb-frac,
+medcb-geom,function,Support\MED3DFittings.lsp,338,N,,Y,docs/lisp/MED3DFittings.md#medcb-geom,
+medcb-geom-bub,function,Support\MED3DFittings.lsp,481,N,,Y,docs/lisp/MED3DFittings.md#medcb-geom-bub,
+medcb-geom-for,function,Support\MED3DFittings.lsp,704,N,,Y,docs/lisp/MED3DFittings.md#medcb-geom-for,
+medcb-geom-gua,function,Support\MED3DFittings.lsp,444,N,,Y,docs/lisp/MED3DFittings.md#medcb-geom-gua,
+medcb-geom-hub,function,Support\MED3DFittings.lsp,627,N,,Y,docs/lisp/MED3DFittings.md#medcb-geom-hub,
+medcb-geom-lby,function,Support\MED3DFittings.lsp,410,Y,docs/3d.md,Y,docs/lisp/MED3DFittings.md#medcb-geom-lby,
+medcb-geom-ph,function,Support\MED3DFittings.lsp,660,N,,Y,docs/lisp/MED3DFittings.md#medcb-geom-ph,
+medcb-geom-plug,function,Support\MED3DFittings.lsp,614,N,,Y,docs/lisp/MED3DFittings.md#medcb-geom-plug,
+medcb-geom-re,function,Support\MED3DFittings.lsp,647,Y,docs/3d.md,Y,docs/lisp/MED3DFittings.md#medcb-geom-re,
+medcb-geom-seal,function,Support\MED3DFittings.lsp,544,N,,Y,docs/lisp/MED3DFittings.md#medcb-geom-seal,
+medcb-geom-uny,function,Support\MED3DFittings.lsp,498,N,,Y,docs/lisp/MED3DFittings.md#medcb-geom-uny,
+medcb-geom-wh,function,Support\MED3DFittings.lsp,351,N,,Y,docs/lisp/MED3DFittings.md#medcb-geom-wh,
+medcb-geom-width,function,Support\MED3DFittings.lsp,1071,N,,Y,docs/lisp/MED3DFittings.md#medcb-geom-width,
+medcb-geom-xrange,function,Support\MED3DFittings.lsp,1061,N,,Y,docs/lisp/MED3DFittings.md#medcb-geom-xrange,
+medcb-get,function,Support\MED3DFittings.lsp,137,N,,Y,docs/lisp/MED3DFittings.md#medcb-get,
+medcb-gua-ref,function,Support\MED3DFittings.lsp,442,N,,Y,docs/lisp/MED3DFittings.md#medcb-gua-ref,
+medcb-h,function,Support\MED3DFittings.lsp,396,N,,Y,docs/lisp/MED3DFittings.md#medcb-h,
+medcb-hod2,function,Support\MED3DFittings.lsp,400,N,,Y,docs/lisp/MED3DFittings.md#medcb-hod2,
+medcb-hub,function,Support\MED3DFittings.lsp,330,N,,Y,docs/lisp/MED3DFittings.md#medcb-hub,
+medcb-hub-tols,function,Support\MED3DFittings.lsp,1376,N,,Y,docs/lisp/MED3DFittings.md#medcb-hub-tols,
+medcb-hubs,function,Support\MED3DFittings.lsp,708,Y,docs/3d.md,Y,docs/lisp/MED3DFittings.md#medcb-hubs,
+medcb-index,function,Support\MED3DFittings.lsp,222,N,,Y,docs/lisp/MED3DFittings.md#medcb-index,
+medcb-insert,function,Support\MED3DFittings.lsp,899,Y,docs/3d.md,Y,docs/lisp/MED3DFittings.md#medcb-insert,
+medcb-insert-block,function,Support\MED3DFittings.lsp,908,N,,Y,docs/lisp/MED3DFittings.md#medcb-insert-block,
+medcb-int,function,Support\MED3DFittings.lsp,1172,N,,Y,docs/lisp/MED3DFittings.md#medcb-int,
+medcb-join,function,Support\MED3DFittings.lsp,922,N,,Y,docs/lisp/MED3DFittings.md#medcb-join,
+medcb-key-parse,function,Support\MED3DFittings.lsp,1190,N,,Y,docs/lisp/MED3DFittings.md#medcb-key-parse,
+medcb-keys-csv,function,Support\MED3DFittings.lsp,1238,N,,Y,docs/lisp/MED3DFittings.md#medcb-keys-csv,
+medcb-legs,function,Support\MED3DFittings.lsp,1303,N,,Y,docs/lisp/MED3DFittings.md#medcb-legs,
+medcb-load-data,function,Support\MED3DFittings.lsp,299,N,,Y,docs/lisp/MED3DFittings.md#medcb-load-data,
+medcb-mirror-x,function,Support\MED3DFittings.lsp,606,N,,Y,docs/lisp/MED3DFittings.md#medcb-mirror-x,
+medcb-mirrored-p,function,Support\MED3DFittings.lsp,1339,N,,Y,docs/lisp/MED3DFittings.md#medcb-mirrored-p,
+medcb-mx,function,Support\MED3DFittings.lsp,605,N,,Y,docs/lisp/MED3DFittings.md#medcb-mx,
+medcb-name-shape,function,Support\MED3DFittings.lsp,817,N,,Y,docs/lisp/MED3DFittings.md#medcb-name-shape,
+medcb-need,function,Support\MED3DFittings.lsp,197,N,,Y,docs/lisp/MED3DFittings.md#medcb-need,
+medcb-num,function,Support\MED3DFittings.lsp,138,N,,Y,docs/lisp/MED3DFittings.md#medcb-num,
+medcb-ok,function,Support\MED3DFittings.lsp,712,N,,Y,docs/lisp/MED3DFittings.md#medcb-ok,
+medcb-orient,function,Support\MED3DFittings.lsp,745,N,,Y,docs/lisp/MED3DFittings.md#medcb-orient,
+medcb-p,function,Support\MED3DFittings.lsp,395,N,,Y,docs/lisp/MED3DFittings.md#medcb-p,
+medcb-pad2,function,Support\MED3DFittings.lsp,141,N,,Y,docs/lisp/MED3DFittings.md#medcb-pad2,
+medcb-parse-size,function,Support\MED3DFittings.lsp,163,N,,Y,docs/lisp/MED3DFittings.md#medcb-parse-size,
+medcb-ph-name,function,Support\MED3DFittings.lsp,155,N,,Y,docs/lisp/MED3DFittings.md#medcb-ph-name,
+medcb-place-all,function,Support\MED3DFittings.lsp,1560,Y,docs/3d.md,Y,docs/lisp/MED3DFittings.md#medcb-place-all,
+medcb-prims-ext,function,Support\MED3DFittings.lsp,1048,N,,Y,docs/lisp/MED3DFittings.md#medcb-prims-ext,
+medcb-prims-geom,function,Support\MED3DFittings.lsp,397,N,,Y,docs/lisp/MED3DFittings.md#medcb-prims-geom,
+medcb-read-csv,function,Support\MED3DFittings.lsp,237,N,,Y,docs/lisp/MED3DFittings.md#medcb-read-csv,
+medcb-read-db,function,Support\MED3DFittings.lsp,289,N,,Y,docs/lisp/MED3DFittings.md#medcb-read-db,
+medcb-read-keys-csv,function,Support\MED3DFittings.lsp,1209,N,,Y,docs/lisp/MED3DFittings.md#medcb-read-keys-csv,
+medcb-real-geom,function,Support\MED3DFittings.lsp,678,N,,Y,docs/lisp/MED3DFittings.md#medcb-real-geom,
+medcb-resolve-code,function,Support\MED3DFittings.lsp,1245,N,,Y,docs/lisp/MED3DFittings.md#medcb-resolve-code,
+medcb-rim-rmax,function,Support\MED3DFittings.lsp,539,N,,Y,docs/lisp/MED3DFittings.md#medcb-rim-rmax,
+medcb-row,function,Support\MED3DFittings.lsp,189,N,,Y,docs/lisp/MED3DFittings.md#medcb-row,
+medcb-row-key,function,Support\MED3DFittings.lsp,195,N,,Y,docs/lisp/MED3DFittings.md#medcb-row-key,
+medcb-row-ok,function,Support\MED3DFittings.lsp,202,N,,Y,docs/lisp/MED3DFittings.md#medcb-row-ok,
+medcb-say,function,Support\MED3DFittings.lsp,955,N,,Y,docs/lisp/MED3DFittings.md#medcb-say,
+medcb-score,function,Support\MED3DFittings.lsp,1284,N,,Y,docs/lisp/MED3DFittings.md#medcb-score,
+medcb-seed-path,function,Support\MED3DFittings.lsp,228,N,,Y,docs/lisp/MED3DFittings.md#medcb-seed-path,
+medcb-seg-param,function,Support\MED3DFittings.lsp,1295,N,,Y,docs/lisp/MED3DFittings.md#medcb-seg-param,
+medcb-shape-forms,function,Support\MED3DFittings.lsp,932,N,,Y,docs/lisp/MED3DFittings.md#medcb-shape-forms,
+medcb-size-down,function,Support\MED3DFittings.lsp,182,N,,Y,docs/lisp/MED3DFittings.md#medcb-size-down,
+medcb-size-tag,function,Support\MED3DFittings.lsp,145,N,,Y,docs/lisp/MED3DFittings.md#medcb-size-tag,
+medcb-size-text,function,Support\MED3DFittings.lsp,172,N,,Y,docs/lisp/MED3DFittings.md#medcb-size-text,
+medcb-split,function,Support\MED3DFittings.lsp,1176,N,,Y,docs/lisp/MED3DFittings.md#medcb-split,
+medcb-sql,function,Support\MED3DFittings.lsp,258,N,,Y,docs/lisp/MED3DFittings.md#medcb-sql,
+medcb-stale-rename,function,Support\MED3DFittings.lsp,867,N,,Y,docs/lisp/MED3DFittings.md#medcb-stale-rename,
+medcb-str,function,Support\MED3DFittings.lsp,1175,N,,Y,docs/lisp/MED3DFittings.md#medcb-str,
+medcb-subtract,function,Support\MED3DFittings.lsp,716,N,,Y,docs/lisp/MED3DFittings.md#medcb-subtract,
+medcb-suffix-for,function,Support\MED3DFittings.lsp,827,N,,Y,docs/lisp/MED3DFittings.md#medcb-suffix-for,
+medcb-sz1,function,Support\MED3DFittings.lsp,152,N,,Y,docs/lisp/MED3DFittings.md#medcb-sz1,
+medcb-tag-for,function,Support\MED3DFittings.lsp,825,N,,Y,docs/lisp/MED3DFittings.md#medcb-tag-for,
+medcb-text,function,Support\MED3DFittings.lsp,988,N,,Y,docs/lisp/MED3DFittings.md#medcb-text,
+medcb-tilt,function,Support\MED3DFittings.lsp,907,N,,Y,docs/lisp/MED3DFittings.md#medcb-tilt,
+medcb-union,function,Support\MED3DFittings.lsp,713,N,,Y,docs/lisp/MED3DFittings.md#medcb-union,
+medcb-unit,function,Support\MED3DFittings.lsp,1165,N,,Y,docs/lisp/MED3DFittings.md#medcb-unit,
+medcb-v+,function,Support\MED3DFittings.lsp,135,N,,Y,docs/lisp/MED3DFittings.md#medcb-v,
+medcb-vert-data,function,Support\MED3DFittings.lsp,1527,N,,Y,docs/lisp/MED3DFittings.md#medcb-vert-data,
+medcb-vert-leg,function,Support\MED3DFittings.lsp,1535,N,,Y,docs/lisp/MED3DFittings.md#medcb-vert-leg,
+medcb-vx,function,Support\MED3DFittings.lsp,136,N,,Y,docs/lisp/MED3DFittings.md#medcb-vx,
+medcb-wcs-hubs,function,Support\MED3DFittings.lsp,1278,N,,Y,docs/lisp/MED3DFittings.md#medcb-wcs-hubs,
+medcb-xdir,function,Support\MED3DFittings.lsp,1272,N,,Y,docs/lisp/MED3DFittings.md#medcb-xdir,
+medchg,function,Support\medchg.lsp,8,Y,docs/tagging.md docs/medchg.md docs/medrecords.md docs/commands.md docs/conduit.md docs/install.md docs/3d-fitting-matrix.md docs/utilities.md docs/README.md docs/debug.md README.md,Y,docs/lisp/medchg.md#medchg,
+MEDConvertTrayElbowTo3D,function,Support\MED3DTrayFunctions.lsp,313,N,,Y,docs/lisp/MED3DTrayFunctions.md#medconverttrayelbowto3d,
+MEDConvertTrayFittingsTo3D,function,Support\MED3DTrayFunctions.lsp,528,N,,Y,docs/lisp/MED3DTrayFunctions.md#medconverttrayfittingsto3d,
+MEDConvertTrayLRReducerTo3D,function,Support\MED3DTrayFunctions.lsp,849,N,,Y,docs/lisp/MED3DTrayFunctions.md#medconverttraylrreducerto3d,
+MEDConvertTrayReducerTo3D,function,Support\MED3DTrayFunctions.lsp,823,N,,Y,docs/lisp/MED3DTrayFunctions.md#medconverttrayreducerto3d,
+MEDConvertTrayTeeTo3D,function,Support\MED3DTrayFunctions.lsp,650,N,,Y,docs/lisp/MED3DTrayFunctions.md#medconverttrayteeto3d,
+MEDConvertTrayTo3D,function,Support\MED3DTrayFunctions.lsp,24,N,,Y,docs/lisp/MED3DTrayFunctions.md#medconverttrayto3d,
+MEDCopyEntity,function,Support\MED3DTrayFunctions.lsp,566,N,,Y,docs/lisp/MED3DTrayFunctions.md#medcopyentity,no references found (possibly dead)
+medcount,function,Support\MEDFunctions.lsp,1736,N,,Y,docs/lisp/MEDFunctions.md#medcount,
+MEDDatabaseRestore,function,Support\MEDCommands.lsp,955,N,,Y,docs/lisp/MEDCommands.md#meddatabaserestore,
+MEDDO,function,Support\CSharpAdd.lsp,56,N,,Y,docs/lisp/CSharpAdd.md#meddo,
+MEDDraw3DTray,function,Support\MED3DTrayFunctions.lsp,7,N,,Y,docs/lisp/MED3DTrayFunctions.md#meddraw3dtray,
+MEDDraw3DTrayFit,function,Support\MED3DTrayFunctions.lsp,335,N,,Y,docs/lisp/MED3DTrayFunctions.md#meddraw3dtrayfit,
+MEDDraw3DTrayLeftOrRightReducer,function,Support\MED3DTrayFunctions.lsp,761,N,,Y,docs/lisp/MED3DTrayFunctions.md#meddraw3dtrayleftorrightreducer,
+MEDDraw3DTrayStraightReducer,function,Support\MED3DTrayFunctions.lsp,723,N,,Y,docs/lisp/MED3DTrayFunctions.md#meddraw3dtraystraightreducer,
+MEDDraw3DTrayTeeCrossFit,function,Support\MED3DTrayFunctions.lsp,579,N,,Y,docs/lisp/MED3DTrayFunctions.md#meddraw3dtrayteecrossfit,
+MEDFixForExcelParse,function,Support\MEDCommands.lsp,895,N,,Y,docs/lisp/MEDCommands.md#medfixforexcelparse,
+MEDGetCurrentOCS,function,Support\MEDFunctions.lsp,246,N,,Y,docs/lisp/MEDFunctions.md#medgetcurrentocs,
+MEDGetCurrentUCS,function,Support\MEDFunctions.lsp,243,N,,Y,docs/lisp/MEDFunctions.md#medgetcurrentucs,no references found (possibly dead)
+MEDGetLayerColor,function,Support\MEDFunctions.lsp,128,N,,Y,docs/lisp/MEDFunctions.md#medgetlayercolor,
+MEDGetProjectNumber,function,Support\MEDVariables.lsp,76,N,,Y,docs/lisp/MEDVariables.md#medgetprojectnumber,no references found (possibly dead)
+MEDGETSYM,function,Support\CSharpAdd.lsp,54,N,,Y,docs/lisp/CSharpAdd.md#medgetsym,no references found (possibly dead)
+MEDGetTrayTag,function,Support\MEDCableTray.lsp,29,N,,Y,docs/lisp/MEDCableTray.md#medgettraytag,
+medleader,function,Support\MEDFunctions.lsp,907,N,,Y,docs/lisp/MEDFunctions.md#medleader,
+medlistnext,function,Support\MEDCommands.lsp,665,N,,Y,docs/lisp/MEDCommands.md#medlistnext,
+medlistprev,function,Support\MEDCommands.lsp,654,N,,Y,docs/lisp/MEDCommands.md#medlistprev,
+medMakeLayer,function,Support\MEDFunctions.lsp,74,N,,Y,docs/lisp/MEDFunctions.md#medmakelayer,
+MEDMakeTextStyle,function,Support\MEDTextStyles.lsp,12,N,,Y,docs/lisp/MEDTextStyles.md#medmaketextstyle,
+MEDMakeTray,function,Support\MEDCableTray.lsp,1726,N,,Y,docs/lisp/MEDCableTray.md#medmaketray,
+MEDMakeTrayFitOutline,function,Support\MEDCableTray.lsp,528,N,,Y,docs/lisp/MEDCableTray.md#medmaketrayfitoutline,no references found (possibly dead)
+medmenuset,function,Support\med.mnl,25,N,,Y,docs/lisp/med-mnl.md#medmenuset,
+MEDMTray90,function,Support\MEDCableTray.lsp,162,N,,Y,docs/lisp/MEDCableTray.md#medmtray90,
+MEDNew3DSolidsAfter,function,Support\MED3DTrayFunctions.lsp,406,N,,Y,docs/lisp/MED3DTrayFunctions.md#mednew3dsolidsafter,
+MEDPlineMake,function,Support\MEDFunctions.lsp,292,N,,Y,docs/lisp/MEDFunctions.md#medplinemake,
+MEDProcessSQLStatement,function,Support\MEDDatabase.lsp,27,N,,Y,docs/lisp/MEDDatabase.md#medprocesssqlstatement,
+MEDPromptForVerticalTrayDistance,function,Support\MEDCableTray.lsp,1796,N,,Y,docs/lisp/MEDCableTray.md#medpromptforverticaltraydistance,
+MEDRebuildMedPropsJsonBeside,function,Support\MEDFunctions.lsp,2241,N,,Y,docs/lisp/MEDFunctions.md#medrebuildmedpropsjsonbeside,
+MEDRemapEQCodeToProjectCode,function,Support\MEDFunctions.lsp,3065,Y,docs/database.md,Y,docs/lisp/MEDFunctions.md#medremapeqcodetoprojectcode,
+MEDremoveitemfromlist,function,Support\MEDFunctions.lsp,3052,N,,Y,docs/lisp/MEDFunctions.md#medremoveitemfromlist,no references found (possibly dead)
+MEDSendEntityDataToBOM,function,Support\MEDFunctions.lsp,356,N,,Y,docs/lisp/MEDFunctions.md#medsendentitydatatobom,duplicate: also defined in Support\MEDFunctions.lsp:524; replaced at load time by Support\MEDFunctions.lsp:524
+MEDSendEntityDataToBOM,function,Support\MEDFunctions.lsp,524,N,,Y,docs/lisp/MEDFunctions.md#medsendentitydatatobom,duplicate: also defined in Support\MEDFunctions.lsp:356; this definition loads last and wins
+MEDSet3DTrayLayer,function,Support\MED3DTrayFunctions.lsp,386,N,,Y,docs/lisp/MED3DTrayFunctions.md#medset3dtraylayer,
+MEDSetMedProperties,function,Support\MEDFunctions.lsp,2210,N,,Y,docs/lisp/MEDFunctions.md#medsetmedproperties,
+MEDSETSYM,function,Support\CSharpAdd.lsp,55,N,,Y,docs/lisp/CSharpAdd.md#medsetsym,no references found (possibly dead)
+MEDSetTextStyleHeight,function,Support\MEDTextStyles.lsp,1,N,,Y,docs/lisp/MEDTextStyles.md#medsettextstyleheight,
+MEDSettings,function,Support\MEDFunctions.lsp,232,Y,docs/cable.md docs/commands.md docs/conduit.md docs/install.md docs/tray.md docs/detail-conduit.md docs/medsettings.md docs/debug.md README.md,Y,docs/lisp/MEDFunctions.md#medsettings,
+MEDSetTrayValues,function,Support\MEDCableTray.lsp,2,N,,Y,docs/lisp/MEDCableTray.md#medsettrayvalues,
+medsmlayer,function,Support\MEDFunctions.lsp,108,N,,Y,docs/lisp/MEDFunctions.md#medsmlayer,
+MEDStamp3DFromBom,function,Support\MEDFunctions.lsp,2272,Y,docs/3d.md,Y,docs/lisp/MEDFunctions.md#medstamp3dfrombom,
+MEDtitle,function,Support\medsetup.lsp,287,N,,Y,docs/lisp/medsetup.md#medtitle,
+MEDTransPointListToUCS,function,Support\MEDFunctions.lsp,261,N,,Y,docs/lisp/MEDFunctions.md#medtranspointlisttoucs,
+MEDTray,function,Support\MEDCableTray.lsp,52,N,,Y,docs/lisp/MEDCableTray.md#medtray,
+MEDTrayOutline,function,Support\MEDCableTray.lsp,69,N,,Y,docs/lisp/MEDCableTray.md#medtrayoutline,
+MEDUserStatus,function,Support\MEDDatabase.lsp,2,N,,Y,docs/lisp/MEDDatabase.md#meduserstatus,
+MEDverifyLayerColor,function,Support\MEDFunctions.lsp,139,N,,Y,docs/lisp/MEDFunctions.md#medverifylayercolor,
+MEDverifyLayerLinetype,function,Support\MEDFunctions.lsp,151,N,,Y,docs/lisp/MEDFunctions.md#medverifylayerlinetype,
+mk2lcon,function,Support\medcon.lsp,200,N,,Y,docs/lisp/medcon.md#mk2lcon,
+mk3dcon,function,Support\MED3DCON.lsp,23,N,,Y,docs/lisp/MED3DCON.md#mk3dcon,file not loaded by MEDCore
+mk3dconbend,function,Support\MED3DCON.lsp,249,N,,Y,docs/lisp/MED3DCON.md#mk3dconbend,file not loaded by MEDCore
+mk3dconvertical,function,Support\MED3DCON.lsp,222,N,,Y,docs/lisp/MED3DCON.md#mk3dconvertical,file not loaded by MEDCore
+mk3dvconbend,function,Support\MED3DCON.lsp,231,N,,Y,docs/lisp/MED3DCON.md#mk3dvconbend,file not loaded by MEDCore
+mk_str_len,function,Support\MEDFunctions.lsp,1411,N,,Y,docs/lisp/MEDFunctions.md#mk_str_len,
+mod_code,function,Support\medchg.lsp,269,N,,Y,docs/lisp/medchg.md#mod_code,
+mod_dist,function,Support\medchg.lsp,835,N,,Y,docs/lisp/medchg.md#mod_dist,
+mod_msr,function,Support\medchg.lsp,855,N,,Y,docs/lisp/medchg.md#mod_msr,
+mod_paperspace,function,Support\medsetup.lsp,184,N,,Y,docs/lisp/medsetup.md#mod_paperspace,
+mod_rtag,function,Support\medchg.lsp,823,N,,Y,docs/lisp/medchg.md#mod_rtag,
+mod_tag,function,Support\medchg.lsp,802,N,,Y,docs/lisp/medchg.md#mod_tag,
+motor,function,Support\QKEY.lsp,767,N,,Y,docs/lisp/QKEY.md#motor,
+move_attrib,function,Support\MEDFunctions.lsp,1594,N,,Y,docs/lisp/MEDFunctions.md#move_attrib,
+mparse,function,Support\MEDFunctions.lsp,1235,N,,Y,docs/lisp/MEDFunctions.md#mparse,
+mtray,function,Support\MEDCableTray.lsp,969,Y,docs/commands.md docs/conduit.md,Y,docs/lisp/MEDCableTray.md#mtray,
+mtrayfit,function,Support\medtray.lsp,870,N,,Y,docs/lisp/medtray.md#mtrayfit,
+newsz,function,Support\MEDFunctions.lsp,2930,N,,Y,docs/lisp/MEDFunctions.md#newsz,
+ntext,function,Support\medtext.lsp,436,N,,Y,docs/lisp/medtext.md#ntext,
+opposite_tray_endpt,function,Support\medtray.lsp,130,N,,Y,docs/lisp/medtray.md#opposite_tray_endpt,
+opt_eq_ins,function,Support\MEDFunctions.lsp,1433,Y,docs/database.md docs/detail.md,Y,docs/lisp/MEDFunctions.md#opt_eq_ins,
+pbreak,function,Support\medutil.lsp,213,N,,Y,docs/lisp/medutil.md#pbreak,
+pl_arc_info_from_buldge,function,Support\medtray.lsp,1230,N,,Y,docs/lisp/medtray.md#pl_arc_info_from_buldge,
+PlaceTextFromLeader,function,Support\MEDFunctions.lsp,983,N,,Y,docs/lisp/MEDFunctions.md#placetextfromleader,
+pmake,function,Support\medtray.lsp,721,N,,Y,docs/lisp/medtray.md#pmake,
+polylen,function,Support\MEDFunctions.lsp,224,N,,Y,docs/lisp/MEDFunctions.md#polylen,
+prc_alt_dpth,function,Support\medchg.lsp,225,N,,Y,docs/lisp/medchg.md#prc_alt_dpth,
+prc_detlist,function,Support\MEDFunctions.lsp,1367,N,,Y,docs/lisp/MEDFunctions.md#prc_detlist,
+prc_list,function,Support\medchg.lsp,166,N,,Y,docs/lisp/medchg.md#prc_list,
+prc_size,function,Support\medchg.lsp,188,N,,Y,docs/lisp/medchg.md#prc_size,
+ProcessSQLStatement,function,Support\MEDDatabase.lsp,38,N,,Y,docs/lisp/MEDDatabase.md#processsqlstatement,
+qt,function,Support\QKEY.lsp,1425,N,,Y,docs/lisp/QKEY.md#qt,
+refitt_ins,function,Support\medinser.lsp,431,N,,Y,docs/lisp/medinser.md#refitt_ins,
+retr_size_tag,function,Support\MEDFunctions.lsp,2550,N,,Y,docs/lisp/MEDFunctions.md#retr_size_tag,
+S::STARTUP,function,Support\CSharpAdd.lsp,48,N,,Y,docs/lisp/CSharpAdd.md#sstartup,
+scale_for,function,Support\medsetup.lsp,11,N,,Y,docs/lisp/medsetup.md#scale_for,
+sel_att_ent,function,Support\QKEY.lsp,1280,N,,Y,docs/lisp/QKEY.md#sel_att_ent,
+select_detail,function,Support\meddetl.lsp,52,N,,Y,docs/lisp/meddetl.md#select_detail,
+select_title,function,Support\medsetup.lsp,62,N,,Y,docs/lisp/medsetup.md#select_title,
+set_detail,function,Support\meddetl.lsp,82,N,,Y,docs/lisp/meddetl.md#set_detail,
+setblk,function,Support\medsetup.lsp,279,N,,Y,docs/lisp/medsetup.md#setblk,no references found (possibly dead)
+setblkins,function,Support\medinser.lsp,2,Y,docs/3d-fitting-matrix.md,Y,docs/lisp/medinser.md#setblkins,
+SetDimstyleVariable,function,Support\MEDDim.lsp,29,N,,Y,docs/lisp/MEDDim.md#setdimstylevariable,
+setdlg_vals,function,Support\medchg.lsp,544,N,,Y,docs/lisp/medchg.md#setdlg_vals,
+SetLayerLineweight,function,Support\MEDFunctions.lsp,57,N,,Y,docs/lisp/MEDFunctions.md#setlayerlineweight,
+setlim,function,Support\medsetup.lsp,324,Y,docs/setup.md docs/commands.md,Y,docs/lisp/medsetup.md#setlim,
+setmdltiles,function,Support\MEDCommands.lsp,676,N,,Y,docs/lisp/MEDCommands.md#setmdltiles,
+setmedval,function,Support\MEDFunctions.lsp,3032,N,,Y,docs/lisp/MEDFunctions.md#setmedval,no references found (possibly dead)
+sets,function,Support\medtext.lsp,477,Y,docs/cable.md,Y,docs/lisp/medtext.md#sets,
+setsize_lst,function,Support\medchg.lsp,1097,N,,Y,docs/lisp/medchg.md#setsize_lst,
+settmpsc,function,Support\medsetup.lsp,39,N,,Y,docs/lisp/medsetup.md#settmpsc,
+settog,function,Support\MEDFunctions.lsp,2946,N,,Y,docs/lisp/MEDFunctions.md#settog,no references found (possibly dead)
+ShowMEDListData,function,Support\MEDCommands.lsp,51,N,,Y,docs/lisp/MEDCommands.md#showmedlistdata,
+smlayer,function,Support\MEDFunctions.lsp,166,N,,Y,docs/lisp/MEDFunctions.md#smlayer,
+snut,function,Support\medutil.lsp,64,N,,Y,docs/lisp/medutil.md#snut,no references found (possibly dead); TODO: confirm with Clint
+subst_txt,function,Support\MEDFunctions.lsp,1512,N,,Y,docs/lisp/MEDFunctions.md#subst_txt,
+ThreeDeeConduitDriver,function,Support\MED3DCON.lsp,306,N,,Y,docs/lisp/MED3DCON.md#threedeeconduitdriver,file not loaded by MEDCore
+tjupd,function,Support\medtext.lsp,614,N,,Y,docs/lisp/medtext.md#tjupd,
+toggle,function,Support\MEDFunctions.lsp,2528,N,,Y,docs/lisp/MEDFunctions.md#toggle,
+tray_brk_rot,function,Support\medtray.lsp,333,N,,Y,docs/lisp/medtray.md#tray_brk_rot,
+trayang,function,Support\MEDCableTray.lsp,408,N,,Y,docs/lisp/MEDCableTray.md#trayang,
+traychck,function,Support\medtray.lsp,458,N,,Y,docs/lisp/medtray.md#traychck,
+trayepg_hd,function,Support\QKEY.lsp,300,N,,Y,docs/lisp/QKEY.md#trayepg_hd,
+trayfit,function,Support\QKEY.lsp,1069,N,,Y,docs/lisp/QKEY.md#trayfit,
+traylrre,function,Support\MEDCableTray.lsp,912,N,,Y,docs/lisp/MEDCableTray.md#traylrre,
+trayoffitt,function,Support\MEDCableTray.lsp,1177,N,,Y,docs/lisp/MEDCableTray.md#trayoffitt,
+trayupdown,function,Support\MEDCableTray.lsp,1813,N,,Y,docs/lisp/MEDCableTray.md#trayupdown,
+tryupdn,function,Support\medtray.lsp,569,N,,Y,docs/lisp/medtray.md#tryupdn,no references found (possibly dead)
+typstrins,function,Support\MEDFunctions.lsp,1422,N,,Y,docs/lisp/MEDFunctions.md#typstrins,
+upd_delete,function,Support\medchg.lsp,1081,N,,Y,docs/lisp/medchg.md#upd_delete,
+upd_detaglst,function,Support\MEDFunctions.lsp,1386,N,,Y,docs/lisp/MEDFunctions.md#upd_detaglst,
+upd_dlg,function,Support\medchg.lsp,559,N,,Y,docs/lisp/medchg.md#upd_dlg,
+upd_tag_list,function,Support\medchg.lsp,876,N,,Y,docs/lisp/medchg.md#upd_tag_list,
+update,function,Support\medtext.lsp,426,N,,Y,docs/lisp/medtext.md#update,
+verify_list,function,Support\MEDFunctions.lsp,1489,N,,Y,docs/lisp/MEDFunctions.md#verify_list,
+verifyLinetypeLoaded,function,Support\MEDFunctions.lsp,35,N,,Y,docs/lisp/MEDFunctions.md#verifylinetypeloaded,
+VerticalConduitDriver,function,Support\MED3DCON.lsp,154,N,,Y,docs/lisp/MED3DCON.md#verticalconduitdriver,file not loaded by MEDCore; no references found (possibly dead)
+vtrayfitsel,function,Support\medtray.lsp,555,N,,Y,docs/lisp/medtray.md#vtrayfitsel,no references found (possibly dead)
+vtrayxdataget,function,Support\MEDFunctions.lsp,1019,N,,Y,docs/lisp/MEDFunctions.md#vtrayxdataget,
+xd_apps,function,Support\MEDFunctions.lsp,2174,N,,Y,docs/lisp/MEDFunctions.md#xd_apps,
+xdatadd,function,Support\MEDFunctions.lsp,2199,N,,Y,docs/lisp/MEDFunctions.md#xdatadd,
+xdataget,function,Support\MEDFunctions.lsp,708,N,,Y,docs/lisp/MEDFunctions.md#xdataget,duplicate: also defined in Support\MEDFunctions.lsp:2104; replaced at load time by Support\MEDFunctions.lsp:2104
+xdataget,function,Support\MEDFunctions.lsp,2104,N,,Y,docs/lisp/MEDFunctions.md#xdataget,duplicate: also defined in Support\MEDFunctions.lsp:708; this definition loads last and wins
+xdatappend,function,Support\MEDFunctions.lsp,1725,N,,Y,docs/lisp/MEDFunctions.md#xdatappend,
+xdr2line,function,Support\MEDFunctions.lsp,1964,N,,Y,docs/lisp/MEDFunctions.md#xdr2line,
+xdrtray,function,Support\MEDCableTray.lsp,137,N,,Y,docs/lisp/MEDCableTray.md#xdrtray,duplicate: also defined in Support\medtray.lsp:263; this definition loads last and wins
+xdrtray,function,Support\medtray.lsp,263,N,,Y,docs/lisp/medtray.md#xdrtray,duplicate: also defined in Support\MEDCableTray.lsp:137; replaced at load time by Support\MEDCableTray.lsp:137
+xdstrip,function,Support\MEDFunctions.lsp,1999,N,,Y,docs/lisp/MEDFunctions.md#xdstrip,
+CABLEPALETTE,.NET,src\MED-DotNet\MED-DotNet\MedCablePalette.cs,13,Y,docs/cable.md docs/commands.md docs/medsettings.md docs/README.md docs/debug.md,Y,docs/command-reference.md#cablepalette,command
+CABLESET,.NET,src\MED-DotNet\MED-DotNet\MedCablePalette.cs,20,Y,docs/cable.md docs/commands.md docs/README.md docs/debug.md,Y,docs/command-reference.md#cableset,command
+MEDCABLE,.NET,src\MED-DotNet\MED-DotNet\MedCablePalette.cs,27,Y,docs/cable.md docs/commands.md docs/install.md docs/README.md docs/debug.md README.md,Y,docs/command-reference.md#medcable,command
+MED-CableApplyLayer,.NET,src\MED-DotNet\MED-DotNet\MedCablePalette.cs,34,Y,docs/debug.md,Y,docs/lisp-reference.md#net-lisp-functions-med-dotnetdll,lisp function; previously listed by name only
+MEDDEBUG,.NET,src\MED-DotNet\MED-DotNet\MedDebug.cs,364,Y,docs/3d.md docs/debug.md,Y,docs/command-reference.md#meddebug,command
+MED-DEBUG-P,.NET,src\MED-DotNet\MED-DotNet\MedDebug.cs,408,Y,docs/debug.md,Y,docs/lisp-reference.md#net-lisp-functions-med-dotnetdll,lisp function
+MED-DEBUG-LEVEL,.NET,src\MED-DotNet\MED-DotNet\MedDebug.cs,415,Y,docs/debug.md,Y,docs/lisp-reference.md#net-lisp-functions-med-dotnetdll,lisp function
+MED-DEBUG-LOG,.NET,src\MED-DotNet\MED-DotNet\MedDebug.cs,422,Y,docs/debug.md,Y,docs/lisp-reference.md#net-lisp-functions-med-dotnetdll,lisp function
+MED-SetMedProperties,.NET,src\MED-DotNet\MED-DotNet\MedPropertiesLisp.cs,20,Y,docs/debug.md,Y,docs/lisp-reference.md#net-lisp-functions-med-dotnetdll,lisp function; previously listed by name only
+MED-UpsertMedPropertiesJson,.NET,src\MED-DotNet\MED-DotNet\MedPropertiesLisp.cs,61,Y,docs/debug.md,Y,docs/lisp-reference.md#net-lisp-functions-med-dotnetdll,lisp function; previously listed by name only
+MED-RebuildMedPropertiesJson,.NET,src\MED-DotNet\MED-DotNet\MedPropertiesLisp.cs,99,Y,docs/debug.md,Y,docs/lisp-reference.md#net-lisp-functions-med-dotnetdll,lisp function; previously listed by name only
+MED-RebuildMedPropertiesJsonForFile,.NET,src\MED-DotNet\MED-DotNet\MedPropertiesLisp.cs,111,Y,docs/debug.md,Y,docs/lisp-reference.md#net-lisp-functions-med-dotnetdll,lisp function; previously listed by name only
+MEDREBUILDMEDPROPSJSON,.NET,src\MED-DotNet\MED-DotNet\MedPropertiesLisp.cs,129,Y,docs/debug.md,Y,docs/command-reference.md#medrebuildmedpropsjson,command; previously listed by name only
+MED-RebuildMedPropertiesJson,.NET,src\MED-DotNet\MED-DotNet\MedPropertiesLisp.cs,137,Y,docs/debug.md,Y,docs/command-reference.md#med-rebuildmedpropertiesjson,command; previously listed by name only
+MED-GetMedProperties,.NET,src\MED-DotNet\MED-DotNet\MedPropertiesLisp.cs,239,Y,docs/debug.md,Y,docs/lisp-reference.md#net-lisp-functions-med-dotnetdll,lisp function; previously listed by name only
+MEDCHG,.NET,src\MED-DotNet\MED-DotNet\MedPropertiesPalette.cs,16,Y,docs/tagging.md docs/cable.md docs/medchg.md docs/medrecords.md docs/commands.md docs/conduit.md docs/install.md docs/3d-fitting-matrix.md docs/tray.md docs/utilities.md docs/README.md docs/debug.md README.md src/MED-DotNet/README.md,Y,docs/command-reference.md#medchg,command
+MEDPROPERTIES,.NET,src\MED-DotNet\MED-DotNet\MedPropertiesPalette.cs,23,Y,docs/medchg.md docs/commands.md docs/3d.md docs/README.md docs/debug.md src/MED-DotNet/README.md,Y,docs/command-reference.md#medproperties,command
+MEDPROPS,.NET,src\MED-DotNet\MED-DotNet\MedPropertiesPalette.cs,30,Y,docs/medchg.md docs/commands.md docs/README.md docs/debug.md src/MED-DotNet/README.md,Y,docs/command-reference.md#medprops,command
+MEDRECORDS,.NET,src\MED-DotNet\MED-DotNet\MedPropertiesPalette.cs,37,Y,docs/medchg.md docs/medrecords.md docs/commands.md docs/README.md docs/debug.md docs/overview.md README.md src/MED-DotNet/README.md,Y,docs/command-reference.md#medrecords,command
+MEDXDEDIT,.NET,src\MED-DotNet\MED-DotNet\MedPropertiesPalette.cs,44,Y,docs/medrecords.md docs/commands.md docs/README.md docs/debug.md src/MED-DotNet/README.md,Y,docs/command-reference.md#medxdedit,command
+MEDSETTINGS,.NET,src\MED-DotNet\MED-DotNet\MedSettingsPalette.cs,12,Y,docs/tagging.md docs/cable.md docs/setup.md docs/commands.md docs/conduit.md docs/install.md docs/tray.md docs/utilities.md docs/detail-conduit.md docs/medsettings.md docs/README.md docs/debug.md docs/overview.md README.md,Y,docs/command-reference.md#medsettings,command
+MEDSET,.NET,src\MED-DotNet\MED-DotNet\MedSettingsPalette.cs,19,Y,docs/commands.md docs/medsettings.md docs/README.md docs/debug.md docs/overview.md,Y,docs/command-reference.md#medset,command
+MEDSHOWBOM,.NET,src\MED-DotNet\MED-DotNet\MedShowBomForm.cs,19,Y,docs/medshowbom.md docs/commands.md docs/install.md docs/database.md docs/README.md docs/debug.md docs/overview.md README.md,Y,docs/command-reference.md#medshowbom,command
+MEDSHOW,.NET,src\MED-DotNet\MED-DotNet\MedShowBomForm.cs,26,Y,docs/medshowbom.md docs/commands.md docs/README.md docs/debug.md,Y,docs/command-reference.md#medshow,command
+MEDSHOWSUM,.NET,src\MED-DotNet\MED-DotNet\MedShowBomForm.cs,33,Y,docs/medshowbom.md docs/commands.md docs/README.md docs/debug.md,Y,docs/command-reference.md#medshowsum,command
+MEDTYPE,.NET,src\MED-DotNet\MED-DotNet\MedTypeForm.cs,41,Y,docs/cable.md docs/setup.md docs/medchg.md docs/medrecords.md docs/commands.md docs/conduit.md docs/install.md docs/3d.md docs/database.md docs/tray.md docs/medtype.md docs/detail.md docs/README.md docs/debug.md docs/overview.md README.md,Y,docs/command-reference.md#medtype,command
+MEDTYPES,.NET,src\MED-DotNet\MED-DotNet\MedTypeForm.cs,55,Y,docs/commands.md docs/medtype.md docs/README.md docs/debug.md,Y,docs/command-reference.md#medtypes,command
+ProcessSQLStatementNET,.NET,src\MED-DotNet\MED-DotNet\PluginApp.cs,32,Y,docs/debug.md,Y,docs/lisp-reference.md#net-lisp-functions-med-dotnetdll,lisp function; registered twice in MED-DotNet (PluginApp.cs:32 and ProcessSQL.cs:185)
+ProcessSQLStatementNET,.NET,src\MED-DotNet\MED-DotNet\ProcessSQL.cs,185,Y,docs/debug.md,Y,docs/lisp-reference.md#net-lisp-functions-med-dotnetdll,lisp function; registered twice in MED-DotNet (PluginApp.cs:32 and ProcessSQL.cs:185)
+MEDPropertiesApp,.NET (Navisworks),src\MED-Navisworks\MED-Navisworks\MEDPropertiesAppPlugin.cs,11,N,,Y,docs/lisp-reference.md#net-lisp-functions-med-dotnetdll,plugin
+MEDPropertiesPlugin,.NET (Navisworks),src\MED-Navisworks\MED-Navisworks\MEDPropertiesDockPane.cs,9,N,,Y,docs/lisp-reference.md#net-lisp-functions-med-dotnetdll,plugin
+MEDPropertiesShow,.NET (Navisworks),src\MED-Navisworks\MED-Navisworks\MEDPropertiesShowCommand.cs,8,N,,Y,docs/lisp-reference.md#net-lisp-functions-med-dotnetdll,plugin
+ADDATRIB,menu macro,Support\med.cuix / MEDRibbon.cuix,,N,,Y,docs/command-reference.md#menu-macros-that-start-no-med-command,menu macro starts a command that does not exist: Only the helper `(addatrib ...)` exists; the command is `ATADD`.
+BOMSS,menu macro,Support\med.cuix / MEDRibbon.cuix,,N,,Y,docs/command-reference.md#menu-macros-that-start-no-med-command,"menu macro starts a command that does not exist: ""BOM Selection"" - no C:BOMSS anywhere. TODO: confirm with Clint (lost command or drop the item)."
+INST,menu macro,Support\med.cuix / MEDRibbon.cuix,,N,,Y,docs/command-reference.md#menu-macros-that-start-no-med-command,menu macro starts a command that does not exist: Details > Instrumentation. `INS` exists; `INST` does not. TODO: confirm with Clint.
+MOTOR,menu macro,Support\med.cuix / MEDRibbon.cuix,,N,,Y,docs/command-reference.md#menu-macros-that-start-no-med-command,menu macro starts a command that does not exist: Only the helper `(motor size vert)` exists; the command is `PLANMOTOR`.
+SHOW,menu macro,Support\med.cuix / MEDRibbon.cuix,,N,,Y,docs/command-reference.md#menu-macros-that-start-no-med-command,menu macro starts a command that does not exist: 2012 BOM browser; replaced by `MEDSHOWBOM`. The menu item does nothing.
+T0,menu macro,Support\med.cuix / MEDRibbon.cuix,,N,,Y,docs/command-reference.md#menu-macros-that-start-no-med-command,"menu macro starts a command that does not exist: Macro runs `(c:loadtxt)` then `T0`; no C:T0 is defined (T1-T3 / B1-B3 are, in MEDCommands.lsp). TODO: confirm with Clint."
+VCHAN90,menu macro,Support\med.cuix / MEDRibbon.cuix,,N,,Y,docs/command-reference.md#menu-macros-that-start-no-med-command,"menu macro starts a command that does not exist: Image menu ""Plan Vertical Fit""; the command is `CHANV90`."

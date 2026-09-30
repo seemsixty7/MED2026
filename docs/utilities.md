@@ -14,8 +14,7 @@ Text, layers, leaders, and quick keys. Ported from the 2012 appendix where the `
 | `CX` | Exchange old substring for new across a text selection |
 | `DD` | `DDEDIT` for TEXT / ATTDEF / MTEXT; `DDATTE` for INSERT |
 | `FD` | FileDate. Insert or update the `FILEINFO` block (name, scale, date, user). See [setup.md](setup.md) |
-| `LOADTXT` | Load a text file into the drawing |
-| `NCE` | Numeric / text helper in `medtext.lsp` |
+| `LOADTXT` | Create the MED text styles, then `BLDSTL`. Two definitions: `medtext.lsp` (styles from `MED_TXT_STYLE_MAP`) and `med.spc` (older B250 / T125 ... set); `med.spc` loads last, so its version runs |
 | `RT` | Replace several text entities with one new value (pick or type) |
 | `TJ` | Set justification and align to a common X |
 | `UPCASE` | Selection to uppercase |
@@ -28,7 +27,7 @@ Text, layers, leaders, and quick keys. Ported from the 2012 appendix where the `
 
 | Command | What it does |
 | --- | --- |
-| `IL` | Isolate: freeze every layer except the picked entity's (that layer becomes current). Thaw all: AutoCAD layer UI (2012 mentioned `LAT`; that qkey is not in Support) |
+| `IL` | Isolate: turn off every layer except the picked entity's (that layer becomes current); `UIL` turns them back on. (2012 mentioned `LAT`; that qkey is not in Support) |
 | `FL` | Freeze layer of a picked entity |
 | `SL` | Set current layer from a picked entity |
 | `CL` | Change a selection to the layer of a picked entity |
@@ -42,7 +41,7 @@ Text, layers, leaders, and quick keys. Ported from the 2012 appendix where the `
 | `TM` | Trim multiple to a border set |
 | `ST` | Stretch with crossing already chosen |
 | `BF` | Break: pick entity, then two points (`BREAK` first-point mode) |
-| `LB` / `LBK` / `LBREAK` | Line break helpers (terminal-strip drawings; break symbol at two points) |
+| `LB` / `LBREAK` | Line break helpers (terminal-strip drawings; break symbol at two points) |
 | `PLMAKE` | Lines → polylines |
 | `PW` / `PLWIDE` | Polyline width |
 | `PBOX` | Closed polyline box from two corners |
@@ -68,7 +67,7 @@ Text, layers, leaders, and quick keys. Ported from the 2012 appendix where the `
 
 `2LINE` / `3LINE` offset a polyline by `_2LINOFF` / `_3LINOFF`. `MEDLINE` is a plain polyline on the current MED linetype. `TSTRIP` draws a terminal strip and can chain into `CTEDIT`.
 
-Oneline and elementary **symbols** are CUI / slide libraries (`medwire1.slb`, `medwire2.slb`). The 2012 `MEDWIRING` menu switcher is gone. The 2012 oneline tutorial (stab, breaker, HOA, typical branch from an image menu) is toolbar training and was not ported. Place symbols from the ribbon; osnap the same way you would any block.
+Oneline and elementary **symbols** are CUI / slide libraries (`medwire1.slb`, `medwire2.slb`). The 2012 `MEDWIRING` / `MEDPLAN` / `MEDDETAIL` pull-down switchers are still in `med.mnl` (MED Main menu), but the ribbon makes them unnecessary. The 2012 oneline tutorial (stab, breaker, HOA, typical branch from an image menu) is toolbar training and was not ported. Place symbols from the ribbon; osnap the same way you would any block.
 
 ## ACAD.PGP
 
@@ -77,3 +76,5 @@ Oneline and elementary **symbols** are CUI / slide libraries (`medwire1.slb`, `m
 ## Defaults file
 
 `Support\med.spc` is the lisp default sheet (sizes, layers, title block, detail-bubble attribute names). Loaded by `MEDCore.lsp`. Session overrides: [MEDSETTINGS](medsettings.md).
+
+`NCE` (`medtext.lsp`) and `LBK` (`medutil.lsp`) are commented out in the source and are not commands. Every command here has a full entry in [command-reference.md](command-reference.md).

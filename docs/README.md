@@ -13,6 +13,7 @@ Author: Clint Moore, PMP. Consulting: [mooredesign.net](https://mooredesign.net)
 - [Database](database.md)
 - [Drawing setup](setup.md) — `SETUP`, scale sets
 - [Commands](commands.md) — full index, grouped like the 2012 guide
+- [Command reference](command-reference.md) — every command A-Z: prompts, menu, related
 
 ## Catalog, settings, properties (C# UI)
 
@@ -37,7 +38,7 @@ LISP in `Support` still routes raceway, places details, tags, and extracts BOM.
 - [Details / equipment](detail.md) — `DETAIL`, `LTG` / `GND` / `PWR` / `INS` / `TRY`, `DETAG`
 - [Detail conduit (two-line)](detail-conduit.md) — `2LCON`, away / toward / break
 - [Tagging](tagging.md) — `CTAG`, `TTAG`, balloons, section marks
-- [3D extract](3d.md) — `MAKE3DTRAY`, `ESOLID`
+- [3D extract](3d.md) — `MEDMAKE3D`, `MAKE3DTRAY`, `M3D` / `C3D`, conduit bodies (`MEDCBINS`); overview in [3D guide](3d-guide.md), symbol matrix in [3d-fitting-matrix.md](3d-fitting-matrix.md)
 - [Utilities](utilities.md) — text, layers, leaders, quick keys
 
 ## Screenshots
@@ -49,3 +50,10 @@ Real shots under `docs/images/`: `medshowbom.png`, `medproperties.png`, `medreco
 `D:\MEDConsolidate\MEDDocs\UserGuide.docx` is an empty 2013 Word manual template. Not used.
 
 These pages port the 2012 users guide (`MED 2012 Full Docs.doc`, 21 Mar 2013) where the workflow still matches MED2026. Toolbar-icon training, Access / `.dbf` / `MEDPACK`, and the MED 1.53 training-icon steps are obsolete and were not ported. When 2012 and 2026 disagree, 2026 wins.
+
+## Developers
+
+- [AutoLISP reference](lisp-reference.md) — every function by source file (signature, arguments, return, side effects)
+- [3D guide](3d-guide.md) — MEDMAKE3D workflow, body keys, seed data, block tags
+- [Documentation audit](doc-audit.csv) — every command and function with file, line and where it is documented
+- [Debug](debug.md), [updates](updates.md)

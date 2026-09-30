@@ -73,6 +73,10 @@
 (if (findfile "MED3DPath.lsp")
   (if (vl-catch-all-error-p (vl-catch-all-apply (quote load) (list "MED3DPath.lsp")))
     (princ "\nMED3DPath.lsp failed to load; APPLOAD it to see the error.")))
+;; MEDCBINS, MEDCBTEST: rigid conduit body blocks (defuns only; a load error must not stop MEDCore)
+(if (findfile "MED3DFittings.lsp")
+  (if (vl-catch-all-error-p (vl-catch-all-apply (quote load) (list "MED3DFittings.lsp")))
+    (princ "\nMED3DFittings.lsp failed to load; APPLOAD it to see the error.")))
 (load "med.spc")         ;Checked 02/05/2022
 
 (if (/= (getvar "USERR2") 0.0)

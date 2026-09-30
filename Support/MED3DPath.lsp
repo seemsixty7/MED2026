@@ -339,7 +339,7 @@
 ;; max(*MED3D-FIT-TOL*, od). r12: farther than *MED3D-FIT-TOL* only on the plan axis
 ;; of one of its hubs (within max(*MED3D-FIT-TOL*, od) of the ray from pt along the hub
 ;; direction, and within that hub's own radius when the hub carries one as 4th item) -
-;; the big break radii (1re 0.9125 x DIMSCALE on one side, union, hub) must not take a
+;; the big break radii (1re 0.09125 x DIMSCALE on one side, union, hub) must not take a
 ;; run that merely ends nearby.
 (defun med3d-fit-on-axis (f p od / dx dy ok hx hy hl al)
   (setq dx (- (car p) (car (cadr f))) dy (- (cadr p) (cadr (cadr f))))

@@ -311,9 +311,9 @@ SOURCES += [
     ("CH5F-UNY-2022", "Crouse-Hinds series UNF / UNL / UNY unions catalog page", "Eaton", "2022", URL_UNY, "",
      "printed p.81-82", "UNY iron: A overall length, B maximum diameter."),
     ("CH6F-EYS-2020", "Crouse-Hinds series EYS / EZS sealing fittings catalog page", "Eaton", "2020", URL_EYS, "",
-     "printed p.113-114", "EYS vertical: a overall length, b body diameter."),
+     "printed p.113-114", "EYS: a overall length, b body diameter, tr turning radius (conduit axis to the pour-boss face; 3-1/2 - 6 with cover removed) -> D_in."),
     ("CH6F-EYD", "Crouse-Hinds series EYD / EZD drain seals catalog page (specification sheet copy)", "Eaton", "n.d.", URL_EYD, "",
-     "EYD dimension table", "a overall length, b body diameter."),
+     "EYD dimension table", "a overall length, b body diameter, tr turning radius (conduit axis to the pour-boss face; 1-1/4 - 4 with cover removed) -> D_in."),
     ("CH-CP269-2006", "Crouse-Hinds Myers hubs (ST) and conduit hubs (MHUB), CP-269 / CP-270", "Cooper Crouse-Hinds", "2006",
      URL_HUB, "", "PDF p.3 (conduit hub MHUB), p.4 (Myers ST)",
      "Conduit hub: a body length, b body diameter, c bushed-nipple flange diameter, d flange thickness, x max. wall. "
@@ -336,8 +336,8 @@ LETTERS = {
     "LBY": [("a", "A"), ("b", "B")],
     "GUAL": [("a", "A"), ("b", "B"), ("c", "C"), ("d", "D"), ("open", "E"), ("e", "HubLen")],
     "UNY": [("len", "A"), ("dia", "B")],
-    "EYS": [("a", "A"), ("b", "B")],
-    "EYD": [("a", "A"), ("b", "B")],
+    "EYS": [("a", "A"), ("b", "B"), ("tr", "D")],
+    "EYD": [("a", "A"), ("b", "B"), ("tr", "D")],
     "HUB": [("a", "A"), ("b", "B"), ("c", "C"), ("d", "D"), ("x", "E")],
     "MYRHUB": [("A", "A"), ("B", "B"), ("C", "C"), ("D", "D"), ("K", "E")],
     "CPL": [("len", "A"), ("od", "B")],
@@ -432,11 +432,13 @@ CH EYS CH6F-EYS-2020 p.114
   cat   EYS1 | EYS2 | EYS3 | EYS4 | EYS5 | EYS6 | EYS7 | EYS8 | EYS9 | EYS10 | EYS012 | EYS014
   a     3 9/32 | 3 12/16 | 4 5/16 | 5 1/16 | 5 1/2 | 6 1/4 | 7 1/2 | 8 1/2 | 9 3/16 | 9 3/4 | 11 1/16 | 12 1/8
   b     1 1/4 | 1 1/2 | 1 3/4 | 2 3/16 | 2 7/16 | 3 | 3 1/2 | 4 1/4 | 4 3/4 | 5 1/4 | 6 1/2 | 7 5/8
+  tr    1 5/8 | 1 29/32 | 2 3/8 | 1 23/32 | 2 1/16 | 2 5/16 | 2 11/16 | 3 5/16 | 3 7/16 | 3 11/16 | 4 19/32 | 5 11/32
 CH EYD CH6F-EYD table
   size  1/2 | 3/4 | 1 | 1-1/4 | 1-1/2 | 2 | 2-1/2 | 3 | 3-1/2 | 4
   cat   EYD1 | EYD2 | EYD3 | EYD4 | EYD5 | EYD6 | EYD7 | EYD8 | EYD9 | EYD10
   a     3 9/32 | 3 11/16 | 4 5/16 | 5 1/16 | 5 1/2 | 6 1/4 | 7 1/2 | 8 1/2 | 9 3/16 | 9 3/4
   b     1 1/4 | 1 1/2 | 2 3/16 | 2 3/16 | 2 7/16 | 3 | 3 1/2 | 4 1/4 | 4 3/4 | 5 1/4
+  tr    1 5/8 | 1 29/32 | 2 3/8 | 1 27/32 | 2 1/16 | 2 5/16 | 2 11/16 | 3 5/16 | 3 7/16 | 3 1/2
 CH HUB CH-CP269-2006 PDF_p.3
   size  1/2 | 3/4 | 1 | 1-1/4 | 1-1/2 | 2 | 2-1/2 | 3 | 3-1/2 | 4
   cat   MHUB1 | MHUB2 | MHUB3 | MHUB4 | MHUB5 | MHUB6 | MHUB7 | MHUB8 | MHUB9 | MHUB10

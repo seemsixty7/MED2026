@@ -72,6 +72,7 @@ class Mock:
             'PRINC': self.princ, 'TRANS': lambda p, a, b, *d: list(p),
             'VLAX-VLA-OBJECT->ENAME': lambda o: o, 'GETVAR': lambda n: [1.0, 0.0, 0.0] if n.upper() == 'UCSXDIR' else 0,
             'ANGLE': lambda a, b: math.atan2(b[1] - a[1], b[0] - a[0]),
+            ':VLAX-TRUE': -1, ':VLAX-FALSE': 0,
             'MED-DOTNET-READY': lambda: True if self.sql is not None else None,
             'MEDPROCESSSQLSTATEMENT': lambda s: (self.queries.append(s), self.sql(s))[1],
         })
@@ -129,6 +130,15 @@ class Mock:
             elif m == 'ADDCYLINDER':
                 c, r, h = a
                 s = Obj('3DSOLID', obj, [('CYL', [c[0], c[1], c[2] - h / 2], [c[0], c[1], c[2] + h / 2], r)])
+            elif m == 'ADDLIGHTWEIGHTPOLYLINE':
+                xy = list(a[0]); s = Obj('LWPOLYLINE', obj); s.pts = [(xy[i], xy[i + 1]) for i in range(0, len(xy), 2)]
+            elif m == 'ADDREGION':
+                pl = a[0][0]
+                if not pl.props.get('Closed'): raise Exception('region: polyline not closed')
+                s = Obj('REGION', obj); s.pts = pl.pts; obj.ents.append(s); return [s]
+            elif m == 'ADDEXTRUDEDSOLID':
+                rg, h, taper = a
+                s = Obj('3DSOLID', obj, [('PTS', [[x, y, z] for z in (0.0, h) for x, y in rg.pts])])
             else: raise Exception('mock block: ' + m)
             obj.ents.append(s); return s
         if isinstance(obj, Obj) and obj.kind == '3DSOLID':
@@ -136,14 +146,18 @@ class Mock:
                 p1, p2, ang = a
                 check('rotate-about-origin', list(p1) == [0.0, 0.0, 0.0], f'{p1} {ang}')
                 f = lambda p: rot_axis(p, p2, ang)
-                obj.parts = [(p[0], f(p[1]), f(p[2]), p[3]) if p[0] == 'CYL' else p for p in obj.parts]; return None
+                obj.parts = [(p[0], f(p[1]), f(p[2]), p[3]) if p[0] == 'CYL' else ('PTS', [f(q) for q in p[1]]) if p[0] == 'PTS' else p
+                             for p in obj.parts]; return None
             if m == 'MOVE':
                 d = [y - x for x, y in zip(a[0], a[1])]
                 mv = lambda p: [x + y for x, y in zip(p, d)]
-                obj.parts = [(p[0], mv(p[1]), mv(p[2])) + tuple(p[3:]) for p in obj.parts]; return None
+                obj.parts = [('PTS', [mv(q) for q in p[1]]) if p[0] == 'PTS' else (p[0], mv(p[1]), mv(p[2])) + tuple(p[3:]) for p in obj.parts]; return None
             if m == 'BOOLEAN':
-                check('boolean-union', a[0] == 0, str(a[0]))
-                other = a[1]; obj.parts += other.parts; other.deleted = True; return None
+                check('boolean-union-or-subtract', a[0] in (0, 2), str(a[0]))
+                other = a[1]; other.deleted = True
+                if a[0] == 0: obj.parts += other.parts
+                else: obj.cuts = getattr(obj, 'cuts', []) + other.parts    # recorded, not in the bbox
+                return None
         raise Exception(f'mock: {obj} {meth}')
 
 def live(b): return [e for e in b.ents if not e.deleted]
@@ -151,6 +165,7 @@ def bbox(parts):
     lo, hi = [1e99] * 3, [-1e99] * 3
     for p in parts:
         if p[0] == 'BOX': pts = [p[1], p[2]]
+        elif p[0] == 'PTS': pts = p[1]
         else:
             a, b, r = p[1], p[2], p[3]
             ln = math.sqrt(sum((y - x) ** 2 for x, y in zip(a, b))) or 1.0

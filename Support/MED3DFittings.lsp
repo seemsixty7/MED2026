@@ -35,6 +35,8 @@
 ;;;   lineweight ByLayer; the INSERT carries the layer (MED_3DCONDUIT, placeholders
 ;;;   MED_3DFLAG). Definitions made by r5 or older (gray cover, red placeholder, old
 ;;;   LL / LR) are renamed <name>_PRE_R6 on first use and rebuilt; PURGE them later.
+;;;   r7: EYS / EYD were reworked, so only their blocks carry "MEDCB geom r7"
+;;;   (*MEDCB-SHAPE-TAGS*); an older EYS / EYD block is renamed <name>_PRE_R7.
 ;;;   Created only when not already in the drawing (an existing definition is never
 ;;;   redefined). No data -> placeholder box on layer MED_3DFLAG in a block named
 ;;;   <name>_PH (the real name stays free for when data is added).
@@ -51,8 +53,8 @@
 ;;;   r6: X / GUAX  RUN +X, RUN2 -X, BRANCH +Y, BRANCH2 -Y;  GUAL RUN +X, BRANCH +Y;
 ;;;     GUAT = T;  LBD / BLB / LBY = LB (LBY: round cover on the 45 deg corner toward
 ;;;     -X +Z);  BT = T;  BC = C;  BUB RUN +X, RUN2 -X (hub faces; the hubs slope 45 deg
-;;;     down to them);  UNY / EYS / EYD RUN +X, RUN2 -X (EYS pour hub +Z, EYD drain
-;;;     -Z);  PLGR / PLGS RUN +X (plug at -X);  HUB RUN +X, wall face at X = 0;
+;;;     down to them);  UNY / EYS / EYD RUN +X, RUN2 -X (EYS / EYD r7: bulge and pour
+;;;     hub +Z, leaning boss toward +X; EYD drain down toward +X);  PLGR / PLGS RUN +X (plug at -X);  HUB RUN +X, wall face at X = 0;
 ;;;     RE RUN +X (small size), RUN2 -X (large size).
 ;;;   LL / LR (r5, per Clint - r4 had them swapped): with the cover up (+Z) and the RUN
 ;;;   (end) hub east (+X), an LL's side hub points north (+Y) and an LR's south (-Y).
@@ -76,7 +78,7 @@
 
 (princ "\rLoading MED3DFittings...")
 (vl-load-com)
-(setq *MEDCB-VERSION* "2026-09-30 r6 (feature/3dpath)")
+(setq *MEDCB-VERSION* "2026-09-30 r7 (feature/3dpath)")
 ;; Block definitions carry this tag in their Comments; one made by an older revision
 ;; (no / another tag) is renamed <name>_PRE_R6 out of the way and rebuilt (existing
 ;; definitions are otherwise never redefined). r5: LL / LR hub convention (Clint);
@@ -84,6 +86,12 @@
 ;; block rule - r5 and older blocks had a gray colour-8 cover and a red placeholder).
 (setq *MEDCB-GEOM-TAG* "MEDCB geom r6")
 (setq *MEDCB-STALE-SUFFIX* "_PRE_R6")
+;; r7: per-shape geometry revisions. Only the shapes listed here were rebuilt, so only
+;; their blocks (and placeholders) get the newer tag; an EYS / EYD block tagged r6 is
+;; renamed <name>_PRE_R7 and rebuilt, every other r6 block stays as it is.
+;;   (shape tag stale-suffix)
+(setq *MEDCB-SHAPE-TAGS* '(("EYS" "MEDCB geom r7" "_PRE_R7")    ; r7 seal rework (Clint)
+                           ("EYD" "MEDCB geom r7" "_PRE_R7")))
 ;; r6: every modelled shape. Classic Condulet bodies (Form 7 / 8, Mark 9) first - the
 ;; MEDCBTEST row - then the phase 2 bodies and the inline fittings.
 (setq *MEDCB-CLASSIC* '("LB" "LR" "LL" "T" "TB" "C" "X"))
@@ -356,10 +364,14 @@
 ;;; ---------------------------------------------- phase 2 builders (r6, pure)
 ;;; Primitive geometry: ("PRIMS" prim ...) with prim
 ;;;   ("CYL" role p0 p1 r)      cylinder p0 -> p1 (any direction)
+;;;   ("PRISM" role p0 p1 rc n) regular n-gon prism p0 -> p1, corner radius rc (r7:
+;;;                             4 = square drive recess, 6 = hex nut)
 ;;;   ("BOX" role pmin pmax)    axis-aligned box
 ;;;   ("SLOT" role cx len w z0 z1)  stadium along X (as BODY / COVER above)
 ;;; role "BODY" (unioned into one solid) or "COVER" (a second solid: cover, pour hub,
 ;;; plug head, locknut); both on layer 0, ByLayer (no colour in the block, r6).
+;;; r7: role "CUT" is subtracted from the body, "CUTC" from the cover solid (plug
+;;; seats, square drive recesses), after all the unions.
 ;;; Builders collect into prims / hubs (dynamic scope of medcb-prims-geom callers).
 (defun medcb-p (prim) (setq prims (cons prim prims)))
 (defun medcb-h (name face dir) (setq hubs (cons (list name face dir) hubs)))
@@ -439,14 +451,70 @@
   (medcb-h "RUN2" (list (/ a -2.0) 0.0 0.0) '(-1.0 0.0 0.0))
   (medcb-prims-geom "UNY" nil))
 
-;; EYS / EYD seal (a length, b body dia): hub ends, body 0.6 a, pour hub up (+Z,
-;; second solid); EYD also a drain down (-Z). RUN faces +/-a/2.
-(defun medcb-geom-seal (shape a b hod sz / prims hubs hub lb)
-  (setq hub (medcb-hod2 hod sz b) lb (* 0.6 a))
-  (medcb-p (list "CYL" "BODY" (list (/ a -2.0) 0.0 0.0) (list (/ a 2.0) 0.0 0.0) (/ hub 2.0)))
-  (medcb-p (list "CYL" "BODY" (list (/ lb -2.0) 0.0 0.0) (list (/ lb 2.0) 0.0 0.0) (/ b 2.0)))
-  (medcb-p (list "CYL" "COVER" '(0.0 0.0 0.0) (list 0.0 0.0 (* 0.65 b)) (* 0.225 b)))
-  (if (= shape "EYD") (medcb-p (list "CYL" "BODY" '(0.0 0.0 0.0) (list 0.0 0.0 (* -0.65 b)) (* 0.15 b))))
+;; EYS / EYD sealing fitting (r7, after Clint's reference model of the real fitting).
+;; Published: a overall length, b body width, D turning radius (conduit axis to the
+;; farthest face; Eaton EYS p.114 / EYD table). The rest is estimated from the catalog
+;; drawings and Clint's reference (approx):
+;;   - the conduit runs straight through a tube (hub OD max(1.06 x conduit OD, 0.62 b)
+;;     <= b), bored to the conduit OD, with plain hub rings at both ends;
+;;   - the body swells out on the +Z side into an eccentric bulge b wide (a cylinder of
+;;     dia b, bottom flush with the tube);
+;;   - on top of the bulge a large, short pour hub (dia 0.84 b) with a recessed plug
+;;     with a square drive; beside it, toward +X, a smaller boss leaning 40 deg with
+;;     its own square-drive plug (the face square to its axis, so slanted);
+;;   - 1-1/4 and up: pour hub face at D; 1/2 - 1 (the catalog's angled body): the
+;;     leaning boss reaches D, the pour hub stays short (0.3 b above the bulge);
+;;   - EYD adds the drain: a boss 45 deg down toward +X, hex nut and cartridge.
+;; Body solid: tube, rings, bulge, hubs minus the plug seats; second solid: plugs minus
+;; the square drives (+ EYD nut / cartridge). RUN faces +/-a/2, axis = X (as r6).
+(defun medcb-geom-seal (shape a b tr hod sz / prims hubs r rt rr lr zc xp rp hp zp th u rs ls xs ct zt xt
+                                             rd dn ld xd pl s2 bt x0 x1)
+  (setq r (/ b 2.0) s2 *MEDCB-R2*
+        rt (/ (min b (if hod hod (max (* 1.06 (medcb-cod sz)) (* 0.62 b)))) 2.0)
+        rr (min r (* 1.06 rt)) lr (* 0.07 a)
+        zc (- r rt)                           ; bulge axis (bottom flush with the tube)
+        bt (+ zc r)                           ; bulge top
+        rp (* 0.42 b) hp (* 0.14 b)           ; pour hub radius, plug thickness
+        xp (* -0.14 a)
+        rs (* 0.25 b) th (/ (* 40.0 pi) 180.0) u (list (sin th) 0.0 (cos th)))
+  (if (not (and tr (> tr (+ bt (* 0.1 b))))) (setq tr (+ bt (* 0.35 b))))
+  (setq zp (if (> (medcb-sz1 sz) 1.0) tr (min tr (+ bt (* 0.3 b))))    ; pour hub face
+        zt (if (> (medcb-sz1 sz) 1.0) (- zp (* 0.03 b)) tr))              ; boss rim top
+  ;; leaning boss: base on the axis beside the pour hub, top face centre ct
+  (setq ls (/ (- zt (* rs (sin th))) (cos th))
+        xs (+ xp (* 0.95 rp)))
+  (if (> (+ xs (* ls (sin th)) (* rs (cos th))) (- (/ a 2.0) lr))
+    (setq xs (- (/ a 2.0) lr (* ls (sin th)) (* rs (cos th)))))
+  (setq ct (medcb-v+ (list xs 0.0 0.0) (medcb-vx u ls))
+        x0 (max (+ (/ a -2.0) lr) (- xp (* 1.15 rp)))
+        x1 (min (- (/ a 2.0) lr) (max (+ xp rp) (+ (car ct) rs))))
+  ;; tube, hub rings, bulge
+  (medcb-p (list "CYL" "BODY" (list (/ a -2.0) 0.0 0.0) (list (/ a 2.0) 0.0 0.0) rt))
+  (medcb-p (list "CYL" "BODY" (list (/ a -2.0) 0.0 0.0) (list (+ (/ a -2.0) lr) 0.0 0.0) rr))
+  (medcb-p (list "CYL" "BODY" (list (- (/ a 2.0) lr) 0.0 0.0) (list (/ a 2.0) 0.0 0.0) rr))
+  (medcb-p (list "CYL" "BODY" (list x0 0.0 zc) (list x1 0.0 zc) r))
+  ;; bore: the conduit runs straight through (threads not drawn)
+  (medcb-p (list "CYL" "CUT" (list (- (/ a -2.0) 0.01) 0.0 0.0) (list (+ (/ a 2.0) 0.01) 0.0 0.0) (min (* 0.95 rt) (/ (medcb-cod sz) 2.0))))
+  ;; pour hub + recessed plug with a square drive
+  (medcb-p (list "CYL" "BODY" (list xp 0.0 zc) (list xp 0.0 zp) rp))
+  (medcb-p (list "CYL" "CUT" (list xp 0.0 (- zp hp)) (list xp 0.0 (+ zp 0.01)) (* 0.8 rp)))
+  (medcb-p (list "CYL" "COVER" (list xp 0.0 (- zp hp)) (list xp 0.0 (- zp (* 0.03 b))) (* 0.79 rp)))
+  (medcb-p (list "PRISM" "CUTC" (list xp 0.0 (- zp (* 0.6 hp))) (list xp 0.0 zp) (* 0.4 rp) 4))
+  ;; leaning boss + its plug (face square to the boss axis)
+  (setq pl (* 0.3 rs))
+  (medcb-p (list "CYL" "BODY" (list xs 0.0 0.0) ct rs))
+  (medcb-p (list "CYL" "CUT" (medcb-v+ ct (medcb-vx u (- (* 1.2 pl)))) (medcb-v+ ct (medcb-vx u 0.01)) (* 0.72 rs)))
+  (medcb-p (list "CYL" "COVER" (medcb-v+ ct (medcb-vx u (- (* 1.2 pl)))) (medcb-v+ ct (medcb-vx u (* -0.03 b))) (* 0.71 rs)))
+  (medcb-p (list "PRISM" "CUTC" (medcb-v+ ct (medcb-vx u (- (* 0.8 pl)))) ct (* 0.42 rs) 4))
+  ;; EYD drain: boss 45 deg down toward +X, hex nut, cartridge
+  (if (= shape "EYD")
+    (progn
+      (setq rd (* 0.15 b) dn (list s2 0.0 (- s2)) ld (/ (+ rt (* 0.1 b)) s2) xd (* -0.05 a))
+      (if (> (+ xd (* (+ ld (* 0.42 b)) s2) (* 0.7 rd)) (- (/ a 2.0) lr))
+        (setq xd (- (/ a 2.0) lr (* (+ ld (* 0.42 b)) s2) (* 0.7 rd))))
+      (medcb-p (list "CYL" "BODY" (list xd 0.0 0.0) (medcb-v+ (list xd 0.0 0.0) (medcb-vx dn ld)) rd))
+      (medcb-p (list "PRISM" "COVER" (medcb-v+ (list xd 0.0 0.0) (medcb-vx dn ld)) (medcb-v+ (list xd 0.0 0.0) (medcb-vx dn (+ ld (* 0.1 b)))) (* 1.25 rd) 6))
+      (medcb-p (list "CYL" "COVER" (medcb-v+ (list xd 0.0 0.0) (medcb-vx dn (+ ld (* 0.1 b)))) (medcb-v+ (list xd 0.0 0.0) (medcb-vx dn (+ ld (* 0.42 b)))) (* 0.7 rd)))))
   (medcb-h "RUN" (list (/ a 2.0) 0.0 0.0) '(1.0 0.0 0.0))
   (medcb-h "RUN2" (list (/ a -2.0) 0.0 0.0) '(-1.0 0.0 0.0))
   (medcb-prims-geom shape nil))
@@ -537,7 +605,7 @@
           ((member shape '("GUAL" "GUAT" "GUAX")) (medcb-geom-gua shape a b c d e hod hl s1))
           ((= shape "BUB") (medcb-geom-bub a b c d e hod s1))
           ((= shape "UNY") (medcb-geom-uny a b))
-          ((member shape '("EYS" "EYD")) (medcb-geom-seal shape a b hod s1))
+          ((member shape '("EYS" "EYD")) (medcb-geom-seal shape a b d hod s1))
           ((member shape '("PLGR" "PLGS")) (medcb-geom-plug shape a b c d))
           ((= shape "HUB") (medcb-geom-hub form a b c d e))
           ((= shape "RE") (medcb-geom-re a b c d sz))))
@@ -555,6 +623,10 @@
 (defun medcb-ok (x) (and x (not (vl-catch-all-error-p x))))
 (defun medcb-union (a b / r)
   (if (and a b) (progn (setq r (vl-catch-all-apply 'vlax-invoke (list a 'Boolean 0 b))) a) (if a a b)))
+;; a minus b (acSubtraction); b is deleted either way (a cut that misses leaves a as is)
+(defun medcb-subtract (a b)
+  (if b (if a (vl-catch-all-apply 'vlax-invoke (list a 'Boolean 2 b)) (vl-catch-all-apply 'vla-delete (list b))))
+  a)
 
 ;; slot (stadium) along X: box + 2 vertical cylinders, unioned
 (defun medcb-add-slot (blk cx len w z0 z1 / h zc s c1 c2 st)
@@ -573,22 +645,47 @@
       (if (medcb-ok s) s))))
 
 ;; cylinder p0 -> p1 (axis parallel to X, Y or Z; r6: any other direction too)
-(defun medcb-add-cyl (blk p0 p1 r / d len mid s q)
-  (setq d (mapcar '- p1 p0) len (distance p0 p1) mid (medcb-vx (medcb-v+ p0 p1) 0.5))
+(defun medcb-add-cyl (blk p0 p1 r / len s)
+  (setq len (distance p0 p1))
   (if (> len 1e-6)
     (progn
       (setq s (vl-catch-all-apply 'vlax-invoke (list blk 'AddCylinder '(0.0 0.0 0.0) r len)))
-      (if (medcb-ok s)
+      (if (medcb-ok s) (medcb-orient s p0 p1)))))
+;; a solid made along +Z, centred on the origin, turned onto p0 -> p1 and moved to
+;; the midpoint (Rotate3D about the origin, then Move)
+(defun medcb-orient (s p0 p1 / d len mid q)
+  (setq d (mapcar '- p1 p0) len (distance p0 p1) mid (medcb-vx (medcb-v+ p0 p1) 0.5)
+        q (sqrt (+ (* (car d) (car d)) (* (cadr d) (cadr d)))))
+  (cond ((> (abs (car d)) (* 0.999 len)) (vlax-invoke s 'Rotate3D '(0.0 0.0 0.0) '(0.0 1.0 0.0) (/ pi 2.0)))
+        ((> (abs (cadr d)) (* 0.999 len)) (vlax-invoke s 'Rotate3D '(0.0 0.0 0.0) '(1.0 0.0 0.0) (/ pi 2.0)))
+        ((> (abs (caddr d)) (* 0.999 len)))
+        ;; oblique: turn +Z onto d about (-dy, dx, 0)
+        (T (vlax-invoke s 'Rotate3D '(0.0 0.0 0.0) (list (- (/ (cadr d) q)) (/ (car d) q) 0.0)
+                        (atan q (caddr d)))))
+  (vlax-invoke s 'Move '(0.0 0.0 0.0) mid)
+  s)
+;; regular n-gon prism p0 -> p1, corner radius rc (r7: square drive recess n = 4,
+;; hex nut n = 6): closed LWPOLYLINE -> region -> extruded solid along +Z, centred,
+;; then oriented like a cylinder. The temporary polyline and region are deleted.
+(defun medcb-add-prism (blk p0 p1 rc n / len pts i a pl rg s)
+  (setq len (distance p0 p1) i 0)
+  (if (> len 1e-6)
+    (progn
+      (repeat n (setq a (+ (/ pi n) (* i (/ (* 2.0 pi) n))) pts (append pts (list (* rc (cos a)) (* rc (sin a)))) i (1+ i)))
+      (setq pl (vl-catch-all-apply 'vlax-invoke (list blk 'AddLightWeightPolyline pts)))
+      (if (medcb-ok pl)
         (progn
-          (setq q (sqrt (+ (* (car d) (car d)) (* (cadr d) (cadr d)))))
-          (cond ((> (abs (car d)) (* 0.999 len)) (vlax-invoke s 'Rotate3D '(0.0 0.0 0.0) '(0.0 1.0 0.0) (/ pi 2.0)))
-                ((> (abs (cadr d)) (* 0.999 len)) (vlax-invoke s 'Rotate3D '(0.0 0.0 0.0) '(1.0 0.0 0.0) (/ pi 2.0)))
-                ((> (abs (caddr d)) (* 0.999 len)))
-                ;; oblique: turn +Z onto d about (-dy, dx, 0)
-                (T (vlax-invoke s 'Rotate3D '(0.0 0.0 0.0) (list (- (/ (cadr d) q)) (/ (car d) q) 0.0)
-                                (atan q (caddr d)))))
-          (vlax-invoke s 'Move '(0.0 0.0 0.0) mid)
-          s)))))
+          (vl-catch-all-apply 'vlax-put (list pl 'Closed :vlax-true))
+          (setq rg (vl-catch-all-apply 'vlax-invoke (list blk 'AddRegion (list pl))))
+          (vl-catch-all-apply 'vla-delete (list pl))
+          (if (and (not (vl-catch-all-error-p rg)) (setq rg (car rg)))
+            (progn
+              (setq s (vl-catch-all-apply 'vlax-invoke (list blk 'AddExtrudedSolid rg len 0.0)))
+              (vl-catch-all-apply 'vla-delete (list rg))
+              (if (medcb-ok s)
+                (progn
+                  (vlax-invoke s 'Move '(0.0 0.0 0.0) (list 0.0 0.0 (/ len -2.0)))
+                  (medcb-orient s p0 p1))))))))))
 
 (defun medcb-flag-layer ( / info)
   (setq info (if med3d-flag-layer (med3d-flag-layer) '("MED_3DFLAG" "RED" "CONTINUOUS")))
@@ -627,9 +724,22 @@
   (setq s (vl-catch-all-apply 'vlax-invoke
             (list blk 'AddBox (medcb-vx (medcb-v+ p0 p1) 0.5) (- (car p1) (car p0)) (- (cadr p1) (cadr p0)) (- (caddr p1) (caddr p0)))))
   (if (medcb-ok s) s))
+;; shape of a block name MED_CB_RGD_<form>_<shape>_<size>[...] ("" when not ours)
+(defun medcb-name-shape (name / t0 i j)
+  (setq t0 "MED_CB_RGD_")
+  (if (and (= (type name) 'STR) (> (strlen name) (strlen t0)) (= (strcase (substr name 1 (strlen t0))) t0)
+           (setq i (vl-string-search "_" name (strlen t0)))
+           (setq j (vl-string-search "_" name (1+ i))))
+    (strcase (substr name (+ i 2) (- j i 1)))
+    ""))
+;; geometry tag / stale suffix for a block name (per-shape revision, else global)
+(defun medcb-tag-for (name / x)
+  (if (setq x (assoc (medcb-name-shape name) *MEDCB-SHAPE-TAGS*)) (cadr x) *MEDCB-GEOM-TAG*))
+(defun medcb-suffix-for (name / x)
+  (if (setq x (assoc (medcb-name-shape name) *MEDCB-SHAPE-TAGS*)) (caddr x) *MEDCB-STALE-SUFFIX*))
 ;; new block definition from geometry; nil (and no block left behind) on failure.
 ;; Solids: body (+ hubs) unioned, cover / plug head / pour hub a second solid.
-(defun medcb-build-block (name geom / blks blk body cov s bx pr)
+(defun medcb-build-block (name geom / blks blk body cov s bx pr cut cutc)
   (setq blks (vla-get-Blocks (medcb-doc))
         blk (vl-catch-all-apply 'vlax-invoke (list blks 'Add '(0.0 0.0 0.0) name)))
   (if (medcb-ok blk)
@@ -638,9 +748,15 @@
        ((setq pr (medcb-get "PRIMS" geom))
           (foreach x pr
             (setq s (cond ((= (car x) "CYL") (medcb-add-cyl blk (nth 2 x) (nth 3 x) (nth 4 x)))
+                          ((= (car x) "PRISM") (medcb-add-prism blk (nth 2 x) (nth 3 x) (nth 4 x) (nth 5 x)))
                           ((= (car x) "BOX") (medcb-add-box blk (nth 2 x) (nth 3 x)))
                           ((= (car x) "SLOT") (medcb-add-slot blk (nth 2 x) (nth 3 x) (nth 4 x) (nth 5 x) (nth 6 x)))))
-            (if (= (cadr x) "COVER") (setq cov (medcb-union cov s)) (setq body (medcb-union body s)))))
+            (cond ((= (cadr x) "COVER") (setq cov (medcb-union cov s)))
+                  ((= (cadr x) "CUT") (setq cut (cons s cut)))
+                  ((= (cadr x) "CUTC") (setq cutc (cons s cutc)))
+                  (T (setq body (medcb-union body s)))))
+          (foreach c cut (medcb-subtract body c))
+          (foreach c cutc (medcb-subtract cov c)))
        ((setq bx (medcb-get "BOX" geom))
           (setq body (medcb-add-box blk (car bx) (cadr bx))))
        (T
@@ -653,10 +769,10 @@
       (medcb-bylayer body)
       (medcb-bylayer cov)
       (if body
-        (progn (vl-catch-all-apply 'vlax-put (list blk 'Comments *MEDCB-GEOM-TAG*)) name)
+        (progn (vl-catch-all-apply 'vlax-put (list blk 'Comments (medcb-tag-for name))) name)
         (progn (vl-catch-all-apply 'vla-delete (list blk)) nil)))))
-;; a block made before r6 (older tag, see *MEDCB-GEOM-TAG*): rename it to
-;; <name>_PRE_R6[_n] (its inserts keep the old block) so the name is free for a new
+;; a block made before r6 (older tag, see *MEDCB-GEOM-TAG*; EYS / EYD before r7, see
+;; *MEDCB-SHAPE-TAGS*): rename it to <name>_PRE_R6[_n] / _PRE_R7[_n] (its inserts keep the old block) so the name is free for a new
 ;; definition. T when renamed. To drop the old ones: PURGE the _PRE_R* blocks once
 ;; nothing references them.
 (defun medcb-stale-rename (name / blk c new i)
@@ -664,10 +780,10 @@
   (if (and (medcb-ok blk)
            (setq c (vl-catch-all-apply 'vlax-get (list blk 'Comments)))
            (not (vl-catch-all-error-p c))
-           (/= c *MEDCB-GEOM-TAG*))
+           (/= c (medcb-tag-for name)))
     (progn
-      (setq new (strcat name *MEDCB-STALE-SUFFIX*) i 1)
-      (while (tblsearch "BLOCK" new) (setq i (1+ i) new (strcat name *MEDCB-STALE-SUFFIX* "_" (itoa i))))
+      (setq new (strcat name (medcb-suffix-for name)) i 1)
+      (while (tblsearch "BLOCK" new) (setq i (1+ i) new (strcat name (medcb-suffix-for name) "_" (itoa i))))
       (if (not (vl-catch-all-error-p (vl-catch-all-apply 'vlax-put (list blk 'Name new))))
         (progn (princ (strcat "\nMED3D: block " name " was made by an older MED3DFittings (" (if (= c "") "no tag" c)
                               ") - renamed " new " and rebuilt."))
@@ -843,7 +959,7 @@
 (defun medcb-prims-ext (geom / lo hi w r)
   (setq lo 0.0 hi 0.0 w 0.0)
   (foreach x (medcb-get "PRIMS" geom)
-    (cond ((= (car x) "CYL")
+    (cond ((and (member (car x) '("CYL" "PRISM")) (not (member (cadr x) '("CUT" "CUTC"))))
             (setq r (nth 4 x))
             (foreach p (list (nth 2 x) (nth 3 x))
               (setq lo (min lo (- (car p) r)) hi (max hi (+ (car p) r)) w (max w (+ (abs (cadr p)) r)))))
@@ -1167,7 +1283,7 @@
 ;; points to (hub direction back in the symbol's axes, a = symbol rotation) x scale +
 ;; *MED3D-FIT-TOL*; vertical hubs *MED3D-FIT-TOL*. Hubs come back as
 ;; (name face dir radius) - MED3DPath only accepts a far run end on the axis of a hub
-;; within that hub's radius (1re breaks 0.9125 x DIMSCALE on +X only).
+;; within that hub's radius (1re breaks 0.09125 x DIMSCALE on +X only, medblck.dat 1c73970).
 (defun medcb-hub-tols (hubs blk ed a / bl sc x y r i)
   (setq bl (medcb-brk-list blk) sc (abs (cond ((cdr (assoc 41 ed))) (1.0))))
   (mapcar '(lambda (h)

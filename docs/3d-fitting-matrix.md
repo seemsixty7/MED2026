@@ -141,11 +141,11 @@ The symbols are hub ticks: short bars across the conduit where a hub is.
 | M31 | code changed to Mogul BLB (MEDCHG) | 2 | Mogul BLB (r6, CH 2006 1F p.14): larger LB on its side |
 | M32 | LB turn with only one leg drawn | 2 | LB on 1lbl with one leg drawn: on its side toward the symbol's short leg (opening sideways, not up) |
 | M33 | Fittings>Union; image menu Union | 2 | union (r6, Eaton UNY): coupling-like; conduit trimmed / extended to the union faces (menu break 2.25 in at 48 > half the union) |
-| M34 | Fittings>Seal; image menu Seal | 2 | EYS seal (r6): inline, pour hub up; conduit continuous (no menu break) |
-| M35 | Fittings>Seal-Drn; image menu Seal-Drain | 2 | EYD seal with drain (r6): as EYS + drain down |
+| M34 | Fittings>Seal; image menu Seal | 2 | EYS seal (r7): inline, bulge + pour hub up, leaning boss toward +X; conduit continuous (no menu break) |
+| M35 | Fittings>Seal-Drn; image menu Seal-Drain | 2 | EYD seal with drain (r7): as EYS + drain leaning down toward +X |
 | M36 | Fittings>Plug-Rec / Plug-SqH; image menu plugs | 2 | plugged coupling (r6, approx): coupling centred on the conduit end, recessed plug at -X |
 | M37 | Fittings>Hub; image menu Hub | 2 | conduit hub (r6, CH MHUB): wall face at the insert point, conduit extended to the hub face (menu break 3 in at 48) |
-| M38 | Fittings>Reducer; image menu Reducer | 8 | reducer (r6, approx): large coupling -X (RUN2), head sticks out, small end +X (RUN); reduce-to size from #ITEM_ALT; the 43.8 in menu break on +X is extended to the head |
+| M38 | Fittings>Reducer; image menu Reducer | 8 | reducer (r6, approx): large coupling -X (RUN2), head sticks out, small end +X (RUN); reduce-to size from #ITEM_ALT; the 4.38 in menu break on +X (0.09125 x 48, medblck.dat) is extended to the head |
 | M41 | code changed to Mogul BT (MEDCHG) | 2 | Mogul BT = T geometry (CH 2006 1F p.15) |
 | M42 | code changed to Mogul BC (MEDCHG) | 2 | Mogul BC = C geometry (CH 2006 1F p.14) |
 | M43 | Myers hub code (MEDCHG) | 2 | Myers ST hub (CP-270): body above the wall, neck + locknut inside |
@@ -178,8 +178,8 @@ Clint's notes are kept in the table; the last two columns say what was built and
 | M41 | Mogul BT | - | T geometry; code 18 | CH1F-2006 p.15 |
 | M42 | Mogul BC | - | C geometry; code 53 | CH1F-2006 p.14 |
 | M33 | Union (UNY) | coupling-like; the menu break may be longer than the union - extend the conduit to the union faces | inline body; conduit trimmed / extended to the faces (on-axis guard in MED3DPath r12); code 72 | CH5F-UNY-2022 printed p.82 |
-| M34 | Seal (EYS) | sealing fitting; draw function | inline body + pour hub up; code 61 | CH6F-EYS-2020 printed p.114 |
-| M35 | Seal with drain (EYD) | draw function | as EYS + drain down; code 64 | CH6F-EYD table (EYD 1" `b` kept as printed) |
+| M34 | Seal (EYS) | sealing fitting; draw function; r7: "massage to look like they are" + reference model | r7: straight-through bored tube, plain hub rings, eccentric bulge up, large short pour hub + leaning boss, both with recessed square-drive plugs; code 61 | CH6F-EYS-2020 printed p.114 (a, b, turning radius D); shape details **approx** |
+| M35 | Seal with drain (EYD) | draw function | r7: as EYS + drain leaning 45° down toward +X (boss, hex nut, cartridge); code 64 | CH6F-EYD table (a, b, turning radius D; EYD 1" `b` kept as printed); shape details **approx** |
 | M36, M44 | Plug | a coupling with a plug (recessed or extruded) | coupling on the conduit end + recessed (PLGR, code 100) or square-head (PLGS, code 101) plug | **approx**: Wheatland coupling (WH-ECN-2017) + ANSI C80.1 OD; the CH PLG page has no dimensions |
 | M37 | Hub | Myers-style or plain conduit hub: same logic, different dimensions - middle ground, or a separate Myers block | two blocks: CH conduit hub (code 120) and Myers ST (code 121); wall face at the insert point | CH-CP269-2006 (MHUB letters a b c d x, Myers ST A B C D K) |
 | M38 | Reducer | recessed, sticks out a little to show it's there; one size to another | coupling on the large conduit + head sticking out + small conduit; reduce-to size from the fitting's alt size (else one size down, with a note); code 103 | **approx**: Wheatland coupling + C80.1 OD |

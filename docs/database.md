@@ -96,7 +96,7 @@ The patch installer ships the two CSVs, not `MED.db`. Edit ODs in the table / ME
 | B_in | Overall depth, perpendicular to the cover (LB, TB: includes the back hub) |
 | C_in | Overall width (LL, LR, T: includes the side hub) |
 | D_in / E_in | Cover opening width / length |
-| (other families) | The phase 2 families reuse A_in - E_in for their own published letters (e.g. GUA a - d + E = cover opening, union A / B, seal a / b, conduit hub a b c d x → A - E, Myers A B C D K → A - E, coupling A = length / B = OD). The builder comments in `MED3DFittings.lsp` and the `Notes` column say which letter is which. Rows marked approx (`SourceId` `APPROX`: plugs, reducers) are derived, not published |
+| (other families) | The phase 2 families reuse A_in - E_in for their own published letters (e.g. GUA a - d + E = cover opening, union A / B, seal a / b / D = turning radius, conduit hub a b c d x → A - E, Myers A B C D K → A - E, coupling A = length / B = OD). The builder comments in `MED3DFittings.lsp` and the `Notes` column say which letter is which. Rows marked approx (`SourceId` `APPROX`: plugs, reducers) are derived, not published |
 | HubOD_in / HubLen_in | Not published; blank. If you fill them, MED3DFittings uses them instead of its estimate |
 | Source | Catalog URL + page |
 

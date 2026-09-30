@@ -35,6 +35,7 @@ rows = [r for r in csv.DictReader(open(CSV, encoding='utf-8')) if r['Shape'] in 
 check('rows', len(rows) > 150, str(len(rows)))
 L, mk = session()
 n = 0
+seals = []
 for r in rows:
     f, sh, sz = r['Form'], r['Shape'], float(r['TradeSizeDec'])
     num = {k: float(r[k + '_in']) if r[k + '_in'] else None for k in 'ABCDE'}
@@ -60,6 +61,21 @@ for r in rows:
         check('A ' + tag, near(hi[0] - lo[0], A), f'{lo} {hi}')
         check('B ' + tag, near(hi[1] - lo[1], B), f'{lo} {hi}')
         check('faces ' + tag, near(hubs['RUN'][0][0], A / 2) and near(hubs['RUN2'][0][0], -A / 2))
+        if sh in ('EYS', 'EYD'):
+            # r7 seal (Clint's reference): tube + eccentric bulge (+Z), pour hub and a
+            # leaning boss, each with a recessed square-drive plug; the farthest face is
+            # at the published turning radius D
+            sol = live(blk)
+            cuts = [p for e in sol for p in getattr(e, 'cuts', [])]
+            check('seal-solids ' + tag, len(sol) == 2, str(sol))
+            check('seal-D ' + tag, D and near(hi[2], D), f'{hi[2]} vs {D}')
+            check('seal-cuts ' + tag, len([p for p in cuts if p[0] == 'CYL']) == 3 and len([p for p in cuts if p[0] == 'PTS' and len(p[1]) == 8]) == 2, str(cuts))
+            obl = [p for e in sol for p in e.parts if p[0] == 'CYL' and abs(p[1][0] - p[2][0]) > 1e-6 and abs(p[1][2] - p[2][2]) > 1e-6]
+            check('seal-leaning-boss ' + tag, len(obl) >= 2, str(obl))
+            bottom = min(p[1][2] - p[3] for e in sol for p in e.parts if p[0] == 'CYL' and p[1][1] == 0 and abs(p[1][2] - p[2][2]) < 1e-9)
+            check('seal-straight-through ' + tag, near(bottom, lo[2]) if sh == 'EYS' else lo[2] < bottom - 0.1 * B, f'{bottom} {lo}')
+            if sh == 'EYD': check('eyd-nut ' + tag, len([p for e in sol for p in e.parts if p[0] == 'PTS' and len(p[1]) == 12]) == 1)
+            seals.append((tag, lo, hi))
     elif sh.startswith('GUA'):
         check('dia ' + tag, near(hi[1] - lo[1], max(A, 2 * C) if sh == 'GUAX' else hi[1] - lo[1]), f'{lo} {hi}')
         check('B ' + tag, near(hi[2] - lo[2], B) and near(lo[2], -D), f'{lo} {hi}')
@@ -155,8 +171,8 @@ e1 = to_py(get(p1, 'ENDTRIM')); e2 = to_py(get(p2, 'ENDTRIM'))
 check('union-extend', near(e1[1], face - brk) and near(e2[0], face - brk) and e1[1] < 0, f'{e1} {e2}')
 check('union-pieces', near(to_py(get(p1, 'PIECES'))[-1][2][0], -face) and near(to_py(get(p2, 'PIECES'))[0][1][0], face),
       f'{to_py(get(p1, "PIECES"))} {to_py(get(p2, "PIECES"))}')
-# hub-axis guard: the reducer's 43.8" break (+X only at 48) must not grab a run that
-# ends near it off the axis or on the other side
+# hub-axis guard: a 43.8" break (+X only at 48; the pre-1c73970 1re typo 0.9125, kept
+# as a stress case) must not grab a run that ends near it off the axis or on the other side
 L, mk, ents, markers = world48({'1RE': [0.9125, 0.0, 0.0, 0.0]})
 on = conduit(ents, [(0.9125 * 48, 0), (100, 0)])          # the broken +X run
 back = conduit(ents, [(-60, 0), (-20, 0)])                  # ends 20" away on -X (not at the fitting)
@@ -187,7 +203,7 @@ check('all-real', not [nm for nm in names if nm.endswith('_PH')], str([nm for nm
 check('all-bylayer', all(not bylayer_bad(mk.blocks[nm.upper()]) for nm in names))
 check('all-insert-layer', all(i.props['Layer'] == 'MED_3DCONDUIT' and i.props.get('Color') == 256 for i in mk.inserts))
 
-print(f'{len(rows)} phase 2 data rows, {n} blocks built')
+print(f'{len(rows)} phase 2 data rows, {n} blocks built ({len(seals)} EYS / EYD r7)')
 if fails:
     print(f'FAILED {len(fails)}'); [print('  ' + f) for f in fails[:60]]; sys.exit(1)
 print('OK test_med3dphase2')

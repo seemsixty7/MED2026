@@ -54,7 +54,7 @@
 
 (princ "\rLoading MED3DFittings...")
 (vl-load-com)
-(setq *MEDCB-VERSION* "2026-09-30 r2 (feature/3dpath)")
+(setq *MEDCB-VERSION* "2026-09-30 r3 (feature/3dpath)")
 (setq *MEDCB-SHAPES* '("LB" "LR" "LL" "T" "TB" "C"))
 (setq *MEDCB-FORMS* '("F7" "F8" "M9"))
 (if (not *MEDCB-FORM*) (setq *MEDCB-FORM* "F7"))
@@ -405,16 +405,19 @@
   (if (and (setq res (medcb-ensure-block form shape sz))
            (setq ref (medcb-insert-block res pt rot nil)))
     (list ref (car res) (cadr res))))
-;; res = (name status) from medcb-ensure-block; flip = turned 180 deg about its own
-;; (rotated) X axis after the Z rotation. Returns the vla reference or nil.
+;; res = (name status) from medcb-ensure-block; flip = tilt about the body's own
+;; (rotated) X axis after the Z rotation: nil = none, T = 180 deg (turned over),
+;; a number = that angle in radians (+/- pi/2: LB back hub turned into the plan).
+;; Right-hand rule about X, as Rotate3D. Returns the vla reference or nil.
+(defun medcb-tilt (flip) (cond ((numberp flip) flip) (flip pi) (T 0.0)))
 (defun medcb-insert-block (res pt rot flip / ref)
   (setq ref (vl-catch-all-apply 'vlax-invoke
               (list (vla-get-ModelSpace (medcb-doc)) 'InsertBlock pt (car res) 1.0 1.0 1.0 rot)))
   (if (medcb-ok ref)
     (progn
-      (if flip
+      (if (/= (medcb-tilt flip) 0.0)
         (vl-catch-all-apply 'vlax-invoke
-          (list ref 'Rotate3D pt (medcb-v+ pt (list (cos rot) (sin rot) 0.0)) pi)))
+          (list ref 'Rotate3D pt (medcb-v+ pt (list (cos rot) (sin rot) 0.0)) (medcb-tilt flip))))
       (vlax-put ref 'Layer (if (wcmatch (cadr res) "PLACEHOLDER,PH-EXISTS") (medcb-flag-layer) (medcb-body-layer)))
       ref)))
 
@@ -552,8 +555,13 @@
 ;;;   most hubs on the conduit legs found at the point (ties keep the offset).
 ;;;   T on 1teed / 2teed -> TB (back hub down, cover up); T on 1teeu / 1teeuo -> TB
 ;;;   turned 180 deg about its run (back hub up, so the cover faces down).
-;;;   LB on 1lbu / 1lbuo (LB up) and on 1lbl / 1lbr (LB as a flat plan turn) keep the
-;;;   Z rotation only (back hub down) and print a note - orientation not modelled yet.
+;;;   LB on 1lbu / 1lbuo (LB up) -> turned 180 deg about its run (back hub up, cover
+;;;   down). Any LB: the snap also tries the back hub tilted into the plan (+/-90 deg
+;;;   about the body X axis, cover sideways), so at a flat plan corner (1lbl / 1lbr
+;;;   with an LB code) RUN meets one leg and BACK the other. Tilted only when that
+;;;   matches more legs than the untilted body; an LB turn whose second leg is not
+;;;   found keeps the back hub down and prints a note. LB down is unchanged.
+;;;   The tilt is applied with Rotate3D about the rotated X axis (medcb-insert-block).
 ;;; Unresolved (key without data: X, LBD, LBY, TA, Mogul, GUA..., no form, no row for
 ;;;   the size, other material): placeholder block on MED_3DFLAG + flag marker +
 ;;;   Skipped line (handle and reason). No size -> marker only.
@@ -647,10 +655,13 @@
         ((and (= blk "1LBL") (= shape "LL")) (/ pi 2.0))
         ((and (= blk "1LBR") (= shape "LR")) (/ pi -2.0))
         (T 0.0)))
-;; block vector -> WCS vector: flip (180 deg about block X) first, then rot about Z
-(defun medcb-xdir (v rot flip / x y z)
-  (setq x (car v) y (cadr v) z (caddr v))
-  (if flip (setq y (- y) z (- z)))
+;; block vector -> WCS vector: tilt about block X first (flip, see medcb-insert-block),
+;; then rot about Z
+(defun medcb-xdir (v rot flip / x y z tl c sn y0)
+  (setq x (car v) y (cadr v) z (caddr v) tl (medcb-tilt flip))
+  (cond ((= tl 0.0))
+        ((equal tl pi 1e-12) (setq y (- y) z (- z)))
+        (T (setq c (cos tl) sn (sin tl) y0 y y (- (* y0 c) (* z sn)) z (+ (* y0 sn) (* z c)))))
   (list (- (* x (cos rot)) (* y (sin rot))) (+ (* x (sin rot)) (* y (cos rot))) z))
 (defun medcb-wcs-hubs (hubs rot flip / r)
   (foreach h hubs (setq r (cons (list (car h) (medcb-xdir (cadr h) rot flip) (medcb-xdir (caddr h) rot flip)) r)))
@@ -715,7 +726,7 @@
 
 ;; one MED_FITTING INSERT -> body alist; "NM" = not a conduit body; nil = no xdata
 (defun medcb-body-of (e runs / ed xd code sz res kp mat form shape blk flip note reason r
-                            pt a rot geom hubs lg k best sc i h)
+                            pt a rot geom hubs lg k best sc i h tl tbest)
   (setq ed (entget e) xd (xdataget e (medcb-app "FITTING")))
   (cond
     ((not xd) nil)
@@ -727,11 +738,8 @@
             h (cdr (assoc 5 ed)))
       (if (and (= shape "T") (member blk (append *MEDCB-2D-TEEDOWN* *MEDCB-2D-TEEUP*)))
         (setq shape "TB" flip (if (member blk *MEDCB-2D-TEEUP*) T)))
-      (cond
-        ((and (= shape "LB") (member blk *MEDCB-2D-LBUP*))
-          (setq note "LB up - modelled with the back hub down (up / down orientation not modelled yet)"))
-        ((and (= shape "LB") (member blk *MEDCB-2D-TURN*))
-          (setq note "LB used as a flat plan turn - back hub modelled down, not along the second conduit")))
+      ;; LB up: turned over (back hub up, cover down)
+      (if (and (= shape "LB") (member blk *MEDCB-2D-LBUP*)) (setq flip T))
       (setq reason
         (cond
           ((<= sz 0.0) "no trade size on the fitting")
@@ -751,14 +759,21 @@
             lg  (medcb-legs pt runs (medcb-fit-tol)))
       (if (cadr lg) (setq pt (list (car pt) (cadr pt) (cadr lg))))   ; conduit elevation wins
       (setq rot (+ rot (medcb-2d-offset blk shape)) k 0)
+      ;; snap: the 4 quarter turns about Z (first best wins, so a tie keeps the drawn
+      ;; rotation); then an LB also tries its back hub tilted into the plan (+/-90 deg
+      ;; about its X axis), kept only if that matches more legs (flat plan corner)
       (if (and *MEDCB-SNAP* (car lg))
         (progn
-          (setq best -1 i 0)
-          (repeat 4
-            (setq sc (medcb-score (medcb-wcs-hubs hubs (+ rot (* i (/ pi 2.0))) flip) (car lg)))
-            (if (> sc best) (setq best sc k i))
-            (setq i (1+ i)))
-          (setq rot (+ rot (* k (/ pi 2.0))))))
+          (setq best -1 tbest flip)
+          (foreach tl (if (= shape "LB") (list flip (/ pi 2.0) (/ pi -2.0)) (list flip))
+            (setq i 0)
+            (repeat 4
+              (setq sc (medcb-score (medcb-wcs-hubs hubs (+ rot (* i (/ pi 2.0))) tl) (car lg)))
+              (if (> sc best) (setq best sc k i tbest tl))
+              (setq i (1+ i))))
+          (setq rot (+ rot (* k (/ pi 2.0))) flip tbest)))
+      (if (and (= shape "LB") (member blk *MEDCB-2D-TURN*) (not (numberp flip)))
+        (setq note "LB used as a flat plan turn - second conduit leg not found, back hub modelled down"))
       (while (< rot 0.0) (setq rot (+ rot (* 2.0 pi))))
       (while (>= rot (* 2.0 pi)) (setq rot (- rot (* 2.0 pi))))
       (list (cons "HANDLE" h) (cons "ENT" e) (cons "CODE" (fix code)) (cons "KEY" (car res)) (cons "SRC" (cadr res))
@@ -781,7 +796,9 @@
                                       (medcb-get "KEY" b) " (" (medcb-get "SRC" b) ") -> " (medcb-get "SHAPE" b) " "
                                       (medcb-size-text (max 0.0625 (medcb-get "SIZE" b))) "\" on " (medcb-get "BLK2D" b)
                                       ", rot " (rtos (* 180.0 (/ (medcb-get "ROT" b) pi)) 2 1) " deg"
-                                      (if (medcb-get "FLIP" b) " flipped" "")
+                                      (cond ((numberp (medcb-get "FLIP" b))
+                                              (strcat " tilted " (rtos (* 180.0 (/ (medcb-get "FLIP" b) pi)) 2 0) " deg about X"))
+                                            ((medcb-get "FLIP" b) " flipped") (T ""))
                                       ", " (itoa (medcb-get "LEGS" b)) " conduit leg(s), quarter turns "
                                       (itoa (medcb-get "TURN" b))
                                       (if (medcb-get "REASON" b) (strcat " - " (medcb-get "REASON" b)) ""))))))

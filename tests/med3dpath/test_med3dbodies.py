@@ -144,23 +144,48 @@ check('ll-insert', ins['Name'] == 'MED_CB_RGD_F7_LL_1-00' and closev(ins['Pt'], 
       and ins['Layer'] == 'MED_3DCONDUIT' and 'Rot3D' not in ins, str(ins))
 check('ll-place-res', get(call(L, 'medcb-place-all', []), 'PLACED') == 0)
 
-# --------------------------- LB as a flat plan turn (1lbl, code 30): note + flag
+# --------------------------- LB as a flat plan turn (1lbl, code 30): back hub tilted
+#   into the plan (+/-90 deg about the body X axis), both legs cut, no flag, no note
+def dot3(a, b): return sum(x * y for x, y in zip(a, b))
+for drawn in (90, 0, 180, 270):
+    L, mk, ents, markers = world()
+    run = conduit(ents, [(0, 0), (60, 0), (60, 40)], elev=0.0)
+    lb = fitting(ents, '1lbl', (60, 0, 0), drawn, 30)
+    bodies = call(L, 'medcb-collect')[0]; b = body(bodies, lb)
+    fl = get(b, 'FLIP')
+    check(f'lb-turn-tilt {drawn}', isinstance(fl, float) and near(abs(fl), math.pi / 2), str(fl))
+    check(f'lb-turn-no-note {drawn}', get(b, 'NOTE') is None, str(get(b, 'NOTE')))
+    hb = dict((h[0], (h[1], h[2])) for h in to_py(get(b, 'HUBS')))
+    dirs = sorted([hb['RUN'][1], hb['BACK'][1]])
+    check(f'lb-turn-hubs {drawn}', all(closev(x, y) for x, y in zip(dirs, sorted([[-1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]))), str(hb))
+    cover = to_py(call(L, 'medcb-xdir', [0.0, 0.0, 1.0], get(b, 'ROT'), fl))
+    check(f'lb-turn-cover-sideways {drawn}', abs(cover[2]) < 1e-9 and near(dist(cover, [0, 0, 0]), 1.0), str(cover))
+    L.g['*MED3D-FITS*'] = [call(L, 'medcb-fit-rec', x) for x in bodies]
+    pl = plan_run(L, ents, run)
+    pcs = to_py(get(pl, 'PIECES'))
+    face = {tuple(round(c) for c in d): dot3(f, d) for f, d in hb.values()}
+    check(f'lb-turn-no-flag {drawn}', not get(pl, 'FITFLAGS'), str(to_py(get(pl, 'FITFLAGS'))))
+    check(f'lb-turn-west-cut {drawn}', closev(pcs[0][2], [60 - face[(-1, 0, 0)], 0, 0]), f'{pcs} {face}')
+    check(f'lb-turn-north-cut {drawn}', closev(pcs[1][1], [60, face[(0, 1, 0)], 0]), f'{pcs} {face}')
+    mk.log.clear(); call(L, 'medcb-place-all', bodies)
+    ins = mk.inserts[-1].props; r3 = ins.get('Rot3D') or []
+    check(f'lb-turn-insert {drawn}', len(r3) == 1 and near(r3[0][2], fl)
+          and closev(sub(r3[0][1], r3[0][0]), [math.cos(ins['Rot']), math.sin(ins['Rot']), 0.0])
+          and closev(r3[0][0], [60, 0, 0]), str(ins))
+    check(f'lb-turn-no-note-printed {drawn}', not any('flat plan turn' in l for l in mk.log), str(mk.log))
+# the same LB turn with only one leg drawn: back hub stays down, note printed
 L, mk, ents, markers = world()
-run = conduit(ents, [(0, 0), (60, 0), (60, 40)], elev=0.0)
+conduit(ents, [(0, 0), (60, 0)], elev=0.0)
 lb = fitting(ents, '1lbl', (60, 0, 0), 90, 30)
-bodies = call(L, 'medcb-collect')[0]; b = body(bodies, lb)
-check('lb-turn-note', 'flat plan turn' in (get(b, 'NOTE') or ''), str(get(b, 'NOTE')))
-check('lb-turn-rot', abs(get(b, 'ROT') - math.pi / 2) < 1e-9 and get(b, 'TURN') == 0, str(get(b, 'ROT')))   # tie keeps Z rotation
-L.g['*MED3D-FITS*'] = [call(L, 'medcb-fit-rec', x) for x in bodies]
-pl = plan_run(L, ents, run)
-ff = to_py(get(pl, 'FITFLAGS'))
-g = call(L, 'medcb-geom-for', 'F7', 'LB', 1.0); runf = hub(get(g, 'HUBS'), 'RUN')[1]
-pcs = to_py(get(pl, 'PIECES'))
-check('lb-turn-flag', len(ff) == 1 and ff[0][1] == lb.h, str(ff))
-check('lb-turn-west-uncut', closev(pcs[0][2], [60, 0, 0]), str(pcs))
-check('lb-turn-north-cut', closev(pcs[1][1], [60, runf[0], 0]), f'{pcs} {runf}')
-mk.log.clear(); call(L, 'medcb-place-all', bodies)
-check('lb-turn-note-printed', any('flat plan turn' in l for l in mk.log), str(mk.log))
+b = body(call(L, 'medcb-collect')[0], lb)
+check('lb-turn-1leg', get(b, 'FLIP') is None and 'flat plan turn' in (get(b, 'NOTE') or ''), f'{get(b, "FLIP")} {get(b, "NOTE")}')
+# snap off: drawn rotation, no tilt
+L, mk, ents, markers = world()
+conduit(ents, [(0, 0), (60, 0), (60, 40)], elev=0.0)
+lb = fitting(ents, '1lbl', (60, 0, 0), 90, 30)
+L.g['*MEDCB-SNAP*'] = None
+b = body(call(L, 'medcb-collect')[0], lb)
+check('lb-turn-nosnap', get(b, 'FLIP') is None and near(get(b, 'ROT'), math.pi / 2), f'{get(b, "FLIP")} {get(b, "ROT")}')
 
 # ----------------------------------------- tee: pass-through run + branch end
 L, mk, ents, markers = world()
@@ -209,7 +234,10 @@ hb = dict((h[0], h[2]) for h in to_py(get(B[tu.h], 'HUBS')))
 check('teeu-back-up', closev(hb['BACK'], [0, 0, 1]), str(hb))
 hb = dict((h[0], h[2]) for h in to_py(get(B[td.h], 'HUBS')))
 check('teed-back-down', closev(hb['BACK'], [0, 0, -1]), str(hb))
-check('lbu-note', 'LB up' in (get(B[lbu.h], 'NOTE') or '') and get(B[lbd.h], 'NOTE') is None)
+check('lbu-flip', get(B[lbu.h], 'FLIP') is True and get(B[lbu.h], 'NOTE') is None and get(B[lbd.h], 'NOTE') is None
+      and get(B[lbd.h], 'FLIP') is None, f'{get(B[lbu.h], "FLIP")} {get(B[lbu.h], "NOTE")}')
+hb = dict((h[0], h[2]) for h in to_py(get(B[lbu.h], 'HUBS')))
+check('lbu-back-up', closev(hb['BACK'], [0, 0, 1]) and closev(hb['RUN'], [-1, 0, 0]), str(hb))
 hb = dict((h[0], h[2]) for h in to_py(get(B[lbd.h], 'HUBS')))
 check('lbd-run-on-conduit', closev(hb['RUN'], [1, 0, 0]) and closev(hb['BACK'], [0, 0, -1]), str(hb))
 check('x-reason', get(B[x.h], 'REASON') == 'no 3D data for X bodies', str(get(B[x.h], 'REASON')))
@@ -223,7 +251,7 @@ names = [i.props['Name'] for i in mk.inserts]
 check('place-names', 'MED_CB_RGD_F7_TB_1-00' in names and 'MED_CB_RGD_F7_X_1-00_PH' in names
       and 'MED_CB_RGD_NA_LBD_1-00_PH' in names and 'MED_CB_RGD_F7_TB_4-00_PH' in names, str(names))
 flipped = [i for i in mk.inserts if 'Rot3D' in i.props]
-check('place-flip', len(flipped) == 2 and all(closev(sub(i.props['Rot3D'][0][1], i.props['Rot3D'][0][0]), [1, 0, 0])
+check('place-flip', len(flipped) == 3 and all(closev(sub(i.props['Rot3D'][0][1], i.props['Rot3D'][0][0]), [math.cos(i.props['Rot']), math.sin(i.props['Rot']), 0])
                                                and near(i.props['Rot3D'][0][2], math.pi) for i in flipped), str([i.props for i in flipped]))
 ph = [i for i in mk.inserts if i.props['Name'].endswith('_PH')]
 check('place-ph-layer', ph and all(i.props['Layer'] == 'MED_3DFLAG' for i in ph))
@@ -234,7 +262,7 @@ check('place-skipped-text', any(s[0] == x.h and s[1] == 'FITTING' and 'X bodies'
       and any(s[0] == nosz.h and 'placeholder' not in s[2] for s in sk), str(sk))
 check('place-markers', len(markers) == 4, str(markers))
 check('place-refs', len(to_py(get(out, 'REFS'))) == 8, str(len(to_py(get(out, 'REFS')))))
-check('place-flag-msg', sum('MED3D FLAG: fitting' in l for l in mk.log) == 4 and any('LB up' in l for l in mk.log), str(mk.log))
+check('place-flag-msg', sum('MED3D FLAG: fitting' in l for l in mk.log) == 4 and not any('MED3D note' in l for l in mk.log), str(mk.log))
 
 # ---------------------------------------------------- seed CSV (no MED-DotNet)
 L, mk, ents, markers = world(None)

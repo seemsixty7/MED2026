@@ -142,7 +142,7 @@ The symbols are hub ticks: short bars across the conduit where a hub is.
 | M32 | LB turn with only one leg drawn | 2 | LB on 1lbl with one leg drawn: on its side toward the symbol's short leg (opening sideways, not up) |
 | M33 | Fittings>Union; image menu Union | 2 | union (r6, Eaton UNY): coupling-like; conduit trimmed / extended to the union faces (menu break 2.25 in at 48 > half the union) |
 | M34 | Fittings>Seal; image menu Seal | 2 | EYS seal (r10): inline, body centred on the conduit, pour hub up, leaning boss toward +X, nothing past the catalog turning radius; conduit continuous (no menu break) |
-| M35 | Fittings>Seal-Drn; image menu Seal-Drain | 2 | EYD seal with drain (r11): the EYS exactly; the pour hub plug is a drain plug with an ECD on a nipple 45 deg toward -X (down when mounted vertically) |
+| M35 | Fittings>Seal-Drn; image menu Seal-Drain | 2 | EYD seal with drain (r12): the EYS mirrored along X; the pour hub plug (at +X) is a drain plug with an ECD on a nipple 45 deg toward +X = the symbol's drain end (down in a vertical-down run) |
 | M36 | Fittings>Plug-Rec / Plug-SqH; image menu plugs | 2 | plugged coupling (r6, approx): coupling centred on the conduit end, recessed plug at -X |
 | M37 | Fittings>Hub; image menu Hub | 2 | conduit hub (r6, CH MHUB): wall face at the insert point, conduit extended to the hub face (menu break 3 in at 48) |
 | M38 | Fittings>Reducer; image menu Reducer | 8 | reducer (r6, approx): large coupling -X (RUN2), head sticks out, small end +X (RUN); reduce-to size from #ITEM_ALT; the 4.38 in menu break on +X (0.09125 x 48, medblck.dat) is extended to the head |

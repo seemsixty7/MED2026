@@ -82,11 +82,13 @@ for r in rows:
     tol = 1e-6
     if sh in ('UNY', 'EYS', 'EYD'):
         # r11 EYD: the drain (nipple, ECD hex, ECD body) may reach past the hub faces /
-        # the turning radius; A, B and D are checked on the rest
+        # the turning radius; A, B and D are checked on the rest. r12: the EYD features are
+        # the EYS ones mirrored along X (sg = -1): pour hub at +X, boss leaning -X, drain +X
         parts = [p for e in live(blk) for p in e.parts]
         def lowhigh(p): return (p[1], p[2]) if p[1][2] < p[2][2] else (p[2], p[1])
         obl = [p for p in parts if p[0] == 'CYL' and abs(p[1][0] - p[2][0]) > 1e-6 and abs(p[1][2] - p[2][2]) > 1e-6]
-        drain = [p for p in obl if lowhigh(p)[1][0] < lowhigh(p)[0][0]] + [p for p in parts if p[0] == 'PTS' and len(p[1]) == 12]
+        sg = -1 if sh == 'EYD' else 1
+        drain = [p for p in obl if sg * (lowhigh(p)[1][0] - lowhigh(p)[0][0]) < 0] + [p for p in parts if p[0] == 'PTS' and len(p[1]) == 12]
         bparts = [p for p in parts if p not in drain]
         blo, bhi = bbox(bparts)
         check('A ' + tag, near(bhi[0] - blo[0], A), f'{blo} {bhi}')
@@ -97,8 +99,10 @@ for r in rows:
             # axis; pour hub (+Z) and a leaning boss toward +X, each with a recessed plug;
             # nothing past the published turning radius D (rim corners included) and the
             # farthest point reaches it. r11 EYD (Clint's markup of r10): the EYS exactly, no
-            # other opening; the pour hub plug is a special drain plug with a nipple + ECD
-            # angled 45 deg toward -X (down when mounted vertically); only the drain may pass D.
+            # other opening; the pour hub plug is a special drain plug with a nipple + ECD;
+            # only the drain may pass D. r12 (Clint's test of r11, drain at the top of his
+            # vertical run): EYD mirrored along X - pour hub / drain at +X (RUN = the 2D
+            # symbol's drain end, the lower end of a vertical-down run), ECD 45 deg toward +X.
             sol = live(blk)
             cuts = [p for e in sol for p in getattr(e, 'cuts', [])]
             rmax = max(part_rmax(p) for p in bparts)
@@ -110,9 +114,10 @@ for r in rows:
                   and any(near(p[3], B / 2) for p in xcyl), str(xcyl))
             vert = [p for p in parts if p[0] == 'CYL' and near(p[1][0], p[2][0]) and near(p[1][1], p[2][1]) and abs(p[1][2] - p[2][2]) > 1e-9 and near(p[3], 0.42 * B)]
             check('seal-pour-up ' + tag, len(vert) == 1 and min(vert[0][1][2], vert[0][2][2]) >= -1e-9 and max(vert[0][1][2], vert[0][2][2]) > B / 2, str(vert))
+            check('seal-pour-side ' + tag, len(vert) == 1 and near(vert[0][1][0], -sg * 0.14 * A), str(vert))
             boss = [p for p in obl if p not in drain]
             check('seal-leaning-boss-up ' + tag, any(near(p[3], 0.25 * B) for p in boss) and all(min(p[1][2], p[2][2]) >= -1e-9
-                  and lowhigh(p)[1][0] > lowhigh(p)[0][0] for p in boss), str(obl))
+                  and sg * (lowhigh(p)[1][0] - lowhigh(p)[0][0]) > 0 for p in boss), str(obl))
             check('seal-bottom ' + tag, near(lo[2], -B / 2), f'{lo}')        # no underside opening
             if sh == 'EYS':
                 check('seal-cuts ' + tag, len([p for p in cuts if p[0] == 'CYL']) == 3 and len([p for p in cuts if p[0] == 'PTS' and len(p[1]) == 8]) == 2, str(cuts))
@@ -122,8 +127,8 @@ for r in rows:
                 dc = [p for p in drain if p[0] == 'CYL']
                 hx = [p for p in drain if p[0] == 'PTS']
                 check('eyd-drain-parts ' + tag, len(dc) == 2 and len(hx) == 1 and all(p in sol[1].parts for p in drain), str(drain))
-                # axis 45 deg toward -X: going up / out of the pour hub it moves -X as much as +Z
-                check('eyd-drain-45 ' + tag, all(near(lowhigh(p)[1][0] - lowhigh(p)[0][0], -(lowhigh(p)[1][2] - lowhigh(p)[0][2])) and abs(p[1][1]) < 1e-9 and abs(p[2][1]) < 1e-9 for p in dc), str(dc))
+                # r12 axis 45 deg toward +X: going up / out of the pour hub it moves +X as much as +Z
+                check('eyd-drain-45 ' + tag, all(near(lowhigh(p)[1][0] - lowhigh(p)[0][0], lowhigh(p)[1][2] - lowhigh(p)[0][2]) and abs(p[1][1]) < 1e-9 and abs(p[2][1]) < 1e-9 for p in dc), str(dc))
                 # seated in the pour hub: the nipple starts on the pour hub axis, inside the plug
                 ph = vert[0]; ptop = max(ph[1][2], ph[2][2])
                 nip = min(dc, key=lambda p: lowhigh(p)[0][2])
@@ -267,7 +272,7 @@ check('all-real', not [nm for nm in names if nm.endswith('_PH')], str([nm for nm
 check('all-bylayer', all(not bylayer_bad(mk.blocks[nm.upper()]) for nm in names))
 check('all-insert-layer', all(i.props['Layer'] == 'MED_3DCONDUIT' and i.props.get('Color') == 256 for i in mk.inserts))
 
-print(f'{len(rows)} phase 2 data rows, {n} blocks built EYS r10 / EYD r11, GUA r9')
+print(f'{len(rows)} phase 2 data rows, {n} blocks built EYS r10 / EYD r12, GUA r9')
 if fails:
     print(f'FAILED {len(fails)}'); [print('  ' + f) for f in fails[:60]]; sys.exit(1)
 print('OK test_med3dphase2')

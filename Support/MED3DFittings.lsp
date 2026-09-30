@@ -48,6 +48,11 @@
 ;;;   r11 (Clint's markup of r10): EYD = the EYS exactly, the pour hub plug replaced by a
 ;;;   drain plug with the ECD 45 deg toward -X; no underside opening. EYD blocks carry
 ;;;   "MEDCB geom r11"; older ones are renamed <name>_PRE_R11 (EYS stays r10).
+;;;   r12 (Clint's AutoCAD test of r11, drain came out at the top of a vertical run): EYD
+;;;   features mirrored along X - pour hub / drain plug toward +X (RUN, the 2D symbol's
+;;;   drain end = the lower end of a vertical-down run), boss leaning toward -X, ECD 45 deg
+;;;   toward +X (outward and down). EYD blocks carry "MEDCB geom r12"; older ones are
+;;;   renamed <name>_PRE_R12 (EYS stays r10).
 ;;;   Created only when not already in the drawing (an existing definition is never
 ;;;   redefined). No data -> placeholder box on layer MED_3DFLAG in a block named
 ;;;   <name>_PH (the real name stays free for when data is added).
@@ -89,7 +94,7 @@
 
 (princ "\rLoading MED3DFittings...")
 (vl-load-com)
-(setq *MEDCB-VERSION* "2026-09-30 r11 (feature/3dpath)")
+(setq *MEDCB-VERSION* "2026-09-30 r12 (feature/3dpath)")
 ;; Block definitions carry this tag in their Comments; one made by an older revision
 ;; (no / another tag) is renamed <name>_PRE_R6 out of the way and rebuilt (existing
 ;; definitions are otherwise never redefined). r5: LL / LR hub convention (Clint);
@@ -102,7 +107,7 @@
 ;; renamed <name>_PRE_R7 and rebuilt, every other r6 block stays as it is.
 ;;   (shape tag stale-suffix)
 (setq *MEDCB-SHAPE-TAGS* '(("EYS" "MEDCB geom r10" "_PRE_R10")  ; r7 rework, r9 D limit, r10 centred body
-                           ("EYD" "MEDCB geom r11" "_PRE_R11")  ; r11 = EYS + drain plug in the pour hub
+                           ("EYD" "MEDCB geom r12" "_PRE_R12")  ; r11 = EYS + drain plug, r12 mirrored (drain +X)
                            ("GUAL" "MEDCB geom r9" "_PRE_R9")   ; r9 tuned to Clint's reference DWGs
                            ("GUAT" "MEDCB geom r9" "_PRE_R9")
                            ("GUAX" "MEDCB geom r9" "_PRE_R9")))
@@ -517,8 +522,11 @@
 ;;   - EYD (r11, Clint's markup of r10): exactly the EYS (same centred body, pour hub,
 ;;     leaning boss, same limit against its own D), no other opening; the standard plug
 ;;     in the large pour hub is replaced by a special drain plug with a short 1/2" NPT
-;;     nipple and a Crouse-Hinds ECD11 on it, angled 45 deg toward -X (RUN2) - it points
-;;     down when the seal is mounted vertically. ECD11 per Eaton's product data: 1.56 in
+;;     nipple and a Crouse-Hinds ECD11 on it, angled 45 deg (r11 toward -X / RUN2);
+;;   - EYD r12 (Clint's test of r11, drain at the top of his vertical run): all the EYD
+;;     features mirrored along X - pour hub / drain plug toward +X, boss leaning toward
+;;     -X, ECD 45 deg toward +X (RUN). 1SEALDR draws its drain at local +X and MEDMAKE3D
+;;     keeps the drawn rotation, so RUN is the lower end of a vertical-down run. ECD11 per Eaton's product data: 1.56 in
 ;;     long, 0.88 in; hex / body split approx (*MEDCB-ECD*). Only the nipple and the ECD
 ;;     go past D (the drain is not body).
 ;; Body solid: tube, rings, body, hubs minus the plug seats; second solid: plugs (minus
@@ -541,6 +549,7 @@
         rp (* 0.42 b) hp (* 0.14 b)           ; pour hub radius, plug thickness
         xp (* -0.14 a)
         rs (* 0.25 b) th (/ (* 40.0 pi) 180.0) u (list (sin th) 0.0 (cos th)))
+  ;; r12: the EYD features are mirrored along X (built as the EYS, then x -> -x below)
   (if (not (and tr (> tr (+ r (* 0.05 b))))) (setq tr (+ r (* 0.35 b))))
   ;; pour hub face: its rim corner (zp, rp) on / inside D
   (setq zp (sqrt (- (* tr tr) (* rp rp))))
@@ -566,14 +575,15 @@
   ;; bore: the conduit runs straight through (threads not drawn)
   (medcb-p (list "CYL" "CUT" (list (- (/ a -2.0) 0.01) 0.0 0.0) (list (+ (/ a 2.0) 0.01) 0.0 0.0) (min (* 0.95 rt) (/ (medcb-cod sz) 2.0))))
   ;; pour hub + recessed plug: EYS square drive; EYD (r11) the special drain plug with a
-  ;; 1/2" nipple and the ECD, 45 deg toward -X (down when mounted vertically, RUN2 down)
+  ;; 1/2" nipple and the ECD (built toward -X here, mirrored to +X for r12 below:
+  ;; block +X = the 2D symbol's drain end = the lower end in a vertical-down run)
   (medcb-p (list "CYL" "BODY" (list xp 0.0 0.0) (list xp 0.0 zp) rp))
   (medcb-p (list "CYL" "CUT" (list xp 0.0 (- zp hp)) (list xp 0.0 (+ zp 0.01)) (* 0.8 rp)))
   (setq pf (- zp (* 0.03 b)))                                       ; plug face
   (medcb-p (list "CYL" "COVER" (list xp 0.0 (- zp hp)) (list xp 0.0 pf) (* 0.79 rp)))
   (if (= shape "EYD")
     (progn
-      (setq ecd *MEDCB-ECD* rn (min 0.42 (* 0.6 rp)) dd (list (- s2) 0.0 s2)
+      (setq ecd *MEDCB-ECD* rn (min 0.42 (* 0.6 rp)) dd (list (- s2) 0.0 s2)   ; toward -X before the r12 mirror (+X after)
             q0 (list xp 0.0 (- pf (* 0.5 (- pf (- zp hp))))) q1 (medcb-v+ q0 (medcb-vx dd (+ (* 0.5 rn) 0.3))))  ; nipple starts mid-plug
       (medcb-p (list "CYL" "COVER" q0 q1 rn))
       (medcb-p (list "PRISM" "COVER" q1 (medcb-v+ q1 (medcb-vx dd (cadr ecd))) (/ (car ecd) (sqrt 3.0)) 6))
@@ -585,9 +595,18 @@
   (medcb-p (list "CYL" "CUT" (medcb-v+ ct (medcb-vx u (- (* 1.2 pl)))) (medcb-v+ ct (medcb-vx u 0.01)) (* 0.72 rs)))
   (medcb-p (list "CYL" "COVER" (medcb-v+ ct (medcb-vx u (- (* 1.2 pl)))) (medcb-v+ ct (medcb-vx u (* -0.03 b))) (* 0.71 rs)))
   (medcb-p (list "PRISM" "CUTC" (medcb-v+ ct (medcb-vx u (- (* 0.8 pl)))) ct (* 0.42 rs) 4))
+  ;; r12 EYD: mirror every feature along X (pour hub / drain plug toward +X, boss
+  ;; leaning toward -X, ECD 45 deg toward +X); the body is symmetric, the hub faces stay
+  (if (= shape "EYD") (setq prims (mapcar 'medcb-mirror-x prims)))
   (medcb-h "RUN" (list (/ a 2.0) 0.0 0.0) '(1.0 0.0 0.0))
   (medcb-h "RUN2" (list (/ a -2.0) 0.0 0.0) '(-1.0 0.0 0.0))
   (medcb-prims-geom shape nil))
+;; x -> -x of a CYL / PRISM primitive (end points)
+(defun medcb-mx (q) (list (- (car q)) (cadr q) (caddr q)))
+(defun medcb-mirror-x (pr)
+  (if (member (car pr) '("CYL" "PRISM"))
+    (append (list (car pr) (cadr pr) (medcb-mx (caddr pr)) (medcb-mx (cadddr pr))) (cdr (cdr (cdr (cdr pr)))))
+    pr))
 
 ;; plugged coupling (approx; A coupling length, B coupling OD, PLGR C recess, PLGS
 ;; C square head, D head height): the conduit end is at the origin, half-way into the

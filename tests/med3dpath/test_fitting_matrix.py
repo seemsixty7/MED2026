@@ -150,4 +150,28 @@ def main():
         print(f'FAILED {len(fails)}'); [print('  ' + f) for f in fails]; sys.exit(1)
     print('OK test_fitting_matrix')
 
+def eyd_vertical():
+    """r12: which end of a vertical run the EYD drain goes to. 1SEALDR draws the seal slash
+    and the drain stub at its local +X end; MEDMAKE3D keeps the drawn rotation (both
+    quarter-turn candidates put both hubs on the run, ties keep the drawing), so block +X
+    (RUN, where the r12 EYD has its pour hub / drain plug and the ECD points) follows the
+    symbol's drain end. Symbol rotated -90 (Clint's vertical run, drain end down the
+    sheet): block +X = WCS -Y (down); rotated +90: +Y."""
+    brks = medblck(); brk = brks.get('1SEALDR', [0.0] * 4)
+    s2 = math.sqrt(0.5)
+    for rot_deg, down in ((270, -1), (-90, -1), (90, 1)):
+        for sc in SCALES:
+            L, mk, ents, markers = world()
+            L.g['GET_BL_DATA'] = lambda name: (brks.get(name.upper(), [0.0] * 4) + [0])
+            for r in build_legs('PASSX', brk, sc, math.radians(rot_deg)): conduit(ents, r)
+            f = fitting(ents, '1SEALDR', (0.0, 0.0, 0.0), rot_deg, 64, scale=(sc, sc, sc))
+            b = body(call(L, 'medcb-collect')[0], f)
+            ok = b is not None and get(b, 'SHAPE') == 'EYD'
+            if ok:
+                px = to_py(call(L, 'medcb-xdir', [1.0, 0.0, 0.0], get(b, 'ROT'), get(b, 'FLIP')))
+                ecd = to_py(call(L, 'medcb-xdir', [s2, 0.0, s2], get(b, 'ROT'), get(b, 'FLIP')))
+                ok = abs(px[1] - down) < 1e-6 and abs(px[0]) < 1e-6 and ecd[1] * down > 0.7 and ecd[2] > 0.7
+            check(f'eyd-vertical rot {rot_deg} sc {sc:g}', ok, str(b and (px, ecd)))
+
+eyd_vertical()
 main()

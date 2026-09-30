@@ -85,35 +85,41 @@ for r in rows:
         check('B ' + tag, near(hi[1] - lo[1], B), f'{lo} {hi}')
         check('faces ' + tag, near(hubs['RUN'][0][0], A / 2) and near(hubs['RUN2'][0][0], -A / 2))
         if sh in ('EYS', 'EYD'):
-            # r9 (Clint): EYS - tube + eccentric bulge (+Z), pour hub and a leaning boss, each
-            # with a recessed square-drive plug; NOTHING goes past the published turning radius
-            # D (axis to the farthest point, rim corners included) and the farthest point
-            # reaches it. EYD - the same body mirrored to -Z (large opening down), its plug a
-            # special plug with an ECD drain threaded in, pointing straight down; only the ECD
-            # may go past D.
+            # r10 (Clint's AutoCAD test of r9): the body is CENTRED on the conduit axis; pour
+            # hub (+Z) and a leaning boss toward +X, each with a recessed square-drive plug;
+            # nothing past the published turning radius D (rim corners included) and the
+            # farthest point reaches it. EYD: upright like the EYS (not mirrored) + the lower
+            # large opening (-Z) with a special plug, nipple and an ECD drain pointing DOWN at
+            # 45 deg toward -X; only the nipple / ECD may go past D.
             sol = live(blk)
             cuts = [p for e in sol for p in getattr(e, 'cuts', [])]
             parts = [p for e in sol for p in e.parts]
-            ecd = [p for p in parts if (p[0] == 'PTS' and len(p[1]) == 12) or (p[0] == 'CYL' and near(p[3], 0.31))] if sh == 'EYD' else []
-            bparts = [p for p in parts if p not in ecd]
+            def mid_z(p): return (p[1][2] + p[2][2]) / 2 if p[0] == 'CYL' else sum(q[2] for q in p[1]) / len(p[1])
+            obl = [p for p in parts if p[0] == 'CYL' and abs(p[1][0] - p[2][0]) > 1e-6 and abs(p[1][2] - p[2][2]) > 1e-6]
+            drain = [p for p in parts if (p in obl and mid_z(p) < 0) or (p[0] == 'PTS' and len(p[1]) == 12)]
+            bparts = [p for p in parts if p not in drain]
             rmax = max(part_rmax(p) for p in bparts)
             check('seal-solids ' + tag, len(sol) == 2, str(sol))
             check('seal-within-D ' + tag, D and rmax <= D + 1e-6, f'{rmax} vs {D}')
             check('seal-reaches-D ' + tag, D and rmax >= D - 0.031 * B, f'{rmax} vs {D}')
-            obl = [p for p in parts if p[0] == 'CYL' and abs(p[1][0] - p[2][0]) > 1e-6 and abs(p[1][2] - p[2][2]) > 1e-6]
-            check('seal-leaning-boss ' + tag, len(obl) >= 1, str(obl))
+            xcyl = [p for p in parts if p[0] == 'CYL' and abs(p[1][1] - p[2][1]) < 1e-9 and abs(p[1][2] - p[2][2]) < 1e-9 and abs(p[1][0] - p[2][0]) > 1e-9]
+            check('seal-concentric ' + tag, all(near(c, 0) for p in xcyl for c in (p[1][1], p[1][2], p[2][1], p[2][2]))
+                  and any(near(p[3], B / 2) for p in xcyl), str(xcyl))
+            vert = [p for p in parts if p[0] == 'CYL' and near(p[1][0], p[2][0]) and near(p[1][1], p[2][1]) and abs(p[1][2] - p[2][2]) > 1e-9 and near(p[3], 0.42 * B)]
+            check('seal-pour-up ' + tag, any(max(p[1][2], p[2][2]) > B / 2 for p in vert), str(vert))
+            boss = [p for p in obl if mid_z(p) > 0]
+            check('seal-leaning-boss-up ' + tag, len(boss) >= 1 and all(min(p[1][2], p[2][2]) >= -1e-9 for p in boss), str(obl))
             if sh == 'EYS':
                 check('seal-cuts ' + tag, len([p for p in cuts if p[0] == 'CYL']) == 3 and len([p for p in cuts if p[0] == 'PTS' and len(p[1]) == 8]) == 2, str(cuts))
-                bottom = min(p[1][2] - p[3] for p in parts if p[0] == 'CYL' and p[1][1] == 0 and abs(p[1][2] - p[2][2]) < 1e-9)
-                check('seal-straight-through ' + tag, near(bottom, lo[2]), f'{bottom} {lo}')
-                check('seal-up ' + tag, hi[2] > B / 2 and all(p[1][2] >= -1e-9 and p[2][2] >= -1e-9 for p in obl), f'{hi}')
+                check('seal-bottom ' + tag, near(lo[2], -B / 2) and not drain, f'{lo}')
             else:
-                check('eyd-cuts ' + tag, len([p for p in cuts if p[0] == 'CYL']) == 3 and len([p for p in cuts if p[0] == 'PTS' and len(p[1]) == 8]) == 1, str(cuts))
-                check('eyd-down ' + tag, lo[2] < -B / 2 and hi[2] < B / 2 and all(p[1][2] <= 1e-9 and p[2][2] <= 1e-9 for p in obl), f'{lo} {hi}')
-                cyl = [p for p in ecd if p[0] == 'CYL']
-                check('eyd-ecd ' + tag, len(ecd) == 2 and len(cyl) == 1 and near(cyl[0][1][0], cyl[0][2][0])
-                      and near(min(cyl[0][2][2], cyl[0][1][2]), lo[2]), str(ecd))
-                check('eyd-ecd-plug ' + tag, all(near(c, cyl[0][1][0]) for p in ecd if p[0] == 'PTS' for c in [sum(q[0] for q in p[1]) / 12]), str(ecd))
+                check('eyd-cuts ' + tag, len([p for p in cuts if p[0] == 'CYL']) == 4 and len([p for p in cuts if p[0] == 'PTS' and len(p[1]) == 8]) == 2, str(cuts))
+                check('eyd-upright ' + tag, hi[2] > B / 2 and any(min(p[1][2], p[2][2]) < -B / 2 for p in vert), f'{lo} {hi}')
+                dc = [p for p in drain if p[0] == 'CYL']
+                def lowhigh(p): return (p[1], p[2]) if p[1][2] < p[2][2] else (p[2], p[1])
+                check('eyd-drain-45-down ' + tag, len(dc) == 2 and len(drain) == 3 and all(
+                      near(lowhigh(p)[0][0] - lowhigh(p)[1][0], lowhigh(p)[0][2] - lowhigh(p)[1][2]) and lowhigh(p)[0][0] < lowhigh(p)[1][0] for p in dc), str(dc))
+                check('eyd-drain-lowest ' + tag, near(min(lowhigh(p)[0][2] - p[3] * math.sqrt(0.5) for p in dc), lo[2], 1e-6), f'{lo}')
     elif sh.startswith('GUA'):
         # r9: tuned to Clint's reference DWGs (3DFittings GUA?4A 4B 6C 7D 9E 9F, measured
         # solid by solid): hub face, bottom, top (lugs / bar), hub OD, body dia
@@ -252,7 +258,7 @@ check('all-real', not [nm for nm in names if nm.endswith('_PH')], str([nm for nm
 check('all-bylayer', all(not bylayer_bad(mk.blocks[nm.upper()]) for nm in names))
 check('all-insert-layer', all(i.props['Layer'] == 'MED_3DCONDUIT' and i.props.get('Color') == 256 for i in mk.inserts))
 
-print(f'{len(rows)} phase 2 data rows, {n} blocks built EYS / EYD / GUA r9')
+print(f'{len(rows)} phase 2 data rows, {n} blocks built EYS / EYD r10, GUA r9')
 if fails:
     print(f'FAILED {len(fails)}'); [print('  ' + f) for f in fails[:60]]; sys.exit(1)
 print('OK test_med3dphase2')

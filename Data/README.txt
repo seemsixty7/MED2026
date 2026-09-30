@@ -5,7 +5,8 @@ MEDType has no private or shop-prefixed equipment rows.
 MEDUsers is empty; setup inserts the current Windows login.
 MEDConduitOD holds conduit outside diameters (inches) per conduit type and trade size.
 MEDType.USER3 on CABLE rows holds cable outside diameter (inches).
-MEDConduitBody holds rigid conduit body (Condulet) dimensions (inches) per form, shape and trade size.
+MEDConduitBody holds rigid conduit body (Condulet) and inline fitting (union, seal,
+hub, plug, reducer, coupling) dimensions (inches) per form, shape and trade size.
 
 seed\conduit_od.csv and seed\cable_od_sources.csv are the same OD data with a
 source per row. MED-DotNet reads them at load to create/fill MEDConduitOD and

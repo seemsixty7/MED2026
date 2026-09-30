@@ -1,6 +1,6 @@
 # Conduit body orientation matrix (MEDMAKE3D)
 
-This page lists every 2D conduit-fitting symbol the MED menus can place, the fitting codes it can carry, and what MEDMAKE3D (MED3DPath r11 / MED3DFittings r5) does with each. The same rows are in `tests\med3dpath\fitting_matrix.csv`: the desk test `tests\med3dpath\test_fitting_matrix.py` rebuilds each row and checks the `cur_*` columns, and `MEDCBGRID` (`tests\autocad\MEDCBGrid.lsp`) draws them all in a drawing.
+This page lists every 2D conduit-fitting symbol the MED menus can place, the fitting codes it can carry, and what MEDMAKE3D (MED3DPath r12 / MED3DFittings r6) does with each. The same rows are in `tests\med3dpath\fitting_matrix.csv`: the desk test `tests\med3dpath\test_fitting_matrix.py` rebuilds each row and checks the `cur_*` columns, and `MEDCBGRID` (`tests\autocad\MEDCBGrid.lsp`) draws them all in a drawing.
 
 **Principle:**
 1. The fitting code picks the body (`MEDType.ITEMKEY2`, else the description).
@@ -17,7 +17,7 @@ From the grid review at DIMSCALE 48 (applied in r5 / r11):
 - **LL / LR were swapped** in the 3D blocks. Now, with the cover up and the RUN (end) hub at +X, an **LL's side hub is at +Y and an LR's at -Y** (side hub up, looking into the end hub: cover on the left = LL). This replaces the earlier "cover always up" (Q2 option A): the body always lies along the symbol's long leg, and the cover faces **down** when the code and the symbol need it: LR on `1lbl` opens on the bottom (M04), LL on `1lbr` opens down (M06). LL / LR blocks made before r5 are renamed `<name>_PRE_R5` the first time MEDMAKE3D needs the name, and rebuilt.
 - **TB on a flat tee (M12):** back hub tilted into the plan toward the branch, opening on the side opposite the joining leg.
 - **LB with one leg drawn (M32):** still on its side (opening sideways, toward the symbol's side), not face up.
-- **LBD / LBY / Mogul BLB** use LB logic (M21 - M23, M31): on `1lbdl` / `1lbdr` / `1lby` / `1lbl` they lie on their side like the LB. They are still placeholders until their builders exist (phase 2).
+- **LBD / LBY / Mogul BLB** use LB logic (M21 - M23, M31): on `1lbdl` / `1lbdr` / `1lby` / `1lbl` they lie on their side like the LB. Real bodies since r6 (phase 2).
 - **Vertical conduit** from the fitting's own xdata (M07 - M09, M13 - M16): the menu stores the up / down conduit on the insert (`MED_CONDUIT` distance + `VERT_DATA` direction). MEDMAKE3D now builds it as a solid from the face of the hub pointing that way to insertion Z ± distance (flagged when no hub points that way).
 - **Q5:** legs are searched out to the `medblck.dat` break × insert scale + 0.25", so up symbols at DIMSCALE 48 find their conduit; it is trimmed or extended to the hub face.
 - **LB up / down, tee up / down, T, C** look good (Q3, Q4 kept).
@@ -82,24 +82,28 @@ The symbols are hub ticks: short bars across the conduit where a hub is.
 | M16 | `1teeuo` | 11 (12 13) | TB | PASSX UP | BACK+Z COVER-Z RUNS:X, cuts 2, flags 0, vert 1 | ✓ BACK+Z COVER-Z RUNS:X, cuts 2, flags 0, vert 1 | ✓ BACK+Z COVER-Z RUNS:X, cuts 2, flags 0, vert 1 | Q4 Q5 |
 | M18 | `1cee` | 50 (51 52) | C | PASSX | COVER+Z RUNS:X, cuts 0, flags 0, vert 0 | ✓ COVER+Z RUNS:X, cuts 0, flags 0, vert 0 | ✓ COVER+Z RUNS:X, cuts 0, flags 0, vert 0 |  |
 | M19 | `1cee` | 50 (51 52) | C | -X +X | COVER+Z RUNS:X, cuts 2, flags 0, vert 0 | ✓ COVER+Z RUNS:X, cuts 2, flags 0, vert 0 | ✓ COVER+Z RUNS:X, cuts 2, flags 0, vert 0 |  |
-| M20 | `1exs` | 80 (81 82) | X | PASSX PASSY | PH*, cuts *, flags 1+, vert 0 | ✓ PH BRANCH+Y BRANCH2-Y COVER+Z RUN+X RUN2-X, cuts 0, flags 1, vert 0 | ✓ PH BRANCH+Y BRANCH2-Y COVER+Z RUN+X RUN2-X, cuts 0, flags 1, vert 0 | Q9 |
-| M21 | `1lbdl` | 39 | LBD | +X +Y | PH BACK+Y COVER-Y RUN+X, cuts *, flags 1+, vert 0 | ✓ PH BACK+Y COVER-Y RUN+X, cuts 2, flags 1, vert 0 | ✓ PH BACK+Y COVER-Y RUN+X, cuts 2, flags 1, vert 0 | Clint r5 |
-| M22 | `1lbdr` | 39 | LBD | +X -Y | PH BACK-Y COVER+Y RUN+X, cuts *, flags 1+, vert 0 | ✓ PH BACK-Y COVER+Y RUN+X, cuts 2, flags 1, vert 0 | ✓ PH BACK-Y COVER+Y RUN+X, cuts 2, flags 1, vert 0 | Clint r5 |
-| M23 | `1lby` | 41 | LBY | +X +Y | PH BACK+Y COVER-Y RUN+X, cuts *, flags 1+, vert 0 | ✓ PH BACK+Y COVER-Y RUN+X, cuts 2, flags 1, vert 0 | ✓ PH BACK+Y COVER-Y RUN+X, cuts 2, flags 1, vert 0 | Clint r5 |
-| M24 | `1gual` | 141 | GUAL | +X +Y | PH*, cuts *, flags 1+, vert 0 | ✓ PH COVER+Z RUN+X RUN2-X, cuts 1, flags 2, vert 0 | ✓ PH COVER+Z RUN+X RUN2-X, cuts 1, flags 2, vert 0 | Q9 |
-| M25 | `1guat` | 142 | GUAT | +X +Y -Y | PH*, cuts *, flags 1+, vert 0 | ✓ PH COVER+Z RUN+Y RUN2-Y, cuts 2, flags 2, vert 0 | ✓ PH COVER+Z RUN+Y RUN2-Y, cuts 2, flags 2, vert 0 | Q9 |
-| M26 | `1guax` | 143 | GUAX | PASSX PASSY | PH*, cuts *, flags 1+, vert 0 | ✓ PH COVER+Z RUN+X RUN2-X, cuts 2, flags 3, vert 0 | ✓ PH COVER+Z RUN+X RUN2-X, cuts 2, flags 3, vert 0 | Q9 |
-| M27 | `1gualsid` | 141 | GUAL | +X | PH*, cuts *, flags 1+, vert 0 | ✓ PH COVER+Z RUN+X RUN2-X, cuts 1, flags 1, vert 0 | ✓ PH COVER+Z RUN+X RUN2-X, cuts 1, flags 1, vert 0 | Q9 |
-| M28 | `1guatsid` | 142 | GUAT | PASSX | PH*, cuts *, flags 1+, vert 0 | ✓ PH COVER+Z RUN+X RUN2-X, cuts 2, flags 1, vert 0 | ✓ PH COVER+Z RUN+X RUN2-X, cuts 2, flags 1, vert 0 | Q9 |
-| M29 | `1bub` | 94 | BUB (Mogul) | PASSX | PH*, cuts *, flags 1+, vert 0 | ✓ PH COVER+Z RUN+X RUN2-X, cuts 0, flags 1, vert 0 | ✓ PH COVER+Z RUN+X RUN2-X, cuts 0, flags 1, vert 0 | Q9 |
-| M31 | `1lbl` | 40 | BLB (Mogul) | +X +Y | PH BACK+Y COVER-Y RUN+X, cuts *, flags 1+, vert 0 | ✓ PH BACK+Y COVER-Y RUN+X, cuts 2, flags 1, vert 0 | ✓ PH BACK+Y COVER-Y RUN+X, cuts 2, flags 1, vert 0 | Clint r5 |
+| M20 | `1exs` | 80 (81 82) | X (F7) | PASSX PASSY | BRANCHES:Y COVER+Z RUNS:X, cuts 0, flags 0, vert 0 | ✓ BRANCHES:Y COVER+Z RUNS:X, cuts 0, flags 0, vert 0 | ✓ BRANCHES:Y COVER+Z RUNS:X, cuts 0, flags 0, vert 0 | Q9 decided |
+| M21 | `1lbdl` | 39 | LBD (CH) | +X +Y | BACK+Y COVER-Y RUN+X, cuts 2, flags 0, vert 0 | ✓ BACK+Y COVER-Y RUN+X, cuts 2, flags 0, vert 0 | ✓ BACK+Y COVER-Y RUN+X, cuts 2, flags 0, vert 0 | Clint r5 |
+| M22 | `1lbdr` | 39 | LBD (CH) | +X -Y | BACK-Y COVER+Y RUN+X, cuts 2, flags 0, vert 0 | ✓ BACK-Y COVER+Y RUN+X, cuts 2, flags 0, vert 0 | ✓ BACK-Y COVER+Y RUN+X, cuts 2, flags 0, vert 0 | Clint r5 |
+| M23 | `1lby` | 41 | LBY (CH) | +X +Y | BACK+Y COVER-Y RUN+X, cuts 2, flags 0, vert 0 | ✓ BACK+Y COVER-Y RUN+X, cuts 2, flags 0, vert 0 | ✓ BACK+Y COVER-Y RUN+X, cuts 2, flags 0, vert 0 | Clint r5 |
+| M24 | `1gual` | 141 | GUAL (XP) | +X +Y | BRANCH+Y COVER+Z RUN+X, cuts 2, flags 0, vert 0 | ✓ BRANCH+Y COVER+Z RUN+X, cuts 2, flags 0, vert 0 | ✓ BRANCH+Y COVER+Z RUN+X, cuts 2, flags 0, vert 0 | Q9 decided |
+| M25 | `1guat` | 142 | GUAT (XP) | +X +Y -Y | BRANCH+X COVER+Z RUNS:Y, cuts 3, flags 0, vert 0 | ✓ BRANCH+X COVER+Z RUNS:Y, cuts 3, flags 0, vert 0 | ✓ BRANCH+X COVER+Z RUNS:Y, cuts 3, flags 0, vert 0 | Q9 decided |
+| M26 | `1guax` | 143 | GUAX (XP) | PASSX PASSY | BRANCHES:Y COVER+Z RUNS:X, cuts 4, flags 0, vert 0 | ✓ BRANCHES:Y COVER+Z RUNS:X, cuts 4, flags 0, vert 0 | ✓ BRANCHES:Y COVER+Z RUNS:X, cuts 4, flags 0, vert 0 | Q9 decided |
+| M27 | `1gualsid` | 141 | GUAL (XP) | +X | BRANCH-Z COVER+Y RUN+X, cuts 1, flags 0, vert 0 | ✓ BRANCH-Z COVER+Y RUN+X, cuts 1, flags 0, vert 0 | ✓ BRANCH-Z COVER+Y RUN+X, cuts 1, flags 0, vert 0 | Q9 decided |
+| M28 | `1guatsid` | 142 | GUAT (XP) | PASSX | BRANCH-Z COVER+Y RUNS:X, cuts 2, flags 0, vert 0 | ✓ BRANCH-Z COVER+Y RUNS:X, cuts 2, flags 0, vert 0 | ✓ BRANCH-Z COVER+Y RUNS:X, cuts 2, flags 0, vert 0 | Q9 decided |
+| M29 | `1bub` | 94 | BUB (Mogul) | PASSX | COVER+Z RUNS:X, cuts 0, flags 0, vert 0 | ✓ COVER+Z RUNS:X, cuts 0, flags 0, vert 0 | ✓ COVER+Z RUNS:X, cuts 0, flags 0, vert 0 | Q9 decided |
+| M31 | `1lbl` | 40 | BLB (Mogul) | +X +Y | BACK+Y COVER-Y RUN+X, cuts 2, flags 0, vert 0 | ✓ BACK+Y COVER-Y RUN+X, cuts 2, flags 0, vert 0 | ✓ BACK+Y COVER-Y RUN+X, cuts 2, flags 0, vert 0 | Clint r5 |
 | M32 | `1lbl` | 30 (31 32) | LB | +X | BACK+Y COVER-Y RUN+X, cuts 1, flags 0, vert 0 | ✓ BACK+Y COVER-Y RUN+X, cuts 1, flags 0, vert 0 | ✓ BACK+Y COVER-Y RUN+X, cuts 1, flags 0, vert 0 | Clint r5 |
-| M33 | `1union` | 72 | - | PASSX | NM, cuts 0, flags 0, vert 0 | ✓ NM, cuts 0, flags 0, vert 0 | ✓ NM, cuts 0, flags 0, vert 0 |  |
-| M34 | `1seal` | 61 | - | PASSX | NM, cuts 0, flags 0, vert 0 | ✓ NM, cuts 0, flags 0, vert 0 | ✓ NM, cuts 0, flags 0, vert 0 |  |
-| M35 | `1sealdr` | 64 | - | PASSX | NM, cuts 0, flags 0, vert 0 | ✓ NM, cuts 0, flags 0, vert 0 | ✓ NM, cuts 0, flags 0, vert 0 |  |
-| M36 | `1cap` | 100 (101) | - | +X | NM, cuts 0, flags 0, vert 0 | ✓ NM, cuts 0, flags 0, vert 0 | ✓ NM, cuts 0, flags 0, vert 0 |  |
-| M37 | `1hub` | 120 | - | +X | NM, cuts 0, flags 0, vert 0 | ✓ NM, cuts 0, flags 0, vert 0 | ✓ NM, cuts 0, flags 0, vert 0 |  |
-| M38 | `1re` | 103 | - | PASSX | NM, cuts 0, flags 0, vert 0 | ✓ NM, cuts 0, flags 0, vert 0 | ✓ NM, cuts 0, flags 0, vert 0 |  |
+| M33 | `1union` | 72 | UNY (CH) | PASSX | COVER+Z RUNS:X, cuts 2, flags 0, vert 0 | ✓ COVER+Z RUNS:X, cuts 2, flags 0, vert 0 | ✓ COVER+Z RUNS:X, cuts 2, flags 0, vert 0 | decided |
+| M34 | `1seal` | 61 | EYS (CH) | PASSX | COVER+Z RUNS:X, cuts 0, flags 0, vert 0 | ✓ COVER+Z RUNS:X, cuts 0, flags 0, vert 0 | ✓ COVER+Z RUNS:X, cuts 0, flags 0, vert 0 | decided |
+| M35 | `1sealdr` | 64 | EYD (CH) | PASSX | COVER+Z RUNS:X, cuts 0, flags 0, vert 0 | ✓ COVER+Z RUNS:X, cuts 0, flags 0, vert 0 | ✓ COVER+Z RUNS:X, cuts 0, flags 0, vert 0 | decided |
+| M36 | `1cap` | 100 (101) | PLGR (CH) | +X | COVER+Z RUN+X, cuts 0, flags 0, vert 0 | ✓ COVER+Z RUN+X, cuts 0, flags 0, vert 0 | ✓ COVER+Z RUN+X, cuts 0, flags 0, vert 0 | decided |
+| M37 | `1hub` | 120 | HUB (CH) | +X | COVER+Z RUN+X, cuts 1, flags 0, vert 0 | ✓ COVER+Z RUN+X, cuts 1, flags 0, vert 0 | ✓ COVER+Z RUN+X, cuts 1, flags 0, vert 0 | decided |
+| M38 | `1re` | 103 | RE (CH) | PASSX | COVER+Z RUN+X RUN2-X, cuts 2, flags 0, vert 0 | ✓ COVER+Z RUN+X RUN2-X, cuts 2, flags 0, vert 0 | ✓ COVER+Z RUN+X RUN2-X, cuts 2, flags 0, vert 0 | decided |
+| M41 | `1tee` | 18 | BT (Mogul) | PASSY +X | BRANCH+X COVER+Z RUNS:Y, cuts 1, flags 0, vert 0 | ✓ BRANCH+X COVER+Z RUNS:Y, cuts 1, flags 0, vert 0 | ✓ BRANCH+X COVER+Z RUNS:Y, cuts 1, flags 0, vert 0 |  |
+| M42 | `1cee` | 53 | BC (Mogul) | PASSX | COVER+Z RUNS:X, cuts 0, flags 0, vert 0 | ✓ COVER+Z RUNS:X, cuts 0, flags 0, vert 0 | ✓ COVER+Z RUNS:X, cuts 0, flags 0, vert 0 |  |
+| M43 | `1hub` | 121 | HUB (Myers ST) | +X | COVER+Z RUN+X, cuts 1, flags 0, vert 0 | ✓ COVER+Z RUN+X, cuts 1, flags 0, vert 0 | ✓ COVER+Z RUN+X, cuts 1, flags 0, vert 0 |  |
+| M44 | `1cap` | 101 | PLGS (CH) | +X | COVER+Z RUN+X, cuts 0, flags 0, vert 0 | ✓ COVER+Z RUN+X, cuts 0, flags 0, vert 0 | ✓ COVER+Z RUN+X, cuts 0, flags 0, vert 0 |  |
 | M39 | `1lbl` | 30 (31 32 33 34 35 36 37 38) | none | -X +Y, **mirrored** (X scale -1) | MIRROR, cuts 0, flags 1, vert 0 | ✓ MIRROR, cuts 0, flags 1, vert 0 | ✓ MIRROR, cuts 0, flags 1, vert 0 | decided |
 | M40 | `1tee` | 11 (12 13 14 15 16) | none | PASSY +X, **mirrored** (Y scale -1) | MIRROR, cuts 0, flags 1, vert 0 | ✓ MIRROR, cuts 0, flags 1, vert 0 | ✓ MIRROR, cuts 0, flags 1, vert 0 | decided |
 
@@ -124,56 +128,67 @@ The symbols are hub ticks: short bars across the conduit where a hub is.
 | M16 | ribbon Tee Fitting Up Open | 6 | menu breaks by 0.046875 x DIMSCALE - found and extended (Q5); vertical conduit built up |
 | M18 | Fittings>Cee; ribbon Cee; image menu 'C' Fitting | 2 | conduit stays continuous through the body |
 | M19 | same with the conduit drawn as two runs | 2 |  |
-| M20 | Fittings>X; ribbon Cross Fitting; image menu X | 2 | X: logic OK (Clint); needs the X body builder (phase 2) |
-| M21 | Fittings>Lbd L; ribbon LBD Fitting; image menu LBD Fitting | 2 | LBD = LB with a bigger body: LB orientation on its side; placeholder until the LBD builder (phase 2) |
-| M22 | Fittings>Lbd R; ribbon LBD Fitting; image menu LBD Fitting | 2 | LBD on its side, opposite presentation; placeholder until the LBD builder (phase 2) |
-| M23 | Fittings>Lby; ribbon LBY Fitting; image menu Lby | 2 | LBY = LB logic, symmetrical legs; placeholder until the LBY builder (phase 2) |
-| M24 | Fittings>Gual; image menu Gual Fitting | 2 | GUAL: face up, symmetrical legs; needs builder (phase 2) |
-| M25 | Fittings>Guat; image menu Guat Fitting | 2 | GUAT: tee logic, face up; needs builder (phase 2) |
-| M26 | Fittings>Guax; image menu Guax Fitting | 2 | GUAX: X logic, face up; needs builder (phase 2) |
-| M27 | Fittings>Gualside | 2 | GUAL side view: LL/LR-like, face either way - be consistent; needs builder (phase 2) |
-| M28 | Fittings>Guatside; image menu Guat side view | 2 | GUAT side view: branch assumed down / away; needs builder (phase 2) |
-| M29 | Fittings>Bub; image menu Pulling fitting | 2 | BUB = 45 deg body: face up at the insert point; needs builder (phase 2) |
-| M31 | code changed to Mogul BLB (MEDCHG) | 2 | Mogul BLB = larger LB: LB orientation on its side; placeholder until the BLB builder (phase 2) |
+| M20 | Fittings>X; ribbon Cross Fitting; image menu X | 2 | X body (r6, CH1F-2022 p.13): face up, both runs continuous through it |
+| M21 | Fittings>Lbd L; ribbon LBD Fitting; image menu LBD Fitting | 2 | LBD (r6, CH 2006 1F p.13): LB orientation on its side along the long leg |
+| M22 | Fittings>Lbd R; ribbon LBD Fitting; image menu LBD Fitting | 2 | LBD on its side, opposite presentation (r6 builder) |
+| M23 | Fittings>Lby; ribbon LBY Fitting; image menu Lby | 2 | LBY (r6, CH 2006 1F p.16): LB logic, symmetrical legs; COVER token = body +Z (the round cover sits on the 45 deg corner between body +Z and -X) |
+| M24 | Fittings>Gual; image menu Gual Fitting | 2 | GUAL (r6, Eaton 3F p.55): face up, legs symmetrical (hub faces at c from the centre) |
+| M25 | Fittings>Guat; image menu Guat Fitting | 2 | GUAT: tee logic, face up; 1guat -90 deg offset like 1tee (branch = symbol +X) |
+| M26 | Fittings>Guax; image menu Guax Fitting | 2 | GUAX: X logic, face up |
+| M27 | Fittings>Gualside | 2 | GUAL side view: tilted -90 deg about X - branch down, cover toward +Y (same for GUAT side) |
+| M28 | Fittings>Guatside; image menu Guat side view | 2 | GUAT side view: branch down / away, cover toward +Y (consistent with GUAL side) |
+| M29 | Fittings>Bub; image menu Pulling fitting | 2 | BUB (r6, CH 2006 1F p.15): face up at the insert point, hubs 45 deg down; planner sees horizontal hubs at the faces |
+| M31 | code changed to Mogul BLB (MEDCHG) | 2 | Mogul BLB (r6, CH 2006 1F p.14): larger LB on its side |
 | M32 | LB turn with only one leg drawn | 2 | LB on 1lbl with one leg drawn: on its side toward the symbol's short leg (opening sideways, not up) |
-| M33 | Fittings>Union; image menu Union | 2 | union: not modelled yet; needs a coupling-like builder (phase 2; menu break may exceed the union length) |
-| M34 | Fittings>Seal; image menu Seal | 2 | not a conduit body |
-| M35 | Fittings>Seal-Drn; image menu Seal-Drain | 2 | not a conduit body |
-| M36 | Fittings>Plug-Rec / Plug-SqH; image menu plugs | 2 | not a conduit body |
-| M37 | Fittings>Hub; image menu Hub | 2 | not a conduit body |
-| M38 | Fittings>Reducer; image menu Reducer | 8 | not a conduit body |
+| M33 | Fittings>Union; image menu Union | 2 | union (r6, Eaton UNY): coupling-like; conduit trimmed / extended to the union faces (menu break 2.25 in at 48 > half the union) |
+| M34 | Fittings>Seal; image menu Seal | 2 | EYS seal (r6): inline, pour hub up; conduit continuous (no menu break) |
+| M35 | Fittings>Seal-Drn; image menu Seal-Drain | 2 | EYD seal with drain (r6): as EYS + drain down |
+| M36 | Fittings>Plug-Rec / Plug-SqH; image menu plugs | 2 | plugged coupling (r6, approx): coupling centred on the conduit end, recessed plug at -X |
+| M37 | Fittings>Hub; image menu Hub | 2 | conduit hub (r6, CH MHUB): wall face at the insert point, conduit extended to the hub face (menu break 3 in at 48) |
+| M38 | Fittings>Reducer; image menu Reducer | 8 | reducer (r6, approx): large coupling -X (RUN2), head sticks out, small end +X (RUN); reduce-to size from #ITEM_ALT; the 43.8 in menu break on +X is extended to the head |
+| M41 | code changed to Mogul BT (MEDCHG) | 2 | Mogul BT = T geometry (CH 2006 1F p.15) |
+| M42 | code changed to Mogul BC (MEDCHG) | 2 | Mogul BC = C geometry (CH 2006 1F p.14) |
+| M43 | Myers hub code (MEDCHG) | 2 | Myers ST hub (CP-270): body above the wall, neck + locknut inside |
+| M44 | Fittings>Plug-SqH | 2 | plugged coupling, square-head plug (approx) |
 | M39 | any LB/LL menu entry, then MIRROR (X scale -1) | 2 | mirrored symbol: no 3D body, conduit left as drawn, one MIRRORED FITTING flag + Skipped line |
 | M40 | any T menu entry, then MIRROR (Y scale -1) | 2 | mirrored symbol: no 3D body, conduit left as drawn, one MIRRORED FITTING flag + Skipped line |
 
 ## Summary
 
-- 37 rows (M10, M17, M30 removed): 37 match at DIMSCALE 1, 37 at DIMSCALE 48.
+- 41 rows (M10, M17, M30 removed; M41 - M44 added in r6): 41 match at DIMSCALE 1, 41 at DIMSCALE 48.
 - Changed in r5 / r11: M03 - M06 (LL / LR), M07 - M09 and M13 - M16 (vertical conduit; up symbols at 48 now find and trim their conduit), M12 (TB tilted), M21 - M23 and M31 (LB logic on the placeholders), M32 (on its side).
+- Changed in r6 / r12 (phase 2): every placeholder and "not modelled" row now gets a real body - M20 (X), M21 - M23 (LBD, LBY), M24 - M28 (GUA), M29 (BUB), M31 (BLB), M33 - M38 (union, seals, plug, hub, reducer); new rows M41 - M44 (Mogul BT, Mogul BC, Myers hub, square-head plug). No placeholders or flags remain in the matrix except the mirrored rows M39 / M40.
 
-## Phase 2: bodies still to build (Clint's notes)
+## Phase 2: bodies (done in r6)
 
-Placeholders stay on `MED_3DFLAG` with a flag until each builder exists. Data rule: published catalog dimensions with sources where found; otherwise clearly labelled approximations derived from the LB / T data, marked "approx" in the CSV and here. Keep the presentation simple, like the existing bodies.
+Clint's notes are kept in the table; the last two columns say what was built and where the numbers come from. Data rule: published catalog dimensions with sources where found; otherwise clearly labelled approximations (`SourceId` `APPROX`, "approx" in the `Notes` column of `Data\seed\conduit_body_dims.csv`). Sources are listed in `Data\seed\conduit_body_sources.csv`.
 
-| Row | Body | Clint |
-| --- | --- | --- |
-| M20 | X (cross) | logic tracks; add the X builder |
-| M21, M22 | LBD | LB with a bigger body and a better bend radius for cables; on its side like the LB |
-| M23 | LBY | LB logic, symmetrical legs (easier) |
-| M24 | GUAL | face up; GUA legs typically symmetrical |
-| M25 | GUAT | tee logic, face up |
-| M26 | GUAX | X logic, legs the same, face up |
-| M27 | GUAL side view | LL / LR-like; the face can lie either way - be consistent |
-| M28 | GUAT side view | branch assumed down / away (the presentation means it goes away); face either way, consistent |
-| M29 | BUB | a 45° body; face up at the insertion point |
-| M31 | Mogul BLB | LB logic, larger body |
-| M33 | Union (UNY) | coupling-like; the menu break may be longer than the union - extend the conduit to the union faces |
-| M34 | Seal (EYS) | sealing fitting; draw function |
-| M35 | Seal with drain (EYD) | draw function |
-| M36 | Plug | a coupling with a plug (recessed or extruded) |
-| M37 | Hub | Myers-style or plain conduit hub: same logic, different dimensions - middle ground, or a separate Myers block |
-| M38 | Reducer | recessed, sticks out a little to show it's there; one size to another |
+| Row | Body | Clint | Built (r6) | Dimensions from |
+| --- | --- | --- | --- | --- |
+| M20 | X (cross) | logic tracks; add the X builder | X: two run hubs on X, two branch hubs on Y, cover up; codes 80 / 81 / 82 (F7 / F8 / M9) | CH1F-2022 printed p.13 (Form 8 / Mark 9 X; F8 X 1-1/2 `c` kept as printed) |
+| M21, M22 | LBD | LB with a bigger body and a better bend radius for cables; on its side like the LB | LB geometry with the LBD letters; code 39 (CH) | CH1F-2006 section 1F p.13 (CH LBD 1" `e` kept as printed) |
+| M23 | LBY | LB logic, symmetrical legs (easier) | own builder: round body with LB hubs (RUN, BACK) at 90°, legs symmetrical, round cover on the 45° corner opposite the hubs; code 41 | CH1F-2006 p.16 (a / b read as hub-face distances; body internals derived) |
+| M24 | GUAL | face up; GUA legs typically symmetrical | round box, cover up, hubs at `c` from the centre; code 141 | Eaton 3F GUA page p.55 (CH3F-GUA-2024); cover / hub OD derived |
+| M25 | GUAT | tee logic, face up | as GUAL + third hub; `1guat` -90° offset like `1tee`; code 142 | CH3F-GUA-2024 |
+| M26 | GUAX | X logic, legs the same, face up | four hubs; code 143 | CH3F-GUA-2024 |
+| M27 | GUAL side view | LL / LR-like; the face can lie either way - be consistent | `1gualsid`: tilted -90° about X - branch down, cover toward +Y | CH3F-GUA-2024 |
+| M28 | GUAT side view | branch assumed down / away; face either way, consistent | `1guatsid`: same tilt as GUAL side | CH3F-GUA-2024 |
+| M29 | BUB | a 45° body; face up at the insertion point | body with the two hubs at 45° down (oblique cylinders); planner treats the hub faces as horizontal; code 94 (Mogul) | CH1F-2006 p.15 (internals derived) |
+| M31 | Mogul BLB | LB logic, larger body | LB geometry with the Mogul letters; code 40 | CH1F-2006 p.14, cross-checked with the current Eaton Mogul page |
+| M41 | Mogul BT | - | T geometry; code 18 | CH1F-2006 p.15 |
+| M42 | Mogul BC | - | C geometry; code 53 | CH1F-2006 p.14 |
+| M33 | Union (UNY) | coupling-like; the menu break may be longer than the union - extend the conduit to the union faces | inline body; conduit trimmed / extended to the faces (on-axis guard in MED3DPath r12); code 72 | CH5F-UNY-2022 printed p.82 |
+| M34 | Seal (EYS) | sealing fitting; draw function | inline body + pour hub up; code 61 | CH6F-EYS-2020 printed p.114 |
+| M35 | Seal with drain (EYD) | draw function | as EYS + drain down; code 64 | CH6F-EYD table (EYD 1" `b` kept as printed) |
+| M36, M44 | Plug | a coupling with a plug (recessed or extruded) | coupling on the conduit end + recessed (PLGR, code 100) or square-head (PLGS, code 101) plug | **approx**: Wheatland coupling (WH-ECN-2017) + ANSI C80.1 OD; the CH PLG page has no dimensions |
+| M37 | Hub | Myers-style or plain conduit hub: same logic, different dimensions - middle ground, or a separate Myers block | two blocks: CH conduit hub (code 120) and Myers ST (code 121); wall face at the insert point | CH-CP269-2006 (MHUB letters a b c d x, Myers ST A B C D K) |
+| M38 | Reducer | recessed, sticks out a little to show it's there; one size to another | coupling on the large conduit + head sticking out + small conduit; reduce-to size from the fitting's alt size (else one size down, with a note); code 103 | **approx**: Wheatland coupling + C80.1 OD |
 
-M33 - M38 are not conduit bodies today (counted "not modelled"); they need their own resolution (code → builder) besides the geometry.
+**Code → body.** `MEDType.ITEMKEY2` is filled for all of these codes in `Data\MED.db` (`tools\build_fitting_body_keys.py`, `Data\seed\fitting_body_keys.csv`). If a database has no key, MEDMAKE3D falls back to the description, then to the keys CSV (same code and same description only).
+
+**Block rule (Clint).** Every entity inside a generated fitting block is on layer 0 with colour, linetype and lineweight ByLayer - no cover colour or other fixed properties. The insert carries the layer: `MED_3DCONDUIT` for real bodies, `MED_3DFLAG` for placeholders. Blocks built by r5 or earlier (gray cover) are renamed `..._PRE_R6` and rebuilt the first time they are needed; PURGE the `_PRE_R6` blocks once nothing uses them.
+
+**Still open.** `2teed` has no DWG; the reducing coupling (REC), the EYS elbow and EZS / EZD are not modelled; the GUA and plug codes cover only the catalog variants chosen here; the `1re` large end is assumed to be on the symbol's -X side.
 
 ## Running the grid
 
@@ -183,7 +198,7 @@ M33 - M38 are not conduit bodies today (counted "not modelled"); they need their
 4. Run `MEDCBGRID`. Pick or type the base point (Enter = 0,0), then the rotation for every cell (Enter = 0; try 30 to check that rotation doesn't matter).
 5. Drawing scale: MEDCBGRID uses the MED scale (`USERR1`, else `DIMSCALE`, as SETUP sets them). If that is 1 (or 0), it asks `scale to use <48>`; Enter = 48. It then sets `_SC`, `DIMSCALE` and `USERR1` to that value, as SETUP does, so the grid and MEDMAKE3D use the same scale.
 6. Every symbol is inserted at +scale on X and Y, the way the menu inserts it (`insert name pt _SC _SC rot`). Only M39 / M40 get one negative scale factor, to fake a user MIRROR. The last line reports `scale check N ok`, and names any cell with the wrong scale or mirror.
-7. `ZOOM E`. There are 37 cells, 10' x 10' at scale 48 (cell size, run length and text scale with scale / 48), 6 per row. Each cell is labelled with the row id, block, code, legs, expected result, and the current match at the grid's scale. M39 / M40 are labelled MIRRORED; after MEDMAKE3D they show only the `MIRRORED FITTING - re-insert, do not mirror` marker, with the conduit untouched.
+7. `ZOOM E`. There are 41 cells, 10' x 10' at scale 48 (cell size, run length and text scale with scale / 48), 6 per row. Each cell is labelled with the row id, block, code, legs, expected result, and the current match at the grid's scale. M39 / M40 are labelled MIRRORED; after MEDMAKE3D they show only the `MIRRORED FITTING - re-insert, do not mirror` marker, with the conduit untouched.
 8. Run `MEDMAKE3D`, choose Layer, and look at each cell (e.g. `-VIEW _SWISO`, or orbit). The up / down cells also get their vertical conduit (36").
 9. To repeat, erase everything (or use a new drawing) and run `MEDCBGRID` again.
 

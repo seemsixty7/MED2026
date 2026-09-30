@@ -19,8 +19,11 @@
 ;;;   - up / down length: the menu asks "Length of conduit traveling ..."; the grid
 ;;;     answers 36" (MED_CONDUIT distance + VERT_DATA written as the menu does).
 ;;;   - conduit breaks are made by shortening the drawn runs, not by BREAK.
+;;;   - reducer (1re, instype 8): the menu's refitt_ins asks "Size to"; the grid writes
+;;;     one trade size below the conduit size as #ITEM_ALT (bld_fitting alt), as the
+;;;     desk test does (r5).
 
-(setq *MEDCBGRID-VERSION* "2026-09-30 r4")
+(setq *MEDCBGRID-VERSION* "2026-09-30 r5")
 
 ;; drawing scale the way MED SETUP / MEDVariables keep it: USERR1 if set, else
 ;; DIMSCALE. 1 (or 0) = not set up: ask, default 48, and set _SC / DIMSCALE /
@@ -137,7 +140,17 @@
       (setq RL_SS ss RL_SS_DATA (if ss (retr_size_tag ss)) _FITTCODE code _TAGSUPRESS nil)
       (ifitt_ins e ss)
       (if (member instype '(3 6)) (dcon_ins e o instype ss))
+      (if (= instype 8) (mcbg-reduce-to e code))
       e)))
+
+;; reducer: reduce-to size = one trade size below the fitting size, written as the
+;; fitting's ALT value the way refitt_ins does (bld_fitting code size tag alt ...)
+(defun mcbg-reduce-to (e code / xd sz alt)
+  (setq xd (xdataget e _FITTING) sz (if xd (nth 2 xd)))
+  (if (numberp sz)
+    (progn
+      (foreach x '(0.5 0.75 1.0 1.25 1.5 2.0 2.5 3.0 3.5 4.0 5.0) (if (< x (- sz 1e-6)) (setq alt x)))
+      (if alt (vl-catch-all-apply 'xdatadd (list e (bld_fitting code sz (nth 1 xd) alt nil nil)))))))
 
 (defun c:MEDCBGRID ( / sc f pos bad rows base rotall s len cols i row o brk cnds e h old oldtag oldcm oldos oldat oldcsz oldfc cnt miss err)
   (if (not (and bld_conduit bld_fitting ifitt_ins dcon_ins get_bl_data retr_size_tag xdatadd))

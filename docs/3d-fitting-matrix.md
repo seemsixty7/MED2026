@@ -198,13 +198,17 @@ The body lies along the symbol's long leg (block +X, the conduit you picked), wi
 
 ## Running the grid
 
-1. Open a new drawing from your MED template, or any MED drawing with DIMSCALE set. `(load "acad")` if MED isn't loaded.
+1. Open a new drawing from your MED template. `(load "acad")` if MED isn't loaded.
 2. Optional: set the conduit size you want (the menu's size setting, `_CSIZE`). The default is 1".
 3. `(load "C:/Users/moore/Dropbox/Development/Jane/MED2026-OpenSource/tests/autocad/MEDCBGrid.lsp")`
 4. Run `MEDCBGRID`. Pick or type the base point (Enter = 0,0), then the rotation for every cell (Enter = 0; try 30 to check that rotation doesn't matter).
-5. `ZOOM E`. There are 40 cells of 10' x 10', 6 per row. Each cell is labelled with the row id, block, code, legs, expected result, and r10 match at DIMSCALE 1 / 48. M39 / M40 are inserted mirrored (X / Y scale -1) and labelled MIRRORED; after MEDMAKE3D they show only the `MIRRORED FITTING - re-insert, do not mirror` marker, with the conduit untouched.
-6. Run `MEDMAKE3D`, choose Layer, and look at each cell (e.g. `-VIEW _SWISO`, or orbit).
-7. To repeat, erase everything (or use a new drawing) and run `MEDCBGRID` again.
+5. Drawing scale: MEDCBGRID uses the MED scale (`USERR1`, else `DIMSCALE`, as SETUP sets them). If that is 1 (or 0), it asks `scale to use <48>`; Enter = 48. It then sets `_SC`, `DIMSCALE` and `USERR1` to that value, as SETUP does, so the grid and MEDMAKE3D use the same scale.
+6. Every symbol is inserted at +scale on X and Y, the way the menu inserts it (`insert name pt _SC _SC rot`). Only M39 / M40 get one negative scale factor, to fake a user MIRROR. The last line reports `scale check N ok`, and names any cell with the wrong scale or mirror.
+7. `ZOOM E`. There are 40 cells, 10' x 10' at scale 48 (cell size, run length and text scale with scale / 48), 6 per row. Each cell is labelled with the row id, block, code, legs, expected result, and the r10 match at the grid's scale. M39 / M40 are labelled MIRRORED; after MEDMAKE3D they show only the `MIRRORED FITTING - re-insert, do not mirror` marker, with the conduit untouched.
+8. Run `MEDMAKE3D`, choose Layer, and look at each cell (e.g. `-VIEW _SWISO`, or orbit). At scale 48, expect the known DIMSCALE-48 mismatches (M08, M09, M15, M16, M17: the menu breaks the conduit farther back than MEDMAKE3D looks, Q5).
+9. To repeat, erase everything (or use a new drawing) and run `MEDCBGRID` again.
+
+**Negative scales.** MED's menus never insert a fitting with a negative scale. Every `setblkins` / `medblkins` fitting entry in `med.mnu`, `med.cuix` and `MEDRibbon.cuix` passes `_SC`. `C:MEDBlockInsert` and `brk_rot` insert at `bl_scale bl_scale` (or `bl_scale ""`, Y = X). `brk_rot` picks the rotation only (rules 22 / 24 turn `1lbl` / `1lbr`; they don't flip them). The `-1` in the symbol entries is the insert type, not a scale. The only negative scale in the Support code is the GRABIT leader block (`medtext.lsp`), which is not a fitting. So the mirror check stays strict: any mirrored `MED_FITTING` conduit body is a user MIRROR / negative scale and is flagged.
 
 ## Keeping this page current
 

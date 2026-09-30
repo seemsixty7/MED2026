@@ -10,14 +10,37 @@
 ;;; row id, block, code, expected orientation and the r10 result. Then run MEDMAKE3D.
 ;;;
 ;;; Load:  (load "<repo>/tests/autocad/MEDCBGrid.lsp")   then  MEDCBGRID
-;;; Needs MED loaded (acad.lsp / MEDCore), a MED drawing set-up (DIMSCALE = _SC).
+;;; Needs MED loaded (acad.lsp / MEDCore). Scale: USERR1 / DIMSCALE as MED SETUP sets
+;;; them; if that is 1 (or 0) it asks (default 48) and sets _SC, DIMSCALE and USERR1.
+;;; Every symbol goes in at +_SC, as the menu inserts it; only the M39 / M40 test cells
+;;; get one negative scale factor (a faked MIRROR). The final line checks this.
 ;;; Not generated faithfully (the label says so):
 ;;;   - blocks whose DWG is missing (2teed): no symbol, conduit + label only;
 ;;;   - up / down length: the menu asks "Length of conduit traveling ..."; the grid
 ;;;     answers 36" (MED_CONDUIT distance + VERT_DATA written as the menu does).
 ;;;   - conduit breaks are made by shortening the drawn runs, not by BREAK.
 
-(setq *MEDCBGRID-VERSION* "2026-09-30 r2")
+(setq *MEDCBGRID-VERSION* "2026-09-30 r3")
+
+;; drawing scale the way MED SETUP / MEDVariables keep it: USERR1 if set, else
+;; DIMSCALE. 1 (or 0) = not set up: ask, default 48, and set _SC / DIMSCALE /
+;; USERR1 like SETUP does, so the grid and MEDMAKE3D see the same scale.
+;; T if the insert's plan symbol is mirrored (same rule as MEDMAKE3D)
+(defun mcbg-mirrored-q (e / ed)
+  (setq ed (entget e))
+  (if medcb-mirrored-p
+    (if (medcb-mirrored-p ed) T)
+    (< (* (cdr (assoc 41 ed)) (cdr (assoc 42 ed)) (caddr (cond ((cdr (assoc 210 ed))) ('(0.0 0.0 1.0))))) 0.0)))
+(defun mcbg-scale ( / sc)
+  (setq sc (if (/= 0.0 (getvar "USERR1")) (getvar "USERR1") (getvar "DIMSCALE")))
+  (if (<= sc 1.0)
+    (progn
+      (setq sc (getreal (strcat "\nDrawing scale (DIMSCALE) is " (rtos sc 2 2) " - scale to use <48>: ")))
+      (if (not (and sc (> sc 0.0))) (setq sc 48.0))))
+  (setq _SC sc)
+  (setvar "DIMSCALE" sc)
+  (setvar "USERR1" sc)
+  sc)
 
 (defun mcbg-split (s d / r i)
   (while (setq i (vl-string-search d s))
@@ -94,23 +117,29 @@
   (entmake (list '(0 . "TEXT") (cons 8 "MED_CBGRID") (cons 10 p) (cons 40 h) (cons 1 s) '(7 . "STANDARD"))))
 
 ;; the 2D symbol + fitting xdata the way C:MEDBlockInsert / ifitt_ins / dcon_ins do
-;; mir: "X" / "Y" = insert with that scale negative (a mirrored symbol, to show the flag)
-(defun mcbg-fitting (blk code instype o rotdeg cnds mir / path e ss)
+;; always inserted at +_SC (as C:MEDBlockInsert: insert name pt _SC _SC rot); the Scale
+;; option works for uniform-scale blocks too. mir "X" / "Y" (M39 / M40 test cells
+;; only) then negates that one scale factor to fake a user MIRROR.
+(defun mcbg-fitting (blk code instype o rotdeg cnds mir / path e ss ed g)
   (setq path (if (= (type _MEDDWG) 'STR) (findfile (strcat _MEDDWG blk ".dwg"))))
   (if (not path) (setq path (findfile (strcat blk ".dwg"))))
   (if path
     (progn
       ;; file path only the first time (else AutoCAD asks to redefine the block)
-      (command "_.-INSERT" (if (tblsearch "BLOCK" blk) blk path) "_non" o
-               (if (= mir "X") (- _SC) _SC) (if (= mir "Y") (- _SC) _SC) rotdeg)
+      (command "_.-INSERT" (if (tblsearch "BLOCK" blk) blk path) "_S" _SC "_non" o rotdeg)
       (setq e (entlast))
+      (if (member mir '("X" "Y"))
+        (progn
+          (setq ed (entget e) g (if (= mir "X") 41 42))
+          (entmod (subst (cons g (- (abs (cdr (assoc g ed))))) (assoc g ed) ed))
+          (entupd e)))
       (if cnds (progn (setq ss (ssadd)) (foreach c cnds (ssadd c ss))))
       (setq RL_SS ss RL_SS_DATA (if ss (retr_size_tag ss)) _FITTCODE code _TAGSUPRESS nil)
       (ifitt_ins e ss)
       (if (member instype '(3 6)) (dcon_ins e o instype ss))
       e)))
 
-(defun c:MEDCBGRID ( / rows base rotall s len cols i row o brk cnds e h old oldtag oldcm oldos oldat oldcsz oldfc cnt miss err)
+(defun c:MEDCBGRID ( / sc f pos bad rows base rotall s len cols i row o brk cnds e h old oldtag oldcm oldos oldat oldcsz oldfc cnt miss err)
   (if (not (and bld_conduit bld_fitting ifitt_ins dcon_ins get_bl_data retr_size_tag xdatadd))
     (progn (princ "\nMEDCBGRID: MED is not loaded (bld_conduit / ifitt_ins missing) - (load \"acad\") first.") (exit)))
   (if (not (setq rows (mcbg-csv))) (progn (princ "\nMEDCBGRID: fitting_matrix.csv not found.") (exit)))
@@ -118,8 +147,8 @@
   (if (not base) (setq base '(0.0 0.0 0.0)))
   (setq rotall (getreal "\nRotation of every cell (degrees) <0>: "))
   (if (not rotall) (setq rotall 0.0))
-  (if (not (numberp _SC)) (setq _SC (getvar "DIMSCALE")))
-  (setq s 120.0 len 40.0 cols 6 h 2.5 i 0 cnt 0 miss 0
+  (setq sc (mcbg-scale) f (/ sc 48.0))
+  (setq s (* f 120.0) len (* f 40.0) cols 6 h (* f 2.5) i 0 cnt 0 miss 0
         old get_con_dist oldtag _TAGOFF oldcsz _CSIZE oldfc _FITTCODE
         oldcm (getvar "CMDECHO") oldos (getvar "OSMODE") oldat (getvar "ATTREQ"))
   (if (not (and (numberp _CSIZE) (> _CSIZE 0.0))) (setq _CSIZE 1.0))
@@ -140,6 +169,11 @@
           (setq e (mcbg-fitting (mcbg-get "BLOCK" row) (atoi (mcbg-get "CODE" row)) (atoi (mcbg-get "INSTYPE" row))
                                 o rotall cnds (strcase (cond ((mcbg-get "MIRROR" row)) ("")))))
           (if e (setq cnt (1+ cnt)) (setq miss (1+ miss)))
+          (if e
+            (if (and (eq (not (mcbg-mirrored-q e)) (not (member (strcase (cond ((mcbg-get "MIRROR" row)) (""))) '("X" "Y"))))
+                     (equal (abs (cdr (assoc 41 (entget e)))) _SC 1e-6) (equal (abs (cdr (assoc 42 (entget e)))) _SC 1e-6))
+              (setq pos (1+ (if pos pos 0)))
+              (setq bad (cons (mcbg-get "ID" row) bad))))
           (mcbg-text (list (- (car o) (* 0.45 s)) (+ (cadr o) (* 0.45 s)) 0.0) (* 1.6 h)
                      (strcat (mcbg-get "ID" row) "  " (mcbg-get "BLOCK" row) "  code " (mcbg-get "CODE" row)
                              "  " (mcbg-get "BODY" row) "  legs " (mcbg-get "LEGS" row)
@@ -149,7 +183,9 @@
                      (strcat "expected: " (mcbg-get "EXPECTED" row) " | cuts " (mcbg-get "EXP_CUTS" row)
                              " | flags " (mcbg-get "EXP_FLAGS" row)))
           (mcbg-text (list (- (car o) (* 0.45 s)) (- (cadr o) (* 0.45 s)) 0.0) h
-                     (strcat "r10 (DIMSCALE 1 / 48): " (mcbg-get "MATCH_SC1" row) " / " (mcbg-get "MATCH_SC48" row)
+                     (strcat (cond ((equal sc 48.0 1e-9) (strcat "r10 at DIMSCALE 48: " (mcbg-get "MATCH_SC48" row)))
+                                   ((equal sc 1.0 1e-9) (strcat "r10 at DIMSCALE 1: " (mcbg-get "MATCH_SC1" row)))
+                                   (T (strcat "r10 (DIMSCALE 1 / 48): " (mcbg-get "MATCH_SC1" row) " / " (mcbg-get "MATCH_SC48" row))))
                              (if (/= (mcbg-get "CLINT_Q" row) "") (strcat "   ask: " (mcbg-get "CLINT_Q" row)) "")))
           (setq i (1+ i))))))
   (setq get_con_dist old _TAGOFF oldtag _CSIZE oldcsz _FITTCODE oldfc RL_SS nil RL_SS_DATA nil)
@@ -157,7 +193,9 @@
   (if (vl-catch-all-error-p err)
     (princ (strcat "\nMEDCBGRID stopped: " (vl-catch-all-error-message err))))
   (princ (strcat "\nMEDCBGRID " *MEDCBGRID-VERSION* ": " (itoa i) " row(s), " (itoa cnt) " symbol(s) inserted, "
-                 (itoa miss) " not placeable; DIMSCALE (_SC) " (rtos _SC 2 2) ", conduit size " (rtos _CSIZE 2 3)
+                 (itoa miss) " not placeable; scale check " (itoa (if pos pos 0)) " ok"
+                 (if bad (strcat ", WRONG scale / mirror: " (apply 'strcat (mapcar '(lambda (x) (strcat x " ")) (reverse bad)))) "")
+                 "; DIMSCALE (_SC) " (rtos _SC 2 2) ", conduit size " (rtos _CSIZE 2 3)
                  "\". Now ZOOM E and run MEDMAKE3D (Layer)."))
   (princ))
 

@@ -193,7 +193,8 @@ for blk in ('1lbl', '1lbr'):
 # mirrored 2D fitting: no body, conduit left as drawn, one marker, Skipped line
 for tag, kw, mir in [('xscale', dict(scale=(-1.0, 1.0, 1.0)), True), ('yscale', dict(scale=(1.0, -1.0, 1.0)), True),
                      ('extrusion', dict(extr=(0.0, 0.0, -1.0)), True),
-                     ('both-neg', dict(scale=(-1.0, -1.0, 1.0)), False), ('z-only', dict(scale=(1.0, 1.0, -1.0)), False)]:
+                     ('both-neg', dict(scale=(-1.0, -1.0, 1.0)), False), ('menu-48', dict(scale=(48.0, 48.0, 48.0)), False),
+                     ('xscale-48', dict(scale=(-48.0, 48.0, 48.0)), True), ('z-only', dict(scale=(1.0, 1.0, -1.0)), False)]:
     L, mk, ents, markers = world()
     run = conduit(ents, [(0, 0), (60, 0), (60, 40)], elev=0.0)
     f = fitting(ents, '1lbl', (60, 0, 0), 180, 30, **kw)

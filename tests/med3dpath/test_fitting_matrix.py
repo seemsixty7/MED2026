@@ -57,7 +57,8 @@ def result(row, sc, rot_deg, brk):
     rot = math.radians(rot_deg)
     runs = [conduit(ents, r) for r in build_legs(row['legs'], brk, sc, rot)]
     mir = (row.get('mirror') or '').strip().upper()
-    scale = (-1.0, 1.0, 1.0) if mir == 'X' else (1.0, -1.0, 1.0) if mir == 'Y' else (1.0, 1.0, 1.0)
+    # the menu inserts at +DIMSCALE on every axis; M39 / M40 fake a user MIRROR
+    scale = (-sc if mir == 'X' else sc, -sc if mir == 'Y' else sc, sc)
     f = fitting(ents, row['block'], (0.0, 0.0, 0.0), rot_deg, int(row['code']), scale=scale)
     res = call(L, 'medcb-collect'); bodies = res[0]
     b = body(bodies, f)

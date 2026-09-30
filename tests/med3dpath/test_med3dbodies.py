@@ -89,7 +89,7 @@ def hub(geom_hubs, name): return next(h for h in to_py(geom_hubs) if h[0] == nam
 L, mk, ents, markers = world()
 for d, k in [('Form 7 "LB" condulet fitting', 'RGD|F7|LB'), ('Form 8 "TB" condulet fitting', 'RGD|F8|TB'),
              ('Mark 9 "C" condulet fitting', 'RGD|M9|C'), ('Mogul "BLB" condulet fitting', 'RGD|MOG|BLB'),
-             ('"LBD" condulet fitting', 'RGD||LBD'), ('Explosion Proof GUAL condulet fitting', 'RGD||GUAL'),
+             ('"LBD" condulet fitting', 'RGD|CH|LBD'), ('Explosion Proof GUAL condulet fitting', 'RGD|XP|GUAL'),
              ('Rigid Steel Coupling', None), ('"EYS" sealling fitting', None), ('', None)]:
     check('desc-key', call(L, 'medcb-desc-key', d) == k, f'{d!r} -> {call(L, "medcb-desc-key", d)}')
 for s, v in [('RGD|F7|LB', ['RGD', 'F7', 'LB']), (' rgd|f8|tb ', ['RGD', 'F8', 'TB']), ('RGD||X', ['RGD', '', 'X']),
@@ -101,12 +101,26 @@ def resolve(sql, code):
     L, mk, ents, markers = world(sql); return to_py(call(L, 'medcb-resolve-code', code))
 check('res-itemkey2', resolve('db', 30) == ['RGD|F7|LB', 'ITEMKEY2', 'Form 7 "LB" condulet fitting'], str(resolve('db', 30)))
 check('res-desc', resolve('blank', 31) == ['RGD|F8|LB', 'DESC', 'Form 8 "LB" condulet fitting'], str(resolve('blank', 31)))
-check('res-desc-x', resolve('db', 80)[:2] == ['RGD|F7|X', 'DESC'], str(resolve('db', 80)))
+check('res-desc-x', resolve('blank', 80)[:2] == ['RGD|F7|X', 'DESC'], str(resolve('blank', 80)))
+check('res-key-x', resolve('db', 80)[:2] == ['RGD|F7|X', 'ITEMKEY2'], str(resolve('db', 80)))
+# r6: LBD / LBY without a form -> CH, "Explosion Proof" -> XP (description parse)
+check('res-desc-lbd', resolve('blank', 39)[:2] == ['RGD|CH|LBD', 'DESC'], str(resolve('blank', 39)))
+check('res-desc-gua', resolve('blank', 142)[:2] == ['RGD|XP|GUAT', 'DESC'], str(resolve('blank', 142)))
+# inline fittings (no "condulet" in the description): ITEMKEY2 blank in the DB -> the
+# seed keys CSV by code when the description is the same
+for code, key in ((72, 'RGD|CH|UNY'), (61, 'RGD|CH|EYS'), (64, 'RGD|CH|EYD'), (100, 'RGD|CH|PLGR'), (101, 'RGD|CH|PLGS'),
+                  (103, 'RGD|CH|RE'), (120, 'RGD|CH|HUB'), (121, 'RGD|MYR|HUB')):
+    check(f'res-csv-fallback {code}', resolve('blank', code)[:2] == [key, 'CSV'], str(resolve('blank', code)))
+    check(f'res-key {code}', resolve('db', code)[:2] == [key, 'ITEMKEY2'], str(resolve('db', code)))
+# a renamed code (other description) is not taken from the CSV
+L0, mk0, _, _ = world('blank'); mk0.sql = lambda s: [['ITEMCODE', 'ITEMDESC', 'ITEMKEY2'], [72, 'my union', None]]
+check('res-csv-desc-differs', call(L0, 'medcb-resolve-code', 72) is None)
 check('res-override', resolve({30: 'RGD|F8|LB'}, 30)[:2] == ['RGD|F8|LB', 'ITEMKEY2'], str(resolve({30: 'RGD|F8|LB'}, 30)))
 check('res-coupling', resolve('db', 8) is None)
 check('res-unknown', resolve('db', 9999) is None)
 check('res-csv', resolve(None, 36)[:2] == ['RGD|F7|LR', 'CSV'], str(resolve(None, 36)))
-check('res-csv-miss', resolve(None, 80) is None, str(resolve(None, 80)))   # CSV keys only the modelled codes
+check('res-csv-miss', resolve(None, 8) is None, str(resolve(None, 8)))   # CSV keys only the modelled codes (no coupling)
+check('res-csv-x', resolve(None, 80)[:2] == ['RGD|F7|X', 'CSV'], str(resolve(None, 80)))
 L, mk, ents, markers = world('db'); call(L, 'medcb-resolve-code', 30); call(L, 'medcb-resolve-code', 11)
 check('one-select', len(mk.queries) == 1 and 'ITEMKEY2' in mk.queries[0], str(mk.queries))
 
@@ -292,33 +306,33 @@ hb = dict((h[0], h[2]) for h in to_py(get(B[lbu.h], 'HUBS')))
 check('lbu-back-up', closev(hb['BACK'], [0, 0, 1]) and closev(hb['RUN'], [-1, 0, 0]), str(hb))
 hb = dict((h[0], h[2]) for h in to_py(get(B[lbd.h], 'HUBS')))
 check('lbd-run-on-conduit', closev(hb['RUN'], [1, 0, 0]) and closev(hb['BACK'], [0, 0, -1]), str(hb))
-check('x-reason', get(B[x.h], 'REASON') == 'no 3D data for X bodies', str(get(B[x.h], 'REASON')))
-check('lbd-reason', 'no form' in get(B[lbdd.h], 'REASON'), str(get(B[lbdd.h], 'REASON')))
+check('x-real', get(B[x.h], 'REASON') is None and get(B[x.h], 'SHAPE') == 'X', str(get(B[x.h], 'REASON')))
+check('lbd-real', get(B[lbdd.h], 'REASON') is None and get(B[lbdd.h], 'FORM') == 'CH', str(get(B[lbdd.h], 'REASON')))
 check('size-reason', get(B[nosz.h], 'REASON') == 'no trade size on the fitting')
 check('big-reason', 'no F7 TB 4" row' in get(B[big.h], 'REASON'), str(get(B[big.h], 'REASON')))
 check('fit-rec-no-size', call(L, 'medcb-fit-rec', B[nosz.h]) is None)
 mk.log.clear()
 out = call(L, 'medcb-place-all', bodies)
 names = [i.props['Name'] for i in mk.inserts]
-check('place-names', 'MED_CB_RGD_F7_TB_1-00' in names and 'MED_CB_RGD_F7_X_1-00_PH' in names
-      and 'MED_CB_RGD_NA_LBD_1-00_PH' in names and 'MED_CB_RGD_F7_TB_4-00_PH' in names, str(names))
+check('place-names', 'MED_CB_RGD_F7_TB_1-00' in names and 'MED_CB_RGD_F7_X_1-00' in names
+      and 'MED_CB_RGD_CH_LBD_1-00' in names and 'MED_CB_RGD_F7_TB_4-00_PH' in names, str(names))
 flipped = [i for i in mk.inserts if 'Rot3D' in i.props and near(i.props['Rot3D'][0][2], math.pi)]
 tilted = [i for i in mk.inserts if 'Rot3D' in i.props and not near(i.props['Rot3D'][0][2], math.pi)]
-# r5: the LBD placeholder on 1lbdl lies on its side like an LB on 1lbl (+90 deg about X)
-check('place-lbd-side', len(tilted) == 1 and tilted[0].props['Name'] == 'MED_CB_RGD_NA_LBD_1-00_PH'
+# r5: the LBD on 1lbdl lies on its side like an LB on 1lbl (+90 deg about X)
+check('place-lbd-side', len(tilted) == 1 and tilted[0].props['Name'] == 'MED_CB_RGD_CH_LBD_1-00'
       and near(tilted[0].props['Rot3D'][0][2], math.pi / 2), str([i.props for i in tilted]))
 check('place-flip', len(flipped) == 3 and all(closev(sub(i.props['Rot3D'][0][1], i.props['Rot3D'][0][0]), [math.cos(i.props['Rot']), math.sin(i.props['Rot']), 0])
                                                and near(i.props['Rot3D'][0][2], math.pi) for i in flipped), str([i.props for i in flipped]))
 ph = [i for i in mk.inserts if i.props['Name'].endswith('_PH')]
 check('place-ph-layer', ph and all(i.props['Layer'] == 'MED_3DFLAG' for i in ph))
 sk = to_py(get(out, 'SKIPPED'))
-check('place-counts', get(out, 'PLACED') == 5 and get(out, 'PH') == 3 and get(out, 'FLAGGED') == 4 and len(sk) == 4,
+check('place-counts', get(out, 'PLACED') == 7 and get(out, 'PH') == 1 and get(out, 'FLAGGED') == 2 and len(sk) == 2,
       f'placed {get(out, "PLACED")} ph {get(out, "PH")} flagged {get(out, "FLAGGED")} skipped {sk}')
-check('place-skipped-text', any(s[0] == x.h and s[1] == 'FITTING' and 'X bodies' in s[2] and 'placeholder' in s[2] for s in sk)
+check('place-skipped-text', any(s[0] == big.h and s[1] == 'FITTING' and 'TB 4' in s[2] and 'placeholder' in s[2] for s in sk)
       and any(s[0] == nosz.h and 'placeholder' not in s[2] for s in sk), str(sk))
-check('place-markers', len(markers) == 4, str(markers))
+check('place-markers', len(markers) == 2, str(markers))
 check('place-refs', len(to_py(get(out, 'REFS'))) == 8, str(len(to_py(get(out, 'REFS')))))
-check('place-flag-msg', sum('MED3D FLAG: fitting' in l for l in mk.log) == 4 and not any('MED3D note' in l for l in mk.log), str(mk.log))
+check('place-flag-msg', sum('MED3D FLAG: fitting' in l for l in mk.log) == 2 and not any('MED3D note' in l for l in mk.log), str(mk.log))
 
 # ---------------------------------------------------- seed CSV (no MED-DotNet)
 L, mk, ents, markers = world(None)

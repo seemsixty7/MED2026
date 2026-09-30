@@ -47,7 +47,7 @@ SOURCES = [
      URL_LB58, "", "product page", "Spot check only: 9.13 x 2.75 x 4.03 in = a, c, b of Form 8 LB 1-1/2 in CH1F-2022."),
 ]
 
-PAGE = {4: "p.10", 5: "p.11", 6: "p.12"}   # PDF page -> printed page
+PAGE = {4: "p.10", 5: "p.11", 6: "p.12", 7: "p.13"}   # PDF page -> printed page
 FORMS = {"F7": ("Crouse-Hinds", "Condulet Form 7", "Feraloy iron alloy"),
          "F8": ("Crouse-Hinds", "Condulet Form 8", "Feraloy iron alloy"),
          "M9": ("Crouse-Hinds", "Condulet Mark 9", "copper-free aluminum")}
@@ -159,6 +159,27 @@ M9 T p6
   c     2 1/8 | 2 5/16 | 2 11/16 | 3 1/4 | 3 1/2 | 4 13/32 | 6 11/16 | 6 11/16 | 8 1/8 | 8 1/8
   d     1 1/16 | 1 1/4 | 1 3/8 | 1 7/8 | 2 3/16 | 2 29/32 | 4 1/4 | 4 1/4 | 5 7/16 | 5 7/16
   e     3 9/32 | 3 27/32 | 4 9/16 | 5 3/16 | 5 7/8 | 8 3/32 | 10 7/8 | 10 7/8 | 13 7/16 | 13 7/16
+F7 X p7
+  size  1/2 | 3/4 | 1 | 1-1/4 | 1-1/2 | 2
+  a     5 5/8 | 6 1/4 | 7 1/4 | 7 7/16 | 8 3/16 | 9 3/16
+  b     3 5/16 | 3 1/2 | 4 | 4 1/8 | 4 5/8 | 5 3/16
+  c     1 3/4 | 2 | 2 1/4 | 2 5/16 | 2 9/16 | 3 1/8
+  d     15/16 | 1 1/8 | 1 3/8 | 1 3/4 | 1 15/16 | 2 7/16
+  e     3 3/16 | 3 13/16 | 4 1/2 | 5 | 5 7/16 | 6 3/8
+F8 X p7
+  size  1/2 | 3/4 | 1 | 1-1/4 | 1-1/2 | 2
+  a     5 11/16 | 6 9/32 | 7 5/16 | 8 1/2 | 10 3/8 | 12 1/4
+  b     2 29/32 | 3 1/16 | 3 1/2 | 4 1/8 | 5 1/4 | 6 1/4
+  c     1 3/4 | 2 | 2 1/4 | 2 5/8 | 2 15/32 | 3 9/16
+  d     1 | 1 3/16 | 1 3/8 | 1 3/4 | 2 1/8 | 3
+  e     3 5/16 | 3 15/16 | 4 9/16 | 5 5/16 | 6 1/2 | 8 9/16
+M9 X p7
+  size  1/2 | 3/4 | 1
+  a     5 11/16 | 6 9/16 | 7 5/16
+  b     2 57/64 | 3 1/4 | 3 1/2
+  c     1 3/4 | 2 | 2 1/4
+  d     1 | 1 3/16 | 1 3/8
+  e     3 5/16 | 3 15/16 | 4 9/16
 """
 
 # Catalog numbers from the shape table (printed p.7). Blank = not listed there.
@@ -182,6 +203,9 @@ CATNO = {
     ("F7", "TB"): "TB17 TB27 TB37 TB47 TB57 TB67",
     ("F8", "TB"): "TB18 TB28 TB38 TB448 TB58 TB68",
     ("M9", "TB"): "TB19 TB29 TB39 TB49 TB59 TB69",
+    ("F7", "X"):  "X17 X27 X37 X47 X57 X67",
+    ("F8", "X"):  "X18 X28 X38 X448 X58 X68",
+    ("M9", "X"):  "X19 X29 X39",
 }
 
 # Published values that look inconsistent with neighbours (kept as published).
@@ -195,6 +219,7 @@ NOTES = {
     ("M9", "LB", "3-1/2"): "dimensions published; no catalog number in the p.7 shape table",
     ("M9", "LL", "1-1/2"): "a = 7 51/64 as published (LB/C same size 7 25/32 / 8 11/32)",
     ("M9", "LR", "1-1/2"): "a = 7 51/64 as published (LB/C same size 7 25/32 / 8 11/32)",
+    ("F8", "X", "1-1/2"): "c = 2 15/32 as published (smaller than 1-1/4 size 2 5/8) - probable catalog typo",
 }
 
 def frac(s):
@@ -244,18 +269,269 @@ def parse_tables():
                     "HubOD_in": "", "HubLen_in": "",
                     "SourceId": "CH1F-2022", "SourcePage": pg + " (PDF p.%d)" % t["page"],
                     "Source": "%s %s, %s %s dimension table (copy read: %s)" % (URL_EATON, pg, series, sh if sh not in ("LL", "LR") else "LL & LR", URL_COPY),
-                    "Published": "a=%s; b=%s; c=%s; d=%s; e=%s" % (txt["a"], txt["b"], txt["c"], txt["d"], txt["e"]),
+                    "Published": "a=%s; b=%s; c=%s; d=%s; e=%s" % (txt["a"], txt["b"], txt["c"], txt["d"], txt["e"])
+                                 + ("  (X: a run length, b width across both side hubs, c depth)" if sh == "X" else ""),
                     "Notes": "; ".join(x for x in [series + " (" + mat + ")", NOTES.get((t["form"], sh, ts), ""),
                                                    "" if cat else "no catalog number listed"] if x),
                 })
     order = {"F7": 0, "F8": 1, "M9": 2}
-    shp = {"C": 0, "LB": 1, "LL": 2, "LR": 3, "T": 4, "TB": 5}
+    shp = {"C": 0, "LB": 1, "LL": 2, "LR": 3, "T": 4, "TB": 5, "X": 6}
     out.sort(key=lambda r: (order[r["Form"]], shp[r["Shape"]], float(r["TradeSizeDec"])))
     return out
 
 COLS = ["Mfr", "Form", "Shape", "TradeSize", "TradeSizeDec", "CatalogNo", "A_in", "B_in", "C_in", "D_in", "E_in",
         "HubOD_in", "HubLen_in", "SourceId", "SourcePage", "Source", "Published", "Notes"]
 NUMCOLS = ["A_in", "B_in", "C_in", "D_in", "E_in", "HubOD_in", "HubLen_in"]
+
+# ---------------------------------------------------------------- phase 2 families
+# Other Crouse-Hinds / Myers / Wheatland publications. Table header:
+#   <form> <shape> <SourceId> <page>        (page: "_" = space)
+# then "size", optional "cat", and the published letters of that family; LETTERS maps
+# them onto the CSV columns A_in..E_in / HubOD_in / HubLen_in.
+URL_CH06 = "http://www.womackelectric.com/wp-content/uploads/2011/05/Crouse-Hinds-Catalog.pdf"
+URL_MOG = "https://images.salsify.com/image/upload/s--i7J4UZBL--/ab833183cc51ee34a08d483e5cf914204e63d03b.pdf"
+URL_GUA = "https://www.eaton.com/content/dam/eaton/products/conduit-cable-and-wire-management/crouse-hinds/catalog-pages/crouse-hinds-gua-conduit-outlet-boxes-catalog-page.pdf"
+URL_GUA_COPY = "https://cms.intrinsicallysafestore.com/wp-content/uploads/2026/03/crouse-hinds-gua-conduit-outlet-boxes-catalog-page.pdf"
+URL_UNY = "https://default.assets-hunzicker-prod.roccommercecloud.com/assets%2F4de6db3f69a0fd8da55d97a16d23c1cc/UNY105_SS_Catalog.pdf"
+URL_EYS = "https://buy.wesco.com/static/catalog/products/images/PDF/EYS-conduit-sealing-fittings.pdf"
+URL_EYD = "https://assets.usesi.com/product-media/specification-sheets/USESI_541688_specification_sheets.pdf"
+URL_HUB = "https://pim.galco.com/Manufacturer/Crouse-Hinds%20Commercial%20Products/TechDocument/Catalog%20Page/meyershubs_cp.pdf"
+URL_WH = "https://www.wheatland.com/wp-content/uploads/2017/12/ECN-Brochure.pdf"
+URL_PLG = "https://www.elliottelectric.com/Media/PLG1-CRS-2-1-SpecificationSheet.pdf"
+
+SOURCES += [
+    ("CH1F-2006", "Crouse-Hinds Condulet conduit outlet bodies, section 1F (LBD, Mogul BC / BLB / BUB / BT, LBY)",
+     "Cooper Crouse-Hinds", "2006", URL_CH06, URL_MOG,
+     "printed p.13 (LBD, PDF p.11); p.14 (Mogul BC, BLB, PDF p.12); p.15 (Mogul BUB, BT, PDF p.13); p.16 (LBY, PDF p.14)",
+     "Mogul values cross-checked against the current Eaton Mogul catalog page at CopyReadURL (identical)."),
+    ("CH3F-GUA-2024", "Crouse-Hinds series GUA conduit outlet boxes catalog page (section 3F)", "Eaton", "2024",
+     URL_GUA, URL_GUA_COPY, "printed p.55",
+     "a body diameter, b overall height, c centre to hub face, d bottom to hub centreline, e hub length (by size); "
+     "cover opening diameter from the 2nd digit of the catalog number (4 = 2, 6 = 3, 7 = 3 5/8, 9 = 5)."),
+    ("CH5F-UNY-2022", "Crouse-Hinds series UNF / UNL / UNY unions catalog page", "Eaton", "2022", URL_UNY, "",
+     "printed p.81-82", "UNY iron: A overall length, B maximum diameter."),
+    ("CH6F-EYS-2020", "Crouse-Hinds series EYS / EZS sealing fittings catalog page", "Eaton", "2020", URL_EYS, "",
+     "printed p.113-114", "EYS vertical: a overall length, b body diameter."),
+    ("CH6F-EYD", "Crouse-Hinds series EYD / EZD drain seals catalog page (specification sheet copy)", "Eaton", "n.d.", URL_EYD, "",
+     "EYD dimension table", "a overall length, b body diameter."),
+    ("CH-CP269-2006", "Crouse-Hinds Myers hubs (ST) and conduit hubs (MHUB), CP-269 / CP-270", "Cooper Crouse-Hinds", "2006",
+     URL_HUB, "", "PDF p.3 (conduit hub MHUB), p.4 (Myers ST)",
+     "Conduit hub: a body length, b body diameter, c bushed-nipple flange diameter, d flange thickness, x max. wall. "
+     "Myers ST: A overall length, B body diameter, C body height above the enclosure wall, D max. wall, K max. threaded neck."),
+    ("WH-ECN-2017", "Wheatland Tube EC&N rigid steel conduit brochure (couplings)", "Wheatland Tube", "2017", URL_WH, "",
+     "rigid coupling table", "Coupling OD and UL minimum length."),
+    ("APPROX", "Derived (approx) - no dimensions published", "MED", "2026-09-30", URL_PLG, "",
+     "-", "PLG (5F) catalog page gives no dimensions. Plug / reducer rows are built from the Wheatland coupling (WH CPL) and "
+     "ANSI C80.1 rigid conduit OD; see Notes per row. Spot checks (Eaton SKU pages): PLG1 length 0.84; RE21 1.05 x 1.05 x 0.92; RE31 1.3 x 1.13 x 0.92."),
+]
+FORMS.update({
+    "CH": ("Crouse-Hinds", "Condulet", "Feraloy iron alloy"),
+    "MOG": ("Crouse-Hinds", "Mogul Condulet", "Feraloy iron alloy"),
+    "XP": ("Crouse-Hinds", "GUA explosionproof outlet box", "Feraloy iron alloy"),
+    "MYR": ("Crouse-Hinds", "Myers ST hub", "zinc die cast"),
+    "WH": ("Wheatland Tube", "rigid steel coupling", "steel"),
+})
+# published letter -> CSV column, per shape (default a..e -> A..E)
+LETTERS = {
+    "LBY": [("a", "A"), ("b", "B")],
+    "GUAL": [("a", "A"), ("b", "B"), ("c", "C"), ("d", "D"), ("open", "E"), ("e", "HubLen")],
+    "UNY": [("len", "A"), ("dia", "B")],
+    "EYS": [("a", "A"), ("b", "B")],
+    "EYD": [("a", "A"), ("b", "B")],
+    "HUB": [("a", "A"), ("b", "B"), ("c", "C"), ("d", "D"), ("x", "E")],
+    "MYRHUB": [("A", "A"), ("B", "B"), ("C", "C"), ("D", "D"), ("K", "E")],
+    "CPL": [("len", "A"), ("od", "B")],
+}
+LETTERS["GUAT"] = LETTERS["GUAX"] = LETTERS["GUAL"]
+
+MOG_C = "2 3/16 | 2 3/16 | 3 | 3 | 4 1/4 | 4 1/4 | 5 1/4 | 5 1/4"
+MOG_D = "1 7/8 | 1 7/8 | 2 5/8 | 2 5/8 | 3 13/16 | 3 13/16 | 4 3/4 | 4 3/4"
+MOG_E = "6 | 6 | 10 | 10 | 15 | 15 | 20 | 20"
+MOG_SZ = "1 | 1-1/4 | 1-1/2 | 2 | 2-1/2 | 3 | 3-1/2 | 4"
+GUA_E = "7/8 | 7/8 | 1 | 1 | 1 1/16 | 1 1/16"
+TABLES2 = """
+CH LBD CH1F-2006 p.13_(PDF_p.11)
+  size  1/2 | 3/4 | 1 | 1-1/4 | 1-1/2 | 2 | 2-1/2 | 3 | 3-1/2 | 4 | 5 | 6
+  cat   LBD1100 | LBD2200 | LBD3300 | LBD4400 | LBD5500 | LBD6600 | LBD7700 | LBD8800 | LBD9900 | LBD10900 | LBD012 | LBD014
+  a     5 | 6 1/4 | 6 1/4 | 8 5/8 | 12 7/16 | 12 7/16 | 19 11/16 | 19 11/16 | 20 7/8 | 20 7/8 | 32 7/16 | 41 1/2
+  b     2 5/16 | 2 5/8 | 2 15/16 | 4 1/4 | 5 7/16 | 5 7/16 | 9 9/16 | 9 9/16 | 10 7/8 | 10 7/8 | 12 1/2 | 15
+  c     1 5/16 | 1 9/16 | 1 13/16 | 3 1/2 | 4 5/8 | 4 5/8 | 5 5/8 | 5 5/8 | 7 3/4 | 7 3/4 | 8 5/8 | 9 3/4
+  d     1 | 1 1/4 | 1 1/2 | 1 13/16 | 2 5/8 | 2 5/8 | 3 | 3 | 4 3/4 | 4 3/4 | 5 7/8 | 7
+  e     3 11/32 | 4 17/32 | 4 11/32 | 7 3/16 | 10 7/8 | 10 7/8 | 15 3/4 | 15 3/4 | 19 7/8 | 19 7/8 | 30 | 39
+MOG BLB CH1F-2006 p.14_(PDF_p.12)
+  size  %(MOG_SZ)s
+  cat   BLB3 | BLB4 | BLB5 | BLB6 | BLB7 | BLB8 | BLB9 | BLB10
+  a     8 19/32 | 8 19/32 | 12 11/16 | 12 11/16 | 16 29/32 | 16 29/32 | 22 1/8 | 22 1/8
+  b     2 27/32 | 3 9/32 | 3 5/8 | 4 3/16 | 5 3/32 | 5 27/32 | 6 1/2 | 7
+  c     %(MOG_C)s
+  d     %(MOG_D)s
+  e     %(MOG_E)s
+MOG BC CH1F-2006 p.14_(PDF_p.12)
+  size  %(MOG_SZ)s
+  cat   BC3 | BC4 | BC5 | BC6 | BC7 | BC8 | BC9 | BC10
+  a     9 9/16 | 9 9/16 | 13 3/4 | 13 3/4 | 18 3/8 | 18 3/8 | 23 3/4 | 23 3/4
+  b     1 7/8 | 2 5/16 | 2 9/16 | 3 1/8 | 3 5/8 | 4 3/8 | 4 7/8 | 5 3/8
+  c     %(MOG_C)s
+  d     %(MOG_D)s
+  e     %(MOG_E)s
+MOG BUB CH1F-2006 p.15_(PDF_p.13)
+  size  %(MOG_SZ)s
+  cat   BUB3 | BUB4 | BUB5 | BUB6 | BUB7 | BUB8 | BUB9 | BUB10
+  a     9 3/16 | 9 5/16 | 13 1/2 | 13 1/2 | 17 3/4 | 17 7/8 | 23 3/8 | 23 1/4
+  b     2 11/16 | 3 3/16 | 3 1/2 | 4 1/8 | 4 13/16 | 5 5/8 | 6 3/8 | 6 13/16
+  c     %(MOG_C)s
+  d     %(MOG_D)s
+  e     %(MOG_E)s
+MOG BT CH1F-2006 p.15_(PDF_p.13)
+  size  %(MOG_SZ)s
+  cat   BT3 | BT4 | BT5 | BT6 | BT7 | BT8 | BT9 | BT10
+  a     9 9/16 | 9 9/16 | 13 3/4 | 13 3/4 | 18 3/8 | 18 3/8 | 23 3/4 | 23 3/4
+  b     1 7/8 | 2 5/16 | 2 9/16 | 3 1/8 | 3 5/8 | 4 3/8 | 4 7/8 | 5 3/8
+  c     3 5/32 | 3 5/32 | 4 1/16 | 4 1/16 | 5 19/32 | 5 23/32 | 6 7/8 | 6 7/8
+  d     %(MOG_D)s
+  e     %(MOG_E)s
+CH LBY CH1F-2006 p.16_(PDF_p.14)
+  size  1/2 | 3/4 | 1 | 1-1/4 | 1-1/2
+  cat   LBY15 | LBY25 | LBY35 | LBY45 | LBY55
+  a     2 13/16 | 3 3/16 | 3 1/4 | 3 25/32 | 4 1/4
+  b     2 | 2 1/4 | 2 1/2 | 2 15/16 | 3 3/8
+XP GUAL CH3F-GUA-2024 p.55
+  size  1/2 | 3/4 | 1 | 1-1/4 | 1-1/2 | 2
+  cat   GUAL14D | GUAL24D | GUAL36C | GUAL47D | GUAL59C | GUAL69C
+  a     2 1/2 | 2 1/2 | 3 1/2 | 4 1/4 | 5 3/4 | 5 3/4
+  b     2 1/4 | 2 1/2 | 2 5/16 | 2 11/16 | 4 1/32 | 4 1/32
+  c     2 3/16 | 2 7/16 | 2 3/8 | 2 5/8 | 4 3/16 | 4 3/16
+  d     5/8 | 3/4 | 7/8 | 1 3/32 | 1 7/32 | 1 1/2
+  open  2 | 2 | 3 | 3 5/8 | 5 | 5
+  e     %(GUA_E)s
+XP GUAT CH3F-GUA-2024 p.55
+  size  1/2 | 3/4 | 1 | 1-1/4 | 1-1/2 | 2
+  cat   GUAT14D | GUAT24D | GUAT36C | GUAT47D | GUAT59C | GUAT69C
+  a     2 1/2 | 2 1/2 | 3 1/2 | 4 1/4 | 5 3/4 | 5 3/4
+  b     2 1/4 | 2 | 2 5/16 | 2 11/16 | 4 1/32 | 4 1/32
+  c     2 3/16 | 2 | 2 3/8 | 2 5/8 | 4 3/16 | 4 3/16
+  d     5/8 | 3/4 | 7/8 | 1 3/32 | 1 7/32 | 1 1/2
+  open  2 | 2 | 3 | 3 5/8 | 5 | 5
+  e     %(GUA_E)s
+XP GUAX CH3F-GUA-2024 p.55
+  size  1/2 | 3/4 | 1 | 1-1/4 | 1-1/2 | 2
+  cat   GUAX14 | GUAX24 | GUAX36C | GUAX47D | GUAX59C | GUAX69C
+  a     2 1/2 | 2 1/2 | 3 1/2 | 4 1/4 | 5 3/4 | 5 3/4
+  b     1 13/16 | 2 | 2 5/16 | 2 11/16 | 4 1/32 | 4 1/32
+  c     1 3/4 | 2 | 2 3/8 | 2 5/8 | 4 3/16 | 4 3/16
+  d     5/8 | 3/4 | 7/8 | 1 3/32 | 1 7/32 | 1 1/2
+  open  2 | 2 | 3 | 3 5/8 | 5 | 5
+  e     %(GUA_E)s
+CH UNY CH5F-UNY-2022 p.82
+  size  1/2 | 3/4 | 1 | 1-1/4 | 1-1/2 | 2 | 2-1/2 | 3 | 3-1/2 | 4
+  cat   UNY105 | UNY205 | UNY305 | UNY405 | UNY505 | UNY605 | UNY705 | UNY805 | UNY905 | UNY1005
+  len   2 5/8 | 2 11/16 | 3 | 3 23/32 | 4 7/32 | 4 7/32 | 5 13/32 | 5 13/16 | 6 9/16 | 6 5/8
+  dia   1 9/16 | 1 7/8 | 2 3/16 | 2 15/16 | 3 1/16 | 3 7/8 | 4 5/32 | 5 1/16 | 5 11/16 | 6 3/16
+CH EYS CH6F-EYS-2020 p.114
+  size  1/2 | 3/4 | 1 | 1-1/4 | 1-1/2 | 2 | 2-1/2 | 3 | 3-1/2 | 4 | 5 | 6
+  cat   EYS1 | EYS2 | EYS3 | EYS4 | EYS5 | EYS6 | EYS7 | EYS8 | EYS9 | EYS10 | EYS012 | EYS014
+  a     3 9/32 | 3 12/16 | 4 5/16 | 5 1/16 | 5 1/2 | 6 1/4 | 7 1/2 | 8 1/2 | 9 3/16 | 9 3/4 | 11 1/16 | 12 1/8
+  b     1 1/4 | 1 1/2 | 1 3/4 | 2 3/16 | 2 7/16 | 3 | 3 1/2 | 4 1/4 | 4 3/4 | 5 1/4 | 6 1/2 | 7 5/8
+CH EYD CH6F-EYD table
+  size  1/2 | 3/4 | 1 | 1-1/4 | 1-1/2 | 2 | 2-1/2 | 3 | 3-1/2 | 4
+  cat   EYD1 | EYD2 | EYD3 | EYD4 | EYD5 | EYD6 | EYD7 | EYD8 | EYD9 | EYD10
+  a     3 9/32 | 3 11/16 | 4 5/16 | 5 1/16 | 5 1/2 | 6 1/4 | 7 1/2 | 8 1/2 | 9 3/16 | 9 3/4
+  b     1 1/4 | 1 1/2 | 2 3/16 | 2 3/16 | 2 7/16 | 3 | 3 1/2 | 4 1/4 | 4 3/4 | 5 1/4
+CH HUB CH-CP269-2006 PDF_p.3
+  size  1/2 | 3/4 | 1 | 1-1/4 | 1-1/2 | 2 | 2-1/2 | 3 | 3-1/2 | 4
+  cat   MHUB1 | MHUB2 | MHUB3 | MHUB4 | MHUB5 | MHUB6 | MHUB7 | MHUB8 | MHUB9 | MHUB10
+  a     1 | 1 1/8 | 1 3/8 | 1 1/2 | 1 5/8 | 1 11/16 | 2 3/16 | 2 7/16 | 2 7/16 | 2 9/16
+  b     1 1/4 | 1 9/16 | 1 7/8 | 2 5/16 | 2 1/2 | 3 | 3 5/8 | 4 1/4 | 4 3/4 | 5 1/4
+  c     1 | 1 3/8 | 1 5/8 | 2 | 2 3/8 | 2 13/16 | 3 7/16 | 4 1/16 | 4 11/16 | 5 1/16
+  d     1/8 | 5/32 | 3/16 | 1/4 | 1/4 | 1/4 | 1/4 | 1/4 | 5/16 | 5/16
+  x     9/64 | 1/4 | 9/32 | 7/16 | 7/16 | 7/16 | 7/16 | 7/16 | 3/4 | 1 1/8
+MYR HUB CH-CP269-2006 PDF_p.4
+  size  1/2 | 3/4 | 1 | 1-1/4 | 1-1/2 | 2 | 2-1/2 | 3 | 3-1/2 | 4 | 5 | 6
+  cat   ST-1 | ST-2 | ST-3 | ST-4 | ST-5 | ST-6 | ST-7 | ST-8 | ST-9 | ST-10 | ST-11 | ST-12
+  A     1 11/32 | 1 15/32 | 1 21/32 | 1 11/16 | 1 11/16 | 1 3/4 | 2 7/32 | 2 5/16 | 2 3/8 | 2 7/16 | 2 15/16 | 3
+  B     1 7/16 | 1 23/32 | 2 | 2 3/8 | 2 3/4 | 3 1/4 | 3 3/4 | 4 3/8 | 5 | 5 1/2 | 6 7/8 | 7 11/16
+  C     13/16 | 29/32 | 1 1/32 | 1 1/32 | 1 1/32 | 1 3/32 | 1 9/32 | 1 3/8 | 1 7/16 | 1 1/2 | 2 | 2
+  D     3/16 | 3/16 | 1/4 | 1/4 | 1/4 | 1/4 | 1/4 | 1/4 | 1/4 | 1/4 | 1/4 | 5/16
+  K     7/8 | 1 1/8 | 1 3/8 | 1 3/4 | 2 | 2 1/2 | 3 | 3 5/8 | 4 1/8 | 4 5/8 | 5 11/16 | 6 3/4
+WH CPL WH-ECN-2017 coupling_table
+  size  1/2 | 3/4 | 1 | 1-1/4 | 1-1/2 | 2 | 2-1/2 | 3 | 3-1/2 | 4 | 5 | 6
+  od    1.010 | 1.250 | 1.525 | 1.869 | 2.155 | 2.650 | 3.250 | 3.870 | 4.500 | 4.875 | 6.000 | 7.200
+  len   1 5/8 | 1 41/64 | 1 31/32 | 2 1/32 | 2 1/16 | 2 1/8 | 3 3/16 | 3 5/16 | 3 13/32 | 3 33/64 | 3 61/64 | 4 1/4
+""" % dict(MOG_C=MOG_C, MOG_D=MOG_D, MOG_E=MOG_E, MOG_SZ=MOG_SZ, GUA_E=GUA_E)
+
+SRC_URL = {"CH1F-2006": (URL_CH06, URL_MOG), "CH3F-GUA-2024": (URL_GUA, URL_GUA_COPY), "CH5F-UNY-2022": (URL_UNY, ""),
+           "CH6F-EYS-2020": (URL_EYS, ""), "CH6F-EYD": (URL_EYD, ""), "CH-CP269-2006": (URL_HUB, ""), "WH-ECN-2017": (URL_WH, "")}
+NOTES2 = {
+    ("CH", "LBD", "1/2"): "c = outside width without bosses (catalog note, 1/2 - 3/4)",
+    ("CH", "LBD", "3/4"): "c = outside width without bosses (catalog note, 1/2 - 3/4)",
+    ("CH", "LBD", "1"): "e = 4 11/32 as published (smaller than 3/4 size 4 17/32)",
+    ("CH", "EYS", "3/4"): "a printed as 3 12/16 (= 3 3/4)",
+    ("CH", "EYS", "5"): "EYS vertical/horizontal-position table (5 and 6 in)",
+    ("CH", "EYS", "6"): "EYS vertical/horizontal-position table (5 and 6 in)",
+    ("CH", "EYD", "1"): "b = 2 3/16 as published (same as 1-1/4 size; EYS 1 in is 1 3/4)",
+    ("XP", "GUAX", "1/2"): "catalog GUAX14 (the only 1/2 in GUAX listed)",
+}
+# ANSI C80.1 rigid steel conduit OD (inches) - the plug / reducer head sizes below
+C80_OD = {"1/2": 0.840, "3/4": 1.050, "1": 1.315, "1-1/4": 1.660, "1-1/2": 1.900, "2": 2.375, "2-1/2": 2.875,
+          "3": 3.500, "3-1/2": 4.000, "4": 4.500, "5": 5.563, "6": 6.625}
+
+def r16(v):
+    return Fraction(round(v * 16), 16)
+
+def parse_tables2():
+    tabs, cur = [], None
+    for line in TABLES2.strip().splitlines():
+        if not line.startswith(" "):
+            form, shape, src, page = line.split()
+            cur = {"form": form, "shape": shape, "src": src, "page": page.replace("_", " "), "dims": {}}
+            tabs.append(cur)
+        else:
+            k, v = line.strip().split(None, 1)
+            cur["dims"][k] = [x.strip() for x in v.split("|")]
+    out, cpl = [], {}
+    for t in tabs:
+        sh, form = t["shape"], t["form"]
+        lmap = LETTERS.get("MYRHUB" if (form, sh) == ("MYR", "HUB") else sh, [(x, x.upper()) for x in "abcde"])
+        mfr, series, mat = FORMS[form]
+        url, copy = SRC_URL[t["src"]]
+        for i, ts in enumerate(t["dims"]["size"]):
+            txt = {k: t["dims"][k][i] for k, _ in lmap}
+            r = {c: "" for c in COLS}
+            r.update({"Mfr": mfr, "Form": form, "Shape": sh, "TradeSize": ts, "TradeSizeDec": fmt(tsdec(ts)),
+                      "CatalogNo": t["dims"].get("cat", [""] * 99)[i], "SourceId": t["src"], "SourcePage": t["page"],
+                      "Source": "%s %s, %s %s dimension table%s" % (url, t["page"], series, sh, (" (copy read: %s)" % copy) if copy else ""),
+                      "Published": "; ".join("%s=%s" % (k, txt[k]) for k, _ in lmap)})
+            for k, col in lmap:
+                r[col + "_in"] = fmt(frac(txt[k]))
+            r["Notes"] = "; ".join(x for x in [series + " (" + mat + ")", NOTES2.get((form, sh, ts), "")] if x)
+            out.append(r)
+            if sh == "CPL":
+                cpl[ts] = (frac(txt["len"]), frac(txt["od"]))
+    # approx rows (no published dimensions): plugged coupling (recessed / square head) and
+    # reducer, from the Wheatland coupling + C80.1 conduit OD
+    for sh, cat in (("PLGR", "PLG%d"), ("PLGS", "PLG%dSQ"), ("RE", "")):
+        for i, ts in enumerate(t for t in cpl if t != "1/2" or sh != "RE"):
+            ln, od = cpl[ts]
+            cod = C80_OD[ts]
+            r = {c: "" for c in COLS}
+            r.update({"Mfr": "Crouse-Hinds", "Form": "CH", "Shape": sh, "TradeSize": ts, "TradeSizeDec": fmt(tsdec(ts)),
+                      "CatalogNo": "", "SourceId": "APPROX", "SourcePage": "-", "A_in": fmt(ln), "B_in": fmt(od)})
+            if sh == "PLGR":
+                r["C_in"] = "0.125"
+                r["Published"] = "approx: A = coupling length, B = coupling OD (WH-ECN-2017); C = plug face recess 1/8"
+                r["Notes"] = "APPROX plugged coupling, recessed-head plug (PLG): coupling from WH-ECN-2017, recess assumed"
+            elif sh == "PLGS":
+                r["C_in"] = fmt(r16(0.75 * cod)); r["D_in"] = fmt(r16(max(0.25, 0.35 * cod)))
+                r["Published"] = "approx: A = coupling length, B = coupling OD (WH-ECN-2017); C = square head 0.75 x conduit OD; D = head height 0.35 x conduit OD"
+                r["Notes"] = "APPROX plugged coupling, square-head plug (PLG): head proportions assumed from C80.1 OD %.3f" % cod
+            else:
+                r["C_in"] = fmt(r16(max(0.125, 0.2 * cod))); r["D_in"] = fmt(cod)
+                r["Published"] = "approx: A = coupling length, B = coupling OD of the large size (WH-ECN-2017); C = reducer head thickness max(1/8, 0.2 x OD); D = head dia = C80.1 conduit OD"
+                r["Notes"] = ("APPROX reducer RE (large size %s in): recessed in the large-size hub / coupling, head sticks out C; "
+                              "spot check RE21 head dia 1.05 = 3/4 in conduit OD" % ts)
+            r["Source"] = "APPROX (see conduit_body_sources.csv); coupling " + URL_WH + "; plug page without dimensions " + URL_PLG
+            out.append(r)
+    return out
 
 def write_csvs(rows):
     os.makedirs(SEED, exist_ok=True)
@@ -293,7 +569,7 @@ def apply_db(rows):
     print("MED.db MEDConduitBody rows: %d -> %d" % (n0, n1))
 
 if __name__ == "__main__":
-    rows = parse_tables()
+    rows = parse_tables() + parse_tables2()
     write_csvs(rows)
     print("conduit_body_dims.csv rows:", len(rows))
     if "--no-db" not in sys.argv:

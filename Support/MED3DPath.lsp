@@ -56,7 +56,7 @@
 
 (princ "\rLoading MED3DPath...")
 (vl-load-com)
-(setq *MED3D-VERSION* "2026-09-30 r11 (feature/3dpath)")
+(setq *MED3D-VERSION* "2026-09-30 r12 (feature/3dpath)")
 
 ;;; ------------------------------------------------------------------ settings
 (if (not *MED3D-BEND-FACTOR*) (setq *MED3D-BEND-FACTOR* 5.0))  ; conduit R = factor x OD
@@ -336,13 +336,29 @@
 ;;; ------------------------------------------------------------ conduit bodies
 ;; body of *MED3D-FITS* at WCS point p: XY within the body's search radius (4th item:
 ;; medblck.dat break x insert scale + *MED3D-FIT-TOL*, else *MED3D-FIT-TOL*), Z within
-;; max(*MED3D-FIT-TOL*, od)
-(defun med3d-fit-at (p od / tol r)
+;; max(*MED3D-FIT-TOL*, od). r12: farther than *MED3D-FIT-TOL* only on the plan axis
+;; of one of its hubs (within max(*MED3D-FIT-TOL*, od) of the ray from pt along the hub
+;; direction, and within that hub's own radius when the hub carries one as 4th item) -
+;; the big break radii (1re 0.9125 x DIMSCALE on one side, union, hub) must not take a
+;; run that merely ends nearby.
+(defun med3d-fit-on-axis (f p od / dx dy ok hx hy hl al)
+  (setq dx (- (car p) (car (cadr f))) dy (- (cadr p) (cadr (cadr f))))
+  (foreach h (caddr f)
+    (setq hx (car (caddr h)) hy (cadr (caddr h)) hl (sqrt (+ (* hx hx) (* hy hy))))
+    (if (and (not ok) (> hl 0.5))
+      (progn
+        (setq hx (/ hx hl) hy (/ hy hl) al (+ (* dx hx) (* dy hy)))
+        (if (and (>= al 0.0) (<= (abs (- (* dx hy) (* dy hx))) (max *MED3D-FIT-TOL* od))
+                 (or (not (numberp (nth 3 h))) (<= al (+ (nth 3 h) (max *MED3D-FIT-TOL* od)))))
+          (setq ok T)))))
+  ok)
+(defun med3d-fit-at (p od / tol r d)
   (foreach f *MED3D-FITS*
     (setq tol (max (if (numberp (nth 3 f)) (nth 3 f) *MED3D-FIT-TOL*) 1e-6))
     (if (and (not r)
-             (<= (distance (list (car p) (cadr p)) (list (car (cadr f)) (cadr (cadr f)))) tol)
-             (<= (abs (- (caddr p) (caddr (cadr f)))) (max *MED3D-FIT-TOL* od)))
+             (<= (setq d (distance (list (car p) (cadr p)) (list (car (cadr f)) (cadr (cadr f))))) tol)
+             (<= (abs (- (caddr p) (caddr (cadr f)))) (max *MED3D-FIT-TOL* od))
+             (or (<= d *MED3D-FIT-TOL*) (med3d-fit-on-axis f p od)))
       (setq r f)))
   r)
 ;; cut-back along leg u (unit, pointing away from the body) for the run end / vertex p:

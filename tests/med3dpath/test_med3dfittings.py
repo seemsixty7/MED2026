@@ -45,11 +45,14 @@ DIRS = {'C': {'RUN': [1, 0, 0], 'RUN2': [-1, 0, 0]},
         'TB': {'RUN': [1, 0, 0], 'RUN2': [-1, 0, 0], 'BACK': [0, 0, -1]},
         'LB': {'RUN': [1, 0, 0], 'BACK': [0, 0, -1]},
         'LL': {'RUN': [1, 0, 0], 'BRANCH': [0, 1, 0]},      # r5: LL side hub +Y, LR -Y (Clint)
-        'LR': {'RUN': [1, 0, 0], 'BRANCH': [0, -1, 0]}}
+        'LR': {'RUN': [1, 0, 0], 'BRANCH': [0, -1, 0]},
+        'X': {'RUN': [1, 0, 0], 'RUN2': [-1, 0, 0], 'BRANCH': [0, 1, 0], 'BRANCH2': [0, -1, 0]}}
 clamped = []
 for rp in rows_py:
     f, sh, sz = rp['Form'], rp['Shape'], float(rp['TradeSizeDec'])
+    if sh not in DIRS or f not in ('F7', 'F8', 'M9'): continue      # phase 2 shapes: test_med3dphase2.py
     A, B, C, D, E = (float(rp[k]) for k in ('A_in', 'B_in', 'C_in', 'D_in', 'E_in'))
+    if sh == 'X': B, C = C, B          # X: published b = width across the side hubs, c = depth
     tag = f'{f} {sh} {rp["TradeSize"]}'
     for cod in (None, 0.84 * sz / 0.5 if sz <= 0.5 else None):
         g = call(L, 'medcb-geom', sh, A, B, C, D, E, None, None, cod)
@@ -78,7 +81,10 @@ for rp in rows_py:
         if 'BACK' in hubs:
             check('B-extent ' + tag, near(H / 2 - hubs['BACK'][0][2], B), f'{H/2 - hubs["BACK"][0][2]} vs {B}')
         if 'BRANCH' in hubs:
-            check('C-extent ' + tag, near(abs(hubs['BRANCH'][0][1]) + W / 2, C), f'{abs(hubs["BRANCH"][0][1]) + W/2} vs {C}')
+            if sh == 'X':
+                check('C-extent ' + tag, near(hubs['BRANCH'][0][1] - hubs['BRANCH2'][0][1], C), f'{hubs["BRANCH"]} {hubs["BRANCH2"]} vs {C}')
+            else:
+                check('C-extent ' + tag, near(abs(hubs['BRANCH'][0][1]) + W / 2, C), f'{abs(hubs["BRANCH"][0][1]) + W/2} vs {C}')
         if sh == 'C': check('C-section ' + tag, near(W, C) and near(H, B))
         check('cover-top ' + tag, near(cov[4], H / 2) and cov[3] < cov[4] and near(body[4], cov[3]) and near(body[3], -H / 2))
         check('cover-inside ' + tag, cov[1] <= body[1] + 1e-9 and cov[2] <= W + 1e-9 and near(cov[0], body[0]))
@@ -93,6 +99,19 @@ for rp in rows_py:
             check('cyl-dir ' + tag, all(near(x / ln, y) for x, y in zip(ax, d)), f'{ax} {d}')
 
 # ------------------------------------------------------------ block build
+# r6 (Clint): no colour in the block - the body is the solid with the hubs (most parts)
+def split_solids(sols):
+    sols = sorted(sols, key=lambda s: -len(s.parts))
+    return sols[:1], sols[1:]
+def bylayer_ok(blocks):
+    bad = []
+    for b in blocks.values():
+        for e in live(b):
+            pr = e.props
+            if not (pr.get('Layer') == '0' and pr.get('Color') == 256 and str(pr.get('Linetype', '')).upper() == 'BYLAYER'
+                    and pr.get('Lineweight') == -1):
+                bad.append((b.props['Name'], pr))
+    return bad
 L, mk = session()
 res = to_py(call(L, 'medcb-ensure-block', 'F7', 'LB', 1.0))
 check('ensure-created', res == ['MED_CB_RGD_F7_LB_1-00', 'CREATED'], str(res))
@@ -100,7 +119,7 @@ b = mk.blocks.get('MED_CB_RGD_F7_LB_1-00')
 check('block-exists', b is not None and b.base == [0.0, 0.0, 0.0])
 if b:
     sols = live(b)
-    body = [s for s in sols if s.props.get('Color') == 0]; cover = [s for s in sols if s.props.get('Color') == 8]
+    body, cover = split_solids(sols)
     check('two-solids', len(sols) == 2 and len(body) == 1 and len(cover) == 1 and all(s.props.get('Layer') == '0' for s in sols), str([(s, s.props) for s in sols]))
     g = call(L, 'medcb-geom-for', 'F7', 'LB', 1.0)
     W, H = get(g, 'W'), get(g, 'H'); hubs = {h[0]: h[1] for h in to_py(get(g, 'HUBS'))}
@@ -116,29 +135,28 @@ if b:
 n0 = sum(len(x.ents) for x in mk.blocks.values())
 res2 = to_py(call(L, 'medcb-ensure-block', 'F7', 'LB', 1.0))
 check('no-overwrite', res2 == ['MED_CB_RGD_F7_LB_1-00', 'EXISTS'] and sum(len(x.ents) for x in mk.blocks.values()) == n0, str(res2))
-# a definition made by someone else is used as is
-mk.invoke('BLOCKS', 'Add', [0.0, 0.0, 0.0], 'MED_CB_RGD_F7_T_1-00')
+# a current definition (r6 tag) is used as is, even when edited by hand
+mk.invoke('BLOCKS', 'Add', [0.0, 0.0, 0.0], 'MED_CB_RGD_F7_T_1-00').props['Comments'] = 'MEDCB geom r6'
 res3 = to_py(call(L, 'medcb-ensure-block', 'F7', 'T', 1.0))
 check('existing-left-alone', res3[1] == 'EXISTS' and mk.blocks['MED_CB_RGD_F7_T_1-00'].ents == [], str(res3))
 # LR / LL / T branch cylinder along Y on the right side
 for sh, sign in (('LR', -1), ('LL', 1), ('T', 1)):
     res = to_py(call(L, 'medcb-ensure-block', 'F8', sh, 2.0))
-    bb = mk.blocks[res[0]]; body = [s for s in live(bb) if s.props.get('Color') == 0][0]
+    bb = mk.blocks[res[0]]; body = split_solids(live(bb))[0][0]
     ycyl = [p for p in body.parts if p[0] == 'CYL' and abs(p[1][1] - p[2][1]) > 1e-9]
     g = call(L, 'medcb-geom-for', 'F8', sh, 2.0); br = [h for h in to_py(get(g, 'HUBS')) if h[0] == 'BRANCH'][0]
     check('branch-cyl ' + sh, len(ycyl) == 1 and near((max if sign > 0 else min)(ycyl[0][1][1], ycyl[0][2][1]), br[1][1]) and br[1][1] * sign > 0, str(ycyl))
     lo, hi = bbox(body.parts)
     check('branch-C ' + sh, near(hi[1] - lo[1], 5.0), f'{hi[1] - lo[1]}')
 # C straight: centred, both hubs
-res = to_py(call(L, 'medcb-ensure-block', 'F7', 'C', 0.5)); body = [s for s in live(mk.blocks[res[0]]) if s.props.get('Color') == 0][0]
+res = to_py(call(L, 'medcb-ensure-block', 'F7', 'C', 0.5)); body = split_solids(live(mk.blocks[res[0]]))[0][0]
 lo, hi = bbox(body.parts)
 check('C-bbox', near(lo[0], -5.375 / 2) and near(hi[0], 5.375 / 2) and near(hi[1] - lo[1], 1.375), f'{lo} {hi}')
 # placeholder: no data for Form 7 TB 4"
 res = to_py(call(L, 'medcb-ensure-block', 'F7', 'TB', 4.0))
 check('placeholder', res == ['MED_CB_RGD_F7_TB_4-00_PH', 'PLACEHOLDER'], str(res))
 ph = mk.blocks.get('MED_CB_RGD_F7_TB_4-00_PH')
-check('placeholder-box', ph and len(live(ph)) == 1 and live(ph)[0].props.get('Layer') == 'MED_3DFLAG' and live(ph)[0].parts[0][0] == 'BOX')
-check('placeholder-layer', 'MED_3DFLAG' in mk.layers)
+check('placeholder-box', ph and len(live(ph)) == 1 and live(ph)[0].props.get('Layer') == '0' and live(ph)[0].parts[0][0] == 'BOX')
 check('real-name-free', 'MED_CB_RGD_F7_TB_4-00' not in mk.blocks)
 check('placeholder-again', to_py(call(L, 'medcb-ensure-block', 'F7', 'TB', 4.0))[1] == 'PH-EXISTS')
 check('bad-shape', call(L, 'medcb-ensure-block', 'F7', 'XX', 1.0) is None)
@@ -148,16 +166,27 @@ ins = to_py(call(L, 'medcb-insert', 'F8', 'LB', 1.5, [10.0, 5.0, 0.0], 0.0))
 check('insert', ins and ins[1] == 'MED_CB_RGD_F8_LB_1-50' and mk.inserts[-1].props['Pt'] == [10.0, 5.0, 0.0]
       and mk.inserts[-1].props['Layer'] == 'MED_3DCONDUIT', str(ins))
 call(L, 'medcb-insert', 'F8', 'TB', 3.0, [0.0, 0.0, 0.0], 0.0)
-check('insert-ph-layer', mk.inserts[-1].props['Layer'] == 'MED_3DFLAG')
+check('insert-ph-layer', mk.inserts[-1].props['Layer'] == 'MED_3DFLAG' and 'MED_3DFLAG' in mk.layers)
 hubs = to_py(call(L, 'medcb-hubs', 'F7', 'LL', 1.0))
 check('hubs-api', [h[0] for h in hubs] == ['RUN', 'BRANCH'] and hubs[1][2] == [0.0, 1.0, 0.0], str(hubs))
-# an LL / LR block made before r5 (no geometry tag) is renamed out of the way and rebuilt
+# a block made before r6 (no / older geometry tag: LL / LR convention before r5, gray
+# cover / red placeholder before r6) is renamed out of the way and rebuilt - any shape
 old = mk.invoke('BLOCKS', 'Add', [0.0, 0.0, 0.0], 'MED_CB_RGD_F7_LR_1-00')
 res = to_py(call(L, 'medcb-ensure-block', 'F7', 'LR', 1.0))
-check('stale-ll-lr', res == ['MED_CB_RGD_F7_LR_1-00', 'CREATED'] and old.props['Name'] == 'MED_CB_RGD_F7_LR_1-00_PRE_R5'
-      and 'MED_CB_RGD_F7_LR_1-00_PRE_R5' in mk.blocks and mk.blocks['MED_CB_RGD_F7_LR_1-00'] is not old
-      and mk.blocks['MED_CB_RGD_F7_LR_1-00'].props.get('Comments') == 'MEDCB geom r5', f'{res} {old.props}')
+check('stale-ll-lr', res == ['MED_CB_RGD_F7_LR_1-00', 'CREATED'] and old.props['Name'] == 'MED_CB_RGD_F7_LR_1-00_PRE_R6'
+      and 'MED_CB_RGD_F7_LR_1-00_PRE_R6' in mk.blocks and mk.blocks['MED_CB_RGD_F7_LR_1-00'] is not old
+      and mk.blocks['MED_CB_RGD_F7_LR_1-00'].props.get('Comments') == 'MEDCB geom r6', f'{res} {old.props}')
 check('fresh-ll-lr-kept', to_py(call(L, 'medcb-ensure-block', 'F7', 'LR', 1.0))[1] == 'EXISTS')
+old = mk.invoke('BLOCKS', 'Add', [0.0, 0.0, 0.0], 'MED_CB_RGD_F7_C_1-00'); old.props['Comments'] = 'MEDCB geom r5'
+res = to_py(call(L, 'medcb-ensure-block', 'F7', 'C', 1.0))
+check('stale-r5-c', res[1] == 'CREATED' and old.props['Name'] == 'MED_CB_RGD_F7_C_1-00_PRE_R6', f'{res} {old.props}')
+old = mk.invoke('BLOCKS', 'Add', [0.0, 0.0, 0.0], 'MED_CB_RGD_F7_TB_5-00_PH'); old.props['Comments'] = 'MEDCB geom r5'
+res = to_py(call(L, 'medcb-ensure-block', 'F7', 'TB', 5.0))
+check('stale-r5-ph', res == ['MED_CB_RGD_F7_TB_5-00_PH', 'PLACEHOLDER'] and old.props['Name'] == 'MED_CB_RGD_F7_TB_5-00_PH_PRE_R6', f'{res} {old.props}')
+# Clint's block rule: every entity of every generated block on layer 0, ByLayer
+gen = {k: v for k, v in mk.blocks.items() if v.props.get('Comments') == 'MEDCB geom r6'}
+check('bylayer-blocks', len(gen) >= 7 and not bylayer_ok(gen), str(bylayer_ok(gen)[:3]))
+check('bylayer-inserts', all(i.props.get('Color') == 256 and i.props.get('Lineweight') == -1 for i in mk.inserts), str([i.props for i in mk.inserts][:2]))
 
 # ------------------------------------------------------- DB rows win over CSV
 import tempfile
@@ -197,8 +226,8 @@ L.g['GETPOINT'] = lambda *a: answers['GETPOINT'].pop(0) if answers['GETPOINT'] e
 L.g['INITGET'] = lambda *a: None
 call(L, 'c:MEDCBTEST')
 names = [i.props['Name'] for i in mk.inserts]
-check('test-6', names == [f'MED_CB_RGD_F8_{s}_1-50' for s in ('LB', 'LR', 'LL', 'T', 'TB', 'C')], str(names))
-check('test-labels', len(mk.texts) == 6, str(len(mk.texts)))
+check('test-7', names == [f'MED_CB_RGD_F8_{s}_1-50' for s in ('LB', 'LR', 'LL', 'T', 'TB', 'C', 'X')], str(names))
+check('test-labels', len(mk.texts) == 7, str(len(mk.texts)))
 spans = []
 for i in mk.inserts:
     sh = i.props['Name'].split('_')[4]

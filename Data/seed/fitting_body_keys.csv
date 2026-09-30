@@ -5,6 +5,7 @@ ITEMCODE,ITEMDESC,BodyKey
 14,"Form 7 ""TB"" condulet fitting",RGD|F7|TB
 15,"Form 8 ""TB"" condulet fitting",RGD|F8|TB
 16,"Mark 9 ""TB"" condulet fitting",RGD|M9|TB
+18,"Mogul ""BT"" condulet fitting",RGD|MOG|BT
 30,"Form 7 ""LB"" condulet fitting",RGD|F7|LB
 31,"Form 8 ""LB"" condulet fitting",RGD|F8|LB
 32,"Mark 9 ""LB"" condulet fitting",RGD|M9|LB
@@ -14,6 +15,25 @@ ITEMCODE,ITEMDESC,BodyKey
 36,"Form 7 ""LR"" condulet fitting",RGD|F7|LR
 37,"Form 8 ""LR"" condulet fitting",RGD|F8|LR
 38,"Mark 9 ""LR"" condulet fitting",RGD|M9|LR
+39,"""LBD"" condulet fitting",RGD|CH|LBD
+40,"Mogul ""BLB"" condulet fitting",RGD|MOG|BLB
+41,"""LBY"" condulet fitting",RGD|CH|LBY
 50,"Form 7 ""C"" condulet fitting",RGD|F7|C
 51,"Form 8 ""C"" condulet fitting",RGD|F8|C
 52,"Mark 9 ""C"" condulet fitting",RGD|M9|C
+53,"Mogul ""BC"" condulet fitting",RGD|MOG|BC
+61,"""EYS"" sealling fitting",RGD|CH|EYS
+64,"""EYD"" drain sealing fitting",RGD|CH|EYD
+72,"""UNY"" union",RGD|CH|UNY
+80,"Form 7 ""X"" condulet fitting",RGD|F7|X
+81,"Form 8 ""X"" condulet fitting",RGD|F8|X
+82,"Mark 9 ""X"" condulet fitting",RGD|M9|X
+94,"Mogul ""BUB"" condulet fitting",RGD|MOG|BUB
+100,"""PLG"" recessed",RGD|CH|PLGR
+101,"""PLG square head",RGD|CH|PLGS
+103,"""RE"" reducer",RGD|CH|RE
+120,"""HUB"" connection fitting",RGD|CH|HUB
+121,"Meyers ""HUB"" connection fitting",RGD|MYR|HUB
+141,Explosion Proof GUAL condulet fitting,RGD|XP|GUAL
+142,Explosion Proof GUAT condulet fitting,RGD|XP|GUAT
+143,Explosion Proof GUAX condulet fitting,RGD|XP|GUAX

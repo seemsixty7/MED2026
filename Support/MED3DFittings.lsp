@@ -1,8 +1,10 @@
-;;; MED3DFittings.lsp - rigid conduit body (Condulet) 3D blocks for MED (AutoCAD 2024+).
+;;; MED3DFittings.lsp - rigid conduit body (Condulet) and inline fitting 3D blocks for
+;;; MED (AutoCAD 2024+).
 ;;;
 ;;; Commands
-;;;   MEDCBINS   insert one conduit body (type, form, trade size) at picked points
-;;;   MEDCBTEST  insert LB LR LL T TB C of one form + size in a row, with labels
+;;;   MEDCBINS   insert one fitting (type, form, trade size) at picked points
+;;;   MEDCBTEST  insert LB LR LL T TB C X of one form + size in a row, with labels
+;;;   MEDCBALL   every fitting type of every form at one size (gallery, one row per form)
 ;;;   MEDCBDATA  reload the dimension data and print what is covered
 ;;;   MEDCBVER   print version / data source
 ;;; MEDMAKE3D (MED3DPath.lsp) uses medcb-collect / medcb-place-all to replace the 2D
@@ -18,8 +20,21 @@
 ;;;   Hub OD / hub length are not published; they are derived below (HubOD_in /
 ;;;   HubLen_in override when filled in the table).
 ;;;
+;;; r6 (phase 2) adds, all from the same table (Data\seed\conduit_body_sources.csv
+;;;   lists every publication; APPROX rows are derived and say so):
+;;;     X (F7 F8 M9)  LBD LBY (CH)  BLB BT BC BUB (MOG Mogul)  GUAL GUAT GUAX (XP)
+;;;     inline: UNY union, EYS / EYD seals, PLGR / PLGS plugged couplings (approx),
+;;;     HUB (CH conduit hub, MYR Myers ST), RE reducer (approx); CPL (WH) = Wheatland
+;;;     rigid coupling data behind the approx rows.
+;;;   Letters per family: see the builders below (medcb-geom-lby ... medcb-geom-re).
+;;;
 ;;; Block: MED_CB_RGD_<form>_<shape>_<size>, size = trade size to 2 decimals with "-"
-;;;   for the point: MED_CB_RGD_F7_LB_1-00, MED_CB_RGD_F8_T_1-25, MED_CB_RGD_F7_C_0-50.
+;;;   for the point: MED_CB_RGD_F7_LB_1-00, MED_CB_RGD_F8_T_1-25, MED_CB_RGD_F7_C_0-50;
+;;;   reducer <large>X<small>: MED_CB_RGD_CH_RE_1-00X0-75.
+;;;   Block contents (r6, Clint's rule): every entity on layer 0, colour / linetype /
+;;;   lineweight ByLayer; the INSERT carries the layer (MED_3DCONDUIT, placeholders
+;;;   MED_3DFLAG). Definitions made by r5 or older (gray cover, red placeholder, old
+;;;   LL / LR) are renamed <name>_PRE_R6 on first use and rebuilt; PURGE them later.
 ;;;   Created only when not already in the drawing (an existing definition is never
 ;;;   redefined). No data -> placeholder box on layer MED_3DFLAG in a block named
 ;;;   <name>_PH (the real name stays free for when data is added).
@@ -33,6 +48,12 @@
 ;;;     C   RUN +X, RUN2 -X            T   RUN +X, RUN2 -X, BRANCH +Y
 ;;;     LB  RUN +X, BACK -Z            TB  RUN +X, RUN2 -X, BACK -Z
 ;;;     LL  RUN +X, BRANCH +Y          LR  RUN +X, BRANCH -Y
+;;;   r6: X / GUAX  RUN +X, RUN2 -X, BRANCH +Y, BRANCH2 -Y;  GUAL RUN +X, BRANCH +Y;
+;;;     GUAT = T;  LBD / BLB / LBY = LB (LBY: round cover on the 45 deg corner toward
+;;;     -X +Z);  BT = T;  BC = C;  BUB RUN +X, RUN2 -X (hub faces; the hubs slope 45 deg
+;;;     down to them);  UNY / EYS / EYD RUN +X, RUN2 -X (EYS pour hub +Z, EYD drain
+;;;     -Z);  PLGR / PLGS RUN +X (plug at -X);  HUB RUN +X, wall face at X = 0;
+;;;     RE RUN +X (small size), RUN2 -X (large size).
 ;;;   LL / LR (r5, per Clint - r4 had them swapped): with the cover up (+Z) and the RUN
 ;;;   (end) hub east (+X), an LL's side hub points north (+Y) and an LR's south (-Y).
 ;;;   Trade rule: side hub pointing up, looking into the end hub: cover on the left =
@@ -55,15 +76,28 @@
 
 (princ "\rLoading MED3DFittings...")
 (vl-load-com)
-(setq *MEDCB-VERSION* "2026-09-30 r5 (feature/3dpath)")
-;; LL / LR hub convention changed in r5 (Clint): block definitions made before carry
-;; no / another geometry tag in their Comments and are renamed out of the way
-(setq *MEDCB-GEOM-TAG* "MEDCB geom r5")
-(setq *MEDCB-SHAPES* '("LB" "LR" "LL" "T" "TB" "C"))
+(setq *MEDCB-VERSION* "2026-09-30 r6 (feature/3dpath)")
+;; Block definitions carry this tag in their Comments; one made by an older revision
+;; (no / another tag) is renamed <name>_PRE_R6 out of the way and rebuilt (existing
+;; definitions are otherwise never redefined). r5: LL / LR hub convention (Clint);
+;; r6: every entity on layer 0 with colour / linetype / lineweight ByLayer (Clint's
+;; block rule - r5 and older blocks had a gray colour-8 cover and a red placeholder).
+(setq *MEDCB-GEOM-TAG* "MEDCB geom r6")
+(setq *MEDCB-STALE-SUFFIX* "_PRE_R6")
+;; r6: every modelled shape. Classic Condulet bodies (Form 7 / 8, Mark 9) first - the
+;; MEDCBTEST row - then the phase 2 bodies and the inline fittings.
+(setq *MEDCB-CLASSIC* '("LB" "LR" "LL" "T" "TB" "C" "X"))
+(setq *MEDCB-SHAPES* (append *MEDCB-CLASSIC*
+                             '("LBD" "BLB" "LBY" "BT" "BC" "BUB" "GUAL" "GUAT" "GUAX"
+                               "UNY" "EYS" "EYD" "PLGR" "PLGS" "HUB" "RE")))
+;; inline fittings (not conduit bodies): union, seals, plugged couplings, hubs, reducer
+(setq *MEDCB-INLINE* '("UNY" "EYS" "EYD" "PLGR" "PLGS" "HUB" "RE"))
 ;; LB-like bodies (same hubs / orientation as an LB: RUN +X, BACK -Z; Clint: LBD is an
 ;; LB with a bigger body, LBY an LB with symmetrical legs, Mogul BLB a larger LB)
 (setq *MEDCB-LB-FAMILY* '("LB" "LBD" "LBY" "BLB"))
-(setq *MEDCB-FORMS* '("F7" "F8" "M9"))
+;; forms: F7 / F8 / M9 Condulet, CH = Crouse-Hinds without a form number (LBD, LBY,
+;; seals, union, plugs, hub, reducer), MOG Mogul, XP GUA explosionproof, MYR Myers hub
+(setq *MEDCB-FORMS* '("F7" "F8" "M9" "CH" "MOG" "XP" "MYR"))
 (if (not *MEDCB-FORM*) (setq *MEDCB-FORM* "F7"))
 (if (not *MEDCB-SHAPE*) (setq *MEDCB-SHAPE* "LB"))
 (if (not *MEDCB-SIZE*) (setq *MEDCB-SIZE* 1.0))
@@ -79,10 +113,16 @@
   (if (and r (> r 0.0)) r))
 (defun medcb-pad2 (n) (if (< n 10) (strcat "0" (itoa n)) (itoa n)))
 
-;; 1.0 -> "1-00", 0.5 -> "0-50", 1.25 -> "1-25" (no RTOS: DIMZIN would strip zeros)
+;; 1.0 -> "1-00", 0.5 -> "0-50", 1.25 -> "1-25" (no RTOS: DIMZIN would strip zeros);
+;; a reducer's (large small) size list -> "1-00X0-75"
 (defun medcb-size-tag (sz / n)
-  (setq n (fix (+ (* (float sz) 100.0) 0.5)))
-  (strcat (itoa (/ n 100)) "-" (medcb-pad2 (rem n 100))))
+  (if (listp sz)
+    (strcat (medcb-size-tag (car sz)) "X" (medcb-size-tag (cadr sz)))
+    (progn
+      (setq n (fix (+ (* (float sz) 100.0) 0.5)))
+      (strcat (itoa (/ n 100)) "-" (medcb-pad2 (rem n 100))))))
+;; first (large) size of a size or (large small) list
+(defun medcb-sz1 (sz) (if (listp sz) (car sz) sz))
 (defun medcb-block-name (form shape sz)
   (strcat "MED_CB_RGD_" (strcase form) "_" (strcase shape) "_" (medcb-size-tag sz)))
 (defun medcb-ph-name (form shape sz) (strcat (medcb-block-name form shape sz) "_PH"))
@@ -103,10 +143,18 @@
                 (medcb-frac s)))))
   (if (and r (> r 0.0)) r))
 (defun medcb-size-text (sz / w f n)
-  (setq n (fix (+ (* sz 16.0) 0.5)) w (/ n 16) f (rem n 16))
-  (cond ((= f 0) (itoa w))
-        (T (setq f (cond ((= f 8) "1/2") ((= f 4) "1/4") ((= f 12) "3/4") (T (strcat (itoa f) "/16"))))
-           (if (> w 0) (strcat (itoa w) "-" f) f))))
+  (if (listp sz)
+    (strcat (medcb-size-text (car sz)) " x " (medcb-size-text (cadr sz)))
+    (progn
+      (setq n (fix (+ (* sz 16.0) 0.5)) w (/ n 16) f (rem n 16))
+      (cond ((= f 0) (itoa w))
+            (T (setq f (cond ((= f 8) "1/2") ((= f 4) "1/4") ((= f 12) "3/4") (T (strcat (itoa f) "/16"))))
+               (if (> w 0) (strcat (itoa w) "-" f) f))))))
+;; trade sizes (rigid conduit) and the next smaller one (reducer without a reduce-to size)
+(setq *MEDCB-TRADE* '(0.5 0.75 1.0 1.25 1.5 2.0 2.5 3.0 3.5 4.0 5.0 6.0))
+(defun medcb-size-down (sz / r)
+  (foreach x *MEDCB-TRADE* (if (< x (- sz 1e-6)) (setq r x)))
+  r)
 
 ;;; ---------------------------------------------------------------------- data
 ;; row: (("FORM" . "F7") ("SHAPE" . "LB") ("SIZE" . 1.0) ("A" . a) ("B" . b) ("C" . c)
@@ -118,8 +166,16 @@
         (cons "HUBOD" (medcb-num hod)) (cons "HUBLEN" (medcb-num hl))
         (cons "CATNO" (if (= (type cat) 'STR) cat "")) (cons "FROM" from)))
 (defun medcb-row-key (r) (list (medcb-get "FORM" r) (medcb-get "SHAPE" r) (medcb-size-tag (medcb-get "SIZE" r))))
-(defun medcb-row-ok (r)
-  (and (medcb-get "A" r) (medcb-get "B" r) (medcb-get "C" r) (medcb-get "D" r) (medcb-get "E" r)))
+;; letters a row needs to build its shape (the others are optional)
+(defun medcb-need (shape)
+  (cond ((member shape '("LBY" "UNY" "EYS" "EYD" "CPL")) '("A" "B"))
+        ((member shape '("PLGR")) '("A" "B" "C"))
+        ((member shape '("GUAL" "GUAT" "GUAX" "PLGS" "RE")) '("A" "B" "C" "D"))
+        (T '("A" "B" "C" "D" "E"))))
+(defun medcb-row-ok (r / ok)
+  (setq ok T)
+  (foreach k (medcb-need (medcb-get "SHAPE" r)) (if (not (medcb-get k r)) (setq ok nil)))
+  ok)
 
 ;; CSV line -> fields (quotes, doubled quotes); stops after n fields when n is given
 (defun medcb-csv-split (line n / i len ch q cur out)
@@ -222,15 +278,25 @@
       (setq *MEDCB-DATA* (if db db '(nil)))))
   (vl-remove nil *MEDCB-DATA*))
 (defun medcb-find (form shape sz / key r)
-  (setq key (list (strcase form) (strcase shape) (medcb-size-tag sz)))
+  (setq key (list (strcase form) (strcase shape) (medcb-size-tag (medcb-sz1 sz))))
   (foreach x (medcb-load-data nil) (if (and (not r) (equal (medcb-row-key x) key)) (setq r x)))
   r)
 
 ;; rigid steel conduit OD (MEDConduitOD code 1) when MEDFunctions is loaded
 (defun medcb-conduit-od (sz / r)
+  (setq sz (medcb-sz1 sz))
   (if med_conduit_od
     (progn (setq r (vl-catch-all-apply 'med_conduit_od (list 1 sz)))
            (if (and (numberp r) (> r 0.0)) (float r)))))
+;; ANSI C80.1 rigid conduit OD by trade size (phase 2 builders when MEDFunctions is
+;; not loaded); other sizes: trade size + 0.35
+(setq *MEDCB-C80* '((0.5 . 0.84) (0.75 . 1.05) (1.0 . 1.315) (1.25 . 1.66) (1.5 . 1.9) (2.0 . 2.375)
+                    (2.5 . 2.875) (3.0 . 3.5) (3.5 . 4.0) (4.0 . 4.5) (5.0 . 5.563) (6.0 . 6.625)))
+(defun medcb-cod (sz / r)
+  (setq sz (medcb-sz1 sz))
+  (cond ((medcb-conduit-od sz))
+        (T (foreach x *MEDCB-C80* (if (and (not r) (equal (car x) sz 1e-6)) (setq r (cdr x))))
+           (if r r (+ sz 0.35)))))
 
 ;;; ------------------------------------------------------------ geometry (pure)
 ;; adds one hub to medcb-geom's hubs / cyls (dynamic scope: hubs cyls ov hub)
@@ -252,7 +318,8 @@
   (if (setq k (medcb-get "SHORT" g))
     (setq g (if (member shape '("LB" "TB"))
               (medcb-geom-wh shape a b c d e hod hl cod w (- b k) "body depth reduced so the back hub fits B")
-              (medcb-geom-wh shape a b c d e hod hl cod (- c k) h "body width reduced so the side hub fits C"))))
+              (medcb-geom-wh shape a b c d e hod hl cod (- c (if (= shape "X") (* 2.0 k) k)) h
+                             "body width reduced so the side hub fits C"))))
   g)
 (defun medcb-geom-wh (shape a b c d e hod hl cod w h note / dp m t0 hub minh n lb cx rl sl ov hubs cyls ell short)
   (setq ell (member shape '("LB" "LL" "LR"))
@@ -267,7 +334,7 @@
   (if (< lb w) (setq lb w note "A shorter than body width"))
   (setq rl (if ell (- a lb) (/ (- a lb) 2.0))
         cx (if ell (- (/ lb 2.0) (/ w 2.0)) 0.0)
-        sl (if (member shape '("LB" "TB")) (- b h) (- c w)))
+        sl (cond ((member shape '("LB" "TB")) (- b h)) ((= shape "X") (/ (- c w) 2.0)) (T (- c w))))
   (if (and (not (= shape "C")) (< sl (- minh 1e-9))) (setq short minh sl minh note "side/back hub lengthened to 0.25 x hub OD"))
   (setq ov (* 0.25 (min w h)))
   (cond
@@ -276,7 +343,8 @@
        (medcb-hub "RUN2" (list (/ a -2.0) 0.0 0.0) '(-1.0 0.0 0.0) rl)))
   (cond
     ((member shape '("LB" "TB")) (medcb-hub "BACK" (list 0.0 0.0 (- (+ (/ h 2.0) sl))) '(0.0 0.0 -1.0) sl))
-    ((member shape '("LL" "T")) (medcb-hub "BRANCH" (list 0.0 (+ (/ w 2.0) sl) 0.0) '(0.0 1.0 0.0) sl))
+    ((member shape '("LL" "T" "X")) (medcb-hub "BRANCH" (list 0.0 (+ (/ w 2.0) sl) 0.0) '(0.0 1.0 0.0) sl)
+      (if (= shape "X") (medcb-hub "BRANCH2" (list 0.0 (- (+ (/ w 2.0) sl)) 0.0) '(0.0 -1.0 0.0) sl)))
     ((= shape "LR") (medcb-hub "BRANCH" (list 0.0 (- (+ (/ w 2.0) sl)) 0.0) '(0.0 -1.0 0.0) sl)))
   (list (cons "SHAPE" shape) (cons "W" w) (cons "H" h) (cons "M" m) (cons "DOPEN" dp) (cons "LBODY" lb)
         (cons "HUBOD" hub) (cons "RUNLEN" rl) (cons "SIDELEN" (if (= shape "C") nil sl)) (cons "NOTE" note) (cons "SHORT" short)
@@ -285,30 +353,201 @@
         (cons "CYLS" (reverse cyls))
         (cons "HUBS" (reverse hubs))))
 
-;; placeholder (no data): box, same hub directions; size only from trade size / OD
+;;; ---------------------------------------------- phase 2 builders (r6, pure)
+;;; Primitive geometry: ("PRIMS" prim ...) with prim
+;;;   ("CYL" role p0 p1 r)      cylinder p0 -> p1 (any direction)
+;;;   ("BOX" role pmin pmax)    axis-aligned box
+;;;   ("SLOT" role cx len w z0 z1)  stadium along X (as BODY / COVER above)
+;;; role "BODY" (unioned into one solid) or "COVER" (a second solid: cover, pour hub,
+;;; plug head, locknut); both on layer 0, ByLayer (no colour in the block, r6).
+;;; Builders collect into prims / hubs (dynamic scope of medcb-prims-geom callers).
+(defun medcb-p (prim) (setq prims (cons prim prims)))
+(defun medcb-h (name face dir) (setq hubs (cons (list name face dir) hubs)))
+(defun medcb-prims-geom (shape note)
+  (list (cons "SHAPE" shape) (cons "NOTE" note) (cons "PRIMS" (reverse prims)) (cons "HUBS" (reverse hubs))))
+;; hub OD of the phase 2 builders: table value, else 1.15 x rigid conduit OD, at most lim
+(defun medcb-hod2 (hod sz lim)
+  (cond (hod hod) (lim (min lim (* 1.15 (medcb-cod sz)))) (T (* 1.15 (medcb-cod sz)))))
+(setq *MEDCB-R2* (sqrt 0.5))
+
+;; LBY (Crouse-Hinds, a b only): LB orientation (RUN +X, BACK -Z), legs symmetrical,
+;; round cover on the 45 deg outside corner (normal (-1,0,1)/sqrt2). Published a =
+;; overall (back of the body to a hub face, both legs), b = body / cover diameter.
+;; Derived: body = round can on the cover axis, cover face 0.55 x hub OD past the
+;; centreline crossing, hubs from the crossing to the faces at a minus the body's reach
+;; behind the crossing (rim of the can / cover), so both legs measure a overall.
+(defun medcb-geom-lby (a b hod sz / prims hubs hub hc f n t0 note)
+  (setq hub (medcb-hod2 hod sz b) hc (* 0.55 hub) n (list (- *MEDCB-R2*) 0.0 *MEDCB-R2*)
+        t0 (max 0.0625 (* 0.06 b))
+        f (- a (* *MEDCB-R2* (max (+ (- hc t0) (/ b 2.0)) (+ hc (* 0.45 b))))))
+  (if (< f (* 0.75 hub)) (setq f (* 0.75 hub) note "A too short for the derived body - hubs lengthened"))
+  (medcb-p (list "CYL" "BODY" (medcb-vx n (* -0.35 b)) (medcb-vx n (- hc t0)) (/ b 2.0)))
+  (medcb-p (list "CYL" "COVER" (medcb-vx n (- hc t0)) (medcb-vx n hc) (* 0.45 b)))
+  (medcb-p (list "CYL" "BODY" '(0.0 0.0 0.0) (list f 0.0 0.0) (/ hub 2.0)))
+  (medcb-p (list "CYL" "BODY" '(0.0 0.0 0.0) (list 0.0 0.0 (- f)) (/ hub 2.0)))
+  (medcb-h "RUN" (list f 0.0 0.0) '(1.0 0.0 0.0))
+  (medcb-h "BACK" (list 0.0 0.0 (- f)) '(0.0 0.0 -1.0))
+  (medcb-prims-geom "LBY" note))
+
+;; GUA explosionproof outlet box (a body dia, b height, c centre to hub face, d bottom
+;; to hub centreline, E cover opening dia, HubLen e): round body, axis Z, threaded
+;; cover on top (face up), horizontal hubs: GUAL RUN +X, BRANCH +Y; GUAT RUN +X,
+;; RUN2 -X, BRANCH +Y; GUAX + BRANCH2 -Y. Origin = hub centreline crossing.
+(defun medcb-geom-gua (shape a b c d e hod hl sz / prims hubs hub z0 z1 t0 rc ov k dirs)
+  (setq hub (medcb-hod2 hod sz (* 0.8 b)) z0 (- d) z1 (- b d) t0 (* 0.12 b)
+        rc (min (* 0.48 a) (/ (+ (if e e (* 0.6 a)) 0.25) 2.0)) ov (* 0.25 a))
+  (if (not hl) (setq hl (max (* 0.25 hub) (- c (/ a 2.0)))))
+  (medcb-p (list "CYL" "BODY" (list 0.0 0.0 z0) (list 0.0 0.0 (- z1 t0)) (/ a 2.0)))
+  (medcb-p (list "CYL" "COVER" (list 0.0 0.0 (- z1 t0)) (list 0.0 0.0 z1) rc))
+  (setq dirs (cond ((= shape "GUAL") '(("RUN" 1.0 0.0) ("BRANCH" 0.0 1.0)))
+                   ((= shape "GUAT") '(("RUN" 1.0 0.0) ("RUN2" -1.0 0.0) ("BRANCH" 0.0 1.0)))
+                   (T '(("RUN" 1.0 0.0) ("RUN2" -1.0 0.0) ("BRANCH" 0.0 1.0) ("BRANCH2" 0.0 -1.0)))))
+  (foreach dd dirs
+    (setq k (list (cadr dd) (caddr dd) 0.0))
+    (medcb-p (list "CYL" "BODY" (medcb-vx k (min (- c hl) (- (/ a 2.0) ov))) (medcb-vx k c) (/ hub 2.0)))
+    (medcb-h (car dd) (medcb-vx k c) k))
+  (medcb-prims-geom shape nil))
+
+;; Mogul BUB (a overall length, b overall height, c width, d x e cover opening):
+;; slot body with the cover up, two hubs 45 deg down and out at the ends. Origin =
+;; midpoint of the hub face centres (the conduit elevation), faces at +/-xf where the
+;; face rims reach A/2. The planner gets horizontal +/-X hub directions at the faces
+;; (plan runs are horizontal - the 45 deg entry is not drawn in the conduit).
+(defun medcb-geom-bub (a b c d e hod sz / prims hubs hub r w dp m xf zt hb sz0 sx ov lb t0 u)
+  (setq w c hub (medcb-hod2 hod sz (* 0.9 w)) r (/ hub 2.0)
+        dp (min d (* 0.9 w)) m (max (/ (- w dp) 2.0) (* 0.05 w))
+        xf (- (/ a 2.0) (* r *MEDCB-R2*)) zt (- b (* r *MEDCB-R2*))
+        hb (min (* 0.8 w) zt) t0 (max 0.0625 (* 0.06 hb)) ov (* 0.25 hb)
+        ;; hub start on the 45 deg axis inside the body, its rim below the cover
+        sz0 (min (- zt (/ hb 2.0)) (- zt t0 (* r *MEDCB-R2*))) sx (- xf sz0)
+        lb (* 2.0 (+ sx (* 0.5 r))))
+  (medcb-p (list "SLOT" "BODY" 0.0 lb w (- zt hb) (- zt t0)))
+  (medcb-p (list "SLOT" "COVER" 0.0 (min lb (+ e m)) (min w (+ dp m)) (- zt t0) zt))
+  (foreach sg '(1.0 -1.0)
+    (setq u (list (* sg *MEDCB-R2*) 0.0 (- *MEDCB-R2*)))
+    (medcb-p (list "CYL" "BODY" (list (* sg sx) 0.0 sz0) (list (* sg xf) 0.0 0.0) r))
+    (medcb-h (if (> sg 0.0) "RUN" "RUN2") (list (* sg xf) 0.0 0.0) (list sg 0.0 0.0)))
+  (medcb-prims-geom "BUB" "hubs 45 deg down; conduit joined horizontally at the hub faces"))
+
+;; UNY union (A length, B max dia): two ends 0.85 B, centre nut B; RUN faces +/-A/2
+(defun medcb-geom-uny (a b / prims hubs l3)
+  (setq l3 (* 0.3 a))
+  (medcb-p (list "CYL" "BODY" (list (/ a -2.0) 0.0 0.0) (list (+ (/ a -2.0) l3) 0.0 0.0) (* 0.425 b)))
+  (medcb-p (list "CYL" "BODY" (list (+ (/ a -2.0) l3) 0.0 0.0) (list (- (/ a 2.0) l3) 0.0 0.0) (/ b 2.0)))
+  (medcb-p (list "CYL" "BODY" (list (- (/ a 2.0) l3) 0.0 0.0) (list (/ a 2.0) 0.0 0.0) (* 0.425 b)))
+  (medcb-h "RUN" (list (/ a 2.0) 0.0 0.0) '(1.0 0.0 0.0))
+  (medcb-h "RUN2" (list (/ a -2.0) 0.0 0.0) '(-1.0 0.0 0.0))
+  (medcb-prims-geom "UNY" nil))
+
+;; EYS / EYD seal (a length, b body dia): hub ends, body 0.6 a, pour hub up (+Z,
+;; second solid); EYD also a drain down (-Z). RUN faces +/-a/2.
+(defun medcb-geom-seal (shape a b hod sz / prims hubs hub lb)
+  (setq hub (medcb-hod2 hod sz b) lb (* 0.6 a))
+  (medcb-p (list "CYL" "BODY" (list (/ a -2.0) 0.0 0.0) (list (/ a 2.0) 0.0 0.0) (/ hub 2.0)))
+  (medcb-p (list "CYL" "BODY" (list (/ lb -2.0) 0.0 0.0) (list (/ lb 2.0) 0.0 0.0) (/ b 2.0)))
+  (medcb-p (list "CYL" "COVER" '(0.0 0.0 0.0) (list 0.0 0.0 (* 0.65 b)) (* 0.225 b)))
+  (if (= shape "EYD") (medcb-p (list "CYL" "BODY" '(0.0 0.0 0.0) (list 0.0 0.0 (* -0.65 b)) (* 0.15 b))))
+  (medcb-h "RUN" (list (/ a 2.0) 0.0 0.0) '(1.0 0.0 0.0))
+  (medcb-h "RUN2" (list (/ a -2.0) 0.0 0.0) '(-1.0 0.0 0.0))
+  (medcb-prims-geom shape nil))
+
+;; plugged coupling (approx; A coupling length, B coupling OD, PLGR C recess, PLGS
+;; C square head, D head height): the conduit end is at the origin, half-way into the
+;; coupling (x -A/2 .. A/2); plug at the -X end (recessed face / square head, second solid)
+(defun medcb-geom-plug (shape a b c d / prims hubs)
+  (medcb-p (list "CYL" "BODY" (list (/ a -2.0) 0.0 0.0) (list (/ a 2.0) 0.0 0.0) (/ b 2.0)))
+  (if (= shape "PLGS")
+    (medcb-p (list "BOX" "COVER" (list (- (+ (/ a 2.0) d)) (/ c -2.0) (/ c -2.0)) (list (+ (/ a -2.0) 1e-3) (/ c 2.0) (/ c 2.0))))
+    (medcb-p (list "CYL" "COVER" (list (- (+ (/ a 2.0) 0.03)) 0.0 0.0) (list (+ (/ a -2.0) 0.01) 0.0 0.0) (* 0.4 b))))
+  (medcb-h "RUN" '(0.0 0.0 0.0) '(1.0 0.0 0.0))
+  (medcb-prims-geom shape (strcat "approx: plugged coupling, " (if (= shape "PLGS") "square-head" "recessed") " plug")))
+
+;; conduit hub on an enclosure wall; the wall's outer face is x = 0, conduit from +X.
+;; CH (MHUB): a body length, b body dia, c bushed-nipple flange dia, d flange thickness,
+;;   x (E) max wall - nipple through the wall, flange inside. RUN face (a,0,0).
+;; MYR (Myers ST): A overall, B body dia, C body height, D max wall, K (E) neck dia -
+;;   neck through the wall, locknut inside. RUN face (C,0,0).
+(defun medcb-geom-hub (form a b c d e / prims hubs wl nk lk)
+  (if (= form "MYR")
+    (progn
+      (setq nk (max (- a c) (+ d 0.125)) lk (max 0.0625 (* 0.3 (- nk d))))
+      (medcb-p (list "CYL" "BODY" '(0.0 0.0 0.0) (list c 0.0 0.0) (/ b 2.0)))
+      (medcb-p (list "CYL" "BODY" (list (- nk) 0.0 0.0) '(0.001 0.0 0.0) (/ e 2.0)))
+      (medcb-p (list "CYL" "COVER" (list (- (+ d lk)) 0.0 0.0) (list (- d) 0.0 0.0) (* 0.475 b)))
+      (medcb-h "RUN" (list c 0.0 0.0) '(1.0 0.0 0.0)))
+    (progn
+      (setq wl e)
+      (medcb-p (list "CYL" "BODY" '(0.0 0.0 0.0) (list a 0.0 0.0) (/ b 2.0)))
+      (medcb-p (list "CYL" "BODY" (list (- (+ wl d)) 0.0 0.0) '(0.001 0.0 0.0) (* 0.4 c)))
+      (medcb-p (list "CYL" "COVER" (list (- (+ wl d)) 0.0 0.0) (list (- wl) 0.0 0.0) (/ c 2.0)))
+      (medcb-h "RUN" (list a 0.0 0.0) '(1.0 0.0 0.0))))
+  (medcb-prims-geom "HUB" nil))
+
+;; reducer RE (approx; row of the large size A: A coupling length, B coupling OD,
+;; C head thickness, D head dia): recessed in the large-size coupling / hub (x -A..0),
+;; the head sticks out C, collar for the small size (hub OD of size 2) - RUN face
+;; (small end) +X, RUN2 face (large end) -X.
+(defun medcb-geom-re (a b c d sz / prims hubs s2 col tc)
+  (setq s2 (if (listp sz) (cadr sz)) col (min (* 0.95 d) (* 1.15 (medcb-cod (if s2 s2 (* 0.75 (medcb-sz1 sz))))))
+        tc (* 0.5 c))
+  (medcb-p (list "CYL" "BODY" (list (- a) 0.0 0.0) '(0.0 0.0 0.0) (/ b 2.0)))
+  (medcb-p (list "CYL" "COVER" '(-0.001 0.0 0.0) (list c 0.0 0.0) (/ d 2.0)))
+  (medcb-p (list "CYL" "COVER" (list (- c 0.001) 0.0 0.0) (list (+ c tc) 0.0 0.0) (/ col 2.0)))
+  (medcb-h "RUN" (list (+ c tc) 0.0 0.0) '(1.0 0.0 0.0))
+  (medcb-h "RUN2" (list (- a) 0.0 0.0) '(-1.0 0.0 0.0))
+  (medcb-prims-geom "RE" "approx: reducer head / coupling proportions (no published dimensions)"))
+
+;; placeholder (no data): box, same hub directions as the real shape; size only from
+;; trade size / OD
+(setq *MEDCB-PH-ELL* (append *MEDCB-LB-FAMILY* '("LL" "LR" "GUAL" "PLGR" "PLGS" "HUB")))
 (defun medcb-geom-ph (shape sz cod / d0 l w h ell x0 x1 hubs)
-  (setq shape (strcase shape) ell (member shape (append *MEDCB-LB-FAMILY* '("LL" "LR")))
+  (setq sz (medcb-sz1 sz) shape (strcase shape) ell (member shape *MEDCB-PH-ELL*)
         d0 (if cod cod (+ sz 0.35)) l (* 4.5 d0) w (* 1.6 d0) h w
         x0 (if ell (/ w -2.0) (/ l -2.0)) x1 (+ x0 l))
   (setq hubs (list (list "RUN" (list x1 0.0 0.0) '(1.0 0.0 0.0))))
   (if (not ell) (setq hubs (append hubs (list (list "RUN2" (list x0 0.0 0.0) '(-1.0 0.0 0.0))))))
   (cond
     ((member shape (cons "TB" *MEDCB-LB-FAMILY*)) (setq hubs (append hubs (list (list "BACK" (list 0.0 0.0 (/ h -2.0)) '(0.0 0.0 -1.0))))))
-    ((member shape '("LL" "T")) (setq hubs (append hubs (list (list "BRANCH" (list 0.0 (/ w 2.0) 0.0) '(0.0 1.0 0.0))))))
+    ((member shape '("LL" "T" "BT" "GUAL" "GUAT")) (setq hubs (append hubs (list (list "BRANCH" (list 0.0 (/ w 2.0) 0.0) '(0.0 1.0 0.0))))))
     ((= shape "LR") (setq hubs (append hubs (list (list "BRANCH" (list 0.0 (/ w -2.0) 0.0) '(0.0 -1.0 0.0))))))
-    ((= shape "X") (setq hubs (append hubs (list (list "BRANCH" (list 0.0 (/ w 2.0) 0.0) '(0.0 1.0 0.0))
-                                                 (list "BRANCH2" (list 0.0 (/ w -2.0) 0.0) '(0.0 -1.0 0.0)))))))
+    ((member shape '("X" "GUAX")) (setq hubs (append hubs (list (list "BRANCH" (list 0.0 (/ w 2.0) 0.0) '(0.0 1.0 0.0))
+                                                               (list "BRANCH2" (list 0.0 (/ w -2.0) 0.0) '(0.0 -1.0 0.0)))))))
   (list (cons "SHAPE" shape) (cons "PLACEHOLDER" T)
         (list "BOX" (list x0 (/ w -2.0) (/ h -2.0)) (list x1 (/ w 2.0) (/ h 2.0)))
         (cons "HUBS" hubs)))
 
+;; real geometry for form / shape / size from the data, nil when there is no usable
+;; row. sz = trade size, or (large small) for a reducer.
+(defun medcb-real-geom (form shape sz / r a b c d e hod hl cod g s1)
+  (setq form (strcase form) shape (strcase shape) s1 (medcb-sz1 sz))
+  (if (and (member shape *MEDCB-SHAPES*) (numberp s1) (> s1 0.0)
+           (setq r (medcb-find form shape s1)) (medcb-row-ok r))
+    (progn
+      (setq a (medcb-get "A" r) b (medcb-get "B" r) c (medcb-get "C" r) d (medcb-get "D" r) e (medcb-get "E" r)
+            hod (medcb-get "HUBOD" r) hl (medcb-get "HUBLEN" r) cod (medcb-conduit-od s1))
+      (setq g
+        (cond
+          ((member shape '("C" "LB" "LL" "LR" "T" "TB")) (medcb-geom shape a b c d e hod hl cod))
+          ;; X: published b = width across both side hubs, c = depth
+          ((= shape "X") (medcb-geom "X" a c b d e hod hl cod))
+          ((member shape '("LBD" "BLB")) (cons (cons "SHAPE" shape) (medcb-geom "LB" a b c d e hod hl cod)))
+          ((= shape "BT") (cons (cons "SHAPE" shape) (medcb-geom "T" a b c d e hod hl cod)))
+          ((= shape "BC") (cons (cons "SHAPE" shape) (medcb-geom "C" a b c d e hod hl cod)))
+          ((= shape "LBY") (medcb-geom-lby a b hod s1))
+          ((member shape '("GUAL" "GUAT" "GUAX")) (medcb-geom-gua shape a b c d e hod hl s1))
+          ((= shape "BUB") (medcb-geom-bub a b c d e hod s1))
+          ((= shape "UNY") (medcb-geom-uny a b))
+          ((member shape '("EYS" "EYD")) (medcb-geom-seal shape a b hod s1))
+          ((member shape '("PLGR" "PLGS")) (medcb-geom-plug shape a b c d))
+          ((= shape "HUB") (medcb-geom-hub form a b c d e))
+          ((= shape "RE") (medcb-geom-re a b c d sz))))
+      g)))
+
 ;; geometry for form/shape/size from the data (placeholder geometry when no row)
-(defun medcb-geom-for (form shape sz / r cod)
-  (setq cod (medcb-conduit-od sz))
-  (if (and (setq r (medcb-find form shape sz)) (medcb-row-ok r))
-    (medcb-geom shape (medcb-get "A" r) (medcb-get "B" r) (medcb-get "C" r) (medcb-get "D" r) (medcb-get "E" r)
-                (medcb-get "HUBOD" r) (medcb-get "HUBLEN" r) cod)
-    (medcb-geom-ph shape sz cod)))
+(defun medcb-geom-for (form shape sz / g)
+  (if (setq g (medcb-real-geom form shape sz))
+    g
+    (medcb-geom-ph shape sz (medcb-conduit-od sz))))
 (defun medcb-hubs (form shape sz) (medcb-get "HUBS" (medcb-geom-for form shape sz)))
 
 ;;; ------------------------------------------------------------------ drawing
@@ -333,16 +572,21 @@
       (setq s (vl-catch-all-apply 'vlax-invoke (list blk 'AddCylinder (list cx 0.0 zc) (/ w 2.0) h)))
       (if (medcb-ok s) s))))
 
-;; cylinder p0 -> p1 (axis parallel to X, Y or Z)
-(defun medcb-add-cyl (blk p0 p1 r / d len mid s)
+;; cylinder p0 -> p1 (axis parallel to X, Y or Z; r6: any other direction too)
+(defun medcb-add-cyl (blk p0 p1 r / d len mid s q)
   (setq d (mapcar '- p1 p0) len (distance p0 p1) mid (medcb-vx (medcb-v+ p0 p1) 0.5))
   (if (> len 1e-6)
     (progn
       (setq s (vl-catch-all-apply 'vlax-invoke (list blk 'AddCylinder '(0.0 0.0 0.0) r len)))
       (if (medcb-ok s)
         (progn
-          (cond ((> (abs (car d)) (* 0.5 len)) (vlax-invoke s 'Rotate3D '(0.0 0.0 0.0) '(0.0 1.0 0.0) (/ pi 2.0)))
-                ((> (abs (cadr d)) (* 0.5 len)) (vlax-invoke s 'Rotate3D '(0.0 0.0 0.0) '(1.0 0.0 0.0) (/ pi 2.0))))
+          (setq q (sqrt (+ (* (car d) (car d)) (* (cadr d) (cadr d)))))
+          (cond ((> (abs (car d)) (* 0.999 len)) (vlax-invoke s 'Rotate3D '(0.0 0.0 0.0) '(0.0 1.0 0.0) (/ pi 2.0)))
+                ((> (abs (cadr d)) (* 0.999 len)) (vlax-invoke s 'Rotate3D '(0.0 0.0 0.0) '(1.0 0.0 0.0) (/ pi 2.0)))
+                ((> (abs (caddr d)) (* 0.999 len)))
+                ;; oblique: turn +Z onto d about (-dy, dx, 0)
+                (T (vlax-invoke s 'Rotate3D '(0.0 0.0 0.0) (list (- (/ (cadr d) q)) (/ (car d) q) 0.0)
+                                (atan q (caddr d)))))
           (vlax-invoke s 'Move '(0.0 0.0 0.0) mid)
           s)))))
 
@@ -365,35 +609,56 @@
                        (cons 2 (car info)) '(70 . 0) '(62 . 3) '(6 . "Continuous"))))
       (car info))))
 
-;; new block definition from geometry; nil (and no block left behind) on failure
-(defun medcb-build-block (name geom / blks blk body cov s ok bx lay)
+;; Clint's block rule (r6): every entity of a generated block on layer 0 with colour,
+;; linetype and lineweight ByLayer - nothing hard-coded. The INSERT carries the layer
+;; (MED_3DCONDUIT, placeholders MED_3DFLAG).
+(defun medcb-bylayer (o)
+  (if o (vl-catch-all-apply 'vlax-put (list o 'Layer "0")))
+  (medcb-bylayer-props o))
+;; colour / linetype / lineweight ByLayer (the layer is left alone)
+(defun medcb-bylayer-props (o)
+  (if o
+    (progn
+      (vl-catch-all-apply 'vlax-put (list o 'Color 256))            ; acByLayer
+      (vl-catch-all-apply 'vlax-put (list o 'Linetype "ByLayer"))
+      (vl-catch-all-apply 'vlax-put (list o 'Lineweight -1))))     ; acLnWtByLayer
+  o)
+(defun medcb-add-box (blk p0 p1 / s)
+  (setq s (vl-catch-all-apply 'vlax-invoke
+            (list blk 'AddBox (medcb-vx (medcb-v+ p0 p1) 0.5) (- (car p1) (car p0)) (- (cadr p1) (cadr p0)) (- (caddr p1) (caddr p0)))))
+  (if (medcb-ok s) s))
+;; new block definition from geometry; nil (and no block left behind) on failure.
+;; Solids: body (+ hubs) unioned, cover / plug head / pour hub a second solid.
+(defun medcb-build-block (name geom / blks blk body cov s bx pr)
   (setq blks (vla-get-Blocks (medcb-doc))
         blk (vl-catch-all-apply 'vlax-invoke (list blks 'Add '(0.0 0.0 0.0) name)))
   (if (medcb-ok blk)
     (progn
-      (if (setq bx (medcb-get "BOX" geom))
-        (progn
-          (setq lay (medcb-flag-layer)
-                body (vl-catch-all-apply 'vlax-invoke
-                       (list blk 'AddBox (medcb-vx (medcb-v+ (car bx) (cadr bx)) 0.5)
-                             (- (car (cadr bx)) (car (car bx))) (- (cadr (cadr bx)) (cadr (car bx)))
-                             (- (caddr (cadr bx)) (caddr (car bx))))))
-          (if (medcb-ok body) (progn (vlax-put body 'Layer lay) (vlax-put body 'Color 1)) (setq body nil)))
-        (progn
+      (cond
+       ((setq pr (medcb-get "PRIMS" geom))
+          (foreach x pr
+            (setq s (cond ((= (car x) "CYL") (medcb-add-cyl blk (nth 2 x) (nth 3 x) (nth 4 x)))
+                          ((= (car x) "BOX") (medcb-add-box blk (nth 2 x) (nth 3 x)))
+                          ((= (car x) "SLOT") (medcb-add-slot blk (nth 2 x) (nth 3 x) (nth 4 x) (nth 5 x) (nth 6 x)))))
+            (if (= (cadr x) "COVER") (setq cov (medcb-union cov s)) (setq body (medcb-union body s)))))
+       ((setq bx (medcb-get "BOX" geom))
+          (setq body (medcb-add-box blk (car bx) (cadr bx))))
+       (T
           (setq s (medcb-get "BODY" geom)
                 body (medcb-add-slot blk (nth 0 s) (nth 1 s) (nth 2 s) (nth 3 s) (nth 4 s)))
           (foreach cy (medcb-get "CYLS" geom)
             (setq body (medcb-union body (medcb-add-cyl blk (nth 0 cy) (nth 1 cy) (nth 2 cy)))))
-          (if body (progn (vlax-put body 'Layer "0") (vlax-put body 'Color 0)))   ; ByBlock
           (setq s (medcb-get "COVER" geom)
-                cov (medcb-add-slot blk (nth 0 s) (nth 1 s) (nth 2 s) (nth 3 s) (nth 4 s)))
-          (if cov (progn (vlax-put cov 'Layer "0") (vlax-put cov 'Color 8)))))
+                cov (medcb-add-slot blk (nth 0 s) (nth 1 s) (nth 2 s) (nth 3 s) (nth 4 s)))))
+      (medcb-bylayer body)
+      (medcb-bylayer cov)
       (if body
         (progn (vl-catch-all-apply 'vlax-put (list blk 'Comments *MEDCB-GEOM-TAG*)) name)
         (progn (vl-catch-all-apply 'vla-delete (list blk)) nil)))))
-;; an LL / LR block defined before r5 (other hub convention): rename it to
-;; <name>_PRE_R5[_n] (its inserts keep the old shape) so the name is free for a new
-;; definition. T when renamed.
+;; a block made before r6 (older tag, see *MEDCB-GEOM-TAG*): rename it to
+;; <name>_PRE_R6[_n] (its inserts keep the old block) so the name is free for a new
+;; definition. T when renamed. To drop the old ones: PURGE the _PRE_R* blocks once
+;; nothing references them.
 (defun medcb-stale-rename (name / blk c new i)
   (setq blk (vl-catch-all-apply 'vla-item (list (vla-get-Blocks (medcb-doc)) name)))
   (if (and (medcb-ok blk)
@@ -401,11 +666,15 @@
            (not (vl-catch-all-error-p c))
            (/= c *MEDCB-GEOM-TAG*))
     (progn
-      (setq new (strcat name "_PRE_R5") i 1)
-      (while (tblsearch "BLOCK" new) (setq i (1+ i) new (strcat name "_PRE_R5_" (itoa i))))
+      (setq new (strcat name *MEDCB-STALE-SUFFIX*) i 1)
+      (while (tblsearch "BLOCK" new) (setq i (1+ i) new (strcat name *MEDCB-STALE-SUFFIX* "_" (itoa i))))
       (if (not (vl-catch-all-error-p (vl-catch-all-apply 'vlax-put (list blk 'Name new))))
-        (progn (princ (strcat "\nMED3D: block " name " was made with the old LL / LR convention - renamed " new "."))
+        (progn (princ (strcat "\nMED3D: block " name " was made by an older MED3DFittings (" (if (= c "") "no tag" c)
+                              ") - renamed " new " and rebuilt."))
                T)))))
+;; T when the block name exists and is current (older ones are renamed first)
+(defun medcb-block-current (name)
+  (and (tblsearch "BLOCK" name) (not (medcb-stale-rename name))))
 
 ;; Block for form/shape/size, generated on demand. Returns (name status):
 ;;   "EXISTS" (already defined, left alone) "CREATED" "PLACEHOLDER" (no data, _PH made)
@@ -414,14 +683,11 @@
   (setq form (strcase form) shape (strcase shape))
   (cond
     ((not (member shape *MEDCB-SHAPES*)) nil)
-    ((not (and (numberp sz) (> sz 0.0))) nil)
-    ((and (tblsearch "BLOCK" (setq name (medcb-block-name form shape sz)))
-          (not (and (member shape '("LL" "LR")) (medcb-stale-rename name))))
-      (list name "EXISTS"))
-    ((and (setq r (medcb-find form shape sz)) (medcb-row-ok r))
-      (setq geom (medcb-geom-for form shape sz))
+    ((not (and (numberp (medcb-sz1 sz)) (> (medcb-sz1 sz) 0.0))) nil)
+    ((medcb-block-current (setq name (medcb-block-name form shape sz))) (list name "EXISTS"))
+    ((setq geom (medcb-real-geom form shape sz))
       (if (medcb-build-block name geom) (list name "CREATED")))
-    ((tblsearch "BLOCK" (setq name (medcb-ph-name form shape sz))) (list name "PH-EXISTS"))
+    ((medcb-block-current (setq name (medcb-ph-name form shape sz))) (list name "PH-EXISTS"))
     (T (if (medcb-build-block name (medcb-geom-ph shape sz (medcb-conduit-od sz))) (list name "PLACEHOLDER")))))
 
 ;; insert in model space; pt WCS; rot radians about WCS Z. Returns (vla-ref name status)
@@ -443,18 +709,37 @@
         (vl-catch-all-apply 'vlax-invoke
           (list ref 'Rotate3D pt (medcb-v+ pt (list (cos rot) (sin rot) 0.0)) (medcb-tilt flip))))
       (vlax-put ref 'Layer (if (wcmatch (cadr res) "PLACEHOLDER,PH-EXISTS") (medcb-flag-layer) (medcb-body-layer)))
+      (medcb-bylayer-props ref)
       ref)))
 
 ;;; ----------------------------------------------------------------- commands
+;; "A B C" / "A/B/C" from a list of strings
+(defun medcb-join (lst sep / r)
+  (setq r "")
+  (foreach x lst (setq r (if (= r "") x (strcat r sep x))))
+  r)
 (defun medcb-ask-shape ( / k)
-  (initget "LB LR LL T TB C")
-  (setq k (getkword (strcat "\nConduit body type [LB/LR/LL/T/TB/C] <" *MEDCB-SHAPE* ">: ")))
+  (initget (medcb-join *MEDCB-SHAPES* " "))
+  (setq k (getkword (strcat "\nFitting type [" (medcb-join *MEDCB-SHAPES* "/") "] <" *MEDCB-SHAPE* ">: ")))
   (if k (setq *MEDCB-SHAPE* k))
   *MEDCB-SHAPE*)
-(defun medcb-ask-form ( / k)
-  (initget "F7 F8 M9")
-  (setq k (getkword (strcat "\nCondulet form (F7 = Form 7, F8 = Form 8, M9 = Mark 9 aluminum) [F7/F8/M9] <" *MEDCB-FORM* ">: ")))
-  (if k (setq *MEDCB-FORM* k))
+;; forms with dimension rows for a shape (F7 / F8 / M9 for the classic bodies)
+(defun medcb-shape-forms (shape / r)
+  (foreach x (medcb-load-data nil)
+    (if (and (= (medcb-get "SHAPE" x) shape) (not (member (medcb-get "FORM" x) r)) (member (medcb-get "FORM" x) *MEDCB-FORMS*))
+      (setq r (cons (medcb-get "FORM" x) r))))
+  (cond ((member shape '("LB" "LR" "LL" "T" "TB" "C")) '("F7" "F8" "M9"))
+        (r (reverse r))
+        (T '("F7"))))
+(defun medcb-ask-form (shape / k fl)
+  (setq fl (medcb-shape-forms (if shape shape "LB")))
+  (if (not (member *MEDCB-FORM* fl)) (setq *MEDCB-FORM* (car fl)))
+  (if (cdr fl)
+    (progn
+      (initget (medcb-join fl " "))
+      (setq k (getkword (strcat "\nForm (F7 = Form 7, F8 = Form 8, M9 = Mark 9 aluminum, CH = Crouse-Hinds, MOG = Mogul, "
+                                "XP = GUA, MYR = Myers) [" (medcb-join fl "/") "] <" *MEDCB-FORM* ">: ")))
+      (if k (setq *MEDCB-FORM* k))))
   *MEDCB-FORM*)
 (defun medcb-ask-size ( / s v)
   (while (not v)
@@ -480,7 +765,11 @@
 
 (defun c:MEDCBINS ( / shape form sz pt ang res)
   (medcb-begin)
-  (setq shape (medcb-ask-shape) form (medcb-ask-form) sz (medcb-ask-size))
+  (setq shape (medcb-ask-shape) form (medcb-ask-form shape) sz (medcb-ask-size))
+  ;; reducer: size to reduce to (default one trade size down)
+  (if (= shape "RE")
+    (setq sz (list sz (cond ((medcb-parse-size (getstring (strcat "\nReduce to size <" (medcb-size-text (cond ((medcb-size-down sz)) (sz))) ">: "))))
+                            ((medcb-size-down sz)) (sz)))))
   (while (setq pt (getpoint (strcat "\nInsertion point (conduit centerline intersection) for "
                                     (medcb-block-name form shape sz) " <done>: ")))
     (setq ang (getangle pt "\nRotation about Z <0>: "))
@@ -497,14 +786,14 @@
 
 (defun c:MEDCBTEST ( / form sz base x res geom len wid h lay maxw gap)
   (medcb-begin)
-  (setq form (medcb-ask-form) sz (medcb-ask-size))
+  (setq form (medcb-ask-form "LB") sz (medcb-ask-size))
   (if (setq base (getpoint "\nBase point for the row <0,0,0>: ")) (setq base (trans base 1 0)) (setq base '(0.0 0.0 0.0)))
   (setq x 0.0 maxw 0.0 gap (max 2.0 (* 2.0 sz)) h (max 0.25 (* 0.2 sz)))
-  (foreach shape *MEDCB-SHAPES*
+  (foreach shape *MEDCB-CLASSIC*
     (setq geom (medcb-geom-for form shape sz))
     (setq wid (medcb-geom-width geom))
     (if (> wid maxw) (setq maxw wid)))
-  (foreach shape *MEDCB-SHAPES*
+  (foreach shape *MEDCB-CLASSIC*
     (setq geom (medcb-geom-for form shape sz)
           len (medcb-geom-xrange geom))
     (setq x (- x (car len)))                                  ; left end of this body at x
@@ -520,30 +809,77 @@
   (princ (strcat "\nMEDCBTEST: " form " " (medcb-size-text sz) "\" in a row along +X, covers facing +Z (view TOP / use a 3D view)."))
   (medcb-end)
   (princ))
+;; MEDCBALL: every shape x every form with data at one trade size, one row per form
+;; group (classic F7 / F8 / M9 rows, then CH / MOG / XP / MYR), labelled; a reducer at
+;; size x one size down. Shapes without a row at that size come in as placeholders.
+(defun c:MEDCBALL ( / sz base y x res geom len h lay gap s2 fl row rowh)
+  (medcb-begin)
+  (setq sz (medcb-ask-size))
+  (if (setq base (getpoint "\nBase point <0,0,0>: ")) (setq base (trans base 1 0)) (setq base '(0.0 0.0 0.0)))
+  (setq y 0.0 gap (max 2.0 (* 2.0 sz)) h (max 0.25 (* 0.2 sz)))
+  (foreach form *MEDCB-FORMS*
+    (setq x 0.0 rowh 0.0 row nil)
+    (foreach shape *MEDCB-SHAPES*
+      (if (member form (medcb-shape-forms shape)) (setq row (cons shape row))))
+    (foreach shape (reverse row)
+      (setq s2 (if (= shape "RE") (list sz (cond ((medcb-size-down sz)) (sz))) sz)
+            geom (medcb-geom-for form shape s2)
+            len (medcb-geom-xrange geom)
+            rowh (max rowh (* 2.0 (medcb-geom-width geom))))
+      (setq x (- x (car len)))
+      (if (setq res (medcb-insert form shape s2 (medcb-v+ base (list x y 0.0)) 0.0))
+        (progn
+          (medcb-say res)
+          (setq lay (vla-get-Layer (car res)))
+          (medcb-text (medcb-v+ base (list x (- y (+ (medcb-geom-width geom) h)) 0.0)) h (strcat form " " shape) lay))
+        (princ (strcat "\n  " form " " shape ": could not create / insert.")))
+      (setq x (+ x (cadr len) gap)))
+    (if row (setq y (- y (+ rowh gap (* 3.0 h))))))
+  (princ (strcat "\nMEDCBALL: every fitting at " (medcb-size-text sz) "\" (one row per form), covers facing +Z."))
+  (medcb-end)
+  (princ))
+
 ;; (xmin xmax) of the geometry along X / max |y| extent, for spacing the test row
-(defun medcb-geom-xrange (geom / lo hi bx)
-  (if (setq bx (medcb-get "BOX" geom))
-    (list (car (car bx)) (car (cadr bx)))
-    (progn
+(defun medcb-prims-ext (geom / lo hi w r)
+  (setq lo 0.0 hi 0.0 w 0.0)
+  (foreach x (medcb-get "PRIMS" geom)
+    (cond ((= (car x) "CYL")
+            (setq r (nth 4 x))
+            (foreach p (list (nth 2 x) (nth 3 x))
+              (setq lo (min lo (- (car p) r)) hi (max hi (+ (car p) r)) w (max w (+ (abs (cadr p)) r)))))
+          ((= (car x) "BOX")
+            (setq lo (min lo (car (nth 2 x))) hi (max hi (car (nth 3 x))) w (max w (abs (cadr (nth 2 x))) (abs (cadr (nth 3 x))))))
+          ((= (car x) "SLOT")
+            (setq lo (min lo (- (nth 2 x) (/ (nth 3 x) 2.0))) hi (max hi (+ (nth 2 x) (/ (nth 3 x) 2.0)))
+                  w (max w (/ (nth 4 x) 2.0))))))
+  (list lo hi w))
+(defun medcb-geom-xrange (geom / lo hi bx e)
+  (cond
+   ((setq bx (medcb-get "BOX" geom))
+    (list (car (car bx)) (car (cadr bx))))
+   ((medcb-get "PRIMS" geom) (setq e (medcb-prims-ext geom)) (list (car e) (cadr e)))
+   (T
       (setq lo 0.0 hi 0.0)
       (foreach hb (medcb-get "HUBS" geom)
         (setq lo (min lo (car (cadr hb))) hi (max hi (car (cadr hb)))))
       (list (min lo (- (nth 0 (medcb-get "BODY" geom)) (/ (nth 1 (medcb-get "BODY" geom)) 2.0))) hi))))
 (defun medcb-geom-width (geom / w bx)
-  (if (setq bx (medcb-get "BOX" geom))
-    (cadr (cadr bx))
-    (progn
+  (cond
+   ((setq bx (medcb-get "BOX" geom))
+    (cadr (cadr bx)))
+   ((medcb-get "PRIMS" geom) (caddr (medcb-prims-ext geom)))
+   (T
       (setq w (/ (medcb-get "W" geom) 2.0))
       (foreach hb (medcb-get "HUBS" geom) (setq w (max w (abs (cadr (cadr hb))))))
       w)))
 
 (defun c:MEDCBDATA ( / rows n from)
   (setq rows (medcb-load-data T) n 0)
-  (princ (strcat "\nMED3DFittings: " (itoa (length rows)) " conduit body row(s)"
+  (princ (strcat "\nMED3DFittings: " (itoa (length rows)) " fitting dimension row(s)"
                  (if rows (strcat " (first from " (medcb-get "FROM" (car rows)) ")") "")
                  "; CSV: " (if (medcb-csv-path) (medcb-csv-path) "not found")))
-  (foreach f *MEDCB-FORMS*
-    (foreach s *MEDCB-SHAPES*
+  (foreach f (append *MEDCB-FORMS* '("WH"))
+    (foreach s (append *MEDCB-SHAPES* '("CPL"))
       (setq n nil)
       (foreach r rows
         (if (and (= (medcb-get "FORM" r) f) (= (medcb-get "SHAPE" r) s) (medcb-row-ok r))
@@ -567,8 +903,10 @@
 ;;;   MOG for Mogul). ITEMKEY2 blank -> the catalog description is parsed:
 ;;;   'Form 7 "LB" condulet fitting' -> RGD|F7|LB ("Form 8" F8, "Mark 9" M9, "Mogul"
 ;;;   MOG, no form -> ""; shape = the quoted word, else the word before "condulet").
-;;;   A description without "condulet" and a blank ITEMKEY2 = not a conduit body
-;;;   (couplings, seals, unions ...): counted "not modelled". No MED-DotNet / DB ->
+;;;   A description without "condulet" and a blank ITEMKEY2: the seed keys CSV by code
+;;;   when the description is the same (union, seals, plugs, hubs, reducer), else not
+;;;   modelled (couplings, connectors ...). "Explosion Proof" -> XP; LBD / LBY without a
+;;;   form -> CH. No MED-DotNet / DB ->
 ;;;   Data\seed\fitting_body_keys.csv (ITEMCODE, ITEMDESC, BodyKey) is used instead.
 ;;;   Size = #ITEMSIZE of the fitting.
 ;;; Placement: the 2D insertion point (WCS) is the body insertion point (centerline
@@ -597,9 +935,18 @@
 ;;;   are not accommodated: no body, the conduit is left as drawn (no trim, no leg
 ;;;   flag), one marker "MIRRORED FITTING - re-insert, do not mirror" on MED_3DFLAG,
 ;;;   a Skipped line and the "Mirrored fittings" summary line.
-;;; Unresolved (key without data: X, LBD, LBY, TA, Mogul, GUA..., no form, no row for
-;;;   the size, other material): placeholder block on MED_3DFLAG + flag marker +
-;;;   Skipped line (handle and reason). No size -> marker only.
+;;; r6 phase 2 on plan symbols: X / GUAX / BUB / seals / union face up; GUA side views
+;;;   (1gualsid / 1guatsid) tilted -90 deg about X: branch down, cover toward +Y (the
+;;;   same for both); 1guat -90 deg like 1tee; reducer: reduce-to size = #ITEM_ALT
+;;;   (xdata ALT, refitt_ins "Size to"), else one trade size down (noted); large end
+;;;   (RUN2) toward the symbol's -X. Each hub carries its own search radius (the break
+;;;   on that side of the symbol) so the planner only extends a run on a hub's axis.
+;;; Code -> builder (fitting_body_keys.csv / ITEMKEY2): 80-82 X, 39 LBD, 41 LBY,
+;;;   18 / 40 / 53 / 94 Mogul BT / BLB / BC / BUB, 141-143 GUAL / GUAT / GUAX,
+;;;   72 UNY, 61 EYS, 64 EYD, 100 PLGR, 101 PLGS, 120 HUB (CH), 121 HUB (MYR), 103 RE.
+;;; Unresolved (key without data, no form, no row for the size, other material):
+;;;   placeholder block on MED_3DFLAG + flag marker + Skipped line (handle and reason).
+;;;   No size -> marker only.
 (setq *MEDCB-KEYS-CSV* "fitting_body_keys.csv")
 (if (not (boundp '*MEDCB-SNAP*)) (setq *MEDCB-SNAP* T))
 (setq *MEDCB-FITCAT* nil)
@@ -645,10 +992,13 @@
   (if (and (= (type desc) 'STR) (setq k (vl-string-search "CONDULET" (setq u (strcase desc)))))
     (progn
       (setq form (cond ((vl-string-search "FORM 7" u) "F7") ((vl-string-search "FORM 8" u) "F8")
-                       ((vl-string-search "MARK 9" u) "M9") ((vl-string-search "MOGUL" u) "MOG") (T "")))
+                       ((vl-string-search "MARK 9" u) "M9") ((vl-string-search "MOGUL" u) "MOG")
+                       ((vl-string-search "EXPLOSION PROOF" u) "XP") (T "")))
       (if (and (setq q (vl-string-search "\"" u)) (setq e (vl-string-search "\"" u (1+ q))))
         (setq shape (medcb-clean (substr u (+ q 2) (- e q 1))))
         (setq shape (medcb-clean (last (medcb-split (vl-string-trim " " (substr u 1 k)) " ")))))
+      ;; LBD / LBY are sold without a form number: Crouse-Hinds (CH) dimensions
+      (if (and (= form "") (member shape '("LBD" "LBY"))) (setq form "CH"))
       (if (/= shape "") (strcat "RGD|" form "|" shape)))))
 
 (defun medcb-read-keys-csv (path / f line hdr ix fl rows code)
@@ -677,18 +1027,41 @@
         (setq *MEDCB-FITCAT* (medcb-read-keys-csv (medcb-seed-path *MEDCB-KEYS-CSV*))))
       (if (null *MEDCB-FITCAT*) (setq *MEDCB-FITCAT* '(nil)))))
   (vl-remove nil *MEDCB-FITCAT*))
-;; fitting code -> (key source desc), source "ITEMKEY2" | "CSV" | "DESC"; nil = not a body
-(defun medcb-resolve-code (code / e k)
+;; Data\seed\fitting_body_keys.csv rows, once per MEDMAKE3D (fallback for a DB whose
+;; ITEMKEY2 is still blank: MED-DotNet not re-seeded yet)
+(setq *MEDCB-KEYCSV* nil)
+(defun medcb-keys-csv ()
+  (if (null *MEDCB-KEYCSV*)
+    (setq *MEDCB-KEYCSV* (cond ((medcb-read-keys-csv (medcb-seed-path *MEDCB-KEYS-CSV*))) ('(nil)))))
+  (vl-remove nil *MEDCB-KEYCSV*))
+;; fitting code -> (key source desc), source "ITEMKEY2" | "CSV" | "DESC"; nil = not a body.
+;; Order: ITEMKEY2, the description (condulets), then the seed keys CSV for the same
+;; code when its description is the same (union, seals, plugs, hubs, reducer).
+(defun medcb-resolve-code (code / e k c)
   (foreach x (medcb-fitcat) (if (and (not e) (= (car x) code)) (setq e x)))
   (cond
     ((null e) nil)
     ((medcb-key-parse (nth 2 e)) (list (vl-string-trim " \t" (nth 2 e)) (if (= (nth 3 e) "DB") "ITEMKEY2" "CSV") (nth 1 e)))
-    ((setq k (medcb-desc-key (nth 1 e))) (list k "DESC" (nth 1 e)))))
+    ((setq k (medcb-desc-key (nth 1 e))) (list k "DESC" (nth 1 e)))
+    ((and (= (nth 3 e) "DB")
+          (progn (foreach x (medcb-keys-csv)
+                   (if (and (not c) (= (car x) code)
+                            (= (strcase (medcb-str (nth 1 x))) (strcase (medcb-str (nth 1 e))))
+                            (medcb-key-parse (nth 2 x)))
+                     (setq c x)))
+                 c))
+      (list (vl-string-trim " \t" (nth 2 c)) "CSV" (nth 1 e)))))
 
-;; Z rotation offset of the 3D body against the 2D symbol (see header)
+;; Z rotation offset of the 3D body against the 2D symbol (see header): the tee
+;; symbols draw the run along Y and the branch +X
 (defun medcb-2d-offset (blk shape)
-  (cond ((and (= blk "1TEE") (= shape "T")) (/ pi -2.0))
+  (cond ((and (= blk "1TEE") (member shape '("T" "BT"))) (/ pi -2.0))
+        ((and (= blk "1GUAT") (= shape "GUAT")) (/ pi -2.0))
         (T 0.0)))
+;; GUA side-view symbols: body tilted -90 deg about X - branch down (-Z), cover
+;; toward +Y (away from the viewer of the plan), the same for GUAL and GUAT (Clint:
+;; face either way, be consistent; branch down / away)
+(setq *MEDCB-2D-GUASIDE* '("1GUALSID" "1GUATSID"))
 ;; block vector -> WCS vector: tilt about block X first (flip, see medcb-insert-block),
 ;; then rot about Z
 (defun medcb-xdir (v rot flip / x y z tl c sn y0)
@@ -785,12 +1158,33 @@
       (setq d m)
       (setq *MEDCB-BRK-CACHE* (cons (cons blk d) *MEDCB-BRK-CACHE*))
       d)))
+;; medblck.dat d1..d4 (block +X +Y -X -Y) of a 2D symbol, or nil
+(defun medcb-brk-list (blk / d)
+  (setq d (if get_bl_data (vl-catch-all-apply 'get_bl_data (list blk))))
+  (if (and (listp d) (not (vl-catch-all-error-p d)))
+    (mapcar '(lambda (x) (if (numberp x) (float x) 0.0)) (list (nth 0 d) (nth 1 d) (nth 2 d) (nth 3 d)))))
+;; r6: per hub search radius for the planner = the break on the symbol side the hub
+;; points to (hub direction back in the symbol's axes, a = symbol rotation) x scale +
+;; *MED3D-FIT-TOL*; vertical hubs *MED3D-FIT-TOL*. Hubs come back as
+;; (name face dir radius) - MED3DPath only accepts a far run end on the axis of a hub
+;; within that hub's radius (1re breaks 0.9125 x DIMSCALE on +X only).
+(defun medcb-hub-tols (hubs blk ed a / bl sc x y r i)
+  (setq bl (medcb-brk-list blk) sc (abs (cond ((cdr (assoc 41 ed))) (1.0))))
+  (mapcar '(lambda (h)
+             (setq x (+ (* (car (caddr h)) (cos a)) (* (cadr (caddr h)) (sin a)))
+                   y (- (* (cadr (caddr h)) (cos a)) (* (car (caddr h)) (sin a))))
+             (setq i (cond ((< (+ (* x x) (* y y)) 0.25) nil)
+                           ((>= (abs x) (abs y)) (if (> x 0.0) 0 2))
+                           (T (if (> y 0.0) 1 3))))
+             (list (car h) (cadr h) (caddr h)
+                   (+ (medcb-fit-tol) (if (and bl i) (* sc (nth i bl)) 0.0))))
+          hubs))
 (defun medcb-brk-tol (blk ed / sc)
   (setq sc (abs (cond ((cdr (assoc 41 ed))) (1.0))))
   (+ (medcb-fit-tol) (* sc (medcb-brk-max blk))))
 ;; one MED_FITTING INSERT -> body alist; "NM" = not a conduit body; nil = no xdata
 (defun medcb-body-of (e runs / ed xd code sz res kp mat form shape blk flip note reason r
-                            pt a rot geom hubs lg k best sc i h tl tbest tol)
+                            pt a rot geom hubs lg k best sc i h tl tbest tol sz2 gsz)
   (setq ed (entget e) xd (xdataget e (medcb-app "FITTING")))
   (if (and xd (numberp (setq code (nth 3 xd)))) (setq res (medcb-resolve-code (fix code))))
   (cond
@@ -823,6 +1217,16 @@
         (cond
           ((member shape *MEDCB-LB-FAMILY*) (setq flip (if (member blk *MEDCB-2D-TURN-R*) (/ pi -2.0) (/ pi 2.0))))
           ((if (member blk *MEDCB-2D-TURN-R*) (= shape "LL") (= shape "LR")) (setq flip T))))
+      (if (and (member blk *MEDCB-2D-GUASIDE*) (member shape '("GUAL" "GUAT" "GUAX"))) (setq flip (/ pi -2.0)))
+      ;; reducer: reduce-to size = the fitting's ALT size (1re / refitt_ins "Size to"),
+      ;; else one trade size down (noted)
+      (if (and (= shape "RE") (> sz 0.0))
+        (progn
+          (setq sz2 (if (numberp (nth 4 xd)) (float (nth 4 xd))))
+          (if (not (and sz2 (> sz2 0.0) (< sz2 (- sz 1e-6))))
+            (setq sz2 (medcb-size-down sz)
+                  note (strcat "no reduce-to size on the reducer - " (if sz2 (medcb-size-text sz2) "?") "\" (one size down) assumed")))))
+      (setq gsz (if sz2 (list sz sz2) sz))
       (setq reason
         (cond
           ((<= sz 0.0) "no trade size on the fitting")
@@ -837,7 +1241,7 @@
             rot (angle '(0.0 0.0 0.0) (trans (list (cos a) (sin a) 0.0) e 0 T))
             geom (if reason
                    (medcb-geom-ph shape (if (> sz 0.0) sz 1.0) (medcb-conduit-od (if (> sz 0.0) sz 1.0)))
-                   (medcb-geom-for form shape sz))
+                   (medcb-geom-for form shape gsz))
             hubs (medcb-get "HUBS" geom)
             tol (medcb-brk-tol blk ed)
             lg  (medcb-legs pt runs tol))
@@ -862,12 +1266,14 @@
       (list (cons "HANDLE" h) (cons "ENT" e) (cons "CODE" (fix code)) (cons "KEY" (car res)) (cons "SRC" (cadr res))
             (cons "FORM" form) (cons "SHAPE" shape) (cons "SIZE" sz) (cons "BLK2D" blk) (cons "PT" pt)
             (cons "ROT" rot) (cons "FLIP" flip) (cons "TURN" k) (cons "LEGS" (length (car lg)))
-            (cons "HUBS" (medcb-wcs-hubs hubs rot flip)) (cons "REASON" reason) (cons "NOTE" note)
-            (cons "TOL" tol)))))
+            (cons "HUBS" (medcb-hub-tols (medcb-wcs-hubs hubs rot flip) blk ed
+                                         (angle '(0.0 0.0 0.0) (trans (list (cos a) (sin a) 0.0) e 0 T))))
+            (cons "REASON" reason) (cons "NOTE" note)
+            (cons "TOL" tol) (cons "SIZE2" sz2)))))
 
 ;; every MED_FITTING INSERT in the drawing -> (bodies not-modelled-count)
 (defun medcb-collect ( / ss i b bodies nm runs)
-  (setq *MEDCB-FITCAT* nil nm 0 runs (medcb-conduit-runs))
+  (setq *MEDCB-FITCAT* nil *MEDCB-KEYCSV* nil nm 0 runs (medcb-conduit-runs))
   (if (setq ss (ssget "_X" (list '(0 . "INSERT") (list -3 (list (medcb-app "FITTING"))))))
     (progn
       (setq i 0)
@@ -898,11 +1304,12 @@
 
 ;; placeholder for any form / shape (unknown ones: box with run hubs)
 (defun medcb-ensure-ph (form shape sz / name)
+  (setq sz (medcb-sz1 sz))
   (setq name (medcb-ph-name (if (= form "") "NA" form) shape sz))
-  (cond ((tblsearch "BLOCK" name) (list name "PH-EXISTS"))
+  (cond ((medcb-block-current name) (list name "PH-EXISTS"))
         ((medcb-build-block name (medcb-geom-ph shape sz (medcb-conduit-od sz))) (list name "PLACEHOLDER"))))
 (defun medcb-ensure-body (form shape sz reason)
-  (cond ((not (and (numberp sz) (> sz 0.0))) nil)
+  (cond ((not (and (numberp (medcb-sz1 sz)) (> (medcb-sz1 sz) 0.0))) nil)
         (reason (medcb-ensure-ph form shape sz))
         (T (medcb-ensure-block form shape sz))))
 
@@ -950,7 +1357,9 @@
   (foreach b bodies
     (setq h (medcb-get "HANDLE" b) pt (medcb-get "PT" b) reason (medcb-get "REASON" b)
           res (if (not (medcb-get "MIRROR" b))
-                (medcb-ensure-body (medcb-get "FORM" b) (medcb-get "SHAPE" b) (medcb-get "SIZE" b) reason))
+                (medcb-ensure-body (medcb-get "FORM" b) (medcb-get "SHAPE" b)
+                                   (if (medcb-get "SIZE2" b) (list (medcb-get "SIZE" b) (medcb-get "SIZE2" b)) (medcb-get "SIZE" b))
+                                   reason))
           ref (if res (medcb-insert-block res pt (medcb-get "ROT" b) (medcb-get "FLIP" b))))
     (if (medcb-get "NOTE" b)
       (princ (strcat "\nMED3D note: fitting " h " (" (medcb-get "KEY" b) "): " (medcb-get "NOTE" b) ".")))
@@ -993,5 +1402,5 @@
   (list (cons "REFS" (reverse refs)) (cons "PLACED" placed) (cons "PH" ph) (cons "FLAGGED" flagged)
         (cons "MIRRORED" mir) (cons "VERT" nv) (cons "SKIPPED" (reverse skipped))))
 
-(princ (strcat "Done.\nMED3DFittings " *MEDCB-VERSION* " loaded: MEDCBINS MEDCBTEST MEDCBDATA MEDCBVER"))
+(princ (strcat "Done.\nMED3DFittings " *MEDCB-VERSION* " loaded: MEDCBINS MEDCBTEST MEDCBALL MEDCBDATA MEDCBVER"))
 (princ)

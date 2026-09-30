@@ -26,6 +26,13 @@ def autolisp_atof(s):
 
 def rot_y90(p): return [p[2], p[1], -p[0]]
 def rot_x90(p): return [p[0], -p[2], p[1]]
+def rot_axis(p, k, ang):
+    """Rodrigues: p rotated about the unit axis k (through the origin) by ang, right hand"""
+    n = math.sqrt(sum(x * x for x in k)); k = [x / n for x in k]
+    c, s = math.cos(ang), math.sin(ang); d = sum(x * y for x, y in zip(k, p))
+    cr = [k[1] * p[2] - k[2] * p[1], k[2] * p[0] - k[0] * p[2], k[0] * p[1] - k[1] * p[0]]
+    r = [p[i] * c + cr[i] * s + k[i] * d * (1 - c) for i in range(3)]
+    return [0.0 if abs(x) < 1e-12 else x for x in r]
 
 class Obj:
     n = 0
@@ -127,9 +134,8 @@ class Mock:
         if isinstance(obj, Obj) and obj.kind == '3DSOLID':
             if m == 'ROTATE3D':
                 p1, p2, ang = a
-                check('rotate-about-origin', list(p1) == [0.0, 0.0, 0.0] and near(ang, math.pi / 2), f'{p1} {ang}')
-                f = rot_y90 if list(p2) == [0.0, 1.0, 0.0] else rot_x90 if list(p2) == [1.0, 0.0, 0.0] else None
-                if f is None: raise Exception('mock: rotate axis')
+                check('rotate-about-origin', list(p1) == [0.0, 0.0, 0.0], f'{p1} {ang}')
+                f = lambda p: rot_axis(p, p2, ang)
                 obj.parts = [(p[0], f(p[1]), f(p[2]), p[3]) if p[0] == 'CYL' else p for p in obj.parts]; return None
             if m == 'MOVE':
                 d = [y - x for x, y in zip(a[0], a[1])]
@@ -146,13 +152,15 @@ def bbox(parts):
     for p in parts:
         if p[0] == 'BOX': pts = [p[1], p[2]]
         else:
-            a, b, r = p[1], p[2], p[3]; ax = [abs(y - x) > 1e-9 for x, y in zip(a, b)]
+            a, b, r = p[1], p[2], p[3]
+            ln = math.sqrt(sum((y - x) ** 2 for x, y in zip(a, b))) or 1.0
+            u = [(y - x) / ln for x, y in zip(a, b)]
             pts = []
             for q in (a, b):
                 for i in range(3):
-                    if not ax[i]:
-                        for s in (-r, r):
-                            t = list(q); t[i] += s; pts.append(t)
+                    e = r * math.sqrt(max(0.0, 1 - u[i] * u[i]))
+                    for sg in (-e, e):
+                        t = list(q); t[i] += sg; pts.append(t)
         for q in pts:
             for i in range(3): lo[i] = min(lo[i], q[i]); hi[i] = max(hi[i], q[i])
     return lo, hi

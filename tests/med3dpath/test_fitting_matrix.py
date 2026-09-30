@@ -43,7 +43,7 @@ def build_legs(legs, brk, sc, rot):
     if len(ends) == 2 and all(g == 0 for g in gaps.values()) and DIRS[ends[0]][0] * DIRS[ends[1]][0] + DIRS[ends[0]][1] * DIRS[ends[1]][1] == 0:
         runs.append([mulp(DIRS[ends[0]], LEG), (0.0, 0.0), mulp(DIRS[ends[1]], LEG)])     # one drawn corner
     else:
-        for t in ends: runs.append([mulp(DIRS[t], gaps[t]), mulp(DIRS[t], LEG)])
+        for t in ends: runs.append([mulp(DIRS[t], gaps[t]), mulp(DIRS[t], gaps[t] + LEG)])   # r6: 1re breaks 43.8" at 48
     return [[rotv(p, rot) for p in r] for r in runs]
 def mulp(d, s): return (d[0] * s, d[1] * s)
 
@@ -62,6 +62,7 @@ def result(row, sc, rot_deg, brk, brks):
     # the menu inserts at +DIMSCALE on every axis; M39 / M40 fake a user MIRROR
     scale = (-sc if mir == 'X' else sc, -sc if mir == 'Y' else sc, sc)
     f = fitting(ents, row['block'], (0.0, 0.0, 0.0), rot_deg, int(row['code']), scale=scale)
+    if int(row['instype']) == 8: f.xdata['MED_FITTING'][4] = 0.75   # reducer: refitt_ins "Size to" (#ITEM_ALT)
     vt = [t for t in row['legs'].split() if t in ('UP', 'DN')]
     if vt:   # as dcon_ins: MED_CONDUIT (tag size code dist msr) + VERT_DATA (r1 r2 dir r4) on the insert
         f.xdata['MED_CONDUIT'] = ['MED_CONDUIT', 'NONE', 1.0, 1, 36.0, 'F']
@@ -73,12 +74,14 @@ def result(row, sc, rot_deg, brk, brks):
         toks = 'MIRROR'
     else:
         toks = []
-        runsdirs = []
+        runsdirs, brdirs = [], []
         for h in to_py(get(b, 'HUBS')):
             d = list(rotv(h[2][:2], -rot)) + [h[2][2]]
-            if h[0] in ('RUN', 'RUN2') and get(b, 'SHAPE') in ('C', 'T', 'TB'): runsdirs.append(axis_tok(d))
+            if h[0] in ('RUN', 'RUN2') and get(b, 'SHAPE') in SYM_RUNS: runsdirs.append(axis_tok(d))
+            elif h[0] in ('BRANCH', 'BRANCH2') and get(b, 'SHAPE') in SYM_BRANCHES: brdirs.append(axis_tok(d))
             else: toks.append(h[0] + axis_tok(d))
-        if runsdirs: toks.append('RUNS:' + (runsdirs[0][1] if len(set(t[1] for t in runsdirs)) == 1 and len(set(t[0] for t in runsdirs)) == 2 else '?'))
+        for tag, dd in (('RUNS:', runsdirs), ('BRANCHES:', brdirs)):
+            if dd: toks.append(tag + (dd[0][1] if len(set(t[1] for t in dd)) == 1 and len(set(t[0] for t in dd)) == 2 else '?'))
         cv = to_py(call(L, 'medcb-xdir', [0.0, 0.0, 1.0], get(b, 'ROT'), get(b, 'FLIP')))
         toks.append('COVER' + axis_tok(list(rotv(cv[:2], -rot)) + [cv[2]]))
         toks = ' '.join(sorted(toks))
@@ -96,6 +99,11 @@ def result(row, sc, rot_deg, brk, brks):
     flags += len(markers)          # placeholder / mirrored / vertical-leg markers
     vert = len(mk.ms_solids) - n0
     return toks, cuts, flags, vert
+
+# symmetrical hub pairs shown as one axis token (RUNS:X = RUN and RUN2 along X);
+# the reducer keeps RUN (small end) / RUN2 (large end) apart
+SYM_RUNS = ('C', 'T', 'TB', 'X', 'BT', 'BC', 'GUAT', 'GUAX', 'UNY', 'EYS', 'EYD', 'BUB')
+SYM_BRANCHES = ('X', 'GUAX')
 
 def fmt(r): return f'{r[0]} | cuts {r[1]} | flags {r[2]} | vert {r[3]}'
 

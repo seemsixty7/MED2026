@@ -313,10 +313,10 @@ SOURCES += [
     ("CH6F-EYS-2020", "Crouse-Hinds series EYS / EZS sealing fittings catalog page", "Eaton", "2020", URL_EYS, "",
      "printed p.113-114", "EYS: a overall length, b body diameter, tr turning radius (conduit axis to the pour-boss face; 3-1/2 - 6 with cover removed) -> D_in."),
     ("CLINT-EYD-PROFILE", "EYD side profile sketch (Clint Moore, estimated 2-1/2 in size)", "Moore Design (MED)", "2026-09-30", "", "",
-     "-", "Proportion reference only (no dimensions): the drain comes off the lower large opening at 45 deg toward -X (MED3DFittings r10). The r8 geometry scaled from it is superseded."),
+     "-", "Proportion reference only (no dimensions). The r8 geometry scaled from it is superseded (r11: EYD = EYS with the drain plug in the pour hub)."),
     ("EATON-ECD11", "Crouse-Hinds series ECD standard drain ECD11, 1/2 in (product page)", "Eaton", "accessed 2026-09-30", "https://www.eaton.com/us/en-us/skuPage.ECD11.html",
      "https://www.eaton.com/content/dam/eaton/products/conduit-cable-and-wire-management/crouse-hinds/catalog-pages/crouse-hinds-ecd-breather-drain-catalog-page.pdf",
-     "product specifications", "ECD11 1/2 in NPT standard drain: 0.88 in length/depth, 1.56 in height, 1.58 in width (published). MED3DFittings r10 EYD drain: hex 0.88 across flats x 0.28, body dia 0.62, 1.06 exposed, on a 1/2 NPT nipple from the special plug, 45 deg down - the split into hex / body is APPROX (the catalog page has no drawing dimensions)."),
+     "product specifications", "ECD11 1/2 in NPT standard drain: 0.88 in length/depth, 1.56 in height, 1.58 in width (published). MED3DFittings r10 EYD drain: hex 0.88 across flats x 0.28, body dia 0.62, 1.06 exposed, on a 1/2 NPT nipple from the drain plug in the pour hub, 45 deg toward -X (down when mounted vertically) - the split into hex / body is APPROX (the catalog page has no drawing dimensions)."),
     ("CLINT-GUA-DWG", "Clint Moore's GUA reference 3D DWGs (Dropbox\\Development\\3DFittings, GUAL / GUAT / GUAX 4A 4B 6C 7D 9E 9F)", "Moore Design (MED)", "2026-09-30", "", "",
      "-", "3D proportions tuned to Clint's reference DWGs (MED3DFittings r9, measured per solid): hub face at a/2 + HubLen, hub OD per trade size, bottom = hub OD / 2, height per body incl. cover disc and lugs / bar. The catalog rows below stay as published."),
     ("CH6F-EYD", "Crouse-Hinds series EYD / EZD drain seals catalog page (specification sheet copy)", "Eaton", "n.d.", URL_EYD, "",
@@ -513,7 +513,7 @@ def parse_tables2():
             for k, col in lmap:
                 r[col + "_in"] = fmt(frac(txt[k]))
             r["Notes"] = "; ".join(x for x in [series + " (" + mat + ")", NOTES2.get((form, sh, ts), ""),
-                                               "3D: EYS body + lower large opening with an ECD11 drain 45 deg down (EATON-ECD11; body shape approx)" if sh == "EYD" else "",
+                                               "3D: the EYS with a drain plug in the pour hub, ECD11 45 deg toward -X (EATON-ECD11; body shape approx)" if sh == "EYD" else "",
                                                "3D proportions tuned to Clint's reference DWGs (CLINT-GUA-DWG)" if sh in ("GUAL", "GUAT", "GUAX") else ""] if x)
             out.append(r)
             if sh == "CPL":

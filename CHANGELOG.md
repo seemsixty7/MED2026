@@ -3,6 +3,11 @@
 ## Unreleased
 
 ### Added
+- **MEDMAKE3D: mirrored fittings flagged; `1lbr` flat turn fixed (MED3DPath r10, MED3DFittings r4).** Per Clint's decisions after 95524a2:
+  - A mirrored conduit-body `MED_FITTING` insert (X scale × Y scale × extrusion Z < 0) gets no 3D body. The conduit next to it is left as drawn (no trim, no leg flags). It gets one marker on `MED_3DFLAG` (`MIRRORED FITTING - re-insert, do not mirror`), a Skipped line with the handle and reason, and a new summary line `Mirrored fittings: N (bad practice - re-insert without mirroring)`.
+  - An LB used as a flat plan turn now lies along the symbol's long leg (drawn +X, the conduit picked) for `1lbr` as well as `1lbl`, with the cover sideways away from the other leg (matrix M02). Only the order in which the tilted LB candidates are tried changed; nothing else moves.
+  - LL / LR naming (Q2): option A kept and documented. The code picks the body and the cover stays up for LL / LR / T / C. The flat-turn LB keeps its sideways cover.
+  - Matrix: new `mirror` column, rows M39 (`1lbl` X-mirrored) and M40 (`1tee` Y-mirrored); `r9_*` columns renamed `r10_*`; 40 rows, 38 match at DIMSCALE 1 and 33 at DIMSCALE 48. `MEDCBGRID` r2 inserts the mirrored cells and reads quoted CSV fields.
 - **Conduit body orientation matrix and test grid.**
   - `docs/3d-fitting-matrix.md` lists every 2D conduit-fitting symbol the menus / CUIX can place, the codes it can carry, the leg geometry, the expected 3D orientation, the current (r9) result, and open questions.
   - The same rows are in `tests/med3dpath/fitting_matrix.csv`. It is checked by `tests/med3dpath/test_fitting_matrix.py`, which applies the conduit breaks from `medblck.dat` at DIMSCALE 1 and 48, rotation 0 and 90. The shared fixture is `tests/med3dpath/bodyworld.py`.

@@ -52,8 +52,10 @@ def conduit(ents, pts, elev=0.0):
     ed.append([210, 0.0, 0.0, 1.0])
     e = Ent(ed, {'MED_CONDUIT': ['MED_CONDUIT', 'NONE', 1.0, 1]}); ents.append(e); return e
 
-def fitting(ents, blk, pt, rot_deg, code, size=1.0):
-    ed = [Pair(0, 'INSERT'), Pair(2, blk), [10] + [float(c) for c in pt], Pair(50, math.radians(rot_deg))]
+def fitting(ents, blk, pt, rot_deg, code, size=1.0, scale=(1.0, 1.0, 1.0), extr=None):
+    ed = [Pair(0, 'INSERT'), Pair(2, blk), [10] + [float(c) for c in pt], Pair(50, math.radians(rot_deg)),
+          Pair(41, float(scale[0])), Pair(42, float(scale[1])), Pair(43, float(scale[2]))]
+    if extr: ed.append([210] + [float(c) for c in extr])
     e = Ent(ed, {'MED_FITTING': ['MED_FITTING', 'NONE', size, code, 0.0, 0.0, 0.0]}); ents.append(e); return e
 
 def body(bodies, e):

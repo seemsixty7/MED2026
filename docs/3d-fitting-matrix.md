@@ -1,11 +1,17 @@
 # Conduit body orientation matrix (MEDMAKE3D)
 
-This page lists every 2D conduit-fitting symbol the MED menus can place, the fitting codes it can carry, and what MEDMAKE3D (MED3DPath r9 / MED3DFittings r3) does with each. The same rows are in `tests\med3dpath\fitting_matrix.csv`: the desk test `tests\med3dpath\test_fitting_matrix.py` rebuilds each row and checks the r9 columns, and `MEDCBGRID` (`tests\autocad\MEDCBGrid.lsp`) draws them all in a drawing.
+This page lists every 2D conduit-fitting symbol the MED menus can place, the fitting codes it can carry, and what MEDMAKE3D (MED3DPath r10 / MED3DFittings r4) does with each. The same rows are in `tests\med3dpath\fitting_matrix.csv`: the desk test `tests\med3dpath\test_fitting_matrix.py` rebuilds each row and checks the r10 columns, and `MEDCBGRID` (`tests\autocad\MEDCBGrid.lsp`) draws them all in a drawing.
 
 **Principle:**
 1. The fitting code picks the body (`MEDType.ITEMKEY2`, else the description).
 2. The conduit legs at the insertion point pick the orientation.
 3. The 2D block rotation (and which symbol was used) is only a hint, for breaking ties.
+
+**Decided by Clint (after 95524a2):**
+- **Cover up (Q2, option A).** The MED code decides the body. LL, LR, T, TB-down, C (and every other body lying flat in the run) keep the cover up, even where that puts an LL / LR body on the symbol's short leg (M03, M05).
+- **Except the flat-turn LB (Q1).** An LB used as a flat plan turn lies on its side: the body runs along the symbol's long leg (block +X, the conduit picked when inserting), the back hub meets the other leg, and the cover / opening faces sideways, away from that leg. It does not need the cover up. Same for `1lbl` and `1lbr` (M01, M02; `1lbr` fixed in r10).
+- **Mirrored symbols are not accommodated.** A `MED_FITTING` insert whose plan symbol is mirrored (X scale × Y scale × extrusion Z < 0: the MIRROR command or a negative scale) gets no 3D body. The conduit is left as drawn (no trim, no leg flags). One marker on `MED_3DFLAG`, labelled `MIRRORED FITTING - re-insert, do not mirror`, a Skipped line with the handle and reason, and the summary line `Mirrored fittings: N (bad practice - re-insert without mirroring)`. Re-insert the right symbol (`1lbr` instead of a mirrored `1lbl`) instead. A negative Z scale alone doesn't change the plan symbol and is not treated as mirrored. Mirrored fittings that aren't conduit bodies (couplings, unions...) are counted "not modelled" as before (M39, M40).
+- Q3 - Q9 stay as they are (r9 behavior).
 
 ## How to read the table
 
@@ -14,12 +20,12 @@ This page lists every 2D conduit-fitting symbol the MED menus can place, the fit
   - `+X +Y`: horizontal conduits leaving the fitting in those directions.
   - `PASSX`: one conduit running straight through along X.
   - `UP` / `DN`: the vertical conduit. It is not a polyline: the menu stores it on the fitting insert itself (`MED_CONDUIT` + `VERT_DATA` direction ±1 + the length you type). MEDMAKE3D does not build vertical legs yet.
-- **Expected / r9:**
+- **Expected / r10:**
   - Which way each hub and the cover face: `RUN+X` = RUN hub toward +X; `RUNS:X` = both run hubs on the X axis; `COVER+Z` = cover up.
   - `cuts` = conduit ends trimmed back to a hub face. `flags` = markers on `MED_3DFLAG`.
-  - `PH` = placeholder (no 3D data); `NM` = not a conduit body (counted "not modelled"); `*` = don't care.
-- **DIMSCALE.** The menu breaks the conduit back from some symbols by the `Support\medblck.dat` distance × DIMSCALE (`_SC`). The table shows r9 at DIMSCALE 1 (breaks under 0.05") and at 48 (1/4" = 1'-0", breaks of 2.2" to 4.2").
-- **✓ / ✗** says whether r9 gives the expected result. **Ask** points to the questions below.
+  - `PH` = placeholder (no 3D data); `MIRROR` = mirrored symbol, no body, one flag; `NM` = not a conduit body (counted "not modelled"); `*` = don't care.
+- **DIMSCALE.** The menu breaks the conduit back from some symbols by the `Support\medblck.dat` distance × DIMSCALE (`_SC`). The table shows r10 at DIMSCALE 1 (breaks under 0.05") and at 48 (1/4" = 1'-0", breaks of 2.2" to 4.2").
+- **✓ / ✗** says whether r10 gives the expected result. **Ask** points to the questions below.
 
 ## What the 2D symbols show (from the DWGs in `Dwg\`)
 
@@ -52,13 +58,13 @@ The symbols are hub ticks: short bars across the conduit where a hub is.
 
 ## Matrix
 
-| Row | 2D block | Code (alt) | Body | Legs | Expected | r9 at DIMSCALE 1 | r9 at DIMSCALE 48 | Ask |
+| Row | 2D block | Code (alt) | Body | Legs | Expected | r10 at DIMSCALE 1 | r10 at DIMSCALE 48 | Ask |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| M01 | `1lbl` | 30 (31 32) | LB | +X +Y | BACK+Y COVER-Y RUN+X, cuts 2, flags 0 | ✓ BACK+Y COVER-Y RUN+X, cuts 2, flags 0 | ✓ BACK+Y COVER-Y RUN+X, cuts 2, flags 0 | Q1 |
-| M02 | `1lbr` | 30 (31 32) | LB | +X -Y | BACK-Y COVER+Y RUN+X, cuts 2, flags 0 | ✗ BACK+X COVER-X RUN-Y, cuts 2, flags 0 | ✗ BACK+X COVER-X RUN-Y, cuts 2, flags 0 | Q1 |
-| M03 | `1lbl` | 33 (34 35) | LL | +X +Y | BRANCH+X COVER+Z RUN+Y, cuts 2, flags 0 | ✓ BRANCH+X COVER+Z RUN+Y, cuts 2, flags 0 | ✓ BRANCH+X COVER+Z RUN+Y, cuts 2, flags 0 | Q2 |
+| M01 | `1lbl` | 30 (31 32) | LB | +X +Y | BACK+Y COVER-Y RUN+X, cuts 2, flags 0 | ✓ BACK+Y COVER-Y RUN+X, cuts 2, flags 0 | ✓ BACK+Y COVER-Y RUN+X, cuts 2, flags 0 | Q1 (decided) |
+| M02 | `1lbr` | 30 (31 32) | LB | +X -Y | BACK-Y COVER+Y RUN+X, cuts 2, flags 0 | ✓ BACK-Y COVER+Y RUN+X, cuts 2, flags 0 | ✓ BACK-Y COVER+Y RUN+X, cuts 2, flags 0 | Q1 (decided) |
+| M03 | `1lbl` | 33 (34 35) | LL | +X +Y | BRANCH+X COVER+Z RUN+Y, cuts 2, flags 0 | ✓ BRANCH+X COVER+Z RUN+Y, cuts 2, flags 0 | ✓ BRANCH+X COVER+Z RUN+Y, cuts 2, flags 0 | Q2 (decided) |
 | M04 | `1lbl` | 36 (37 38) | LR | +X +Y | BRANCH+Y COVER+Z RUN+X, cuts 2, flags 0 | ✓ BRANCH+Y COVER+Z RUN+X, cuts 2, flags 0 | ✓ BRANCH+Y COVER+Z RUN+X, cuts 2, flags 0 |  |
-| M05 | `1lbr` | 36 (37 38) | LR | +X -Y | BRANCH+X COVER+Z RUN-Y, cuts 2, flags 0 | ✓ BRANCH+X COVER+Z RUN-Y, cuts 2, flags 0 | ✓ BRANCH+X COVER+Z RUN-Y, cuts 2, flags 0 | Q2 |
+| M05 | `1lbr` | 36 (37 38) | LR | +X -Y | BRANCH+X COVER+Z RUN-Y, cuts 2, flags 0 | ✓ BRANCH+X COVER+Z RUN-Y, cuts 2, flags 0 | ✓ BRANCH+X COVER+Z RUN-Y, cuts 2, flags 0 | Q2 (decided) |
 | M06 | `1lbr` | 33 (34 35) | LL | +X -Y | BRANCH-Y COVER+Z RUN+X, cuts 2, flags 0 | ✓ BRANCH-Y COVER+Z RUN+X, cuts 2, flags 0 | ✓ BRANCH-Y COVER+Z RUN+X, cuts 2, flags 0 |  |
 | M07 | `1lbd` | 30 (31 32) | LB | +X DN | BACK-Z COVER+Z RUN+X, cuts 1, flags 0 | ✓ BACK-Z COVER+Z RUN+X, cuts 1, flags 0 | ✓ BACK-Z COVER+Z RUN+X, cuts 1, flags 0 | Q3 |
 | M08 | `1lbu` | 30 (31 32) | LB | +X UP | BACK+Z COVER-Z RUN+X, cuts 1, flags 0 | ✓ BACK+Z COVER-Z RUN+X, cuts 1, flags 0 | ✗ BACK+Z COVER-Z RUN+X, cuts 0, flags 0 | Q3 Q5 |
@@ -92,16 +98,18 @@ The symbols are hub ticks: short bars across the conduit where a hub is.
 | M36 | `1cap` | 100 (101) | - | +X | NM, cuts 0, flags 0 | ✓ NM, cuts 0, flags 0 | ✓ NM, cuts 0, flags 0 |  |
 | M37 | `1hub` | 120 | - | +X | NM, cuts 0, flags 0 | ✓ NM, cuts 0, flags 0 | ✓ NM, cuts 0, flags 0 |  |
 | M38 | `1re` | 103 | - | PASSX | NM, cuts 0, flags 0 | ✓ NM, cuts 0, flags 0 | ✓ NM, cuts 0, flags 0 |  |
+| M39 | `1lbl` | 30 (31 32 33 34 35 36 37 38) | none | -X +Y, **mirrored** (X scale -1) | MIRROR, cuts 0, flags 1 | ✓ MIRROR, cuts 0, flags 1 | ✓ MIRROR, cuts 0, flags 1 | decided |
+| M40 | `1tee` | 11 (12 13 14 15 16) | none | PASSY +X, **mirrored** (Y scale -1) | MIRROR, cuts 0, flags 1 | ✓ MIRROR, cuts 0, flags 1 | ✓ MIRROR, cuts 0, flags 1 | decided |
 
 ### Where each row comes from
 
 | Row | Menu / how it gets there | Insert type | Notes |
 | --- | --- | --- | --- |
-| M01 | Fittings>Lbl; ribbon LB Fitting (CON_LB1); image menu LB Fitting | 2 | flat plan turn; body along the symbol's long leg (+X) |
-| M02 | Fittings>Lbr; ribbon LB Fitting (CON_LB2); image menu LB Fitting | 2 | flat plan turn; body along the symbol's long leg (+X) |
-| M03 | ribbon LL Fitting (CON_LL) | 2 | cover up puts the body on the symbol's short leg |
+| M01 | Fittings>Lbl; ribbon LB Fitting (CON_LB1); image menu LB Fitting | 2 | flat plan turn; body along the symbol's long leg (+X), cover sideways away from the +Y leg |
+| M02 | Fittings>Lbr; ribbon LB Fitting (CON_LB2); image menu LB Fitting | 2 | flat plan turn; body along the symbol's long leg (+X), cover sideways away from the -Y leg (fixed in r10) |
+| M03 | ribbon LL Fitting (CON_LL) | 2 | decided: code picks the body, cover always up - puts the body on the symbol's short leg |
 | M04 | code changed to LR (MEDCHG) | 2 |  |
-| M05 | ribbon LR Fitting (CON_LR) | 2 | cover up puts the body on the symbol's short leg |
+| M05 | ribbon LR Fitting (CON_LR) | 2 | decided: code picks the body, cover always up - puts the body on the symbol's short leg |
 | M06 | code changed to LL (MEDCHG) | 2 |  |
 | M07 | Fittings>Lb-down; ribbon LB Fitting Down; image menu Lb down | 3 | vertical leg = VERT_DATA on the fitting insert (not built) |
 | M08 | Fittings>Lb-up; ribbon LB Fitting Up Solid; image menu Lb up | 6 | menu breaks the conduit back by 0.0527 x DIMSCALE |
@@ -135,15 +143,18 @@ The symbols are hub ticks: short bars across the conduit where a hub is.
 | M36 | Fittings>Plug-Rec / Plug-SqH; image menu plugs | 2 | not a conduit body |
 | M37 | Fittings>Hub; image menu Hub | 2 | not a conduit body |
 | M38 | Fittings>Reducer; image menu Reducer | 8 | not a conduit body |
+| M39 | any LB/LL menu entry, then MIRROR (X scale -1) | 2 | mirrored symbol: no 3D body, conduit left as drawn, one MIRRORED FITTING flag + Skipped line |
+| M40 | any T menu entry, then MIRROR (Y scale -1) | 2 | mirrored symbol: no 3D body, conduit left as drawn, one MIRRORED FITTING flag + Skipped line |
 
 Form 8 / Mark 9 codes (the alt codes) resolve the same way. The table only checks that the size row exists: at 1" every form has LB / LL / LR / T / TB / C, and TB exists only up to 2".
 
-## Summary (r9)
+## Summary (r10)
 
-- 38 rows: 35 match at DIMSCALE 1, 30 at DIMSCALE 48.
-- **Mismatches:**
-  - **M02** `1lbr` + LB (code 30): the body lies along the symbol's short leg (-Y) with the back hub on +X. The symbol and `1lbl` (M01) put it along +X. The snap takes the first orientation that meets both legs, and for `1lbr` that is the other one. This is the case in Clint's screenshot (Q1).
-  - **M08 / M09 / M15 / M16** `1lbu`, `1lbuo`, `1teeu`, `1teeuo` at DIMSCALE 48: the menu cut the conduit back by 2.2 - 2.5". r9 only looks within 0.25" of the insertion point, so the legs are not found. The orientation is still right, because the drawn rotation from `medblck.dat` puts +X on the conduit. But the conduit is not trimmed (it runs about 2.5" into the body), there is no snap, and the block Z is used instead of the conduit Z (Q5).
+- 40 rows (M39 / M40 new: mirrored symbols): 38 match at DIMSCALE 1, 33 at DIMSCALE 48. r9 had 35 / 30 of the first 38; M02 is fixed, and M39 / M40 match.
+- **Fixed in r10:**
+  - **M02** `1lbr` + LB (code 30): the body now lies along the symbol's long leg (+X) with the back hub on -Y and the cover sideways toward +Y, like `1lbl` (M01). The snap tries the tilted LB quarter turn by quarter turn from the drawn rotation, so the drawn +X leg wins a tie.
+- **Remaining mismatches** (unchanged, Q3 - Q9 left as they are):
+  - **M08 / M09 / M15 / M16** `1lbu`, `1lbuo`, `1teeu`, `1teeuo` at DIMSCALE 48: the menu cut the conduit back by 2.2 - 2.5". MEDMAKE3D only looks within 0.25" of the insertion point, so the legs are not found. The orientation is still right, because the drawn rotation from `medblck.dat` puts +X on the conduit. But the conduit is not trimmed (it runs about 2.5" into the body), there is no snap, and the block Z is used instead of the conduit Z (Q5).
   - **M17** `2teed` at DIMSCALE 48: legs not found, and the drawn rotation (+X) is 90° off the main run (block Y), so the TB is turned the wrong way. It cannot be placed anyway (DWG missing, Q8).
   - **M10** LL / LR code on an LB-down symbol: placed flat with no flag. It has no hub for the vertical conduit (Q6).
   - **M12** TB code on a flat tee: back hub down, branch leg left uncut and flagged (Q7).
@@ -155,37 +166,31 @@ Form 8 / Mark 9 codes (the alt codes) resolve the same way. The table only check
 
 ## Questions for Clint
 
-**Q1 - LB used as a flat plan turn (`1lbl` / `1lbr`, code 30): which leg carries the body?**
-Proposed: the symbol's long leg (block +X, the conduit you picked), with the back hub on the other leg; the cover then faces away from that leg (sideways). r9 does this for `1lbl` but not for `1lbr`.
+**Q1 - LB used as a flat plan turn (`1lbl` / `1lbr`, code 30) - DECIDED.**
+The body lies along the symbol's long leg (block +X, the conduit you picked), with the back hub on the other leg. The LB is on its side, so the cover faces sideways, away from that leg - no cover-up rule for this case. r10 does this for both `1lbl` and `1lbr`.
 
-**Q2 - LL / LR naming against the symbols.**
-- By the Crouse-Hinds rule used for the 3D blocks (cover toward you, end hub down: side opening left = LL):
-  - the `1lbl` symbol (body along +X, opening +Y) is an **LR** with the cover up;
-  - `1lbr` is an **LL** with the cover up.
-- The ribbon places LL as `1lbl` + 33 and LR as `1lbr` + 36. r9 keeps the cover up, so those two put the body on the symbol's short leg (M03, M05).
-- Options:
-  - (a) cover always up, body wherever that puts it (r9);
-  - (b) body along the symbol's long leg, cover down when the code and symbol disagree;
-  - (c) MED's LL / LR are the mirror of the catalog, so swap them.
+**Q2 - LL / LR naming against the symbols - DECIDED: option A.**
+- By the Crouse-Hinds rule used for the 3D blocks (cover toward you, end hub down: side opening left = LL), the `1lbl` symbol (body along +X, opening +Y) is an **LR** with the cover up, and `1lbr` an **LL**.
+- Decision: the MED code decides the body and the cover stays up (LL / LR / T / C and the other flat bodies). With the ribbon's LL = `1lbl` + 33 and LR = `1lbr` + 36, that puts the body on the symbol's short leg (M03, M05). That's accepted. The flat-turn LB (Q1) is the one exception: its cover faces sideways.
 
 **Q3 - LB up / down (`1lbd`, `1lbu`, `1lbuo`).**
-- r9: the body lies horizontal along the run with the back hub vertical (cover up for down, cover down for up).
+- Today: the body lies horizontal along the run with the back hub vertical (cover up for down, cover down for up).
 - The other common way, at a wall: the body vertical along the riser, the back hub toward the horizontal run, and the cover facing away from the run.
 - Which one should MEDMAKE3D use, and is it the same for up and down?
 
 **Q4 - Tee up / down (`1teeu`, `1teeuo`, `1teed`, code 11).**
-- r9 uses a TB: back hub down (tee down), or turned over with the back hub up and the cover down (tee up).
+- Today MEDMAKE3D uses a TB: back hub down (tee down), or turned over with the back hub up and the cover down (tee up).
 - Alternative: a T tilted 90° about its run, so the branch points down / up and the cover faces sideways.
 - Keep TB (you chose it earlier), or use a T for up only?
 
 **Q5 - Conduit breaks around up symbols.**
-- At your usual DIMSCALE, the menu leaves the conduit 2 - 3" short of `1lbu` / `1lbuo` / `1teeu` / `1teeuo` (0.0527 × DIMSCALE), so r9 doesn't see those legs.
+- At your usual DIMSCALE, the menu leaves the conduit 2 - 3" short of `1lbu` / `1lbuo` / `1teeu` / `1teeuo` (0.0527 × DIMSCALE), so MEDMAKE3D doesn't see those legs.
 - Proposed: search each fitting out to its `medblck.dat` break distance × DIMSCALE + 0.25", and trim / extend the leg to the hub face.
 - What DIMSCALE do your drawings use?
 
-**Q6 - A code that can't meet the legs** (LL / LR / C / T code on an LB-down / up symbol, ...): flag it (proposed), or trust the code silently (r9)?
+**Q6 - A code that can't meet the legs** (LL / LR / C / T code on an LB-down / up symbol, ...): flag it (proposed), or trust the code silently (today)?
 
-**Q7 - TB code on a flat tee (`1tee` + 14 / 15 / 16):** tilt the back hub into the plan toward the branch, like the flat LB (proposed), or keep the back hub down and flag the branch (r9)?
+**Q7 - TB code on a flat tee (`1tee` + 14 / 15 / 16):** tilt the back hub into the plan toward the branch, like the flat LB (proposed), or keep the back hub down and flag the branch (today)?
 
 **Q8 - `2teed` ("T-down to Tee" in the image menu):** `Dwg\2teed.dwg` is missing, so the entry can't insert anything. Its `medblck.dat` breaks say the main run lies along the symbol's Y. Restore the DWG, or remove the entry?
 
@@ -197,14 +202,14 @@ Proposed: the symbol's long leg (block +X, the conduit you picked), with the bac
 2. Optional: set the conduit size you want (the menu's size setting, `_CSIZE`). The default is 1".
 3. `(load "C:/Users/moore/Dropbox/Development/Jane/MED2026-OpenSource/tests/autocad/MEDCBGrid.lsp")`
 4. Run `MEDCBGRID`. Pick or type the base point (Enter = 0,0), then the rotation for every cell (Enter = 0; try 30 to check that rotation doesn't matter).
-5. `ZOOM E`. There are 38 cells of 10' x 10', 6 per row. Each cell is labelled with the row id, block, code, legs, expected result, and r9 match at DIMSCALE 1 / 48.
+5. `ZOOM E`. There are 40 cells of 10' x 10', 6 per row. Each cell is labelled with the row id, block, code, legs, expected result, and r10 match at DIMSCALE 1 / 48. M39 / M40 are inserted mirrored (X / Y scale -1) and labelled MIRRORED; after MEDMAKE3D they show only the `MIRRORED FITTING - re-insert, do not mirror` marker, with the conduit untouched.
 6. Run `MEDMAKE3D`, choose Layer, and look at each cell (e.g. `-VIEW _SWISO`, or orbit).
 7. To repeat, erase everything (or use a new drawing) and run `MEDCBGRID` again.
 
 ## Keeping this page current
 
 After a change to the resolution / orientation code:
-1. Run `python tests/med3dpath/test_fitting_matrix.py --write` to refresh the r9 columns in the CSV.
+1. Run `python tests/med3dpath/test_fitting_matrix.py --write` to refresh the r10 columns in the CSV.
 2. Re-check the ✓ / ✗ here and the summary.
 
 Without `--write`, the test fails whenever the code stops matching what the CSV records.

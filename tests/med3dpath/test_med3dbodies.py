@@ -68,8 +68,10 @@ def conduit(ents, pts, elev=12.0, closed=False):
     ed.append([210, 0.0, 0.0, 1.0])
     e = Ent(ed, {'MED_CONDUIT': ['MED_CONDUIT', 'C1', 1.0, 1]}); ents.append(e); return e
 
-def fitting(ents, blk, pt, rot_deg, code, size=1.0):
-    ed = [Pair(0, 'INSERT'), Pair(2, blk), [10] + [float(c) for c in pt], Pair(50, math.radians(rot_deg))]
+def fitting(ents, blk, pt, rot_deg, code, size=1.0, scale=(1.0, 1.0, 1.0), extr=None):
+    ed = [Pair(0, 'INSERT'), Pair(2, blk), [10] + [float(c) for c in pt], Pair(50, math.radians(rot_deg)),
+          Pair(41, float(scale[0])), Pair(42, float(scale[1])), Pair(43, float(scale[2]))]
+    if extr: ed.append([210] + [float(c) for c in extr])
     e = Ent(ed, {'MED_FITTING': ['MED_FITTING', 'NONE', size, code, 0.0, 0.0, 0.0]}); ents.append(e); return e
 
 def body(bodies, e):
@@ -173,6 +175,51 @@ for drawn in (90, 0, 180, 270):
           and closev(sub(r3[0][1], r3[0][0]), [math.cos(ins['Rot']), math.sin(ins['Rot']), 0.0])
           and closev(r3[0][0], [60, 0, 0]), str(ins))
     check(f'lb-turn-no-note-printed {drawn}', not any('flat plan turn' in l for l in mk.log), str(mk.log))
+# LB flat turn lies along the symbol's long leg (drawn +X = the conduit picked) for
+# both 1lbl and 1lbr; the cover faces sideways, away from the other leg
+for blk in ('1lbl', '1lbr'):
+    for drawn, other in ((180, (0.0, 1.0, 0.0)), (90, (-1.0, 0.0, 0.0))):
+        L, mk, ents, markers = world()
+        run = conduit(ents, [(0, 0), (60, 0), (60, 40)], elev=0.0)
+        lb = fitting(ents, blk, (60, 0, 0), drawn, 30)
+        b = body(call(L, 'medcb-collect')[0], lb)
+        hb = dict((h[0], h[2]) for h in to_py(get(b, 'HUBS')))
+        a0 = math.radians(drawn)
+        check(f'lb-long-leg {blk} {drawn}', closev(hb['RUN'], [math.cos(a0), math.sin(a0), 0.0])
+              and closev(hb['BACK'], list(other)), str(hb))
+        cover = to_py(call(L, 'medcb-xdir', [0.0, 0.0, 1.0], get(b, 'ROT'), get(b, 'FLIP')))
+        check(f'lb-long-leg-cover {blk} {drawn}', closev(cover, [-c for c in other]), str(cover))
+
+# mirrored 2D fitting: no body, conduit left as drawn, one marker, Skipped line
+for tag, kw, mir in [('xscale', dict(scale=(-1.0, 1.0, 1.0)), True), ('yscale', dict(scale=(1.0, -1.0, 1.0)), True),
+                     ('extrusion', dict(extr=(0.0, 0.0, -1.0)), True),
+                     ('both-neg', dict(scale=(-1.0, -1.0, 1.0)), False), ('z-only', dict(scale=(1.0, 1.0, -1.0)), False)]:
+    L, mk, ents, markers = world()
+    run = conduit(ents, [(0, 0), (60, 0), (60, 40)], elev=0.0)
+    f = fitting(ents, '1lbl', (60, 0, 0), 180, 30, **kw)
+    bodies = call(L, 'medcb-collect')[0]; b = body(bodies, f)
+    check(f'mirror-detect {tag}', bool(get(b, 'MIRROR')) == mir, str(to_py(b)))
+    if not mir: continue
+    check(f'mirror-no-fitrec {tag}', call(L, 'medcb-fit-rec', b) is None)
+    L.g['*MED3D-FITS*'] = [x for x in [call(L, 'medcb-fit-rec', x) for x in bodies] if x]
+    pl = plan_run(L, ents, run)
+    cs = [dict((car(c), cdr(c)) for c in cc)['STATUS'] for cc in get(pl, 'CORNERS')]
+    check(f'mirror-conduit-as-drawn {tag}', cs == ['FITTED'] and not get(pl, 'FITFLAGS') and not get(pl, 'GAPS'), str(cs))
+    n0 = len(mk.inserts); mk.log.clear(); markers.clear()
+    pr = call(L, 'medcb-place-all', bodies)
+    check(f'mirror-no-insert {tag}', len(mk.inserts) == n0, str(len(mk.inserts)))
+    check(f'mirror-counts {tag}', get(pr, 'MIRRORED') == 1 and get(pr, 'FLAGGED') == 1 and get(pr, 'PLACED') == 0
+          and get(pr, 'PH') == 0, str(to_py(pr)))
+    sk = to_py(get(pr, 'SKIPPED'))
+    check(f'mirror-skipped {tag}', len(sk) == 1 and sk[0][0] == f.h and 'mirrored' in sk[0][2], str(sk))
+    check(f'mirror-marker {tag}', len(markers) == 1 and markers[0][1].startswith('MIRRORED FITTING - re-insert, do not mirror')
+          and closev(markers[0][0], [60, 0, 0]), str(markers))
+# a mirrored non-body fitting (coupling) is simply not modelled
+L, mk, ents, markers = world()
+cp = fitting(ents, '1cplg', (0, 0, 0), 0, 8, scale=(-1.0, 1.0, 1.0))
+res = call(L, 'medcb-collect')
+check('mirror-nm', not res[0] and res[1] == 1, str(to_py(res)))
+
 # the same LB turn with only one leg drawn: back hub stays down, note printed
 L, mk, ents, markers = world()
 conduit(ents, [(0, 0), (60, 0)], elev=0.0)

@@ -347,7 +347,7 @@ if __name__ == '__main__':
     ref = mk.new_solid([])
     def place_all(bodies):
         calls.append(('PLACE', len(bodies)))
-        return [Pair('REFS', [ref]), Pair('PLACED', 1), Pair('PH', 1), Pair('FLAGGED', 1),
+        return [Pair('REFS', [ref]), Pair('PLACED', 1), Pair('PH', 1), Pair('FLAGGED', 1), Pair('MIRRORED', 2),
                 Pair('SKIPPED', [['HB2', 'FITTING', 'no trade size on the fitting']])]
     L.g.update({'MEDCB-COLLECT': lambda: (calls.append(('COLLECT',)) or [[body, nosize], 3]),
                 'MEDCB-PLACE-ALL': place_all, 'MED3D-PATH-BUILD-ALL': build_all2})
@@ -359,6 +359,7 @@ if __name__ == '__main__':
     check('bodies reset', not L.g.get('*MED3D-FITS*'), '*MED3D-FITS* left set')
     summary = ' '.join(mk.log[mk.log.index(next(l for l in mk.log if 'MEDMAKE3D summary' in l)):])
     for want in ('Conduit bodies: 1 block(s), 1 placeholder(s), 3 fitting(s) not modelled',
+                 'Mirrored fittings: 2 (bad practice - re-insert without mirroring)',
                  'Flagged       : 1', 'Skipped       : 3', 'HB2 fitting: no trade size'):
         check('bodies summary', want in summary, f'missing "{want}" in {summary[:500]}')
     print(f'{"ok  " if len(fails) == n0 else "FAIL"} MEDMAKE3D conduit bodies: stages {order}')

@@ -56,7 +56,7 @@
 
 (princ "\rLoading MED3DPath...")
 (vl-load-com)
-(setq *MED3D-VERSION* "2026-09-30 r9 (feature/3dpath)")
+(setq *MED3D-VERSION* "2026-09-30 r10 (feature/3dpath)")
 
 ;;; ------------------------------------------------------------------ settings
 (if (not *MED3D-BEND-FACTOR*) (setq *MED3D-BEND-FACTOR* 5.0))  ; conduit R = factor x OD
@@ -1271,6 +1271,8 @@
   (med3d-summary-line "Conduit bodies: " (if cb (med3d-get "PLACED" cb) 0)
     (strcat "block(s), " (itoa (if cb (med3d-get "PH" cb) 0)) " placeholder(s), "
             (itoa (if (cadr bodies) (cadr bodies) 0)) " fitting(s) not modelled"))
+  (if (and cb (numberp (med3d-get "MIRRORED" cb)) (> (med3d-get "MIRRORED" cb) 0))
+    (med3d-summary-line "Mirrored fittings: " (med3d-get "MIRRORED" cb) "(bad practice - re-insert without mirroring)"))
   (med3d-summary-line "Cable         : " (length (med3d-get "SOLIDS" cab))
     (strcat "solid(s) from " (itoa (if cab (med3d-get "OK" cab) 0)) " of "
             (itoa (if cab (med3d-get "RUNS" cab) 0)) " run(s)"))

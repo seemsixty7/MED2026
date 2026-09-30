@@ -2,7 +2,7 @@
 block x fitting code x leg geometry, see docs/3d-fitting-matrix.md) is built in the
 mock drawing the way the MED menus leave it (conduit breaks from Support/medblck.dat
 x DIMSCALE), run through the real MED3DFittings / MED3DPath resolution, and compared
-with the expected orientation. The r9_* / match_* columns record the current result;
+with the expected orientation. The r10_* / match_* columns record the current result;
 the test fails if the code no longer gives what the CSV records.
 Usage: python3 tests/med3dpath/test_fitting_matrix.py [--write] [-v]"""
 import csv, io, math, os, sys
@@ -56,11 +56,15 @@ def result(row, sc, rot_deg, brk):
     L, mk, ents, markers = world()
     rot = math.radians(rot_deg)
     runs = [conduit(ents, r) for r in build_legs(row['legs'], brk, sc, rot)]
-    f = fitting(ents, row['block'], (0.0, 0.0, 0.0), rot_deg, int(row['code']))
+    mir = (row.get('mirror') or '').strip().upper()
+    scale = (-1.0, 1.0, 1.0) if mir == 'X' else (1.0, -1.0, 1.0) if mir == 'Y' else (1.0, 1.0, 1.0)
+    f = fitting(ents, row['block'], (0.0, 0.0, 0.0), rot_deg, int(row['code']), scale=scale)
     res = call(L, 'medcb-collect'); bodies = res[0]
     b = body(bodies, f)
     if b is None: return 'NM', 0, 0
-    if get(b, 'REASON'):
+    if get(b, 'MIRROR'):
+        toks = 'MIRROR'
+    elif get(b, 'REASON'):
         toks = 'PH'
     else:
         toks = []
@@ -81,7 +85,7 @@ def result(row, sc, rot_deg, brk):
         cuts += sum(1 for x in et if x > 1e-9)
         cuts += 2 * sum(1 for c in (get(pl, 'CORNERS') or []) if dict((car(i), cdr(i)) for i in c).get('STATUS') == 'FITTING')
         flags += len(to_py(get(pl, 'FITFLAGS')) or [])
-    if toks == 'PH': flags += 1
+    if toks in ('PH', 'MIRROR'): flags += 1
     return toks, cuts, flags
 
 def fmt(r): return f'{r[0]} | cuts {r[1]} | flags {r[2]}'
@@ -97,7 +101,7 @@ def main():
     brks = medblck()
     rows = list(csv.DictReader(open(MATRIX, newline='', encoding='utf-8')))
     fields = list(rows[0].keys())
-    for c in ('r9_sc1', 'r9_sc48', 'match_sc1', 'match_sc48'):
+    for c in ('mirror', 'r10_sc1', 'r10_sc48', 'match_sc1', 'match_sc48'):
         if c not in fields: fields.append(c)
     for row in rows:
         brk = brks.get(row['block'].upper(), [0.0] * 4)
@@ -107,20 +111,20 @@ def main():
             check(f"{row['id']} rotation invariance sc {sc:g}", r0 == r90, f'{fmt(r0)} vs {fmt(r90)}')
             tag = 'sc1' if sc == 1.0 else 'sc48'
             got, ok = fmt(r0), 'Y' if matches(row, r0) else 'N'
-            if write: row['r9_' + tag], row['match_' + tag] = got, ok
+            if write: row['r10_' + tag], row['match_' + tag] = got, ok
             else:
-                check(f"{row['id']} r9_{tag}", row.get('r9_' + tag) == got, f"CSV '{row.get('r9_' + tag)}' but code gives '{got}'")
+                check(f"{row['id']} r10_{tag}", row.get('r10_' + tag) == got, f"CSV '{row.get('r10_' + tag)}' but code gives '{got}'")
                 check(f"{row['id']} match_{tag}", row.get('match_' + tag) == ok, f"CSV {row.get('match_' + tag)} vs {ok}")
-        if VERBOSE: print(row['id'], row['block'], row['code'], row['r9_sc1'] if write else '', row['match_sc1'] if write else '')
+        if VERBOSE: print(row['id'], row['block'], row['code'], row['r10_sc1'] if write else '', row['match_sc1'] if write else '')
     if write:
         buf = io.StringIO(); w = csv.DictWriter(buf, fieldnames=fields, lineterminator='\r\n'); w.writeheader(); w.writerows(rows)
         open(MATRIX, 'w', newline='', encoding='utf-8').write(buf.getvalue())
     n = len(rows); m1 = sum(r['match_sc1'] == 'Y' for r in rows); m48 = sum(r['match_sc48'] == 'Y' for r in rows)
-    print(f'{n} rows; match r9 at DIMSCALE 1: {m1}; at DIMSCALE 48: {m48}')
+    print(f'{n} rows; match r10 at DIMSCALE 1: {m1}; at DIMSCALE 48: {m48}')
     for r in rows:
         if r['match_sc1'] != 'Y' or r['match_sc48'] != 'Y':
             print(f"  mismatch {r['id']} {r['block']} code {r['code']}: expected '{r['expected']} | cuts {r['exp_cuts']} | flags {r['exp_flags']}'"
-                  f"; sc1 '{r['r9_sc1']}'; sc48 '{r['r9_sc48']}'")
+                  f"; sc1 '{r['r10_sc1']}'; sc48 '{r['r10_sc48']}'")
     if fails:
         print(f'FAILED {len(fails)}'); [print('  ' + f) for f in fails]; sys.exit(1)
     print('OK test_fitting_matrix')

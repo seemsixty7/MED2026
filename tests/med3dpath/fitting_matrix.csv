@@ -1,39 +1,41 @@
-id,block,source,instype,code,alt_codes,body,legs,expected,exp_cuts,exp_flags,clint_q,notes,r9_sc1,r9_sc48,match_sc1,match_sc48
-M01,1lbl,Fittings>Lbl; ribbon LB Fitting (CON_LB1); image menu LB Fitting,2,30,31 32,LB,+X +Y,BACK+Y COVER-Y RUN+X,2,0,Q1,flat plan turn; body along the symbol's long leg (+X),BACK+Y COVER-Y RUN+X | cuts 2 | flags 0,BACK+Y COVER-Y RUN+X | cuts 2 | flags 0,Y,Y
-M02,1lbr,Fittings>Lbr; ribbon LB Fitting (CON_LB2); image menu LB Fitting,2,30,31 32,LB,+X -Y,BACK-Y COVER+Y RUN+X,2,0,Q1,flat plan turn; body along the symbol's long leg (+X),BACK+X COVER-X RUN-Y | cuts 2 | flags 0,BACK+X COVER-X RUN-Y | cuts 2 | flags 0,N,N
-M03,1lbl,ribbon LL Fitting (CON_LL),2,33,34 35,LL,+X +Y,BRANCH+X COVER+Z RUN+Y,2,0,Q2,cover up puts the body on the symbol's short leg,BRANCH+X COVER+Z RUN+Y | cuts 2 | flags 0,BRANCH+X COVER+Z RUN+Y | cuts 2 | flags 0,Y,Y
-M04,1lbl,code changed to LR (MEDCHG),2,36,37 38,LR,+X +Y,BRANCH+Y COVER+Z RUN+X,2,0,,,BRANCH+Y COVER+Z RUN+X | cuts 2 | flags 0,BRANCH+Y COVER+Z RUN+X | cuts 2 | flags 0,Y,Y
-M05,1lbr,ribbon LR Fitting (CON_LR),2,36,37 38,LR,+X -Y,BRANCH+X COVER+Z RUN-Y,2,0,Q2,cover up puts the body on the symbol's short leg,BRANCH+X COVER+Z RUN-Y | cuts 2 | flags 0,BRANCH+X COVER+Z RUN-Y | cuts 2 | flags 0,Y,Y
-M06,1lbr,code changed to LL (MEDCHG),2,33,34 35,LL,+X -Y,BRANCH-Y COVER+Z RUN+X,2,0,,,BRANCH-Y COVER+Z RUN+X | cuts 2 | flags 0,BRANCH-Y COVER+Z RUN+X | cuts 2 | flags 0,Y,Y
-M07,1lbd,Fittings>Lb-down; ribbon LB Fitting Down; image menu Lb down,3,30,31 32,LB,+X DN,BACK-Z COVER+Z RUN+X,1,0,Q3,vertical leg = VERT_DATA on the fitting insert (not built),BACK-Z COVER+Z RUN+X | cuts 1 | flags 0,BACK-Z COVER+Z RUN+X | cuts 1 | flags 0,Y,Y
-M08,1lbu,Fittings>Lb-up; ribbon LB Fitting Up Solid; image menu Lb up,6,30,31 32,LB,+X UP,BACK+Z COVER-Z RUN+X,1,0,Q3 Q5,menu breaks the conduit back by 0.0527 x DIMSCALE,BACK+Z COVER-Z RUN+X | cuts 1 | flags 0,BACK+Z COVER-Z RUN+X | cuts 0 | flags 0,Y,N
-M09,1lbuo,ribbon LB Fitting Up Open (CON_LBOUPOPEN),6,30,31 32,LB,+X UP,BACK+Z COVER-Z RUN+X,1,0,Q3 Q5,menu breaks the conduit back by 0.046875 x DIMSCALE,BACK+Z COVER-Z RUN+X | cuts 1 | flags 0,BACK+Z COVER-Z RUN+X | cuts 0 | flags 0,Y,N
-M10,1lbd,code changed to LL (MEDCHG),3,33,34 35 36 37 38,LL,+X DN,*,1,1,Q6,an LL has no hub for the vertical leg,BRANCH-Y COVER+Z RUN+X | cuts 1 | flags 0,BRANCH-Y COVER+Z RUN+X | cuts 1 | flags 0,N,N
-M11,1tee,Fittings>Tee; ribbon Tee Fitting; image menu Tee,2,11,12 13,T,PASSY +X,BRANCH+X COVER+Z RUNS:Y,1,0,,main runs through along the symbol's Y; branch = +X,BRANCH+X COVER+Z RUNS:Y | cuts 1 | flags 0,BRANCH+X COVER+Z RUNS:Y | cuts 1 | flags 0,Y,Y
-M12,1tee,code changed to TB (MEDCHG),2,14,15 16,TB,PASSY +X,BACK+X COVER-X RUNS:Y,1,0,Q7,flat tee with a TB code,BACK-Z COVER+Z RUNS:Y | cuts 0 | flags 1,BACK-Z COVER+Z RUNS:Y | cuts 0 | flags 1,N,N
-M13,1teed,Fittings>T-down; ribbon Tee Fitting Down; image menu T-down,3,11,12 13,TB,PASSX DN,BACK-Z COVER+Z RUNS:X,0,0,Q4,T code on a tee-down symbol -> TB,BACK-Z COVER+Z RUNS:X | cuts 0 | flags 0,BACK-Z COVER+Z RUNS:X | cuts 0 | flags 0,Y,Y
-M14,1teed,code changed to TB (MEDCHG),3,14,15 16,TB,PASSX DN,BACK-Z COVER+Z RUNS:X,0,0,,,BACK-Z COVER+Z RUNS:X | cuts 0 | flags 0,BACK-Z COVER+Z RUNS:X | cuts 0 | flags 0,Y,Y
-M15,1teeu,Fittings>T-up; ribbon Tee Fitting Up Solid; image menu T-up,6,11,12 13,TB,PASSX UP,BACK+Z COVER-Z RUNS:X,2,0,Q4 Q5,menu breaks the conduit on both sides by 0.0527 x DIMSCALE,BACK+Z COVER-Z RUNS:X | cuts 2 | flags 0,BACK+Z COVER-Z RUNS:X | cuts 0 | flags 0,Y,N
-M16,1teeuo,ribbon Tee Fitting Up Open,6,11,12 13,TB,PASSX UP,BACK+Z COVER-Z RUNS:X,2,0,Q4 Q5,menu breaks the conduit on both sides by 0.046875 x DIMSCALE,BACK+Z COVER-Z RUNS:X | cuts 2 | flags 0,BACK+Z COVER-Z RUNS:X | cuts 0 | flags 0,Y,N
-M17,2teed,image menu T-down to Tee,3,11,12 13,TB,PASSY DN,BACK-Z COVER+Z RUNS:Y,2,0,Q8,Dwg\2teed.dwg is missing - the menu entry cannot insert it,BACK-Z COVER+Z RUNS:Y | cuts 2 | flags 0,BACK-Z COVER+Z RUNS:X | cuts 0 | flags 0,Y,N
-M18,1cee,Fittings>Cee; ribbon Cee; image menu 'C' Fitting,2,50,51 52,C,PASSX,COVER+Z RUNS:X,0,0,,conduit stays continuous through the body,COVER+Z RUNS:X | cuts 0 | flags 0,COVER+Z RUNS:X | cuts 0 | flags 0,Y,Y
-M19,1cee,same with the conduit drawn as two runs,2,50,51 52,C,-X +X,COVER+Z RUNS:X,2,0,,,COVER+Z RUNS:X | cuts 2 | flags 0,COVER+Z RUNS:X | cuts 2 | flags 0,Y,Y
-M20,1exs,Fittings>X; ribbon Cross Fitting; image menu X,2,80,81 82,X,PASSX PASSY,PH,*,1+,Q9,no X data - placeholder,PH | cuts 0 | flags 1,PH | cuts 0 | flags 1,Y,Y
-M21,1lbdl,Fittings>Lbd L; ribbon LBD Fitting; image menu LBD Fitting,2,39,,LBD,+X +Y,PH,*,1+,Q9,no form / data - placeholder,PH | cuts 2 | flags 2,PH | cuts 2 | flags 2,Y,Y
-M22,1lbdr,Fittings>Lbd R; ribbon LBD Fitting; image menu LBD Fitting,2,39,,LBD,+X -Y,PH,*,1+,Q9,no form / data - placeholder,PH | cuts 2 | flags 2,PH | cuts 2 | flags 2,Y,Y
-M23,1lby,Fittings>Lby; ribbon LBY Fitting; image menu Lby,2,41,,LBY,+X +Y,PH,*,1+,Q9,no form / data - placeholder,PH | cuts 2 | flags 2,PH | cuts 2 | flags 2,Y,Y
-M24,1gual,Fittings>Gual; image menu Gual Fitting,2,141,,GUAL,+X +Y,PH,*,1+,Q9,explosion proof - placeholder,PH | cuts 1 | flags 2,PH | cuts 0 | flags 1,Y,Y
-M25,1guat,Fittings>Guat; image menu Guat Fitting,2,142,,GUAT,+X +Y -Y,PH,*,1+,Q9,explosion proof - placeholder,PH | cuts 2 | flags 2,PH | cuts 0 | flags 1,Y,Y
-M26,1guax,Fittings>Guax; image menu Guax Fitting,2,143,,GUAX,PASSX PASSY,PH,*,1+,Q9,explosion proof - placeholder,PH | cuts 2 | flags 3,PH | cuts 0 | flags 1,Y,Y
-M27,1gualsid,Fittings>Gualside,2,141,,GUAL,+X,PH,*,1+,Q9,side view symbol - placeholder,PH | cuts 1 | flags 1,PH | cuts 0 | flags 1,Y,Y
-M28,1guatsid,Fittings>Guatside; image menu Guat side view,2,142,,GUAT,PASSX,PH,*,1+,Q9,side view symbol - placeholder,PH | cuts 2 | flags 1,PH | cuts 0 | flags 1,Y,Y
-M29,1bub,Fittings>Bub; image menu Pulling fitting,2,94,,BUB (Mogul),PASSX,PH,*,1+,Q9,Mogul - placeholder,PH | cuts 0 | flags 1,PH | cuts 0 | flags 1,Y,Y
-M30,1tee,code changed to TA (MEDCHG),2,17,18,TA,PASSY +X,PH,*,1+,Q9,no TA data - placeholder,PH | cuts 0 | flags 2,PH | cuts 0 | flags 2,Y,Y
-M31,1lbl,code changed to Mogul BLB (MEDCHG),2,40,,BLB (Mogul),+X +Y,PH,*,1+,Q9,Mogul - placeholder,PH | cuts 2 | flags 2,PH | cuts 2 | flags 2,Y,Y
-M32,1lbl,LB turn with only one leg drawn,2,30,31 32,LB,+X,BACK-Z COVER+Z RUN+X,1,0,,prints the flat plan turn note,BACK-Z COVER+Z RUN+X | cuts 1 | flags 0,BACK-Z COVER+Z RUN+X | cuts 1 | flags 0,Y,Y
-M33,1union,Fittings>Union; image menu Union,2,72,,-,PASSX,NM,0,0,,not a conduit body - counted not modelled,NM | cuts 0 | flags 0,NM | cuts 0 | flags 0,Y,Y
-M34,1seal,Fittings>Seal; image menu Seal,2,61,,-,PASSX,NM,0,0,,not a conduit body,NM | cuts 0 | flags 0,NM | cuts 0 | flags 0,Y,Y
-M35,1sealdr,Fittings>Seal-Drn; image menu Seal-Drain,2,64,,-,PASSX,NM,0,0,,not a conduit body,NM | cuts 0 | flags 0,NM | cuts 0 | flags 0,Y,Y
-M36,1cap,Fittings>Plug-Rec / Plug-SqH; image menu plugs,2,100,101,-,+X,NM,0,0,,not a conduit body,NM | cuts 0 | flags 0,NM | cuts 0 | flags 0,Y,Y
-M37,1hub,Fittings>Hub; image menu Hub,2,120,,-,+X,NM,0,0,,not a conduit body,NM | cuts 0 | flags 0,NM | cuts 0 | flags 0,Y,Y
-M38,1re,Fittings>Reducer; image menu Reducer,8,103,,-,PASSX,NM,0,0,,not a conduit body,NM | cuts 0 | flags 0,NM | cuts 0 | flags 0,Y,Y
+id,block,source,instype,code,alt_codes,body,legs,expected,exp_cuts,exp_flags,clint_q,notes,mirror,r10_sc1,r10_sc48,match_sc1,match_sc48
+M01,1lbl,Fittings>Lbl; ribbon LB Fitting (CON_LB1); image menu LB Fitting,2,30,31 32,LB,+X +Y,BACK+Y COVER-Y RUN+X,2,0,Q1 (decided),"flat plan turn; body along the symbol's long leg (+X), cover sideways away from the +Y leg",,BACK+Y COVER-Y RUN+X | cuts 2 | flags 0,BACK+Y COVER-Y RUN+X | cuts 2 | flags 0,Y,Y
+M02,1lbr,Fittings>Lbr; ribbon LB Fitting (CON_LB2); image menu LB Fitting,2,30,31 32,LB,+X -Y,BACK-Y COVER+Y RUN+X,2,0,Q1 (decided),"flat plan turn; body along the symbol's long leg (+X), cover sideways away from the -Y leg (fixed in r10)",,BACK-Y COVER+Y RUN+X | cuts 2 | flags 0,BACK-Y COVER+Y RUN+X | cuts 2 | flags 0,Y,Y
+M03,1lbl,ribbon LL Fitting (CON_LL),2,33,34 35,LL,+X +Y,BRANCH+X COVER+Z RUN+Y,2,0,Q2 (decided),"decided: code picks the body, cover always up - puts the body on the symbol's short leg",,BRANCH+X COVER+Z RUN+Y | cuts 2 | flags 0,BRANCH+X COVER+Z RUN+Y | cuts 2 | flags 0,Y,Y
+M04,1lbl,code changed to LR (MEDCHG),2,36,37 38,LR,+X +Y,BRANCH+Y COVER+Z RUN+X,2,0,,,,BRANCH+Y COVER+Z RUN+X | cuts 2 | flags 0,BRANCH+Y COVER+Z RUN+X | cuts 2 | flags 0,Y,Y
+M05,1lbr,ribbon LR Fitting (CON_LR),2,36,37 38,LR,+X -Y,BRANCH+X COVER+Z RUN-Y,2,0,Q2 (decided),"decided: code picks the body, cover always up - puts the body on the symbol's short leg",,BRANCH+X COVER+Z RUN-Y | cuts 2 | flags 0,BRANCH+X COVER+Z RUN-Y | cuts 2 | flags 0,Y,Y
+M06,1lbr,code changed to LL (MEDCHG),2,33,34 35,LL,+X -Y,BRANCH-Y COVER+Z RUN+X,2,0,,,,BRANCH-Y COVER+Z RUN+X | cuts 2 | flags 0,BRANCH-Y COVER+Z RUN+X | cuts 2 | flags 0,Y,Y
+M07,1lbd,Fittings>Lb-down; ribbon LB Fitting Down; image menu Lb down,3,30,31 32,LB,+X DN,BACK-Z COVER+Z RUN+X,1,0,Q3,vertical leg = VERT_DATA on the fitting insert (not built),,BACK-Z COVER+Z RUN+X | cuts 1 | flags 0,BACK-Z COVER+Z RUN+X | cuts 1 | flags 0,Y,Y
+M08,1lbu,Fittings>Lb-up; ribbon LB Fitting Up Solid; image menu Lb up,6,30,31 32,LB,+X UP,BACK+Z COVER-Z RUN+X,1,0,Q3 Q5,menu breaks the conduit back by 0.0527 x DIMSCALE,,BACK+Z COVER-Z RUN+X | cuts 1 | flags 0,BACK+Z COVER-Z RUN+X | cuts 0 | flags 0,Y,N
+M09,1lbuo,ribbon LB Fitting Up Open (CON_LBOUPOPEN),6,30,31 32,LB,+X UP,BACK+Z COVER-Z RUN+X,1,0,Q3 Q5,menu breaks the conduit back by 0.046875 x DIMSCALE,,BACK+Z COVER-Z RUN+X | cuts 1 | flags 0,BACK+Z COVER-Z RUN+X | cuts 0 | flags 0,Y,N
+M10,1lbd,code changed to LL (MEDCHG),3,33,34 35 36 37 38,LL,+X DN,*,1,1,Q6,an LL has no hub for the vertical leg,,BRANCH-Y COVER+Z RUN+X | cuts 1 | flags 0,BRANCH-Y COVER+Z RUN+X | cuts 1 | flags 0,N,N
+M11,1tee,Fittings>Tee; ribbon Tee Fitting; image menu Tee,2,11,12 13,T,PASSY +X,BRANCH+X COVER+Z RUNS:Y,1,0,,main runs through along the symbol's Y; branch = +X,,BRANCH+X COVER+Z RUNS:Y | cuts 1 | flags 0,BRANCH+X COVER+Z RUNS:Y | cuts 1 | flags 0,Y,Y
+M12,1tee,code changed to TB (MEDCHG),2,14,15 16,TB,PASSY +X,BACK+X COVER-X RUNS:Y,1,0,Q7,flat tee with a TB code,,BACK-Z COVER+Z RUNS:Y | cuts 0 | flags 1,BACK-Z COVER+Z RUNS:Y | cuts 0 | flags 1,N,N
+M13,1teed,Fittings>T-down; ribbon Tee Fitting Down; image menu T-down,3,11,12 13,TB,PASSX DN,BACK-Z COVER+Z RUNS:X,0,0,Q4,T code on a tee-down symbol -> TB,,BACK-Z COVER+Z RUNS:X | cuts 0 | flags 0,BACK-Z COVER+Z RUNS:X | cuts 0 | flags 0,Y,Y
+M14,1teed,code changed to TB (MEDCHG),3,14,15 16,TB,PASSX DN,BACK-Z COVER+Z RUNS:X,0,0,,,,BACK-Z COVER+Z RUNS:X | cuts 0 | flags 0,BACK-Z COVER+Z RUNS:X | cuts 0 | flags 0,Y,Y
+M15,1teeu,Fittings>T-up; ribbon Tee Fitting Up Solid; image menu T-up,6,11,12 13,TB,PASSX UP,BACK+Z COVER-Z RUNS:X,2,0,Q4 Q5,menu breaks the conduit on both sides by 0.0527 x DIMSCALE,,BACK+Z COVER-Z RUNS:X | cuts 2 | flags 0,BACK+Z COVER-Z RUNS:X | cuts 0 | flags 0,Y,N
+M16,1teeuo,ribbon Tee Fitting Up Open,6,11,12 13,TB,PASSX UP,BACK+Z COVER-Z RUNS:X,2,0,Q4 Q5,menu breaks the conduit on both sides by 0.046875 x DIMSCALE,,BACK+Z COVER-Z RUNS:X | cuts 2 | flags 0,BACK+Z COVER-Z RUNS:X | cuts 0 | flags 0,Y,N
+M17,2teed,image menu T-down to Tee,3,11,12 13,TB,PASSY DN,BACK-Z COVER+Z RUNS:Y,2,0,Q8,Dwg\2teed.dwg is missing - the menu entry cannot insert it,,BACK-Z COVER+Z RUNS:Y | cuts 2 | flags 0,BACK-Z COVER+Z RUNS:X | cuts 0 | flags 0,Y,N
+M18,1cee,Fittings>Cee; ribbon Cee; image menu 'C' Fitting,2,50,51 52,C,PASSX,COVER+Z RUNS:X,0,0,,conduit stays continuous through the body,,COVER+Z RUNS:X | cuts 0 | flags 0,COVER+Z RUNS:X | cuts 0 | flags 0,Y,Y
+M19,1cee,same with the conduit drawn as two runs,2,50,51 52,C,-X +X,COVER+Z RUNS:X,2,0,,,,COVER+Z RUNS:X | cuts 2 | flags 0,COVER+Z RUNS:X | cuts 2 | flags 0,Y,Y
+M20,1exs,Fittings>X; ribbon Cross Fitting; image menu X,2,80,81 82,X,PASSX PASSY,PH,*,1+,Q9,no X data - placeholder,,PH | cuts 0 | flags 1,PH | cuts 0 | flags 1,Y,Y
+M21,1lbdl,Fittings>Lbd L; ribbon LBD Fitting; image menu LBD Fitting,2,39,,LBD,+X +Y,PH,*,1+,Q9,no form / data - placeholder,,PH | cuts 2 | flags 2,PH | cuts 2 | flags 2,Y,Y
+M22,1lbdr,Fittings>Lbd R; ribbon LBD Fitting; image menu LBD Fitting,2,39,,LBD,+X -Y,PH,*,1+,Q9,no form / data - placeholder,,PH | cuts 2 | flags 2,PH | cuts 2 | flags 2,Y,Y
+M23,1lby,Fittings>Lby; ribbon LBY Fitting; image menu Lby,2,41,,LBY,+X +Y,PH,*,1+,Q9,no form / data - placeholder,,PH | cuts 2 | flags 2,PH | cuts 2 | flags 2,Y,Y
+M24,1gual,Fittings>Gual; image menu Gual Fitting,2,141,,GUAL,+X +Y,PH,*,1+,Q9,explosion proof - placeholder,,PH | cuts 1 | flags 2,PH | cuts 0 | flags 1,Y,Y
+M25,1guat,Fittings>Guat; image menu Guat Fitting,2,142,,GUAT,+X +Y -Y,PH,*,1+,Q9,explosion proof - placeholder,,PH | cuts 2 | flags 2,PH | cuts 0 | flags 1,Y,Y
+M26,1guax,Fittings>Guax; image menu Guax Fitting,2,143,,GUAX,PASSX PASSY,PH,*,1+,Q9,explosion proof - placeholder,,PH | cuts 2 | flags 3,PH | cuts 0 | flags 1,Y,Y
+M27,1gualsid,Fittings>Gualside,2,141,,GUAL,+X,PH,*,1+,Q9,side view symbol - placeholder,,PH | cuts 1 | flags 1,PH | cuts 0 | flags 1,Y,Y
+M28,1guatsid,Fittings>Guatside; image menu Guat side view,2,142,,GUAT,PASSX,PH,*,1+,Q9,side view symbol - placeholder,,PH | cuts 2 | flags 1,PH | cuts 0 | flags 1,Y,Y
+M29,1bub,Fittings>Bub; image menu Pulling fitting,2,94,,BUB (Mogul),PASSX,PH,*,1+,Q9,Mogul - placeholder,,PH | cuts 0 | flags 1,PH | cuts 0 | flags 1,Y,Y
+M30,1tee,code changed to TA (MEDCHG),2,17,18,TA,PASSY +X,PH,*,1+,Q9,no TA data - placeholder,,PH | cuts 0 | flags 2,PH | cuts 0 | flags 2,Y,Y
+M31,1lbl,code changed to Mogul BLB (MEDCHG),2,40,,BLB (Mogul),+X +Y,PH,*,1+,Q9,Mogul - placeholder,,PH | cuts 2 | flags 2,PH | cuts 2 | flags 2,Y,Y
+M32,1lbl,LB turn with only one leg drawn,2,30,31 32,LB,+X,BACK-Z COVER+Z RUN+X,1,0,,prints the flat plan turn note,,BACK-Z COVER+Z RUN+X | cuts 1 | flags 0,BACK-Z COVER+Z RUN+X | cuts 1 | flags 0,Y,Y
+M33,1union,Fittings>Union; image menu Union,2,72,,-,PASSX,NM,0,0,,not a conduit body - counted not modelled,,NM | cuts 0 | flags 0,NM | cuts 0 | flags 0,Y,Y
+M34,1seal,Fittings>Seal; image menu Seal,2,61,,-,PASSX,NM,0,0,,not a conduit body,,NM | cuts 0 | flags 0,NM | cuts 0 | flags 0,Y,Y
+M35,1sealdr,Fittings>Seal-Drn; image menu Seal-Drain,2,64,,-,PASSX,NM,0,0,,not a conduit body,,NM | cuts 0 | flags 0,NM | cuts 0 | flags 0,Y,Y
+M36,1cap,Fittings>Plug-Rec / Plug-SqH; image menu plugs,2,100,101,-,+X,NM,0,0,,not a conduit body,,NM | cuts 0 | flags 0,NM | cuts 0 | flags 0,Y,Y
+M37,1hub,Fittings>Hub; image menu Hub,2,120,,-,+X,NM,0,0,,not a conduit body,,NM | cuts 0 | flags 0,NM | cuts 0 | flags 0,Y,Y
+M38,1re,Fittings>Reducer; image menu Reducer,8,103,,-,PASSX,NM,0,0,,not a conduit body,,NM | cuts 0 | flags 0,NM | cuts 0 | flags 0,Y,Y
+M39,1lbl,"any LB/LL menu entry, then MIRROR (X scale -1)",2,30,31 32 33 34 35 36 37 38,none,-X +Y,MIRROR,0,1,decided,"mirrored symbol: no 3D body, conduit left as drawn, one MIRRORED FITTING flag + Skipped line",X,MIRROR | cuts 0 | flags 1,MIRROR | cuts 0 | flags 1,Y,Y
+M40,1tee,"any T menu entry, then MIRROR (Y scale -1)",2,11,12 13 14 15 16,none,PASSY +X,MIRROR,0,1,decided,"mirrored symbol: no 3D body, conduit left as drawn, one MIRRORED FITTING flag + Skipped line",Y,MIRROR | cuts 0 | flags 1,MIRROR | cuts 0 | flags 1,Y,Y

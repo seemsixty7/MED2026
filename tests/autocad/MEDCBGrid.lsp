@@ -7,7 +7,7 @@
 ;;; menu's own ifitt_ins (and dcon_ins + VERT_DATA for the up / down symbols).
 ;;; The conduit is cut back around each symbol by the medblck.dat break distances
 ;;; x DIMSCALE (_SC), as the menu's med_brk_out does. Each cell is labelled with the
-;;; row id, block, code, expected orientation and the r9 result. Then run MEDMAKE3D.
+;;; row id, block, code, expected orientation and the r10 result. Then run MEDMAKE3D.
 ;;;
 ;;; Load:  (load "<repo>/tests/autocad/MEDCBGrid.lsp")   then  MEDCBGRID
 ;;; Needs MED loaded (acad.lsp / MEDCore), a MED drawing set-up (DIMSCALE = _SC).
@@ -17,13 +17,25 @@
 ;;;     answers 36" (MED_CONDUIT distance + VERT_DATA written as the menu does).
 ;;;   - conduit breaks are made by shortening the drawn runs, not by BREAK.
 
-(setq *MEDCBGRID-VERSION* "2026-09-30 r1")
+(setq *MEDCBGRID-VERSION* "2026-09-30 r2")
 
 (defun mcbg-split (s d / r i)
   (while (setq i (vl-string-search d s))
     (setq r (cons (substr s 1 i) r) s (substr s (+ i 1 (strlen d)))))
   (reverse (cons s r)))
 
+;; one CSV line -> fields ("..." quoting with "" escapes, as Python's csv writes)
+(defun mcbg-csv-line (l / r cur i c q n)
+  (setq r nil cur "" i 1 q nil n (strlen l))
+  (while (<= i n)
+    (setq c (substr l i 1))
+    (cond
+      ((and q (= c "\"") (= (substr l (1+ i) 1) "\"")) (setq cur (strcat cur "\"") i (1+ i)))
+      ((= c "\"") (setq q (not q)))
+      ((and (not q) (= c ",")) (setq r (cons cur r) cur ""))
+      (T (setq cur (strcat cur c))))
+    (setq i (1+ i)))
+  (reverse (cons cur r)))
 (defun mcbg-csv ( / f p l hdr rows)
   (setq p (findfile "fitting_matrix.csv"))
   (if (and (not p) (= (type _MEDDIR) 'STR))
@@ -34,7 +46,7 @@
       (setq hdr (mapcar 'strcase (mcbg-split (vl-string-trim "\r\n" (read-line f)) ",")))
       (while (setq l (read-line f))
         (setq l (vl-string-trim "\r\n" l))
-        (if (/= l "") (setq rows (cons (mapcar 'cons hdr (mcbg-split l ",")) rows))))
+        (if (/= l "") (setq rows (cons (mapcar 'cons hdr (mcbg-csv-line l)) rows))))
       (close f)
       (reverse rows))))
 (defun mcbg-get (k row) (cdr (assoc k row)))
@@ -82,13 +94,15 @@
   (entmake (list '(0 . "TEXT") (cons 8 "MED_CBGRID") (cons 10 p) (cons 40 h) (cons 1 s) '(7 . "STANDARD"))))
 
 ;; the 2D symbol + fitting xdata the way C:MEDBlockInsert / ifitt_ins / dcon_ins do
-(defun mcbg-fitting (blk code instype o rotdeg cnds / path e ss)
+;; mir: "X" / "Y" = insert with that scale negative (a mirrored symbol, to show the flag)
+(defun mcbg-fitting (blk code instype o rotdeg cnds mir / path e ss)
   (setq path (if (= (type _MEDDWG) 'STR) (findfile (strcat _MEDDWG blk ".dwg"))))
   (if (not path) (setq path (findfile (strcat blk ".dwg"))))
   (if path
     (progn
       ;; file path only the first time (else AutoCAD asks to redefine the block)
-      (command "_.-INSERT" (if (tblsearch "BLOCK" blk) blk path) "_non" o _SC _SC rotdeg)
+      (command "_.-INSERT" (if (tblsearch "BLOCK" blk) blk path) "_non" o
+               (if (= mir "X") (- _SC) _SC) (if (= mir "Y") (- _SC) _SC) rotdeg)
       (setq e (entlast))
       (if cnds (progn (setq ss (ssadd)) (foreach c cnds (ssadd c ss))))
       (setq RL_SS ss RL_SS_DATA (if ss (retr_size_tag ss)) _FITTCODE code _TAGSUPRESS nil)
@@ -124,17 +138,18 @@
                 brk (mapcar '(lambda (d) (* d _SC)) (reverse (cdr (reverse (get_bl_data (mcbg-get "BLOCK" row)))))))
           (setq cnds (mcbg-legs (mcbg-get "LEGS" row) brk o (* pi (/ rotall 180.0)) len))
           (setq e (mcbg-fitting (mcbg-get "BLOCK" row) (atoi (mcbg-get "CODE" row)) (atoi (mcbg-get "INSTYPE" row))
-                                o rotall cnds))
+                                o rotall cnds (strcase (cond ((mcbg-get "MIRROR" row)) ("")))))
           (if e (setq cnt (1+ cnt)) (setq miss (1+ miss)))
           (mcbg-text (list (- (car o) (* 0.45 s)) (+ (cadr o) (* 0.45 s)) 0.0) (* 1.6 h)
                      (strcat (mcbg-get "ID" row) "  " (mcbg-get "BLOCK" row) "  code " (mcbg-get "CODE" row)
                              "  " (mcbg-get "BODY" row) "  legs " (mcbg-get "LEGS" row)
+                             (if (member (mcbg-get "MIRROR" row) '("X" "Y")) (strcat "  MIRRORED (" (mcbg-get "MIRROR" row) " scale -1)") "")
                              (if e "" "  - NOT PLACEABLE: block DWG missing")))
           (mcbg-text (list (- (car o) (* 0.45 s)) (- (cadr o) (* 0.40 s)) 0.0) h
                      (strcat "expected: " (mcbg-get "EXPECTED" row) " | cuts " (mcbg-get "EXP_CUTS" row)
                              " | flags " (mcbg-get "EXP_FLAGS" row)))
           (mcbg-text (list (- (car o) (* 0.45 s)) (- (cadr o) (* 0.45 s)) 0.0) h
-                     (strcat "r9 (DIMSCALE 1 / 48): " (mcbg-get "MATCH_SC1" row) " / " (mcbg-get "MATCH_SC48" row)
+                     (strcat "r10 (DIMSCALE 1 / 48): " (mcbg-get "MATCH_SC1" row) " / " (mcbg-get "MATCH_SC48" row)
                              (if (/= (mcbg-get "CLINT_Q" row) "") (strcat "   ask: " (mcbg-get "CLINT_Q" row)) "")))
           (setq i (1+ i))))))
   (setq get_con_dist old _TAGOFF oldtag _CSIZE oldcsz _FITTCODE oldfc RL_SS nil RL_SS_DATA nil)

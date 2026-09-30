@@ -54,7 +54,7 @@
 
 (princ "\rLoading MED3DFittings...")
 (vl-load-com)
-(setq *MEDCB-VERSION* "2026-09-30 r3 (feature/3dpath)")
+(setq *MEDCB-VERSION* "2026-09-30 r4 (feature/3dpath)")
 (setq *MEDCB-SHAPES* '("LB" "LR" "LL" "T" "TB" "C"))
 (setq *MEDCB-FORMS* '("F7" "F8" "M9"))
 (if (not *MEDCB-FORM*) (setq *MEDCB-FORM* "F7"))
@@ -562,6 +562,10 @@
 ;;;   matches more legs than the untilted body; an LB turn whose second leg is not
 ;;;   found keeps the back hub down and prints a note. LB down is unchanged.
 ;;;   The tilt is applied with Rotate3D about the rotated X axis (medcb-insert-block).
+;;; Mirrored 2D symbols (X scale x Y scale x extrusion Z < 0: MIRROR, negative scale)
+;;;   are not accommodated: no body, the conduit is left as drawn (no trim, no leg
+;;;   flag), one marker "MIRRORED FITTING - re-insert, do not mirror" on MED_3DFLAG,
+;;;   a Skipped line and the "Mirrored fittings" summary line.
 ;;; Unresolved (key without data: X, LBD, LBY, TA, Mogul, GUA..., no form, no row for
 ;;;   the size, other material): placeholder block on MED_3DFLAG + flag marker +
 ;;;   Skipped line (handle and reason). No size -> marker only.
@@ -724,18 +728,33 @@
         (setq i (1+ i)))))
   (reverse r))
 
+(defun medcb-mirrored-p (ed / sx sy n)
+  ;; plan mirror: X scale x Y scale x extrusion Z < 0 (MIRROR, negative scale, or an
+  ;; insert seen from below). A negative Z scale alone does not change the plan symbol.
+  (setq sx (cond ((cdr (assoc 41 ed))) (1.0)) sy (cond ((cdr (assoc 42 ed))) (1.0))
+        n (cond ((cdr (assoc 210 ed))) ('(0.0 0.0 1.0))))
+  (< (* sx sy (caddr n)) 0.0))
 ;; one MED_FITTING INSERT -> body alist; "NM" = not a conduit body; nil = no xdata
 (defun medcb-body-of (e runs / ed xd code sz res kp mat form shape blk flip note reason r
                             pt a rot geom hubs lg k best sc i h tl tbest)
   (setq ed (entget e) xd (xdataget e (medcb-app "FITTING")))
+  (if (and xd (numberp (setq code (nth 3 xd)))) (setq res (medcb-resolve-code (fix code))))
   (cond
     ((not xd) nil)
-    ((not (and (numberp (setq code (nth 3 xd))) (setq res (medcb-resolve-code (fix code))))) "NM")
+    ((not res) "NM")
+    ((progn
+       (setq kp (medcb-key-parse (car res)) mat (car kp) form (cadr kp) shape (caddr kp)
+             blk (strcase (cdr (assoc 2 ed)))
+             sz (if (numberp (nth 2 xd)) (float (nth 2 xd)) 0.0)
+             h (cdr (assoc 5 ed)))
+       (medcb-mirrored-p ed))
+      ;; mirrored 2D symbol: not accommodated - no body, no conduit trim; one flag + Skipped
+      (list (cons "HANDLE" h) (cons "ENT" e) (cons "CODE" (fix code)) (cons "KEY" (car res)) (cons "SRC" (cadr res))
+            (cons "FORM" form) (cons "SHAPE" shape) (cons "SIZE" sz) (cons "BLK2D" blk)
+            (cons "PT" (trans (cdr (assoc 10 ed)) e 0)) (cons "ROT" 0.0) (cons "FLIP" nil) (cons "TURN" 0) (cons "LEGS" 0)
+            (cons "HUBS" nil) (cons "MIRROR" T)
+            (cons "REASON" "mirrored 2D fitting block - re-insert it without mirroring") (cons "NOTE" nil)))
     (T
-      (setq kp (medcb-key-parse (car res)) mat (car kp) form (cadr kp) shape (caddr kp)
-            blk (strcase (cdr (assoc 2 ed)))
-            sz (if (numberp (nth 2 xd)) (float (nth 2 xd)) 0.0)
-            h (cdr (assoc 5 ed)))
       (if (and (= shape "T") (member blk (append *MEDCB-2D-TEEDOWN* *MEDCB-2D-TEEUP*)))
         (setq shape "TB" flip (if (member blk *MEDCB-2D-TEEUP*) T)))
       ;; LB up: turned over (back hub up, cover down)
@@ -761,16 +780,24 @@
       (setq rot (+ rot (medcb-2d-offset blk shape)) k 0)
       ;; snap: the 4 quarter turns about Z (first best wins, so a tie keeps the drawn
       ;; rotation); then an LB also tries its back hub tilted into the plan (+/-90 deg
-      ;; about its X axis), kept only if that matches more legs (flat plan corner)
+      ;; about its X axis), kept only if that matches more legs (flat plan corner).
+      ;; Tilted candidates go quarter turn first, both tilts per turn, so the body stays
+      ;; on the drawn +X leg (the symbol's long leg = the conduit picked) when it can.
       (if (and *MEDCB-SNAP* (car lg))
         (progn
-          (setq best -1 tbest flip)
-          (foreach tl (if (= shape "LB") (list flip (/ pi 2.0) (/ pi -2.0)) (list flip))
-            (setq i 0)
-            (repeat 4
-              (setq sc (medcb-score (medcb-wcs-hubs hubs (+ rot (* i (/ pi 2.0))) tl) (car lg)))
-              (if (> sc best) (setq best sc k i tbest tl))
-              (setq i (1+ i))))
+          (setq best -1 tbest flip i 0)
+          (repeat 4
+            (setq sc (medcb-score (medcb-wcs-hubs hubs (+ rot (* i (/ pi 2.0))) flip) (car lg)))
+            (if (> sc best) (setq best sc k i))
+            (setq i (1+ i)))
+          (if (= shape "LB")
+            (progn
+              (setq i 0)
+              (repeat 4
+                (foreach tl (list (/ pi 2.0) (/ pi -2.0))
+                  (setq sc (medcb-score (medcb-wcs-hubs hubs (+ rot (* i (/ pi 2.0))) tl) (car lg)))
+                  (if (> sc best) (setq best sc k i tbest tl)))
+                (setq i (1+ i)))))
           (setq rot (+ rot (* k (/ pi 2.0))) flip tbest)))
       (if (and (= shape "LB") (member blk *MEDCB-2D-TURN*) (not (numberp flip)))
         (setq note "LB used as a flat plan turn - second conduit leg not found, back hub modelled down"))
@@ -806,8 +833,9 @@
   (list (reverse bodies) nm))
 
 ;; record for the conduit planner (*MED3D-FITS*): (handle pt hubs); nil without a size
+;; mirrored fittings get none (the conduit is left as drawn)
 (defun medcb-fit-rec (b)
-  (if (> (medcb-get "SIZE" b) 0.0) (list (medcb-get "HANDLE" b) (medcb-get "PT" b) (medcb-get "HUBS" b))))
+  (if (and (> (medcb-get "SIZE" b) 0.0) (not (medcb-get "MIRROR" b))) (list (medcb-get "HANDLE" b) (medcb-get "PT" b) (medcb-get "HUBS" b))))
 
 ;; placeholder for any form / shape (unknown ones: box with run hubs)
 (defun medcb-ensure-ph (form shape sz / name)
@@ -820,12 +848,14 @@
         (T (medcb-ensure-block form shape sz))))
 
 ;; insert the bodies; returns (("REFS" ename ...) ("PLACED" . n) ("PH" . n) ("FLAGGED" . n)
-;;   ("SKIPPED" (handle "FITTING" reason) ...))
-(defun medcb-place-all (bodies / h pt reason res ref e refs placed ph flagged skipped)
-  (setq placed 0 ph 0 flagged 0)
+;;   ("MIRRORED" . n) ("SKIPPED" (handle "FITTING" reason) ...))
+(setq *MEDCB-MIRROR-FLAG* "MIRRORED FITTING - re-insert, do not mirror")
+(defun medcb-place-all (bodies / h pt reason res ref e refs placed ph flagged skipped mir)
+  (setq placed 0 ph 0 flagged 0 mir 0)
   (foreach b bodies
     (setq h (medcb-get "HANDLE" b) pt (medcb-get "PT" b) reason (medcb-get "REASON" b)
-          res (medcb-ensure-body (medcb-get "FORM" b) (medcb-get "SHAPE" b) (medcb-get "SIZE" b) reason)
+          res (if (not (medcb-get "MIRROR" b))
+                (medcb-ensure-body (medcb-get "FORM" b) (medcb-get "SHAPE" b) (medcb-get "SIZE" b) reason))
           ref (if res (medcb-insert-block res pt (medcb-get "ROT" b) (medcb-get "FLIP" b))))
     (if (medcb-get "NOTE" b)
       (princ (strcat "\nMED3D note: fitting " h " (" (medcb-get "KEY" b) "): " (medcb-get "NOTE" b) ".")))
@@ -833,8 +863,16 @@
       (progn
         (setq e (vlax-vla-object->ename ref) refs (cons e refs))
         (if MEDStamp3DFromBom (vl-catch-all-apply 'MEDStamp3DFromBom (list e (medcb-get "ENT" b) "FITTING" nil)))))
-    (if (and ref (not reason))
-      (setq placed (1+ placed))
+    (cond
+     ((medcb-get "MIRROR" b)
+      (setq mir (1+ mir) flagged (1+ flagged)
+            skipped (cons (list h "FITTING" (strcat (medcb-get "KEY" b) " on " (medcb-get "BLK2D" b) ": " reason)) skipped))
+      (princ (strcat "\nMED3D FLAG: fitting " h " (" (medcb-get "BLK2D" b) ") is mirrored - no 3D body; re-insert it without mirroring."))
+      (if med3d-flag-at
+        (med3d-flag-at pt (max 1.0 (* 2.0 (medcb-get "SIZE" b))) (strcat *MEDCB-MIRROR-FLAG* " (" h ")"))))
+     ((and ref (not reason))
+      (setq placed (1+ placed)))
+     (T
       (progn
         (if ref (setq ph (1+ ph)))
         (if (not reason) (setq reason "block could not be created / inserted"))
@@ -844,9 +882,9 @@
                             skipped))
         (princ (strcat "\nMED3D FLAG: fitting " h " " (medcb-get "KEY" b) ": " reason "."))
         (if med3d-flag-at
-          (med3d-flag-at pt (max 1.0 (* 2.0 (medcb-get "SIZE" b))) (strcat "3D FLAG " h " " (medcb-get "KEY" b)))))))
+          (med3d-flag-at pt (max 1.0 (* 2.0 (medcb-get "SIZE" b))) (strcat "3D FLAG " h " " (medcb-get "KEY" b))))))))
   (list (cons "REFS" (reverse refs)) (cons "PLACED" placed) (cons "PH" ph) (cons "FLAGGED" flagged)
-        (cons "SKIPPED" (reverse skipped))))
+        (cons "MIRRORED" mir) (cons "SKIPPED" (reverse skipped))))
 
 (princ (strcat "Done.\nMED3DFittings " *MEDCB-VERSION* " loaded: MEDCBINS MEDCBTEST MEDCBDATA MEDCBVER"))
 (princ)

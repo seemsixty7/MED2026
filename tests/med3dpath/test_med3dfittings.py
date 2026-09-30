@@ -44,8 +44,8 @@ DIRS = {'C': {'RUN': [1, 0, 0], 'RUN2': [-1, 0, 0]},
         'T': {'RUN': [1, 0, 0], 'RUN2': [-1, 0, 0], 'BRANCH': [0, 1, 0]},
         'TB': {'RUN': [1, 0, 0], 'RUN2': [-1, 0, 0], 'BACK': [0, 0, -1]},
         'LB': {'RUN': [1, 0, 0], 'BACK': [0, 0, -1]},
-        'LL': {'RUN': [1, 0, 0], 'BRANCH': [0, -1, 0]},
-        'LR': {'RUN': [1, 0, 0], 'BRANCH': [0, 1, 0]}}
+        'LL': {'RUN': [1, 0, 0], 'BRANCH': [0, 1, 0]},      # r5: LL side hub +Y, LR -Y (Clint)
+        'LR': {'RUN': [1, 0, 0], 'BRANCH': [0, -1, 0]}}
 clamped = []
 for rp in rows_py:
     f, sh, sz = rp['Form'], rp['Shape'], float(rp['TradeSizeDec'])
@@ -121,7 +121,7 @@ mk.invoke('BLOCKS', 'Add', [0.0, 0.0, 0.0], 'MED_CB_RGD_F7_T_1-00')
 res3 = to_py(call(L, 'medcb-ensure-block', 'F7', 'T', 1.0))
 check('existing-left-alone', res3[1] == 'EXISTS' and mk.blocks['MED_CB_RGD_F7_T_1-00'].ents == [], str(res3))
 # LR / LL / T branch cylinder along Y on the right side
-for sh, sign in (('LR', 1), ('LL', -1), ('T', 1)):
+for sh, sign in (('LR', -1), ('LL', 1), ('T', 1)):
     res = to_py(call(L, 'medcb-ensure-block', 'F8', sh, 2.0))
     bb = mk.blocks[res[0]]; body = [s for s in live(bb) if s.props.get('Color') == 0][0]
     ycyl = [p for p in body.parts if p[0] == 'CYL' and abs(p[1][1] - p[2][1]) > 1e-9]
@@ -150,7 +150,14 @@ check('insert', ins and ins[1] == 'MED_CB_RGD_F8_LB_1-50' and mk.inserts[-1].pro
 call(L, 'medcb-insert', 'F8', 'TB', 3.0, [0.0, 0.0, 0.0], 0.0)
 check('insert-ph-layer', mk.inserts[-1].props['Layer'] == 'MED_3DFLAG')
 hubs = to_py(call(L, 'medcb-hubs', 'F7', 'LL', 1.0))
-check('hubs-api', [h[0] for h in hubs] == ['RUN', 'BRANCH'] and hubs[1][2] == [0.0, -1.0, 0.0], str(hubs))
+check('hubs-api', [h[0] for h in hubs] == ['RUN', 'BRANCH'] and hubs[1][2] == [0.0, 1.0, 0.0], str(hubs))
+# an LL / LR block made before r5 (no geometry tag) is renamed out of the way and rebuilt
+old = mk.invoke('BLOCKS', 'Add', [0.0, 0.0, 0.0], 'MED_CB_RGD_F7_LR_1-00')
+res = to_py(call(L, 'medcb-ensure-block', 'F7', 'LR', 1.0))
+check('stale-ll-lr', res == ['MED_CB_RGD_F7_LR_1-00', 'CREATED'] and old.props['Name'] == 'MED_CB_RGD_F7_LR_1-00_PRE_R5'
+      and 'MED_CB_RGD_F7_LR_1-00_PRE_R5' in mk.blocks and mk.blocks['MED_CB_RGD_F7_LR_1-00'] is not old
+      and mk.blocks['MED_CB_RGD_F7_LR_1-00'].props.get('Comments') == 'MEDCB geom r5', f'{res} {old.props}')
+check('fresh-ll-lr-kept', to_py(call(L, 'medcb-ensure-block', 'F7', 'LR', 1.0))[1] == 'EXISTS')
 
 # ------------------------------------------------------- DB rows win over CSV
 import tempfile

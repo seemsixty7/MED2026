@@ -56,7 +56,7 @@
 
 (princ "\rLoading MED3DPath...")
 (vl-load-com)
-(setq *MED3D-VERSION* "2026-09-30 r10 (feature/3dpath)")
+(setq *MED3D-VERSION* "2026-09-30 r11 (feature/3dpath)")
 
 ;;; ------------------------------------------------------------------ settings
 (if (not *MED3D-BEND-FACTOR*) (setq *MED3D-BEND-FACTOR* 5.0))  ; conduit R = factor x OD
@@ -334,22 +334,27 @@
   (list stats (reverse avails)))
 
 ;;; ------------------------------------------------------------ conduit bodies
-;; body of *MED3D-FITS* at WCS point p (XY within *MED3D-FIT-TOL*, Z within max(tol, od))
+;; body of *MED3D-FITS* at WCS point p: XY within the body's search radius (4th item:
+;; medblck.dat break x insert scale + *MED3D-FIT-TOL*, else *MED3D-FIT-TOL*), Z within
+;; max(*MED3D-FIT-TOL*, od)
 (defun med3d-fit-at (p od / tol r)
-  (setq tol (max *MED3D-FIT-TOL* 1e-6))
   (foreach f *MED3D-FITS*
+    (setq tol (max (if (numberp (nth 3 f)) (nth 3 f) *MED3D-FIT-TOL*) 1e-6))
     (if (and (not r)
              (<= (distance (list (car p) (cadr p)) (list (car (cadr f)) (cadr (cadr f)))) tol)
-             (<= (abs (- (caddr p) (caddr (cadr f)))) (max tol od)))
+             (<= (abs (- (caddr p) (caddr (cadr f)))) (max *MED3D-FIT-TOL* od)))
       (setq r f)))
   r)
-;; cut-back along leg u (unit, pointing away from the body): (distance . T) to the
-;; face of the hub pointing along u (within *MED3D-FIT-ANG*), (0.0 . nil) if none
-(defun med3d-fit-trim (f u / best r d)
+;; cut-back along leg u (unit, pointing away from the body) for the run end / vertex p:
+;; (distance . T) from p to the face of the hub pointing along u (within
+;; *MED3D-FIT-ANG*); negative = the run stops short of the face (menu break) and is
+;; extended to it. (0.0 . nil) if no hub points along u.
+(defun med3d-fit-trim (f u p / best r d off)
   (setq best (cos (/ (* pi *MED3D-FIT-ANG*) 180.0)))
   (foreach h (caddr f)
     (if (>= (setq d (med3d-dot (caddr h) u)) best) (setq best d r h)))
-  (if r (cons (max 0.0 (med3d-dot (cadr r) u)) T) (cons 0.0 nil)))
+  (setq off (if p (med3d-dot (list (- (car p) (car (cadr f))) (- (cadr p) (cadr (cadr f))) 0.0) u) 0.0))
+  (if r (cons (- (max 0.0 (med3d-dot (cadr r) u)) off) T) (cons 0.0 nil)))
 ;; joints at a body become ("F" ...): (V th kin kout "F" 0.0 vidx d1 d2 cut-in cut-out handle).
 ;; Returns (joints (cut-at-start cut-at-end) fitflags hits); fitflags = ((point handle vidx) ...)
 (defun med3d-fit-joints (segs joints closed od / out flags hits f s r ci co bad n p cs ce)
@@ -359,9 +364,9 @@
       (progn
         (setq ci 0.0 co 0.0 bad nil hits (cons (car f) hits))
         (if (= (car (nth (nth 2 j) segs)) "L")
-          (setq r (med3d-fit-trim f (med3d-vx (nth 7 j) -1.0)) ci (car r) bad (not (cdr r))))
+          (setq r (med3d-fit-trim f (med3d-vx (nth 7 j) -1.0) (nth 0 j)) ci (car r) bad (not (cdr r))))
         (if (= (car (nth (nth 3 j) segs)) "L")
-          (setq r (med3d-fit-trim f (nth 8 j)) co (car r) bad (or bad (not (cdr r)))))
+          (setq r (med3d-fit-trim f (nth 8 j) (nth 0 j)) co (car r) bad (or bad (not (cdr r)))))
         (if bad (setq flags (cons (list (nth 0 j) (car f) (nth 6 j)) flags)))
         (setq out (cons (list (nth 0 j) (nth 1 j) (nth 2 j) (nth 3 j) "F" 0.0 (nth 6 j) (nth 7 j) (nth 8 j)
                               ci co (car f))
@@ -372,12 +377,12 @@
       (setq n (length segs) s (car segs) p (nth 1 s))
       (if (and (= (car s) "L") (setq f (med3d-fit-at p od)))
         (progn
-          (setq r (med3d-fit-trim f (med3d-seg-tin s)) cs (car r) hits (cons (car f) hits))
+          (setq r (med3d-fit-trim f (med3d-seg-tin s) p) cs (car r) hits (cons (car f) hits))
           (if (not (cdr r)) (setq flags (cons (list p (car f) (nth 3 s)) flags)))))
       (setq s (nth (1- n) segs) p (nth 2 s))
       (if (and (= (car s) "L") (setq f (med3d-fit-at p od)))
         (progn
-          (setq r (med3d-fit-trim f (med3d-vx (med3d-seg-tout s) -1.0)) ce (car r) hits (cons (car f) hits))
+          (setq r (med3d-fit-trim f (med3d-vx (med3d-seg-tout s) -1.0) p) ce (car r) hits (cons (car f) hits))
           (if (not (cdr r)) (setq flags (cons (list p (car f) (nth 4 s)) flags)))))))
   (list (reverse out) (list cs ce) (reverse flags) (reverse hits)))
 ;; segment lengths minus the body cut-backs (so bends next to a body still fit)
@@ -1270,7 +1275,9 @@
             (itoa (if con (med3d-get "RUNS" con) 0)) " run(s)"))
   (med3d-summary-line "Conduit bodies: " (if cb (med3d-get "PLACED" cb) 0)
     (strcat "block(s), " (itoa (if cb (med3d-get "PH" cb) 0)) " placeholder(s), "
-            (itoa (if (cadr bodies) (cadr bodies) 0)) " fitting(s) not modelled"))
+            (itoa (if (cadr bodies) (cadr bodies) 0)) " fitting(s) not modelled"
+            (if (and cb (numberp (med3d-get "VERT" cb)) (> (med3d-get "VERT" cb) 0))
+              (strcat ", " (itoa (med3d-get "VERT" cb)) " vertical conduit leg(s)") "")))
   (if (and cb (numberp (med3d-get "MIRRORED" cb)) (> (med3d-get "MIRRORED" cb) 0))
     (med3d-summary-line "Mirrored fittings: " (med3d-get "MIRRORED" cb) "(bad practice - re-insert without mirroring)"))
   (med3d-summary-line "Cable         : " (length (med3d-get "SOLIDS" cab))

@@ -113,14 +113,15 @@ check('one-select', len(mk.queries) == 1 and 'ITEMKEY2' in mk.queries[0], str(mk
 # --------------------------------------- LL at a square corner (1lbl, code 33)
 L, mk, ents, markers = world()
 run = conduit(ents, [(0, 0), (60, 0), (60, 40), (100, 40)], elev=12.0)
-ll = fitting(ents, '1lbl', (60, 0, 0), 90, 33)                   # 2D +X north, +90 local = west leg
+ll = fitting(ents, '1lbl', (60, 0, 0), 90, 33)                   # 2D +X north (long leg), local +Y = west leg
 res = call(L, 'medcb-collect')
 bodies, nm = res[0], res[1]
 b = body(bodies, ll)
 check('ll-found', b is not None and nm == 0, str(to_py(res)))
 check('ll-shape', get(b, 'SHAPE') == 'LL' and get(b, 'FORM') == 'F7' and get(b, 'SRC') == 'ITEMKEY2')
 check('ll-z', closev(get(b, 'PT'), [60, 0, 12]), f'conduit elevation wins: {get(b, "PT")}')
-check('ll-rot', abs(get(b, 'ROT') - math.pi) < 1e-9 and get(b, 'TURN') == 0 and get(b, 'LEGS') == 2,
+# r5: LL body along the symbol's long leg (north), side hub (+Y) west, cover up
+check('ll-rot', abs(get(b, 'ROT') - math.pi / 2) < 1e-9 and get(b, 'TURN') == 0 and get(b, 'LEGS') == 2 and not get(b, 'FLIP'),
       f'rot {get(b, "ROT")} turn {get(b, "TURN")} legs {get(b, "LEGS")}')
 g = call(L, 'medcb-geom-for', 'F7', 'LL', 1.0); W = get(g, 'W')
 runf, brf = hub(get(g, 'HUBS'), 'RUN')[1], hub(get(g, 'HUBS'), 'BRANCH')[1]
@@ -131,8 +132,8 @@ check('ll-corner', cs[0]['STATUS'] == 'FITTING' and cs[0]['FITTING'] == ll.h and
       str([(c['STATUS'], c.get('FITTING')) for c in cs]))
 pcs = to_py(get(pl, 'PIECES'))
 check('ll-no-sphere', all(p[0] != 'S' for p in pcs) and get(pl, 'GAPS') and not get(pl, 'FITFLAGS'), str(pcs))
-check('ll-cut-west', closev(pcs[0][2], [60 - runf[0], 0, 12]), f'{pcs[0]} vs run face {runf}')
-check('ll-cut-north', closev(pcs[1][1], [60, abs(brf[1]), 12]), f'{pcs[1]} vs branch face {brf}')
+check('ll-cut-west', closev(pcs[0][2], [60 - abs(brf[1]), 0, 12]), f'{pcs[0]} vs branch face {brf}')
+check('ll-cut-north', closev(pcs[1][1], [60, runf[0], 12]), f'{pcs[1]} vs run face {runf}')
 check('ll-next-bend', pcs[2][0] == 'A' and pcs[1][2][1] < pcs[2][1][1] + 1e-9, str(pcs[1:3]))
 pc = plan_run(L, ents, run, od=0.5, kind='CABLE')
 check('cable-unaffected', all(dict((car(c), cdr(c)) for c in cc)['STATUS'] != 'FITTING' for cc in get(pc, 'CORNERS')))
@@ -142,7 +143,7 @@ check('no-fits-unchanged', not get(pn, 'GAPS') and get(pn, 'ENDTRIM') is None
       and [dict((car(c), cdr(c)) for c in cc)['STATUS'] for cc in get(pn, 'CORNERS')] == ['FITTED', 'FITTED'])
 pl_res = to_py(call(L, 'medcb-place-all', bodies))
 ins = mk.inserts[-1].props
-check('ll-insert', ins['Name'] == 'MED_CB_RGD_F7_LL_1-00' and closev(ins['Pt'], [60, 0, 12]) and abs(ins['Rot'] - math.pi) < 1e-9
+check('ll-insert', ins['Name'] == 'MED_CB_RGD_F7_LL_1-00' and closev(ins['Pt'], [60, 0, 12]) and abs(ins['Rot'] - math.pi / 2) < 1e-9
       and ins['Layer'] == 'MED_3DCONDUIT' and 'Rot3D' not in ins, str(ins))
 check('ll-place-res', get(call(L, 'medcb-place-all', []), 'PLACED') == 0)
 
@@ -221,19 +222,22 @@ cp = fitting(ents, '1cplg', (0, 0, 0), 0, 8, scale=(-1.0, 1.0, 1.0))
 res = call(L, 'medcb-collect')
 check('mirror-nm', not res[0] and res[1] == 1, str(to_py(res)))
 
-# the same LB turn with only one leg drawn: back hub stays down, note printed
+# the same LB turn with only one leg drawn (r5): the symbol says where the other leg
+# is, so the LB still lies on its side - back hub toward the symbol's short leg, no note
 L, mk, ents, markers = world()
 conduit(ents, [(0, 0), (60, 0)], elev=0.0)
 lb = fitting(ents, '1lbl', (60, 0, 0), 90, 30)
 b = body(call(L, 'medcb-collect')[0], lb)
-check('lb-turn-1leg', get(b, 'FLIP') is None and 'flat plan turn' in (get(b, 'NOTE') or ''), f'{get(b, "FLIP")} {get(b, "NOTE")}')
-# snap off: drawn rotation, no tilt
+hb = dict((h[0], h[2]) for h in to_py(get(b, 'HUBS')))
+check('lb-turn-1leg', near(get(b, 'FLIP'), math.pi / 2) and get(b, 'NOTE') is None and closev(hb['BACK'], [-1.0, 0.0, 0.0])
+      and closev(hb['RUN'], [0.0, 1.0, 0.0]), f'{get(b, "FLIP")} {get(b, "NOTE")} {hb}')
+# snap off: drawn rotation, the symbol's tilt
 L, mk, ents, markers = world()
 conduit(ents, [(0, 0), (60, 0), (60, 40)], elev=0.0)
 lb = fitting(ents, '1lbl', (60, 0, 0), 90, 30)
 L.g['*MEDCB-SNAP*'] = None
 b = body(call(L, 'medcb-collect')[0], lb)
-check('lb-turn-nosnap', get(b, 'FLIP') is None and near(get(b, 'ROT'), math.pi / 2), f'{get(b, "FLIP")} {get(b, "ROT")}')
+check('lb-turn-nosnap', near(get(b, 'FLIP'), math.pi / 2) and near(get(b, 'ROT'), math.pi / 2), f'{get(b, "FLIP")} {get(b, "ROT")}')
 
 # ----------------------------------------- tee: pass-through run + branch end
 L, mk, ents, markers = world()
@@ -298,7 +302,11 @@ out = call(L, 'medcb-place-all', bodies)
 names = [i.props['Name'] for i in mk.inserts]
 check('place-names', 'MED_CB_RGD_F7_TB_1-00' in names and 'MED_CB_RGD_F7_X_1-00_PH' in names
       and 'MED_CB_RGD_NA_LBD_1-00_PH' in names and 'MED_CB_RGD_F7_TB_4-00_PH' in names, str(names))
-flipped = [i for i in mk.inserts if 'Rot3D' in i.props]
+flipped = [i for i in mk.inserts if 'Rot3D' in i.props and near(i.props['Rot3D'][0][2], math.pi)]
+tilted = [i for i in mk.inserts if 'Rot3D' in i.props and not near(i.props['Rot3D'][0][2], math.pi)]
+# r5: the LBD placeholder on 1lbdl lies on its side like an LB on 1lbl (+90 deg about X)
+check('place-lbd-side', len(tilted) == 1 and tilted[0].props['Name'] == 'MED_CB_RGD_NA_LBD_1-00_PH'
+      and near(tilted[0].props['Rot3D'][0][2], math.pi / 2), str([i.props for i in tilted]))
 check('place-flip', len(flipped) == 3 and all(closev(sub(i.props['Rot3D'][0][1], i.props['Rot3D'][0][0]), [math.cos(i.props['Rot']), math.sin(i.props['Rot']), 0])
                                                and near(i.props['Rot3D'][0][2], math.pi) for i in flipped), str([i.props for i in flipped]))
 ph = [i for i in mk.inserts if i.props['Name'].endswith('_PH')]
@@ -318,6 +326,50 @@ conduit(ents, [(0, 0), (60, 0), (60, 40)])
 e = fitting(ents, '1lbr', (60, 0, 0), 0, 36)
 b = body(call(L, 'medcb-collect')[0], e)
 check('csv-body', b and get(b, 'SHAPE') == 'LR' and get(b, 'SRC') == 'CSV', str(to_py(b)))
+
+# ------------------------------- r5: vertical conduit from the fitting's xdata; Q5 search
+# LB up (1lbu) at DIMSCALE 48: the menu left the conduit 0.0527 x 48 = 2.53" short
+L, mk, ents, markers = world()
+L.g['GET_BL_DATA'] = lambda name: [0.052734375] * 4 + [0]
+run = conduit(ents, [(-40, 0), (-0.052734375 * 48, 0)], elev=10.0)
+lb = fitting(ents, '1lbu', (0, 0, 0), 180, 30, scale=(48.0, 48.0, 48.0))
+lb.xdata['MED_CONDUIT'] = ['MED_CONDUIT', 'NONE', 1.0, 1, 36.0, 'F']
+lb.xdata['VERT_DATA'] = ['VERT_DATA', 0.0, 0.0, 1, 0.0]
+bodies = call(L, 'medcb-collect')[0]; b = body(bodies, lb)
+hb = dict((h[0], (h[1], h[2])) for h in to_py(get(b, 'HUBS')))
+check('q5-found', get(b, 'LEGS') == 1 and closev(get(b, 'PT'), [0, 0, 10]) and near(get(b, 'TOL'), 0.25 + 48 * 0.052734375),
+      f'{get(b, "LEGS")} {get(b, "PT")} {get(b, "TOL")}')
+check('q5-lb-up', closev(hb['BACK'][1], [0, 0, 1]) and closev(hb['RUN'][1], [-1, 0, 0]), str(hb))
+L.g['*MED3D-FITS*'] = [call(L, 'medcb-fit-rec', x) for x in bodies]
+pl = plan_run(L, ents, run)
+pcs = to_py(get(pl, 'PIECES')); et = to_py(get(pl, 'ENDTRIM'))
+check('q5-trim-to-face', closev(pcs[-1][2], [hb['RUN'][0][0], 0, 10]) and not get(pl, 'FITFLAGS'), f'{et} {pcs}')
+n0 = len(mk.ms_solids); pr = call(L, 'medcb-place-all', bodies)
+vs = mk.ms_solids[n0:]
+check('vert-leg', len(vs) == 1 and get(pr, 'VERT') == 1 and vs[0].props.get('Layer') == 'MED_3DCONDUIT', str(to_py(pr)))
+if vs:
+    c = vs[0].parts[0]
+    check('vert-leg-span', near(c[1][2], 10 + hb['BACK'][0][2]) and near(c[2][2], 46.0) and near(c[1][0], 0) and near(c[1][1], 0),
+          f'{c} back face {hb["BACK"][0]}')
+# break wider than the hub: the run end is extended back to the face (negative trim)
+r = to_py(call(L, 'med3d-fit-trim', ['H', [0.0, 0.0, 0.0], [['RUN', [2.0, 0.0, 0.0], [1.0, 0.0, 0.0]]]], [1.0, 0.0, 0.0], [3.0, 0.0, 0.0]))
+check('q5-extend', near(r[0], -1.0) and r[1] is True, str(r))
+# down, no hub pointing down (a C code on the LB-down symbol): built from the insertion point + flagged
+L, mk, ents, markers = world()
+run = conduit(ents, [(0, 0), (40, 0)], elev=0.0)
+c = fitting(ents, '1lbd', (0, 0, 0), 0, 50)
+c.xdata['MED_CONDUIT'] = ['MED_CONDUIT', 'NONE', 1.0, 1, 24.0, 'F']
+c.xdata['VERT_DATA'] = ['VERT_DATA', 0.0, 0.0, -1, 0.0]
+bodies = call(L, 'medcb-collect')[0]
+pr = call(L, 'medcb-place-all', bodies)
+check('vert-no-hub', len(mk.ms_solids) == 1 and near(mk.ms_solids[0].parts[0][1][2], -24.0) and near(mk.ms_solids[0].parts[0][2][2], 0.0)
+      and get(pr, 'FLAGGED') == 1 and any('vertical conduit' in m[1] for m in markers), f'{to_py(pr)} {markers}')
+# TA (code 17) is modelled as a T
+L, mk, ents, markers = world()
+conduit(ents, [(0, -40), (0, 40)]); conduit(ents, [(0, 0), (40, 0)])
+t = fitting(ents, '1tee', (0, 0, 0), 0, 17)
+b = body(call(L, 'medcb-collect')[0], t)
+check('ta-as-t', get(b, 'SHAPE') == 'T' and not get(b, 'REASON') and 'TA modelled as a T' in (get(b, 'NOTE') or ''), str(to_py(b)))
 
 if fails:
     print(f'FAILED {len(fails)}'); [print('  ' + f) for f in fails]; sys.exit(1)

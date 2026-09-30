@@ -7,7 +7,7 @@
 ;;; menu's own ifitt_ins (and dcon_ins + VERT_DATA for the up / down symbols).
 ;;; The conduit is cut back around each symbol by the medblck.dat break distances
 ;;; x DIMSCALE (_SC), as the menu's med_brk_out does. Each cell is labelled with the
-;;; row id, block, code, expected orientation and the r10 result. Then run MEDMAKE3D.
+;;; row id, block, code, expected orientation and the current result. Then run MEDMAKE3D.
 ;;;
 ;;; Load:  (load "<repo>/tests/autocad/MEDCBGrid.lsp")   then  MEDCBGRID
 ;;; Needs MED loaded (acad.lsp / MEDCore). Scale: USERR1 / DIMSCALE as MED SETUP sets
@@ -20,7 +20,7 @@
 ;;;     answers 36" (MED_CONDUIT distance + VERT_DATA written as the menu does).
 ;;;   - conduit breaks are made by shortening the drawn runs, not by BREAK.
 
-(setq *MEDCBGRID-VERSION* "2026-09-30 r3")
+(setq *MEDCBGRID-VERSION* "2026-09-30 r4")
 
 ;; drawing scale the way MED SETUP / MEDVariables keep it: USERR1 if set, else
 ;; DIMSCALE. 1 (or 0) = not set up: ask, default 48, and set _SC / DIMSCALE /
@@ -183,9 +183,9 @@
                      (strcat "expected: " (mcbg-get "EXPECTED" row) " | cuts " (mcbg-get "EXP_CUTS" row)
                              " | flags " (mcbg-get "EXP_FLAGS" row)))
           (mcbg-text (list (- (car o) (* 0.45 s)) (- (cadr o) (* 0.45 s)) 0.0) h
-                     (strcat (cond ((equal sc 48.0 1e-9) (strcat "r10 at DIMSCALE 48: " (mcbg-get "MATCH_SC48" row)))
-                                   ((equal sc 1.0 1e-9) (strcat "r10 at DIMSCALE 1: " (mcbg-get "MATCH_SC1" row)))
-                                   (T (strcat "r10 (DIMSCALE 1 / 48): " (mcbg-get "MATCH_SC1" row) " / " (mcbg-get "MATCH_SC48" row))))
+                     (strcat (cond ((equal sc 48.0 1e-9) (strcat "current at DIMSCALE 48: " (mcbg-get "MATCH_SC48" row)))
+                                   ((equal sc 1.0 1e-9) (strcat "current at DIMSCALE 1: " (mcbg-get "MATCH_SC1" row)))
+                                   (T (strcat "current (DIMSCALE 1 / 48): " (mcbg-get "MATCH_SC1" row) " / " (mcbg-get "MATCH_SC48" row))))
                              (if (/= (mcbg-get "CLINT_Q" row) "") (strcat "   ask: " (mcbg-get "CLINT_Q" row)) "")))
           (setq i (1+ i))))))
   (setq get_con_dist old _TAGOFF oldtag _CSIZE oldcsz _FITTCODE oldfc RL_SS nil RL_SS_DATA nil)

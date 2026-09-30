@@ -37,7 +37,7 @@ class Obj:
 class Mock:
     def __init__(self, L):
         self.L = L; self.blocks = {}; self.inserts = []; self.texts = []; self.layers = set(); self.log = []
-        self.sql = None; self.settings = None; self.queries = []
+        self.sql = None; self.settings = None; self.queries = []; self.ms_solids = []
         g = L.g
         g.update({
             'STRCASE': lambda s, lo=None: s.lower() if lo else s.upper(),
@@ -59,6 +59,7 @@ class Mock:
             'VLAX-GET-ACAD-OBJECT': lambda: 'ACAD', 'VLA-GET-ACTIVEDOCUMENT': lambda a: 'DOC',
             'VLA-GET-BLOCKS': lambda d: 'BLOCKS', 'VLA-GET-MODELSPACE': lambda d: 'MS',
             'VLAX-INVOKE': self.invoke, 'VLAX-PUT': self.put, 'VLA-DELETE': self.delete,
+            'VLA-ITEM': self.item, 'VLAX-GET': lambda o, p: o.props.get(str(p).upper().capitalize(), ''),
             'VLA-GET-LAYER': lambda o: o.props.get('Layer', '0'),
             'VLA-STARTUNDOMARK': lambda d: None, 'VLA-ENDUNDOMARK': lambda d: None,
             'PRINC': self.princ, 'TRANS': lambda p, a, b, *d: list(p),
@@ -88,7 +89,14 @@ class Mock:
     def catch_apply(self, f, args):
         try: return self.L.apply(f, list(args or []))
         except Exception as ex: return CatchErr(str(ex))
-    def put(self, o, prop, v): o.props[str(prop).upper().capitalize()] = v; return None
+    def put(self, o, prop, v):
+        k = str(prop).upper().capitalize()
+        if isinstance(o, Obj) and o.kind == 'BLOCK' and k == 'Name':
+            self.blocks.pop(o.props['Name'].upper(), None); self.blocks[v.upper()] = o
+        o.props[k] = v; return None
+    def item(self, coll, name):
+        if coll == 'BLOCKS' and name.upper() in self.blocks: return self.blocks[name.upper()]
+        raise Exception('no item ' + name)
     def delete(self, o):
         o.deleted = True
         if o.kind == 'BLOCK': self.blocks.pop(o.props['Name'].upper(), None)
@@ -101,6 +109,10 @@ class Mock:
         if obj == 'MS' and m == 'INSERTBLOCK':
             if a[1].upper() not in self.blocks: raise Exception('no block ' + a[1])
             r = Obj('INSERT'); r.props.update(Name=a[1], Pt=list(a[0]), Rot=a[5]); self.inserts.append(r); return r
+        if obj == 'MS' and m == 'ADDCYLINDER':
+            c, r, h = a
+            s = Obj('3DSOLID', 'MS', [('CYL', [c[0], c[1], c[2] - h / 2], [c[0], c[1], c[2] + h / 2], r)])
+            self.ms_solids.append(s); return s
         if isinstance(obj, Obj) and obj.kind == 'INSERT' and m == 'ROTATE3D':
             obj.props.setdefault('Rot3D', []).append((list(a[0]), list(a[1]), a[2])); return None
         if isinstance(obj, Obj) and obj.kind == 'BLOCK':

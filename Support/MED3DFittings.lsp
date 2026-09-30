@@ -32,10 +32,11 @@
 ;;;   centre on the conduit axis.  Hub directions (outward, i.e. toward the conduit):
 ;;;     C   RUN +X, RUN2 -X            T   RUN +X, RUN2 -X, BRANCH +Y
 ;;;     LB  RUN +X, BACK -Z            TB  RUN +X, RUN2 -X, BACK -Z
-;;;     LL  RUN +X, BRANCH -Y          LR  RUN +X, BRANCH +Y
-;;;   LL / LR: looking at the cover with the RUN hub pointing east (+X), LL opens to the
-;;;   south (-Y) and LR to the north (+Y) - the same as the trade rule "cover toward you,
-;;;   end hub down: side opening on the left = LL, right = LR".
+;;;     LL  RUN +X, BRANCH +Y          LR  RUN +X, BRANCH -Y
+;;;   LL / LR (r5, per Clint - r4 had them swapped): with the cover up (+Z) and the RUN
+;;;   (end) hub east (+X), an LL's side hub points north (+Y) and an LR's south (-Y).
+;;;   Trade rule: side hub pointing up, looking into the end hub: cover on the left =
+;;;   LL, on the right = LR.
 ;;;   (medcb-hubs form shape size) returns ((name face-point outward-dir) ...) in these
 ;;;   block coordinates for placement code; face-point = where the conduit enters.
 ;;;
@@ -54,8 +55,14 @@
 
 (princ "\rLoading MED3DFittings...")
 (vl-load-com)
-(setq *MEDCB-VERSION* "2026-09-30 r4 (feature/3dpath)")
+(setq *MEDCB-VERSION* "2026-09-30 r5 (feature/3dpath)")
+;; LL / LR hub convention changed in r5 (Clint): block definitions made before carry
+;; no / another geometry tag in their Comments and are renamed out of the way
+(setq *MEDCB-GEOM-TAG* "MEDCB geom r5")
 (setq *MEDCB-SHAPES* '("LB" "LR" "LL" "T" "TB" "C"))
+;; LB-like bodies (same hubs / orientation as an LB: RUN +X, BACK -Z; Clint: LBD is an
+;; LB with a bigger body, LBY an LB with symmetrical legs, Mogul BLB a larger LB)
+(setq *MEDCB-LB-FAMILY* '("LB" "LBD" "LBY" "BLB"))
 (setq *MEDCB-FORMS* '("F7" "F8" "M9"))
 (if (not *MEDCB-FORM*) (setq *MEDCB-FORM* "F7"))
 (if (not *MEDCB-SHAPE*) (setq *MEDCB-SHAPE* "LB"))
@@ -269,8 +276,8 @@
        (medcb-hub "RUN2" (list (/ a -2.0) 0.0 0.0) '(-1.0 0.0 0.0) rl)))
   (cond
     ((member shape '("LB" "TB")) (medcb-hub "BACK" (list 0.0 0.0 (- (+ (/ h 2.0) sl))) '(0.0 0.0 -1.0) sl))
-    ((member shape '("LR" "T")) (medcb-hub "BRANCH" (list 0.0 (+ (/ w 2.0) sl) 0.0) '(0.0 1.0 0.0) sl))
-    ((= shape "LL") (medcb-hub "BRANCH" (list 0.0 (- (+ (/ w 2.0) sl)) 0.0) '(0.0 -1.0 0.0) sl)))
+    ((member shape '("LL" "T")) (medcb-hub "BRANCH" (list 0.0 (+ (/ w 2.0) sl) 0.0) '(0.0 1.0 0.0) sl))
+    ((= shape "LR") (medcb-hub "BRANCH" (list 0.0 (- (+ (/ w 2.0) sl)) 0.0) '(0.0 -1.0 0.0) sl)))
   (list (cons "SHAPE" shape) (cons "W" w) (cons "H" h) (cons "M" m) (cons "DOPEN" dp) (cons "LBODY" lb)
         (cons "HUBOD" hub) (cons "RUNLEN" rl) (cons "SIDELEN" (if (= shape "C") nil sl)) (cons "NOTE" note) (cons "SHORT" short)
         (list "BODY" cx lb w (/ h -2.0) (- (/ h 2.0) t0))
@@ -280,15 +287,15 @@
 
 ;; placeholder (no data): box, same hub directions; size only from trade size / OD
 (defun medcb-geom-ph (shape sz cod / d0 l w h ell x0 x1 hubs)
-  (setq shape (strcase shape) ell (member shape '("LB" "LL" "LR"))
+  (setq shape (strcase shape) ell (member shape (append *MEDCB-LB-FAMILY* '("LL" "LR")))
         d0 (if cod cod (+ sz 0.35)) l (* 4.5 d0) w (* 1.6 d0) h w
         x0 (if ell (/ w -2.0) (/ l -2.0)) x1 (+ x0 l))
   (setq hubs (list (list "RUN" (list x1 0.0 0.0) '(1.0 0.0 0.0))))
   (if (not ell) (setq hubs (append hubs (list (list "RUN2" (list x0 0.0 0.0) '(-1.0 0.0 0.0))))))
   (cond
-    ((member shape '("LB" "TB")) (setq hubs (append hubs (list (list "BACK" (list 0.0 0.0 (/ h -2.0)) '(0.0 0.0 -1.0))))))
-    ((member shape '("LR" "T")) (setq hubs (append hubs (list (list "BRANCH" (list 0.0 (/ w 2.0) 0.0) '(0.0 1.0 0.0))))))
-    ((= shape "LL") (setq hubs (append hubs (list (list "BRANCH" (list 0.0 (/ w -2.0) 0.0) '(0.0 -1.0 0.0))))))
+    ((member shape (cons "TB" *MEDCB-LB-FAMILY*)) (setq hubs (append hubs (list (list "BACK" (list 0.0 0.0 (/ h -2.0)) '(0.0 0.0 -1.0))))))
+    ((member shape '("LL" "T")) (setq hubs (append hubs (list (list "BRANCH" (list 0.0 (/ w 2.0) 0.0) '(0.0 1.0 0.0))))))
+    ((= shape "LR") (setq hubs (append hubs (list (list "BRANCH" (list 0.0 (/ w -2.0) 0.0) '(0.0 -1.0 0.0))))))
     ((= shape "X") (setq hubs (append hubs (list (list "BRANCH" (list 0.0 (/ w 2.0) 0.0) '(0.0 1.0 0.0))
                                                  (list "BRANCH2" (list 0.0 (/ w -2.0) 0.0) '(0.0 -1.0 0.0)))))))
   (list (cons "SHAPE" shape) (cons "PLACEHOLDER" T)
@@ -382,8 +389,23 @@
                 cov (medcb-add-slot blk (nth 0 s) (nth 1 s) (nth 2 s) (nth 3 s) (nth 4 s)))
           (if cov (progn (vlax-put cov 'Layer "0") (vlax-put cov 'Color 8)))))
       (if body
-        name
+        (progn (vl-catch-all-apply 'vlax-put (list blk 'Comments *MEDCB-GEOM-TAG*)) name)
         (progn (vl-catch-all-apply 'vla-delete (list blk)) nil)))))
+;; an LL / LR block defined before r5 (other hub convention): rename it to
+;; <name>_PRE_R5[_n] (its inserts keep the old shape) so the name is free for a new
+;; definition. T when renamed.
+(defun medcb-stale-rename (name / blk c new i)
+  (setq blk (vl-catch-all-apply 'vla-item (list (vla-get-Blocks (medcb-doc)) name)))
+  (if (and (medcb-ok blk)
+           (setq c (vl-catch-all-apply 'vlax-get (list blk 'Comments)))
+           (not (vl-catch-all-error-p c))
+           (/= c *MEDCB-GEOM-TAG*))
+    (progn
+      (setq new (strcat name "_PRE_R5") i 1)
+      (while (tblsearch "BLOCK" new) (setq i (1+ i) new (strcat name "_PRE_R5_" (itoa i))))
+      (if (not (vl-catch-all-error-p (vl-catch-all-apply 'vlax-put (list blk 'Name new))))
+        (progn (princ (strcat "\nMED3D: block " name " was made with the old LL / LR convention - renamed " new "."))
+               T)))))
 
 ;; Block for form/shape/size, generated on demand. Returns (name status):
 ;;   "EXISTS" (already defined, left alone) "CREATED" "PLACEHOLDER" (no data, _PH made)
@@ -393,7 +415,9 @@
   (cond
     ((not (member shape *MEDCB-SHAPES*)) nil)
     ((not (and (numberp sz) (> sz 0.0))) nil)
-    ((tblsearch "BLOCK" (setq name (medcb-block-name form shape sz))) (list name "EXISTS"))
+    ((and (tblsearch "BLOCK" (setq name (medcb-block-name form shape sz)))
+          (not (and (member shape '("LL" "LR")) (medcb-stale-rename name))))
+      (list name "EXISTS"))
     ((and (setq r (medcb-find form shape sz)) (medcb-row-ok r))
       (setq geom (medcb-geom-for form shape sz))
       (if (medcb-build-block name geom) (list name "CREATED")))
@@ -549,19 +573,26 @@
 ;;;   Size = #ITEMSIZE of the fitting.
 ;;; Placement: the 2D insertion point (WCS) is the body insertion point (centerline
 ;;;   intersection); where a conduit vertex / pass-through is found at that XY its Z
-;;;   wins over the block Z. Rotation = the 2D rotation about Z (+ a fixed offset for
-;;;   symbols whose +X is not the run: 1tee T -90 deg (+X = branch), 1lbl LL +90,
-;;;   1lbr LR -90), then with *MEDCB-SNAP* (default T) the quarter turn that puts the
-;;;   most hubs on the conduit legs found at the point (ties keep the offset).
-;;;   T on 1teed / 2teed -> TB (back hub down, cover up); T on 1teeu / 1teeuo -> TB
-;;;   turned 180 deg about its run (back hub up, so the cover faces down).
-;;;   LB on 1lbu / 1lbuo (LB up) -> turned 180 deg about its run (back hub up, cover
-;;;   down). Any LB: the snap also tries the back hub tilted into the plan (+/-90 deg
-;;;   about the body X axis, cover sideways), so at a flat plan corner (1lbl / 1lbr
-;;;   with an LB code) RUN meets one leg and BACK the other. Tilted only when that
-;;;   matches more legs than the untilted body; an LB turn whose second leg is not
-;;;   found keeps the back hub down and prints a note. LB down is unchanged.
-;;;   The tilt is applied with Rotate3D about the rotated X axis (medcb-insert-block).
+;;;   wins over the block Z. Legs are searched within the medblck.dat break distance x
+;;;   the insert scale + *MED3D-FIT-TOL* (Q5: the menu cuts the conduit back from some
+;;;   symbols); the planner trims or extends those runs to the hub faces.
+;;;   Rotation = the 2D rotation about Z (1tee T: -90 deg, +X is the branch), then a
+;;;   tilt about the body X axis (medcb-insert-block, Rotate3D):
+;;;   - 1lbl / 1lbr / 1lbdl / 1lbdr / 1lby: the body lies along the symbol's long leg
+;;;     (+X, the conduit picked). LB / LBD / LBY / BLB lie on their side (back hub
+;;;     +/-90 deg toward the short leg, +Y on 1lbl, -Y on 1lbr; cover sideways away from
+;;;     it), even with only one leg drawn. LL / LR: cover up when the side hub already
+;;;     points at the short leg, else turned over (cover down) - e.g. LR on 1lbl.
+;;;   - T on 1teed / 2teed -> TB (back hub down, cover up); T on 1teeu / 1teeuo -> TB
+;;;     turned over (back hub up, cover down). LB on 1lbu / 1lbuo turned over.
+;;;   - TA (code 17) is modelled as a T.
+;;;   With *MEDCB-SNAP* (default T) the quarter turns about Z and the alternative tilts
+;;;   (LB family / TB: back hub into the plan; LL / LR: over) are scored against the
+;;;   conduit legs; the first best wins, drawn rotation and symbol tilt first. A TB code
+;;;   on a flat tee so gets its back hub on the branch, opening opposite it.
+;;;   Vertical conduit stored on the insert (MED_CONDUIT distance + VERT_DATA
+;;;   direction, written by the menu's dcon_ins) is built as a cylinder from the face
+;;;   of the hub pointing that way to insertion Z +/- distance (flagged when no hub).
 ;;; Mirrored 2D symbols (X scale x Y scale x extrusion Z < 0: MIRROR, negative scale)
 ;;;   are not accommodated: no body, the conduit is left as drawn (no trim, no leg
 ;;;   flag), one marker "MIRRORED FITTING - re-insert, do not mirror" on MED_3DFLAG,
@@ -575,7 +606,8 @@
 (setq *MEDCB-2D-TEEDOWN* '("1TEED" "2TEED")
       *MEDCB-2D-TEEUP*   '("1TEEU" "1TEEUO")
       *MEDCB-2D-LBUP*    '("1LBU" "1LBUO")
-      *MEDCB-2D-TURN*    '("1LBL" "1LBR"))
+      *MEDCB-2D-TURN*    '("1LBL" "1LBR" "1LBDL" "1LBDR" "1LBY")
+      *MEDCB-2D-TURN-R*  '("1LBR" "1LBDR"))     ; short leg at -Y (the others +Y)
 
 (defun medcb-dot (a b) (+ (* (car a) (car b)) (* (cadr a) (cadr b)) (* (caddr a) (caddr b))))
 (defun medcb-unit (v / l)
@@ -656,8 +688,6 @@
 ;; Z rotation offset of the 3D body against the 2D symbol (see header)
 (defun medcb-2d-offset (blk shape)
   (cond ((and (= blk "1TEE") (= shape "T")) (/ pi -2.0))
-        ((and (= blk "1LBL") (= shape "LL")) (/ pi 2.0))
-        ((and (= blk "1LBR") (= shape "LR")) (/ pi -2.0))
         (T 0.0)))
 ;; block vector -> WCS vector: tilt about block X first (flip, see medcb-insert-block),
 ;; then rot about Z
@@ -734,9 +764,33 @@
   (setq sx (cond ((cdr (assoc 41 ed))) (1.0)) sy (cond ((cdr (assoc 42 ed))) (1.0))
         n (cond ((cdr (assoc 210 ed))) ('(0.0 0.0 1.0))))
   (< (* sx sy (caddr n)) 0.0))
+;; tilts the snap tries after the symbol's own one (see medcb-insert-block)
+(defun medcb-alt-tilts (shape flip / r)
+  (cond
+    ((or (member shape *MEDCB-LB-FAMILY*) (= shape "TB"))
+      (foreach tl (list (/ pi 2.0) (/ pi -2.0)) (if (not (equal (medcb-tilt flip) tl 1e-9)) (setq r (cons tl r))))
+      (reverse r))
+    ((member shape '("LL" "LR")) (list (if flip nil T)))))
+;; leg search radius (Q5): the menu breaks the conduit back from some symbols by the
+;; medblck.dat distances x the insert scale; search that far + *MED3D-FIT-TOL*
+(setq *MEDCB-BRK-CACHE* nil)
+(defun medcb-brk-max (blk / c d m x)
+  (if (setq c (assoc blk *MEDCB-BRK-CACHE*))
+    (cdr c)
+    (progn
+      (setq d (if get_bl_data (vl-catch-all-apply 'get_bl_data (list blk))))
+      (setq m 0.0)
+      (if (and (listp d) (not (vl-catch-all-error-p d)))
+        (foreach x (list (nth 0 d) (nth 1 d) (nth 2 d) (nth 3 d)) (if (and (numberp x) (> x m)) (setq m x))))
+      (setq d m)
+      (setq *MEDCB-BRK-CACHE* (cons (cons blk d) *MEDCB-BRK-CACHE*))
+      d)))
+(defun medcb-brk-tol (blk ed / sc)
+  (setq sc (abs (cond ((cdr (assoc 41 ed))) (1.0))))
+  (+ (medcb-fit-tol) (* sc (medcb-brk-max blk))))
 ;; one MED_FITTING INSERT -> body alist; "NM" = not a conduit body; nil = no xdata
 (defun medcb-body-of (e runs / ed xd code sz res kp mat form shape blk flip note reason r
-                            pt a rot geom hubs lg k best sc i h tl tbest)
+                            pt a rot geom hubs lg k best sc i h tl tbest tol)
   (setq ed (entget e) xd (xdataget e (medcb-app "FITTING")))
   (if (and xd (numberp (setq code (nth 3 xd)))) (setq res (medcb-resolve-code (fix code))))
   (cond
@@ -755,10 +809,20 @@
             (cons "HUBS" nil) (cons "MIRROR" T)
             (cons "REASON" "mirrored 2D fitting block - re-insert it without mirroring") (cons "NOTE" nil)))
     (T
+      ;; TA (Form 7, MEDCHG only): modelled as a T (Clint: "simply a Tee fitting")
+      (if (= shape "TA") (setq shape "T" note "TA modelled as a T (T dimensions)"))
       (if (and (= shape "T") (member blk (append *MEDCB-2D-TEEDOWN* *MEDCB-2D-TEEUP*)))
         (setq shape "TB" flip (if (member blk *MEDCB-2D-TEEUP*) T)))
       ;; LB up: turned over (back hub up, cover down)
-      (if (and (= shape "LB") (member blk *MEDCB-2D-LBUP*)) (setq flip T))
+      (if (and (member shape *MEDCB-LB-FAMILY*) (member blk *MEDCB-2D-LBUP*)) (setq flip T))
+      ;; 1lbl / 1lbr (and 1lbdl / 1lbdr / 1lby): the body lies along the symbol's long leg (+X) and the symbol's
+      ;; short leg (+Y on 1lbl, -Y on 1lbr) is the other hub: LB family on its side
+      ;; (back hub tilted +/-90 deg into the plan, cover away from that leg), LL / LR
+      ;; cover up or turned over (cover down) as the code needs (Clint, r5)
+      (if (member blk *MEDCB-2D-TURN*)
+        (cond
+          ((member shape *MEDCB-LB-FAMILY*) (setq flip (if (member blk *MEDCB-2D-TURN-R*) (/ pi -2.0) (/ pi 2.0))))
+          ((if (member blk *MEDCB-2D-TURN-R*) (= shape "LL") (= shape "LR")) (setq flip T))))
       (setq reason
         (cond
           ((<= sz 0.0) "no trade size on the fitting")
@@ -775,38 +839,31 @@
                    (medcb-geom-ph shape (if (> sz 0.0) sz 1.0) (medcb-conduit-od (if (> sz 0.0) sz 1.0)))
                    (medcb-geom-for form shape sz))
             hubs (medcb-get "HUBS" geom)
-            lg  (medcb-legs pt runs (medcb-fit-tol)))
+            tol (medcb-brk-tol blk ed)
+            lg  (medcb-legs pt runs tol))
       (if (cadr lg) (setq pt (list (car pt) (cadr pt) (cadr lg))))   ; conduit elevation wins
       (setq rot (+ rot (medcb-2d-offset blk shape)) k 0)
-      ;; snap: the 4 quarter turns about Z (first best wins, so a tie keeps the drawn
-      ;; rotation); then an LB also tries its back hub tilted into the plan (+/-90 deg
-      ;; about its X axis), kept only if that matches more legs (flat plan corner).
-      ;; Tilted candidates go quarter turn first, both tilts per turn, so the body stays
-      ;; on the drawn +X leg (the symbol's long leg = the conduit picked) when it can.
+      ;; snap: quarter turns about Z from the drawn rotation; per turn the symbol's own
+      ;; tilt first, then the alternatives (LB family / TB: back hub tilted +/-90 deg
+      ;; into the plan; LL / LR: cover up or turned over). The first candidate with the
+      ;; most hubs on conduit legs wins, so ties keep the drawn rotation and the tilt
+      ;; the symbol implies (the body stays on the drawn +X leg when it can).
       (if (and *MEDCB-SNAP* (car lg))
         (progn
           (setq best -1 tbest flip i 0)
           (repeat 4
-            (setq sc (medcb-score (medcb-wcs-hubs hubs (+ rot (* i (/ pi 2.0))) flip) (car lg)))
-            (if (> sc best) (setq best sc k i))
+            (foreach tl (cons flip (medcb-alt-tilts shape flip))
+              (setq sc (medcb-score (medcb-wcs-hubs hubs (+ rot (* i (/ pi 2.0))) tl) (car lg)))
+              (if (> sc best) (setq best sc k i tbest tl)))
             (setq i (1+ i)))
-          (if (= shape "LB")
-            (progn
-              (setq i 0)
-              (repeat 4
-                (foreach tl (list (/ pi 2.0) (/ pi -2.0))
-                  (setq sc (medcb-score (medcb-wcs-hubs hubs (+ rot (* i (/ pi 2.0))) tl) (car lg)))
-                  (if (> sc best) (setq best sc k i tbest tl)))
-                (setq i (1+ i)))))
           (setq rot (+ rot (* k (/ pi 2.0))) flip tbest)))
-      (if (and (= shape "LB") (member blk *MEDCB-2D-TURN*) (not (numberp flip)))
-        (setq note "LB used as a flat plan turn - second conduit leg not found, back hub modelled down"))
       (while (< rot 0.0) (setq rot (+ rot (* 2.0 pi))))
       (while (>= rot (* 2.0 pi)) (setq rot (- rot (* 2.0 pi))))
       (list (cons "HANDLE" h) (cons "ENT" e) (cons "CODE" (fix code)) (cons "KEY" (car res)) (cons "SRC" (cadr res))
             (cons "FORM" form) (cons "SHAPE" shape) (cons "SIZE" sz) (cons "BLK2D" blk) (cons "PT" pt)
             (cons "ROT" rot) (cons "FLIP" flip) (cons "TURN" k) (cons "LEGS" (length (car lg)))
-            (cons "HUBS" (medcb-wcs-hubs hubs rot flip)) (cons "REASON" reason) (cons "NOTE" note)))))
+            (cons "HUBS" (medcb-wcs-hubs hubs rot flip)) (cons "REASON" reason) (cons "NOTE" note)
+            (cons "TOL" tol)))))
 
 ;; every MED_FITTING INSERT in the drawing -> (bodies not-modelled-count)
 (defun medcb-collect ( / ss i b bodies nm runs)
@@ -832,10 +889,12 @@
         (setq i (1+ i)))))
   (list (reverse bodies) nm))
 
-;; record for the conduit planner (*MED3D-FITS*): (handle pt hubs); nil without a size
+;; record for the conduit planner (*MED3D-FITS*): (handle pt hubs search-radius); nil
+;; without a size
 ;; mirrored fittings get none (the conduit is left as drawn)
 (defun medcb-fit-rec (b)
-  (if (and (> (medcb-get "SIZE" b) 0.0) (not (medcb-get "MIRROR" b))) (list (medcb-get "HANDLE" b) (medcb-get "PT" b) (medcb-get "HUBS" b))))
+  (if (and (> (medcb-get "SIZE" b) 0.0) (not (medcb-get "MIRROR" b)))
+    (list (medcb-get "HANDLE" b) (medcb-get "PT" b) (medcb-get "HUBS" b) (medcb-get "TOL" b))))
 
 ;; placeholder for any form / shape (unknown ones: box with run hubs)
 (defun medcb-ensure-ph (form shape sz / name)
@@ -848,10 +907,46 @@
         (T (medcb-ensure-block form shape sz))))
 
 ;; insert the bodies; returns (("REFS" ename ...) ("PLACED" . n) ("PH" . n) ("FLAGGED" . n)
-;;   ("MIRRORED" . n) ("SKIPPED" (handle "FITTING" reason) ...))
+;;   ("MIRRORED" . n) ("VERT" . vertical-conduit-solids) ("SKIPPED" (handle "FITTING" reason) ...))
 (setq *MEDCB-MIRROR-FLAG* "MIRRORED FITTING - re-insert, do not mirror")
-(defun medcb-place-all (bodies / h pt reason res ref e refs placed ph flagged skipped mir)
-  (setq placed 0 ph 0 flagged 0 mir 0)
+;; vertical conduit stored on the fitting insert by the menu's dcon_ins (up / down
+;; symbols): MED_CONDUIT (app tag size code dist msr) + VERT_DATA (app r1 r2 dir r4).
+;; Returns (dir length) or nil.
+(defun medcb-vert-data (e / vd cd dir len)
+  (setq vd (xdataget e "VERT_DATA") cd (xdataget e (medcb-app "CONDUIT")))
+  (if (and vd cd (numberp (setq dir (nth 3 vd))) (/= dir 0)
+           (numberp (setq len (nth 4 cd))) (> len 0.0))
+    (list (if (> dir 0) 1.0 -1.0) (float len))))
+;; the vertical conduit of body b as a cylinder from the face of the hub pointing
+;; that way (else from the insertion point) to insertion Z + dir x length.
+;; Returns (ename-or-nil flagged-p)
+(defun medcb-vert-leg (b / e vd dir len pt hub best d od z0 z1 sol ms)
+  (setq e (medcb-get "ENT" b) pt (medcb-get "PT" b))
+  (if (and (setq vd (medcb-vert-data e)) pt)
+    (progn
+      (setq dir (car vd) len (cadr vd) best (medcb-cos-tol))
+      (foreach h (medcb-get "HUBS" b)
+        (if (>= (setq d (* dir (caddr (caddr h)))) best) (setq best d hub h)))
+      (setq od (cond ((and med3d-run-od (numberp (setq d (vl-catch-all-apply 'med3d-run-od (list e "CONDUIT")))) (> d 0.0)) d)
+                     ((medcb-conduit-od (medcb-get "SIZE" b)))
+                     (T (+ (max 0.5 (medcb-get "SIZE" b)) 0.35)))
+            z0 (+ (caddr pt) (if hub (caddr (cadr hub)) 0.0))
+            z1 (+ (caddr pt) (* dir len)))
+      (if (> (* dir (- z1 z0)) 1e-6)
+        (progn
+          (setq ms (vla-get-ModelSpace (medcb-doc))
+                sol (vl-catch-all-apply 'vlax-invoke
+                      (list ms 'AddCylinder (list (car pt) (cadr pt) (/ (+ z0 z1) 2.0)) (/ od 2.0) (abs (- z1 z0)))))
+          (if (medcb-ok sol)
+            (progn
+              (vlax-put sol 'Layer (medcb-body-layer))
+              (setq sol (vlax-vla-object->ename sol))
+              (if MEDStamp3DFromBom (vl-catch-all-apply 'MEDStamp3DFromBom (list sol e "CONDUIT" nil)))
+              (list sol (not hub)))
+            (list nil T)))
+        (list nil nil)))))
+(defun medcb-place-all (bodies / h pt reason res ref e refs placed ph flagged skipped mir vl nv)
+  (setq placed 0 ph 0 flagged 0 mir 0 nv 0)
   (foreach b bodies
     (setq h (medcb-get "HANDLE" b) pt (medcb-get "PT" b) reason (medcb-get "REASON" b)
           res (if (not (medcb-get "MIRROR" b))
@@ -863,6 +958,18 @@
       (progn
         (setq e (vlax-vla-object->ename ref) refs (cons e refs))
         (if MEDStamp3DFromBom (vl-catch-all-apply 'MEDStamp3DFromBom (list e (medcb-get "ENT" b) "FITTING" nil)))))
+    ;; vertical conduit leg from the fitting's own conduit xdata (not for mirrored)
+    (if (and (not (medcb-get "MIRROR" b)) (setq vl (medcb-vert-leg b)))
+      (progn
+        (if (car vl) (setq refs (cons (car vl) refs) nv (1+ nv)))
+        (if (cadr vl)
+          (progn
+            (setq flagged (1+ flagged)
+                  skipped (cons (list h "CONDUIT" (strcat "vertical conduit on fitting " h ": no hub points that way"
+                                                          (if (car vl) " - built from the insertion point" "")))
+                                skipped))
+            (if med3d-flag-at
+              (med3d-flag-at pt (max 1.0 (* 2.0 (medcb-get "SIZE" b))) (strcat "3D FLAG " h " vertical conduit")))))))
     (cond
      ((medcb-get "MIRROR" b)
       (setq mir (1+ mir) flagged (1+ flagged)
@@ -884,7 +991,7 @@
         (if med3d-flag-at
           (med3d-flag-at pt (max 1.0 (* 2.0 (medcb-get "SIZE" b))) (strcat "3D FLAG " h " " (medcb-get "KEY" b))))))))
   (list (cons "REFS" (reverse refs)) (cons "PLACED" placed) (cons "PH" ph) (cons "FLAGGED" flagged)
-        (cons "MIRRORED" mir) (cons "SKIPPED" (reverse skipped))))
+        (cons "MIRRORED" mir) (cons "VERT" nv) (cons "SKIPPED" (reverse skipped))))
 
 (princ (strcat "Done.\nMED3DFittings " *MEDCB-VERSION* " loaded: MEDCBINS MEDCBTEST MEDCBDATA MEDCBVER"))
 (princ)

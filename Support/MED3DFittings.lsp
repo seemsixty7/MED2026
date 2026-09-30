@@ -5,6 +5,8 @@
 ;;;   MEDCBTEST  insert LB LR LL T TB C of one form + size in a row, with labels
 ;;;   MEDCBDATA  reload the dimension data and print what is covered
 ;;;   MEDCBVER   print version / data source
+;;; MEDMAKE3D (MED3DPath.lsp) uses medcb-collect / medcb-place-all to replace the 2D
+;;; MED_FITTING blocks of a plan with these bodies - see "plan fittings" below.
 ;;;
 ;;; Data: MEDConduitBody (MED-DotNet MedODSeed creates + seeds it from
 ;;;   Data\seed\conduit_body_dims.csv, blanks-only). When the table is not reachable
@@ -52,7 +54,7 @@
 
 (princ "\rLoading MED3DFittings...")
 (vl-load-com)
-(setq *MEDCB-VERSION* "2026-09-30 r1 (feature/3dpath)")
+(setq *MEDCB-VERSION* "2026-09-30 r2 (feature/3dpath)")
 (setq *MEDCB-SHAPES* '("LB" "LR" "LL" "T" "TB" "C"))
 (setq *MEDCB-FORMS* '("F7" "F8" "M9"))
 (if (not *MEDCB-FORM*) (setq *MEDCB-FORM* "F7"))
@@ -132,13 +134,15 @@
   (foreach x lst (if (and (not r) (= (strcase x) (strcase name))) (setq r i)) (setq i (1+ i)))
   r)
 
-(defun medcb-csv-path ( / here c r)
+;; Data\seed\<name>: support path, else ..\Data\seed or Data\seed next to this file
+(defun medcb-seed-path (name / here c r)
   (setq here (findfile "MED3DFittings.lsp"))
-  (foreach c (list (findfile *MEDCB-CSV*)
-                   (if here (strcat (vl-filename-directory here) "\\..\\Data\\seed\\" *MEDCB-CSV*))
-                   (if here (strcat (vl-filename-directory here) "\\Data\\seed\\" *MEDCB-CSV*)))
+  (foreach c (list (findfile name)
+                   (if here (strcat (vl-filename-directory here) "\\..\\Data\\seed\\" name))
+                   (if here (strcat (vl-filename-directory here) "\\Data\\seed\\" name)))
     (if (and (not r) c (findfile c)) (setq r (findfile c))))
   r)
+(defun medcb-csv-path () (medcb-seed-path *MEDCB-CSV*))
 
 (defun medcb-read-csv (path / f line hdr cols rows fl ix)
   (if (and path (setq f (open path "r")))
@@ -284,7 +288,9 @@
   (cond
     ((member shape '("LB" "TB")) (setq hubs (append hubs (list (list "BACK" (list 0.0 0.0 (/ h -2.0)) '(0.0 0.0 -1.0))))))
     ((member shape '("LR" "T")) (setq hubs (append hubs (list (list "BRANCH" (list 0.0 (/ w 2.0) 0.0) '(0.0 1.0 0.0))))))
-    ((= shape "LL") (setq hubs (append hubs (list (list "BRANCH" (list 0.0 (/ w -2.0) 0.0) '(0.0 -1.0 0.0)))))))
+    ((= shape "LL") (setq hubs (append hubs (list (list "BRANCH" (list 0.0 (/ w -2.0) 0.0) '(0.0 -1.0 0.0))))))
+    ((= shape "X") (setq hubs (append hubs (list (list "BRANCH" (list 0.0 (/ w 2.0) 0.0) '(0.0 1.0 0.0))
+                                                 (list "BRANCH2" (list 0.0 (/ w -2.0) 0.0) '(0.0 -1.0 0.0)))))))
   (list (cons "SHAPE" shape) (cons "PLACEHOLDER" T)
         (list "BOX" (list x0 (/ w -2.0) (/ h -2.0)) (list x1 (/ w 2.0) (/ h 2.0)))
         (cons "HUBS" hubs)))
@@ -396,14 +402,21 @@
 
 ;; insert in model space; pt WCS; rot radians about WCS Z. Returns (vla-ref name status)
 (defun medcb-insert (form shape sz pt rot / res ref)
-  (if (setq res (medcb-ensure-block form shape sz))
+  (if (and (setq res (medcb-ensure-block form shape sz))
+           (setq ref (medcb-insert-block res pt rot nil)))
+    (list ref (car res) (cadr res))))
+;; res = (name status) from medcb-ensure-block; flip = turned 180 deg about its own
+;; (rotated) X axis after the Z rotation. Returns the vla reference or nil.
+(defun medcb-insert-block (res pt rot flip / ref)
+  (setq ref (vl-catch-all-apply 'vlax-invoke
+              (list (vla-get-ModelSpace (medcb-doc)) 'InsertBlock pt (car res) 1.0 1.0 1.0 rot)))
+  (if (medcb-ok ref)
     (progn
-      (setq ref (vl-catch-all-apply 'vlax-invoke
-                  (list (vla-get-ModelSpace (medcb-doc)) 'InsertBlock pt (car res) 1.0 1.0 1.0 rot)))
-      (if (medcb-ok ref)
-        (progn
-          (vlax-put ref 'Layer (if (wcmatch (cadr res) "PLACEHOLDER,PH-EXISTS") (medcb-flag-layer) (medcb-body-layer)))
-          (list ref (car res) (cadr res)))))))
+      (if flip
+        (vl-catch-all-apply 'vlax-invoke
+          (list ref 'Rotate3D pt (medcb-v+ pt (list (cos rot) (sin rot) 0.0)) pi)))
+      (vlax-put ref 'Layer (if (wcmatch (cadr res) "PLACEHOLDER,PH-EXISTS") (medcb-flag-layer) (medcb-body-layer)))
+      ref)))
 
 ;;; ----------------------------------------------------------------- commands
 (defun medcb-ask-shape ( / k)
@@ -517,6 +530,306 @@
                  "\n  CSV       : " (if (medcb-csv-path) (medcb-csv-path) "not found")
                  "\n  file      : " (if (findfile "MED3DFittings.lsp") (findfile "MED3DFittings.lsp") "not on support path")))
   (princ))
+
+;;; ============================================ plan fittings (for MEDMAKE3D)
+;;; 2D MED_FITTING blocks on a plan -> 3D conduit bodies. MED3DPath MEDMAKE3D calls
+;;; (medcb-collect) before the conduit stage, hands (medcb-fit-rec body) to the
+;;; conduit planner (runs are cut back to the hubs) and calls (medcb-place-all bodies)
+;;; after it.
+;;; Body key: MEDType.ITEMKEY2 = "RGD|F7|LB" (material|form|shape; forms F7 F8 M9,
+;;;   MOG for Mogul). ITEMKEY2 blank -> the catalog description is parsed:
+;;;   'Form 7 "LB" condulet fitting' -> RGD|F7|LB ("Form 8" F8, "Mark 9" M9, "Mogul"
+;;;   MOG, no form -> ""; shape = the quoted word, else the word before "condulet").
+;;;   A description without "condulet" and a blank ITEMKEY2 = not a conduit body
+;;;   (couplings, seals, unions ...): counted "not modelled". No MED-DotNet / DB ->
+;;;   Data\seed\fitting_body_keys.csv (ITEMCODE, ITEMDESC, BodyKey) is used instead.
+;;;   Size = #ITEMSIZE of the fitting.
+;;; Placement: the 2D insertion point (WCS) is the body insertion point (centerline
+;;;   intersection); where a conduit vertex / pass-through is found at that XY its Z
+;;;   wins over the block Z. Rotation = the 2D rotation about Z (+ a fixed offset for
+;;;   symbols whose +X is not the run: 1tee T -90 deg (+X = branch), 1lbl LL +90,
+;;;   1lbr LR -90), then with *MEDCB-SNAP* (default T) the quarter turn that puts the
+;;;   most hubs on the conduit legs found at the point (ties keep the offset).
+;;;   T on 1teed / 2teed -> TB (back hub down, cover up); T on 1teeu / 1teeuo -> TB
+;;;   turned 180 deg about its run (back hub up, so the cover faces down).
+;;;   LB on 1lbu / 1lbuo (LB up) and on 1lbl / 1lbr (LB as a flat plan turn) keep the
+;;;   Z rotation only (back hub down) and print a note - orientation not modelled yet.
+;;; Unresolved (key without data: X, LBD, LBY, TA, Mogul, GUA..., no form, no row for
+;;;   the size, other material): placeholder block on MED_3DFLAG + flag marker +
+;;;   Skipped line (handle and reason). No size -> marker only.
+(setq *MEDCB-KEYS-CSV* "fitting_body_keys.csv")
+(if (not (boundp '*MEDCB-SNAP*)) (setq *MEDCB-SNAP* T))
+(setq *MEDCB-FITCAT* nil)
+(setq *MEDCB-2D-TEEDOWN* '("1TEED" "2TEED")
+      *MEDCB-2D-TEEUP*   '("1TEEU" "1TEEUO")
+      *MEDCB-2D-LBUP*    '("1LBU" "1LBUO")
+      *MEDCB-2D-TURN*    '("1LBL" "1LBR"))
+
+(defun medcb-dot (a b) (+ (* (car a) (car b)) (* (cadr a) (cadr b)) (* (caddr a) (caddr b))))
+(defun medcb-unit (v / l)
+  (setq l (sqrt (medcb-dot v v)))
+  (if (> l 1e-12) (medcb-vx v (/ 1.0 l))))
+(defun medcb-dxy (a b) (distance (list (car a) (cadr a)) (list (car b) (cadr b))))
+(defun medcb-app (kind / v)
+  (setq v (if (= kind "FITTING") _FITTING _CONDUIT))
+  (if (= (type v) 'STR) v (strcat "MED_" kind)))
+(defun medcb-int (v)
+  (cond ((numberp v) (fix v))
+        ((and (= (type v) 'STR) (/= (vl-string-trim " " v) "")) (atoi v))))
+(defun medcb-str (v) (if (= (type v) 'STR) (vl-string-trim " \t" v) ""))
+(defun medcb-split (s ch / k out)
+  (while (setq k (vl-string-search ch s))
+    (setq out (cons (substr s 1 k) out) s (substr s (+ k 2))))
+  (reverse (cons s out)))
+;; upper case, A-Z 0-9 only (safe in a block name)
+(defun medcb-clean (s / i a r)
+  (setq r "" i 1 s (strcase s))
+  (while (<= i (strlen s))
+    (setq a (ascii (substr s i 1)))
+    (if (or (and (>= a 48) (<= a 57)) (and (>= a 65) (<= a 90))) (setq r (strcat r (chr a))))
+    (setq i (1+ i)))
+  r)
+
+;; "RGD|F7|LB" -> ("RGD" "F7" "LB"); nil unless material|form|shape with a shape
+(defun medcb-key-parse (key / p)
+  (if (and (= (type key) 'STR) (setq p (medcb-split (vl-string-trim " \t" key) "|")) (= (length p) 3))
+    (progn
+      (setq p (mapcar 'medcb-clean p))
+      (if (and (/= (car p) "") (/= (nth 2 p) "")) p))))
+;; catalog description -> "RGD|<form>|<shape>" or nil (not a condulet)
+(defun medcb-desc-key (desc / u k q e form shape)
+  (if (and (= (type desc) 'STR) (setq k (vl-string-search "CONDULET" (setq u (strcase desc)))))
+    (progn
+      (setq form (cond ((vl-string-search "FORM 7" u) "F7") ((vl-string-search "FORM 8" u) "F8")
+                       ((vl-string-search "MARK 9" u) "M9") ((vl-string-search "MOGUL" u) "MOG") (T "")))
+      (if (and (setq q (vl-string-search "\"" u)) (setq e (vl-string-search "\"" u (1+ q))))
+        (setq shape (medcb-clean (substr u (+ q 2) (- e q 1))))
+        (setq shape (medcb-clean (last (medcb-split (vl-string-trim " " (substr u 1 k)) " ")))))
+      (if (/= shape "") (strcat "RGD|" form "|" shape)))))
+
+(defun medcb-read-keys-csv (path / f line hdr ix fl rows code)
+  (if (and path (setq f (open path "r")))
+    (progn
+      (if (setq line (read-line f))
+        (progn
+          (setq hdr (medcb-csv-split line nil)
+                ix (mapcar '(lambda (x) (medcb-index x hdr)) '("ITEMCODE" "ITEMDESC" "BodyKey")))
+          (if (member nil ix) (setq ix nil))))
+      (while (and ix (setq line (read-line f)))
+        (setq fl (medcb-csv-split line nil))
+        (if (and (> (length fl) (apply 'max ix)) (setq code (medcb-int (nth (car ix) fl))))
+          (setq rows (cons (list code (nth (cadr ix) fl) (nth (caddr ix) fl) "CSV") rows))))
+      (close f)
+      (reverse rows))))
+;; FITTING catalog, once per MEDMAKE3D: ((code desc itemkey2 "DB"|"CSV") ...)
+(defun medcb-fitcat ( / res code)
+  (if (null *MEDCB-FITCAT*)
+    (progn
+      (setq res (medcb-sql "SELECT ITEMCODE, ITEMDESC, ITEMKEY2 FROM MEDType WHERE ITEMTYPE='FITTING'"))
+      (foreach r (cdr res)
+        (if (and (listp r) (>= (length r) 2) (setq code (medcb-int (car r))))
+          (setq *MEDCB-FITCAT* (cons (list code (medcb-str (nth 1 r)) (medcb-str (nth 2 r)) "DB") *MEDCB-FITCAT*))))
+      (if (null *MEDCB-FITCAT*)
+        (setq *MEDCB-FITCAT* (medcb-read-keys-csv (medcb-seed-path *MEDCB-KEYS-CSV*))))
+      (if (null *MEDCB-FITCAT*) (setq *MEDCB-FITCAT* '(nil)))))
+  (vl-remove nil *MEDCB-FITCAT*))
+;; fitting code -> (key source desc), source "ITEMKEY2" | "CSV" | "DESC"; nil = not a body
+(defun medcb-resolve-code (code / e k)
+  (foreach x (medcb-fitcat) (if (and (not e) (= (car x) code)) (setq e x)))
+  (cond
+    ((null e) nil)
+    ((medcb-key-parse (nth 2 e)) (list (vl-string-trim " \t" (nth 2 e)) (if (= (nth 3 e) "DB") "ITEMKEY2" "CSV") (nth 1 e)))
+    ((setq k (medcb-desc-key (nth 1 e))) (list k "DESC" (nth 1 e)))))
+
+;; Z rotation offset of the 3D body against the 2D symbol (see header)
+(defun medcb-2d-offset (blk shape)
+  (cond ((and (= blk "1TEE") (= shape "T")) (/ pi -2.0))
+        ((and (= blk "1LBL") (= shape "LL")) (/ pi 2.0))
+        ((and (= blk "1LBR") (= shape "LR")) (/ pi -2.0))
+        (T 0.0)))
+;; block vector -> WCS vector: flip (180 deg about block X) first, then rot about Z
+(defun medcb-xdir (v rot flip / x y z)
+  (setq x (car v) y (cadr v) z (caddr v))
+  (if flip (setq y (- y) z (- z)))
+  (list (- (* x (cos rot)) (* y (sin rot))) (+ (* x (sin rot)) (* y (cos rot))) z))
+(defun medcb-wcs-hubs (hubs rot flip / r)
+  (foreach h hubs (setq r (cons (list (car h) (medcb-xdir (cadr h) rot flip) (medcb-xdir (caddr h) rot flip)) r)))
+  (reverse r))
+(defun medcb-cos-tol () (cos (/ (* pi (if (numberp *MED3D-FIT-ANG*) *MED3D-FIT-ANG* 30.0)) 180.0)))
+(defun medcb-fit-tol () (if (numberp *MED3D-FIT-TOL*) *MED3D-FIT-TOL* 0.25))
+;; legs matched by a hub pointing along them (each hub used once)
+(defun medcb-score (hubs legs / ct n used best bi i d)
+  (setq ct (medcb-cos-tol) n 0 used nil)
+  (foreach lg legs
+    (setq best ct bi nil i 0)
+    (foreach h hubs
+      (if (and (not (member i used)) (>= (setq d (medcb-dot (caddr h) lg)) best)) (setq best d bi i))
+      (setq i (1+ i)))
+    (if bi (setq used (cons bi used) n (1+ n))))
+  n)
+
+;; XY foot of pt on segment a-b: (param xy-distance) for 0 < param < 1, else nil
+(defun medcb-seg-param (a b pt / dx dy l2 s)
+  (setq dx (- (car b) (car a)) dy (- (cadr b) (cadr a)) l2 (+ (* dx dx) (* dy dy)))
+  (if (> l2 1e-12)
+    (progn
+      (setq s (/ (+ (* (- (car pt) (car a)) dx) (* (- (cadr pt) (cadr a)) dy)) l2))
+      (if (and (> s 0.0) (< s 1.0))
+        (list s (medcb-dxy pt (list (+ (car a) (* s dx)) (+ (cadr a) (* s dy)))))))))
+;; conduit legs at pt: ((unit-dir ...) z-of-the-conduit-or-nil); runs = ((pts closed) ...) WCS
+(defun medcb-legs (pt runs tol / dirs z n i a b tt u)
+  (foreach r runs
+    (setq n (length (car r)) i 0)
+    (foreach p (car r)
+      (if (<= (medcb-dxy p pt) tol)
+        (progn
+          (if (not z) (setq z (caddr p)))
+          (if (or (> i 0) (cadr r))
+            (setq dirs (cons (medcb-unit (mapcar '- (nth (if (> i 0) (1- i) (1- n)) (car r)) p)) dirs)))
+          (if (or (< i (1- n)) (cadr r))
+            (setq dirs (cons (medcb-unit (mapcar '- (nth (if (< i (1- n)) (1+ i) 0) (car r)) p)) dirs)))))
+      (setq i (1+ i)))
+    (setq i 0)                                          ; passes straight through pt
+    (repeat (if (cadr r) n (max 0 (1- n)))
+      (setq a (nth i (car r)) b (nth (rem (1+ i) n) (car r)))
+      (if (and (> (medcb-dxy a pt) tol) (> (medcb-dxy b pt) tol)
+               (setq tt (medcb-seg-param a b pt)) (<= (cadr tt) tol))
+        (progn
+          (if (not z) (setq z (+ (caddr a) (* (car tt) (- (caddr b) (caddr a))))))
+          (setq u (medcb-unit (mapcar '- b a)))
+          (if u (setq dirs (cons u (cons (medcb-vx u -1.0) dirs))))))
+      (setq i (1+ i))))
+  (list (vl-remove nil dirs) z))
+
+;; every MED_CONDUIT polyline as (pts closed) for the leg search (needs MED3DPath)
+(defun medcb-conduit-runs ( / ss i pd r)
+  (if (and med3d-read-path
+           (setq ss (ssget "_X" (list '(-4 . "<OR") '(0 . "LWPOLYLINE") '(0 . "POLYLINE") '(-4 . "OR>")
+                                      (list -3 (list (medcb-app "CONDUIT")))))))
+    (progn
+      (setq i 0)
+      (repeat (sslength ss)
+        (if (setq pd (med3d-read-path (ssname ss i))) (setq r (cons (list (car pd) (nth 3 pd)) r)))
+        (setq i (1+ i)))))
+  (reverse r))
+
+;; one MED_FITTING INSERT -> body alist; "NM" = not a conduit body; nil = no xdata
+(defun medcb-body-of (e runs / ed xd code sz res kp mat form shape blk flip note reason r
+                            pt a rot geom hubs lg k best sc i h)
+  (setq ed (entget e) xd (xdataget e (medcb-app "FITTING")))
+  (cond
+    ((not xd) nil)
+    ((not (and (numberp (setq code (nth 3 xd))) (setq res (medcb-resolve-code (fix code))))) "NM")
+    (T
+      (setq kp (medcb-key-parse (car res)) mat (car kp) form (cadr kp) shape (caddr kp)
+            blk (strcase (cdr (assoc 2 ed)))
+            sz (if (numberp (nth 2 xd)) (float (nth 2 xd)) 0.0)
+            h (cdr (assoc 5 ed)))
+      (if (and (= shape "T") (member blk (append *MEDCB-2D-TEEDOWN* *MEDCB-2D-TEEUP*)))
+        (setq shape "TB" flip (if (member blk *MEDCB-2D-TEEUP*) T)))
+      (cond
+        ((and (= shape "LB") (member blk *MEDCB-2D-LBUP*))
+          (setq note "LB up - modelled with the back hub down (up / down orientation not modelled yet)"))
+        ((and (= shape "LB") (member blk *MEDCB-2D-TURN*))
+          (setq note "LB used as a flat plan turn - back hub modelled down, not along the second conduit")))
+      (setq reason
+        (cond
+          ((<= sz 0.0) "no trade size on the fitting")
+          ((/= mat "RGD") (strcat "material " mat " not modelled"))
+          ((= form "") (strcat shape " - no form in the body key / description"))
+          ((not (member shape *MEDCB-SHAPES*)) (strcat "no 3D data for " shape " bodies"))
+          ((not (member form *MEDCB-FORMS*)) (strcat "no 3D data for form " form))
+          ((not (and (setq r (medcb-find form shape sz)) (medcb-row-ok r)))
+            (strcat "no " form " " shape " " (medcb-size-text sz) "\" row in the conduit body data"))))
+      (setq pt  (trans (cdr (assoc 10 ed)) e 0)
+            a   (if (assoc 50 ed) (cdr (assoc 50 ed)) 0.0)
+            rot (angle '(0.0 0.0 0.0) (trans (list (cos a) (sin a) 0.0) e 0 T))
+            geom (if reason
+                   (medcb-geom-ph shape (if (> sz 0.0) sz 1.0) (medcb-conduit-od (if (> sz 0.0) sz 1.0)))
+                   (medcb-geom-for form shape sz))
+            hubs (medcb-get "HUBS" geom)
+            lg  (medcb-legs pt runs (medcb-fit-tol)))
+      (if (cadr lg) (setq pt (list (car pt) (cadr pt) (cadr lg))))   ; conduit elevation wins
+      (setq rot (+ rot (medcb-2d-offset blk shape)) k 0)
+      (if (and *MEDCB-SNAP* (car lg))
+        (progn
+          (setq best -1 i 0)
+          (repeat 4
+            (setq sc (medcb-score (medcb-wcs-hubs hubs (+ rot (* i (/ pi 2.0))) flip) (car lg)))
+            (if (> sc best) (setq best sc k i))
+            (setq i (1+ i)))
+          (setq rot (+ rot (* k (/ pi 2.0))))))
+      (while (< rot 0.0) (setq rot (+ rot (* 2.0 pi))))
+      (while (>= rot (* 2.0 pi)) (setq rot (- rot (* 2.0 pi))))
+      (list (cons "HANDLE" h) (cons "ENT" e) (cons "CODE" (fix code)) (cons "KEY" (car res)) (cons "SRC" (cadr res))
+            (cons "FORM" form) (cons "SHAPE" shape) (cons "SIZE" sz) (cons "BLK2D" blk) (cons "PT" pt)
+            (cons "ROT" rot) (cons "FLIP" flip) (cons "TURN" k) (cons "LEGS" (length (car lg)))
+            (cons "HUBS" (medcb-wcs-hubs hubs rot flip)) (cons "REASON" reason) (cons "NOTE" note)))))
+
+;; every MED_FITTING INSERT in the drawing -> (bodies not-modelled-count)
+(defun medcb-collect ( / ss i b bodies nm runs)
+  (setq *MEDCB-FITCAT* nil nm 0 runs (medcb-conduit-runs))
+  (if (setq ss (ssget "_X" (list '(0 . "INSERT") (list -3 (list (medcb-app "FITTING"))))))
+    (progn
+      (setq i 0)
+      (repeat (sslength ss)
+        (setq b (medcb-body-of (ssname ss i) runs))
+        (cond ((= (type b) 'STR) (setq nm (1+ nm)))
+              (b (setq bodies (cons b bodies))
+                 (if med3d-dbg
+                   (med3d-dbg (strcat "body " (medcb-get "HANDLE" b) " code " (itoa (medcb-get "CODE" b)) " "
+                                      (medcb-get "KEY" b) " (" (medcb-get "SRC" b) ") -> " (medcb-get "SHAPE" b) " "
+                                      (medcb-size-text (max 0.0625 (medcb-get "SIZE" b))) "\" on " (medcb-get "BLK2D" b)
+                                      ", rot " (rtos (* 180.0 (/ (medcb-get "ROT" b) pi)) 2 1) " deg"
+                                      (if (medcb-get "FLIP" b) " flipped" "")
+                                      ", " (itoa (medcb-get "LEGS" b)) " conduit leg(s), quarter turns "
+                                      (itoa (medcb-get "TURN" b))
+                                      (if (medcb-get "REASON" b) (strcat " - " (medcb-get "REASON" b)) ""))))))
+        (setq i (1+ i)))))
+  (list (reverse bodies) nm))
+
+;; record for the conduit planner (*MED3D-FITS*): (handle pt hubs); nil without a size
+(defun medcb-fit-rec (b)
+  (if (> (medcb-get "SIZE" b) 0.0) (list (medcb-get "HANDLE" b) (medcb-get "PT" b) (medcb-get "HUBS" b))))
+
+;; placeholder for any form / shape (unknown ones: box with run hubs)
+(defun medcb-ensure-ph (form shape sz / name)
+  (setq name (medcb-ph-name (if (= form "") "NA" form) shape sz))
+  (cond ((tblsearch "BLOCK" name) (list name "PH-EXISTS"))
+        ((medcb-build-block name (medcb-geom-ph shape sz (medcb-conduit-od sz))) (list name "PLACEHOLDER"))))
+(defun medcb-ensure-body (form shape sz reason)
+  (cond ((not (and (numberp sz) (> sz 0.0))) nil)
+        (reason (medcb-ensure-ph form shape sz))
+        (T (medcb-ensure-block form shape sz))))
+
+;; insert the bodies; returns (("REFS" ename ...) ("PLACED" . n) ("PH" . n) ("FLAGGED" . n)
+;;   ("SKIPPED" (handle "FITTING" reason) ...))
+(defun medcb-place-all (bodies / h pt reason res ref e refs placed ph flagged skipped)
+  (setq placed 0 ph 0 flagged 0)
+  (foreach b bodies
+    (setq h (medcb-get "HANDLE" b) pt (medcb-get "PT" b) reason (medcb-get "REASON" b)
+          res (medcb-ensure-body (medcb-get "FORM" b) (medcb-get "SHAPE" b) (medcb-get "SIZE" b) reason)
+          ref (if res (medcb-insert-block res pt (medcb-get "ROT" b) (medcb-get "FLIP" b))))
+    (if (medcb-get "NOTE" b)
+      (princ (strcat "\nMED3D note: fitting " h " (" (medcb-get "KEY" b) "): " (medcb-get "NOTE" b) ".")))
+    (if ref
+      (progn
+        (setq e (vlax-vla-object->ename ref) refs (cons e refs))
+        (if MEDStamp3DFromBom (vl-catch-all-apply 'MEDStamp3DFromBom (list e (medcb-get "ENT" b) "FITTING" nil)))))
+    (if (and ref (not reason))
+      (setq placed (1+ placed))
+      (progn
+        (if ref (setq ph (1+ ph)))
+        (if (not reason) (setq reason "block could not be created / inserted"))
+        (setq flagged (1+ flagged)
+              skipped (cons (list h "FITTING" (strcat (medcb-get "KEY" b) ": " reason
+                                                      (if ref " - placeholder on MED_3DFLAG" "")))
+                            skipped))
+        (princ (strcat "\nMED3D FLAG: fitting " h " " (medcb-get "KEY" b) ": " reason "."))
+        (if med3d-flag-at
+          (med3d-flag-at pt (max 1.0 (* 2.0 (medcb-get "SIZE" b))) (strcat "3D FLAG " h " " (medcb-get "KEY" b)))))))
+  (list (cons "REFS" (reverse refs)) (cons "PLACED" placed) (cons "PH" ph) (cons "FLAGGED" flagged)
+        (cons "SKIPPED" (reverse skipped))))
 
 (princ (strcat "Done.\nMED3DFittings " *MEDCB-VERSION* " loaded: MEDCBINS MEDCBTEST MEDCBDATA MEDCBVER"))
 (princ)

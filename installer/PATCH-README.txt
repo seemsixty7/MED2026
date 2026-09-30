@@ -14,6 +14,8 @@ What it updates
   existing database at load - it never replaces MED.db or overwrites values)
 - Data\seed\conduit_body_dims.csv, Data\seed\conduit_body_sources.csv (conduit
   body dimensions; MED-DotNet creates/fills MEDConduitBody the same way)
+- Data\seed\fitting_body_keys.csv (conduit body key per fitting code; MED-DotNet
+  fills blank MEDType.ITEMKEY2 on matching FITTING rows, never overwrites)
 - Support\MED.version.txt (channel=patch)
 - Navisworks MEDProperties plugin under your per-user AppData
   (Manage 2024 / Simulate 2024 Plugins\MEDPropertiesPlugin\)

@@ -443,12 +443,16 @@
 	     (while (< trayoutcnt trayoutnum)
 	     	 (setq trayent (ssname 3douttray trayoutcnt)
 	     	       mark    (entlast))
-	     	 (MEDSet3DTrayLayer trayent)
-	     	 (MEDConvertTrayFittingsTo3D trayent)
-	     	 (if (setq new (MEDNew3DSolidsAfter mark))
-	     	   (setq fitsols (append fitsols new))
-	     	   (setq skipped (cons (list (cdr (assoc 5 (entget trayent))) "FITTING"
-	     	                             "no solid created (not an elbow / tee / cross / reducer outline)") skipped)))
+	     	 ;; block fittings (conduit bodies, couplings ...) are not tray outlines:
+	     	 ;; MEDMAKE3D handles them in its conduit body stage (MED3DFittings.lsp)
+	     	 (if (/= (cdr (assoc 0 (entget trayent))) "INSERT")
+	     	   (progn
+	     	     (MEDSet3DTrayLayer trayent)
+	     	     (MEDConvertTrayFittingsTo3D trayent)
+	     	     (if (setq new (MEDNew3DSolidsAfter mark))
+	     	       (setq fitsols (append fitsols new))
+	     	       (setq skipped (cons (list (cdr (assoc 5 (entget trayent))) "FITTING"
+	     	                                 "no solid created (not an elbow / tee / cross / reducer outline)") skipped)))))
 	     	 (setq trayoutcnt (1+ trayoutcnt))
 	     )
 	   )

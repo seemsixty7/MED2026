@@ -48,7 +48,7 @@ Edit with [MEDTYPE](medtype.md), not a desktop database tool.
 | ITEMDESC | ITEM_DESC | Catalog text looked up at extract and in MEDLIST |
 | ITEM_GRP | ITEM_GRP | Cable Type on the Cable palette (Building Wire, Tray Cable, Ground Cable, Instrument Cable, Residential Cable). Details: grouping (Lighting, Grounding, …). Empty group hides a detail from `DETAIL` / `LTG` / … |
 | ITEMKEY1 | ITEMKEY1 | Details: detail number |
-| ITEMKEY2 | ITEMKEY2 | Details: drawing number the detail lives on |
+| ITEMKEY2 | ITEMKEY2 | Details: drawing number the detail lives on. FITTING: conduit body key `material\|form\|shape` (e.g. `RGD\|F7\|LB`) used by MEDMAKE3D. Blank = read from the description. Seeded blanks-only from `Data\seed\fitting_body_keys.csv` (see [3d.md](3d.md)) |
 | ITEMKEY3 | ITEMKEY3 | Details: block (and slide) name to insert. Blank + `opt_eq_ins` in USER2 → pick an entity to attach |
 | ITEMKEY4 | ITEMKEY4 | Details: layer-set name from `med.spc` |
 | USER1 | USER1 | Details: value for a `DETNUM` attribute if the block has one. Tray: section length in feet (reporting; MED does not auto-cut tray to this) |

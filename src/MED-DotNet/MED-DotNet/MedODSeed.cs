@@ -15,7 +15,10 @@ namespace MEDDotNet
     ///  - fills MEDType.USER3 (cable OD, inches) for CABLE rows only where USER3 is blank and
     ///    ITEMDESC still matches the seed row (user-renumbered/edited codes are left alone);
     ///  - creates MEDConduitBody (rigid conduit body dimensions, MED3DFittings.lsp) and inserts
-    ///    missing rows from conduit_body_dims.csv; only NULL dimension columns are filled.
+    ///    missing rows from conduit_body_dims.csv; only NULL dimension columns are filled;
+    ///  - fills MEDType.ITEMKEY2 (conduit body key, e.g. RGD|F7|LB, used by MEDMAKE3D) for
+    ///    FITTING rows from fitting_body_keys.csv, only where ITEMKEY2 is blank and ITEMDESC
+    ///    still matches the seed row.
     /// Pattern follows MedUserProject (runtime schema change, no scripts).
     /// </summary>
     internal static class MedODSeed
@@ -26,6 +29,7 @@ namespace MEDDotNet
         public const string ConduitSeedFile = "conduit_od.csv";
         public const string CableSeedFile = "cable_od_sources.csv";
         public const string ConduitBodySeedFile = "conduit_body_dims.csv";
+        public const string FittingBodyKeySeedFile = "fitting_body_keys.csv";
 
         public static void EnsureReady()
         {
@@ -43,6 +47,7 @@ namespace MEDDotNet
                         SeedConduitOd(Path.Combine(dir, ConduitSeedFile));
                         SeedCableOd(Path.Combine(dir, CableSeedFile));
                         SeedConduitBody(Path.Combine(dir, ConduitBodySeedFile));
+                        SeedFittingBodyKeys(Path.Combine(dir, FittingBodyKeySeedFile));
                     }
                     _done = true;
                 }
@@ -201,7 +206,8 @@ namespace MEDDotNet
                 try
                 {
                     if (File.Exists(Path.Combine(c, ConduitSeedFile)) || File.Exists(Path.Combine(c, CableSeedFile))
-                        || File.Exists(Path.Combine(c, ConduitBodySeedFile)))
+                        || File.Exists(Path.Combine(c, ConduitBodySeedFile))
+                        || File.Exists(Path.Combine(c, FittingBodyKeySeedFile)))
                         return Path.GetFullPath(c);
                 }
                 catch (System.Exception)
@@ -321,6 +327,47 @@ namespace MEDDotNet
                             + "AND (USER3 IS NULL OR LTRIM(RTRIM(USER3)) = '') "
                             + "AND UPPER(LTRIM(RTRIM(ITEMDESC))) = @d";
                         ProcessSQL.AddParam(cmd, "@od", od);
+                        ProcessSQL.AddParam(cmd, "@c", code);
+                        ProcessSQL.AddParam(cmd, "@d", desc.Trim().ToUpperInvariant());
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+                tx.Commit();
+            }
+            MedTypeLookup.ClearCache();
+        }
+
+        /// <summary>MEDType.ITEMKEY2 = conduit body key on FITTING rows (blank + same description only).</summary>
+        static void SeedFittingBodyKeys(string path)
+        {
+            if (!File.Exists(path))
+                return;
+            List<string[]> rows = ReadCsv(path);
+            if (rows.Count < 2)
+                return;
+            Dictionary<string, int> map = HeaderMap(rows[0]);
+            using (DbConnection conn = ProcessSQL.OpenConnection())
+            using (DbTransaction tx = conn.BeginTransaction())
+            {
+                for (int i = 1; i < rows.Count; i++)
+                {
+                    string[] r = rows[i];
+                    long code;
+                    if (!long.TryParse(Get(r, map, "ITEMCODE"), NumberStyles.Integer, CultureInfo.InvariantCulture, out code))
+                        continue;
+                    string key = Get(r, map, "BodyKey");
+                    if (key.Length == 0)
+                        continue;
+                    string desc = Get(r, map, "ITEMDESC");
+                    using (DbCommand cmd = conn.CreateCommand())
+                    {
+                        cmd.Transaction = tx;
+                        cmd.CommandText =
+                            "UPDATE MEDType SET ITEMKEY2 = @k "
+                            + "WHERE ITEMTYPE = 'FITTING' AND ITEMCODE = @c "
+                            + "AND (ITEMKEY2 IS NULL OR LTRIM(RTRIM(ITEMKEY2)) = '') "
+                            + "AND UPPER(LTRIM(RTRIM(ITEMDESC))) = @d";
+                        ProcessSQL.AddParam(cmd, "@k", Trunc(key, 20));
                         ProcessSQL.AddParam(cmd, "@c", code);
                         ProcessSQL.AddParam(cmd, "@d", desc.Trim().ToUpperInvariant());
                         cmd.ExecuteNonQuery();

@@ -182,6 +182,39 @@ check('radius', abs(get(plan([(0,0),(100,0),(100,100)], kind='CABLE', override=P
 case('cable 7xOD flags short leg', plan([(0,0),(7,0),(7,50)], kind='CABLE'), [(1,'FLAGGED')])
 case('conduit 5xOD fits short leg', plan([(0,0),(7,0),(7,50)]), [(1,'FITTED')])
 
+# 15 conduit bodies (*MED3D-FITS*, MEDMAKE3D): body joint = sharp, no sphere, legs cut
+#    back to the hub faces; no hub along a leg -> uncut + FITFLAGS; cable ignores bodies
+def corners(pl): return [cdict(c) for c in (get(pl, 'CORNERS') or [])]
+LLH = [['RUN', [-4.0, 0.0, 0.0], [-1.0, 0.0, 0.0]], ['BRANCH', [0.0, 2.5, 0.0], [0.0, 1.0, 0.0]]]
+L.g['*MED3D-FITS*'] = [['F1', [50.0, 0.0, 0.0], LLH]]
+pf = plan([(0,0),(50,0),(50,30),(80,30)])
+cf = corners(pf); pcs = get(pf, 'PIECES')
+check('body corner', cf[0]['STATUS'] == 'FITTING' and cf[0]['FITTING'] == 'F1' and cf[1]['STATUS'] == 'FITTED', str(cf))
+check('body cut', close(pcs[0][2], [46, 0, 0]) and close(pcs[1][1], [50, 2.5, 0]) and all(p[0] != 'S' for p in pcs), str(pcs))
+check('body gaps', get(pf, 'GAPS') is True and not get(pf, 'FITFLAGS'), 'GAPS / FITFLAGS')
+check('body bend fits after cut', pcs[2][0] == 'A' and abs(dot(sub(pcs[2][1], pcs[1][2]), [1, 1, 1])) < 1e-9, str(pcs[1:3]))
+# a short leg: the bend next to the body gets the length left after the cut
+pf = plan([(0,0),(50,0),(50,8),(80,8)])
+check('body short leg', corners(pf)[1]['STATUS'] == 'FLAGGED', str(corners(pf)))
+# no hub along the west leg
+L.g['*MED3D-FITS*'] = [['F2', [50.0, 0.0, 0.0], LLH[1:]]]
+pf = plan([(0,0),(50,0),(50,30)])
+ff = get(pf, 'FITFLAGS')
+check('body flag', len(ff) == 1 and ff[0][1] == 'F2' and ff[0][2] == 1 and close(get(pf, 'PIECES')[0][2], [50, 0, 0]), str(ff))
+# run ends at a body (both ends), Z tolerance, cable unaffected, 3D leg on a back hub
+L.g['*MED3D-FITS*'] = [['A', [0.0, 0.0, 0.0], [['RUN', [3.0, 0.0, 0.0], [1.0, 0.0, 0.0]]]],
+                       ['B', [40.0, 0.0, 0.0], [['BACK', [0.0, 0.0, 2.0], [0.0, 0.0, 1.0]], ['RUN', [-3.0, 0.0, 0.0], [-1.0, 0.0, 0.0]]]]]
+pf = plan([(0,0,0),(40,0,0),(40,0,30)])
+pcs = get(pf, 'PIECES')
+check('body ends', close(pcs[0][1], [3, 0, 0]) and close(pcs[0][2], [37, 0, 0]) and close(pcs[1][1], [40, 0, 2]), str(pcs))
+check('body endtrim', close(get(pf, 'ENDTRIM'), [3.0, 0.0]), str(get(pf, 'ENDTRIM')))
+pz = plan([(0,0,50),(40,0,50)])
+check('body z tol', get(pz, 'ENDTRIM') == [0.0, 0.0] and not get(pz, 'FITHITS'), str(get(pz, 'ENDTRIM')))
+pc = plan([(0,0),(50,0),(50,30)], kind='CABLE')
+check('body cable', get(pc, 'ENDTRIM') is None and not get(pc, 'GAPS'), 'cable run used bodies')
+L.g['*MED3D-FITS*'] = None
+case('bodies off again', plan([(0,0),(50,0),(50,30)]), [(1,'FITTED')])
+
 for r in results:
     print(f'{r[0]:34s} {str(r[1]):70s} pieces={r[2]:14s} len={r[3]}')
 print()

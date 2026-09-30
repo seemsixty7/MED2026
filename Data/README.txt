@@ -12,6 +12,9 @@ source per row. MED-DotNet reads them at load to create/fill MEDConduitOD and
 blank CABLE USER3 values in an existing database (patches ship these, not MED.db).
 seed\conduit_body_dims.csv (+ conduit_body_sources.csv) fills MEDConduitBody the same
 way; MED3DFittings.lsp reads the CSV directly when the table is not available.
+seed\fitting_body_keys.csv (ITEMCODE, ITEMDESC, BodyKey) fills blank MEDType.ITEMKEY2
+on FITTING rows whose description matches (conduit body key for MEDMAKE3D, e.g.
+RGD|F7|LB); existing values are never overwritten.
 
 Any MEDRegistrations.db beside this file is a local opt-in roster only.
 It is not part of the product runtime and must never ship with Setup or Patch.

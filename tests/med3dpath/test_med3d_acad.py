@@ -50,12 +50,14 @@ def heavy(mk, ocs_pts, buls, n, elev, flag=0, closed=False):
 class SS:
     def __init__(self, items=None): self.items = list(items or [])
 TRAY_LSP = os.path.join(ROOT, 'Support', 'MED3DTrayFunctions.lsp')
+FIT_LSP = os.path.join(ROOT, 'Support', 'MED3DFittings.lsp')
 
 def make3d_session(fmt, tray_file=False):
     """Mock drawing with 1 good + 1 no-OD conduit run, 1 cable run; the tray worker
     is a stub that makes 2 tray + 1 fitting solids and reports one skipped fitting."""
     L, mk = session()
     if tray_file: L.load(TRAY_LSP)
+    L.load(FIT_LSP)           # conduit bodies stage (no MED_FITTING inserts here -> no bodies)
     L.g['*MED3D-DEBUG*'] = None
     calls, cmds, sidecars, tray_sols = [], [], [], []
     def ssget(*a):
@@ -333,6 +335,33 @@ if __name__ == '__main__':
         check(f'make3d {fmt} error restored', L.g.get('*ERROR*') == 'ORIG-ERR', '*error* not restored')
         print(f'{"ok  " if len(fails) == n0 else "FAIL"} MEDMAKE3D {fmt}: stages {order}, '
               f'{len(wb)} WBLOCK, sidecars {sidecars}')
+    # conduit bodies: collect -> *MED3D-FITS* during the conduit stage only -> place -> cable
+    n0 = len(fails); L, mk, calls, cmds, sidecars, tray_sols = make3d_session('Layer')
+    body = [Pair('HANDLE', 'HB1'), Pair('PT', [1000.0, 1000.0, 0.0]), Pair('SIZE', 1.0),
+            Pair('HUBS', [['RUN', [1003.0, 1000.0, 0.0], [1.0, 0.0, 0.0]]])]
+    nosize = [Pair('HANDLE', 'HB2'), Pair('PT', [0.0, 0.0, 0.0]), Pair('SIZE', 0.0), Pair('HUBS', None)]
+    seen = {}
+    real_build = L.g['MED3D-PATH-BUILD-ALL']
+    def build_all2(kind):
+        seen[kind] = to_py(L.g.get('*MED3D-FITS*')); return real_build(kind)
+    ref = mk.new_solid([])
+    def place_all(bodies):
+        calls.append(('PLACE', len(bodies)))
+        return [Pair('REFS', [ref]), Pair('PLACED', 1), Pair('PH', 1), Pair('FLAGGED', 1),
+                Pair('SKIPPED', [['HB2', 'FITTING', 'no trade size on the fitting']])]
+    L.g.update({'MEDCB-COLLECT': lambda: (calls.append(('COLLECT',)) or [[body, nosize], 3]),
+                'MEDCB-PLACE-ALL': place_all, 'MED3D-PATH-BUILD-ALL': build_all2})
+    L.apply(L.g['C:MEDMAKE3D'], [])
+    order = [c[0] for c in calls]
+    check('bodies order', order == ['TRAY', 'COLLECT', 'CONDUIT', 'PLACE', 'CABLE'], f'{order}')
+    check('bodies fits', seen.get('CONDUIT') and len(seen['CONDUIT']) == 1 and seen['CONDUIT'][0][0] == 'HB1'
+          and not seen.get('CABLE'), f'{seen}')
+    check('bodies reset', not L.g.get('*MED3D-FITS*'), '*MED3D-FITS* left set')
+    summary = ' '.join(mk.log[mk.log.index(next(l for l in mk.log if 'MEDMAKE3D summary' in l)):])
+    for want in ('Conduit bodies: 1 block(s), 1 placeholder(s), 3 fitting(s) not modelled',
+                 'Flagged       : 1', 'Skipped       : 3', 'HB2 fitting: no trade size'):
+        check('bodies summary', want in summary, f'missing "{want}" in {summary[:500]}')
+    print(f'{"ok  " if len(fails) == n0 else "FAIL"} MEDMAKE3D conduit bodies: stages {order}')
     # MAKE3DTRAY goes through the same worker
     n0 = len(fails); L, mk, calls, cmds, sidecars, tray_sols = make3d_session('Dwg', tray_file=True)
     L.apply(L.g['C:MAKE3DTRAY'], [])
@@ -345,16 +374,17 @@ if __name__ == '__main__':
     for t in trays: t.typ = 'LWPOLYLINE'; t.xdata['MED_TRAY'] = ['MED_TRAY']
     fits = [mk.new_solid([]) for _ in range(2)]
     for f in fits: f.typ = 'LWPOLYLINE'; f.xdata['MED_FITTING'] = ['MED_FITTING']
+    cbody = mk.new_solid([]); cbody.typ = 'INSERT'; cbody.xdata['MED_FITTING'] = ['MED_FITTING']   # conduit body block
     made = []
     def conv(e): s_ = mk.new_solid([]); made.append(s_); return s_
     L.load(TRAY_LSP)          # real med3d-tray-build back (make3d_session stubbed it)
     L.g.update({'MEDSET3DTRAYLAYER': lambda e: None, 'MEDCONVERTTRAYTO3D': conv,
                 'MEDCONVERTTRAYFITTINGSTO3D': lambda e: conv(e) if e is fits[0] else None})
     res = L.apply(Sym('MED3D-TRAY-BUILD'), [])
-    ok = (res[0] == made[:2] and res[1] == made[2:3] and len(res[2]) == 1
+    ok = (res[0] == made[:2] and res[1] == made[2:3] and len(res[2]) == 1 and len(made) == 3
           and res[2][0][0] == f'H{fits[1].id}' and res[2][0][1] == 'FITTING')
     check('tray worker', ok, f'{res}')
-    print(f'{"ok  " if len(fails) == n0 else "FAIL"} med3d-tray-build: 2 tray + 1 fitting solid, 1 fitting skipped')
+    print(f'{"ok  " if len(fails) == n0 else "FAIL"} med3d-tray-build: 2 tray + 1 fitting solid, 1 fitting skipped, conduit-body INSERT left alone')
     old4 = os.path.join(os.path.dirname(__file__), 'old_4a1d703.lsp')
     if os.path.exists(old4):
         print('--- 4a1d703 on the 3D loop (demo of the two ways to get balls at every corner)')

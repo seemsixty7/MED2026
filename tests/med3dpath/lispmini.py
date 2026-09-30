@@ -159,6 +159,13 @@ class Interp:
                 if lequal(car(it), k): return it
             return None
         B['ASSOC'] = assoc
+        def member(x, l):
+            ls = aslist(l)
+            for i, y in enumerate(ls):
+                if lequal(y, x): return ls[i:]
+            return None
+        B['MEMBER'] = member
+        B['VL-REMOVE'] = lambda x, l: [y for y in aslist(l) if not lequal(y, x)] or None
         B['EQUAL'] = lambda a, b, f=0.0: lb(lequal(a, b, f))
         B['EQ'] = lambda a, b: lb(a is b or (a == b and not isinstance(a, list)))
         B['DISTANCE'] = lambda p, q: math.sqrt(sum((a - b) ** 2 for a, b in zip(p, q)))

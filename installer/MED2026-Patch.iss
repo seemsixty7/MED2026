@@ -68,6 +68,7 @@ Source: "Data\seed\conduit_od.csv"; DestDir: "{app}\Data\seed"; Flags: ignorever
 Source: "Data\seed\cable_od_sources.csv"; DestDir: "{app}\Data\seed"; Flags: ignoreversion; Components: support; Check: MedDataSeedWritable
 Source: "Data\seed\conduit_body_dims.csv"; DestDir: "{app}\Data\seed"; Flags: ignoreversion; Components: support; Check: MedDataSeedWritable
 Source: "Data\seed\conduit_body_sources.csv"; DestDir: "{app}\Data\seed"; Flags: ignoreversion; Components: support; Check: MedDataSeedWritable
+Source: "Data\seed\fitting_body_keys.csv"; DestDir: "{app}\Data\seed"; Flags: ignoreversion; Components: support; Check: MedDataSeedWritable
 Source: "Support\MED.version.txt"; DestDir: "{app}\Support"; Flags: ignoreversion; Components: support; Check: MedSupportWritable
 Source: "installer\Register-MEDInstall.ps1"; Flags: dontcopy
 

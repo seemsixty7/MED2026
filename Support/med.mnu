@@ -132,7 +132,7 @@ ID_MEDMAIN     [MED Main]
                  [Seal-Drn]^C^C(setq _FITTCODE  64) (setblkins _MEDFIT "1sealdr"  nil nil _SC 2) MEDBlockInsert
                  [Tee     ]^C^C(setq _FITTCODE  11) (setblkins _MEDFIT "1tee"     nil nil _SC 2) MEDBlockInsert
                  [T-down  ]^C^C(setq _FITTCODE  11) (setblkins _MEDFIT "1teed"    nil nil _SC 3) MEDBlockInsert
-                 [T-up    ]^C^C(setq _FITTCODE  11) (setblkins _MEDFIT "1teeu"    nil nil _SC 3) MEDBlockInsert
+                 [T-up    ]^C^C(setq _FITTCODE  11) (setblkins _MEDFIT "1teeu"    nil nil _SC 6) MEDBlockInsert
                  [Union   ]^C^C(setq _FITTCODE  72) (setblkins _MEDFIT "1union"   nil nil _SC 2) MEDBlockInsert
                  [<-X     ]^C^C(setq _FITTCODE  80) (setblkins _MEDFIT "1exs"     nil nil _SC 2) MEDBlockInsert
                [ Icons ]$i=MED.MEDplanfit $i=* 
@@ -797,8 +797,8 @@ CON_GUAX       [_Button("GUAX Fitting", "CON_GUAX", "CON_GUAX_32")]^C^C(setq _FI
 ID_Conduit_T_and_Cross_Fittings_0 [_Toolbar("Conduit T and Cross Fittings", _Floating, _Hide, 530, 182, 1)]
 CON_TEE        [_Button("Tee Fitting", "CON_TEE", "CON_TEE_32")]^C^C(setq _FITTCODE  11) (setblkins _MEDFIT "1tee"     nil nil _SC 2) MEDBlockInsert
 CON_TEEDOWN    [_Button("Tee Fitting Down", "CON_TEEDOWN", "CON_TEEDOWN_32")]^C^C(setq _FITTCODE  11) (setblkins _MEDFIT "1teed"    nil nil _SC 3) MEDBlockInsert
-CON_TEEUP      [_Button("Tee Fitting Up Solid", "CON_TEEUP", "CON_TEEUP_32")]^C^C(setq _FITTCODE  11) (setblkins _MEDFIT "1teeu"    nil nil _SC 3) MEDBlockInsert
-CON_TEEUPOPEN  [_Button("Tee Fitting Up Open", "CON_TEEUPOPEN", "CON_TEEUPOPEN_32")]^C^C(setq _FITTCODE  11) (setblkins _MEDFIT "1teeuo"    nil nil _SC 3) MEDBlockInsert
+CON_TEEUP      [_Button("Tee Fitting Up Solid", "CON_TEEUP", "CON_TEEUP_32")]^C^C(setq _FITTCODE  11) (setblkins _MEDFIT "1teeu"    nil nil _SC 6) MEDBlockInsert
+CON_TEEUPOPEN  [_Button("Tee Fitting Up Open", "CON_TEEUPOPEN", "CON_TEEUPOPEN_32")]^C^C(setq _FITTCODE  11) (setblkins _MEDFIT "1teeuo"    nil nil _SC 6) MEDBlockInsert
 CON_CROSS      [_Button("Cross Fitting", "CON_CROSS", "CON_CROSS_32")]^C^C(setq _FITTCODE  80) (setblkins _MEDFIT "1exs"     nil nil _SC 2) MEDBlockInsert
 
 **LIGHTING_SYMBOLS
@@ -1201,13 +1201,13 @@ ID__16         [_Flyout("Misc Switches", ICON6962.bmp, ICON_24_BLANK, _OtherIcon
 [MEDplan(1lbu,Lb up)]^C^C(setq _FITTCODE  30) (setblkins _MEDFIT "1lbu"     nil nil _SC 6) MEDBlockInsert
 [MEDplan(1tee,Tee)]^C^C(setq _FITTCODE  11) (setblkins _MEDFIT "1tee"     nil nil _SC 2) MEDBlockInsert
 [MEDplan(1teed,T-down)]^C^C(setq _FITTCODE  11) (setblkins _MEDFIT "1teed"    nil nil _SC 3) MEDBlockInsert
-[MEDplan(1teeu,T-up)]^C^C(setq _FITTCODE  11) (setblkins _MEDFIT "1teeu"    nil nil _SC 3) MEDBlockInsert
+[MEDplan(1teeu,T-up)]^C^C(setq _FITTCODE  11) (setblkins _MEDFIT "1teeu"    nil nil _SC 6) MEDBlockInsert
 [MEDplan(1teed,T-down to Tee)]^C^C(setq _FITTCODE  11) (setblkins _MEDFIT "2teed"    nil nil _SC 3) MEDBlockInsert
 [MEDplan(1union,Union)]^C^C(setq _FITTCODE  72) (setblkins _MEDFIT "1union"   nil nil _SC 1) MEDBlockInsert
 [MEDplan(1cee,'C' Fitting)]^C^C(setq _FITTCODE  50) (setblkins _MEDFIT "1cee"     nil nil _SC 2) MEDBlockInsert
 [MEDplan(1cap,Recessed Plug)]^C^C(setq _FITTCODE 100) (setblkins _MEDFIT "1cap"     nil nil _SC 2) MEDBlockInsert
 [MEDplan(1cap,Square Head Plug)]^C^C(setq _FITTCODE 101) (setblkins _MEDFIT "1cap"     nil nil _SC 2) MEDBlockInsert
-[MEDplan(1exs,X)]^C^C(setq _FITTCODE  30) (setblkins _MEDFIT "1exs"     nil nil _SC 2) MEDBlockInsert
+[MEDplan(1exs,X)]^C^C(setq _FITTCODE  80) (setblkins _MEDFIT "1exs"     nil nil _SC 2) MEDBlockInsert
 [MEDplan(1seal,Seal)]^C^C(setq _FITTCODE  61) (setblkins _MEDFIT "1seal"    nil nil _SC 1) MEDBlockInsert
 [MEDplan(1sealdr,Seal-Drain)]^C^C(setq _FITTCODE  64) (setblkins _MEDFIT "1sealdr"  nil nil _SC 1) MEDBlockInsert
 [MEDplan(1bub,Pulling fitting)]^C^C(setq _FITTCODE  94) (setblkins _MEDFIT "1bub"     nil nil _SC 2) MEDBlockInsert

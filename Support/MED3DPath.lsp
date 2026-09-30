@@ -6,7 +6,9 @@
 ;;;   MAKE3DCONDUIT  every MED_CONDUIT run     -> Dwg / Layer output like MAKE3DTRAY
 ;;;   MAKE3DCABLE    every MED_CABLE run       -> Dwg / Layer output like MAKE3DTRAY
 ;;;   MEDMAKE3D      tray + tray fittings (MED3DTrayFunctions, med3d-tray-build),
-;;;                  then every conduit run, then every cable run -> one prompt
+;;;                  then conduit bodies are resolved (MED3DFittings medcb-collect),
+;;;                  then every conduit run (cut back to the body hubs), then the
+;;;                  body blocks, then every cable run -> one prompt
 ;;;                  [Dwg/Layer]: one combined DWG + one .medprops.json sidecar,
 ;;;                  or all solids left on their layers; prints a summary
 ;;;   MED3DPLAN      print the corner table of one run (no solids)
@@ -38,6 +40,14 @@
 ;;;   INDEX (0-based source vertex) VERTEX ANGLE RADIUS TANGENT PTIN PTOUT CENTER
 ;;;   NORMAL TIN TOUT STATUS ("FITTED" "FLAGGED" "KINK") NEED AVAIL SEGIN SEGOUT.
 ;;;   Each run drawn by a command is also kept in *MED3D-LAST-PLANS*.
+;;; Conduit bodies (MEDMAKE3D only): *MED3D-FITS* = ((handle pt hubs) ...), hubs =
+;;;   ((name face-offset outward-dir) ...) in WCS, face offset relative to pt. A run
+;;;   vertex / open end within *MED3D-FIT-TOL* (XY) of pt is a body joint: no fillet,
+;;;   no sphere, not flagged (STATUS "FITTING"); each straight leg is cut back to the
+;;;   hub face whose outward direction is within *MED3D-FIT-ANG* degrees of the leg.
+;;;   No such hub -> leg left uncut and FLAGGED ("FITFLAGS"). A run that passes
+;;;   straight through a body (C, T run) stays continuous. Runs cut at an inner
+;;;   body joint have "GAPS" and are drawn as PIECES.
 ;;; Workers (no prompts; wrap in med3d-begin / med3d-end):
 ;;;   (med3d-path-build-all kind) -> converts every MED run of kind, returns
 ;;;     (("KIND" . k) ("RUNS" . n) ("OK" . n) ("SOLIDS" enames...) ("FLAGGED" . n)
@@ -46,7 +56,7 @@
 
 (princ "\rLoading MED3DPath...")
 (vl-load-com)
-(setq *MED3D-VERSION* "2026-09-29 r7 (feature/3dpath)")
+(setq *MED3D-VERSION* "2026-09-30 r8 (feature/3dpath)")
 
 ;;; ------------------------------------------------------------------ settings
 (if (not *MED3D-BEND-FACTOR*) (setq *MED3D-BEND-FACTOR* 5.0))  ; conduit R = factor x OD
@@ -65,6 +75,11 @@
 ;; (tiny jogs / near-duplicate vertices in 3D polylines would otherwise leave a
 ;; segment too short for any bend and force spheres at both its corners)
 (if (not *MED3D-DUP-FACTOR*) (setq *MED3D-DUP-FACTOR* 0.1))
+;; conduit bodies (MEDMAKE3D): XY distance body point <-> run vertex (drawing units)
+;; and the largest angle between a conduit leg and the hub it is cut back to
+(if (not *MED3D-FIT-TOL*) (setq *MED3D-FIT-TOL* 0.25))
+(if (not *MED3D-FIT-ANG*) (setq *MED3D-FIT-ANG* 30.0))
+(setq *MED3D-FITS* nil *MED3D-ENDTRIM* nil)   ; set by MEDMAKE3D / med3d-plan only
 (setq *MED3D-TOL* 1e-6       ; length tolerance (drawing units)
       *MED3D-ANGTOL* 1e-4)   ; radians; smaller deflection = straight through
 
@@ -279,14 +294,14 @@
 ;; tangents on every straight sum to <= its length; then any dropped corner that
 ;; now fits is put back.
 (defun med3d-allocate (segs joints closed / eps lens stats forced cands i f costs edges cyc flags changed avails a b)
-  (setq eps 1e-9 lens (mapcar 'med3d-seg-len segs) i 0 stats nil forced nil cands nil)
+  (setq eps 1e-9 lens (med3d-fit-lens (mapcar 'med3d-seg-len segs) joints closed) i 0 stats nil forced nil cands nil)
   (foreach j joints
-    (setq f (or (= (nth 4 j) "R")
+    (setq f (or (= (nth 4 j) "R") (= (nth 4 j) "F")
                 (and (= (nth 4 j) "C")
                      (or (> (nth 5 j) (+ (nth (nth 2 j) lens) eps))
                          (> (nth 5 j) (+ (nth (nth 3 j) lens) eps))))))
     (setq forced (cons f forced)
-          stats  (cons (if (= (nth 4 j) "K") "KINK" "FLAGGED") stats))
+          stats  (cons (cond ((= (nth 4 j) "K") "KINK") ((= (nth 4 j) "F") "FITTING") (T "FLAGGED")) stats))
     (if (and (= (nth 4 j) "C") (not f)) (setq cands (cons i cands)))
     (setq i (1+ i)))
   (setq forced (reverse forced) stats (reverse stats) cands (reverse cands))
@@ -318,6 +333,65 @@
     (setq avails (cons (med3d-avail joints stats lens i) avails) i (1+ i)))
   (list stats (reverse avails)))
 
+;;; ------------------------------------------------------------ conduit bodies
+;; body of *MED3D-FITS* at WCS point p (XY within *MED3D-FIT-TOL*, Z within max(tol, od))
+(defun med3d-fit-at (p od / tol r)
+  (setq tol (max *MED3D-FIT-TOL* 1e-6))
+  (foreach f *MED3D-FITS*
+    (if (and (not r)
+             (<= (distance (list (car p) (cadr p)) (list (car (cadr f)) (cadr (cadr f)))) tol)
+             (<= (abs (- (caddr p) (caddr (cadr f)))) (max tol od)))
+      (setq r f)))
+  r)
+;; cut-back along leg u (unit, pointing away from the body): (distance . T) to the
+;; face of the hub pointing along u (within *MED3D-FIT-ANG*), (0.0 . nil) if none
+(defun med3d-fit-trim (f u / best r d)
+  (setq best (cos (/ (* pi *MED3D-FIT-ANG*) 180.0)))
+  (foreach h (caddr f)
+    (if (>= (setq d (med3d-dot (caddr h) u)) best) (setq best d r h)))
+  (if r (cons (max 0.0 (med3d-dot (cadr r) u)) T) (cons 0.0 nil)))
+;; joints at a body become ("F" ...): (V th kin kout "F" 0.0 vidx d1 d2 cut-in cut-out handle).
+;; Returns (joints (cut-at-start cut-at-end) fitflags hits); fitflags = ((point handle vidx) ...)
+(defun med3d-fit-joints (segs joints closed od / out flags hits f s r ci co bad n p cs ce)
+  (setq cs 0.0 ce 0.0)
+  (foreach j joints
+    (if (setq f (med3d-fit-at (nth 0 j) od))
+      (progn
+        (setq ci 0.0 co 0.0 bad nil hits (cons (car f) hits))
+        (if (= (car (nth (nth 2 j) segs)) "L")
+          (setq r (med3d-fit-trim f (med3d-vx (nth 7 j) -1.0)) ci (car r) bad (not (cdr r))))
+        (if (= (car (nth (nth 3 j) segs)) "L")
+          (setq r (med3d-fit-trim f (nth 8 j)) co (car r) bad (or bad (not (cdr r)))))
+        (if bad (setq flags (cons (list (nth 0 j) (car f) (nth 6 j)) flags)))
+        (setq out (cons (list (nth 0 j) (nth 1 j) (nth 2 j) (nth 3 j) "F" 0.0 (nth 6 j) (nth 7 j) (nth 8 j)
+                              ci co (car f))
+                        out)))
+      (setq out (cons j out))))
+  (if (not closed)
+    (progn
+      (setq n (length segs) s (car segs) p (nth 1 s))
+      (if (and (= (car s) "L") (setq f (med3d-fit-at p od)))
+        (progn
+          (setq r (med3d-fit-trim f (med3d-seg-tin s)) cs (car r) hits (cons (car f) hits))
+          (if (not (cdr r)) (setq flags (cons (list p (car f) (nth 3 s)) flags)))))
+      (setq s (nth (1- n) segs) p (nth 2 s))
+      (if (and (= (car s) "L") (setq f (med3d-fit-at p od)))
+        (progn
+          (setq r (med3d-fit-trim f (med3d-vx (med3d-seg-tout s) -1.0)) ce (car r) hits (cons (car f) hits))
+          (if (not (cdr r)) (setq flags (cons (list p (car f) (nth 4 s)) flags)))))))
+  (list (reverse out) (list cs ce) (reverse flags) (reverse hits)))
+;; segment lengths minus the body cut-backs (so bends next to a body still fit)
+(defun med3d-fit-lens (lens joints closed / n)
+  (foreach j joints
+    (if (= (nth 4 j) "F")
+      (setq lens (med3d-set-nth lens (nth 2 j) (- (nth (nth 2 j) lens) (nth 9 j)))
+            lens (med3d-set-nth lens (nth 3 j) (- (nth (nth 3 j) lens) (nth 10 j))))))
+  (if (and (not closed) *MED3D-ENDTRIM* lens)
+    (setq n (length lens)
+          lens (med3d-set-nth lens 0 (- (car lens) (car *MED3D-ENDTRIM*)))
+          lens (med3d-set-nth lens (1- n) (- (nth (1- n) lens) (cadr *MED3D-ENDTRIM*)))))
+  lens)
+
 ;;; ---------------------------------------------------------------------- plan
 (defun med3d-corner-by (corners key k / r cc)
   (foreach cc corners (if (= (med3d-get key cc) k) (setq r cc)))
@@ -326,7 +400,7 @@
 ;; Pure geometry: WCS vertices -> plan alist
 ;;   ("SEGS" ...) ("CORNERS" ...) ("PIECES" ...) ("CLOSED" . flag) ("OD" . od) ("R" . R)
 ;; pieces: ("L" A B) | ("A" A B C N th) | ("S" P radius), in path order.
-(defun med3d-plan (pts buls nrm closed od kind override / *MED3D-DUP-TOL* bs segs R joints al stats avails rs corners i st th d1 d2 tt pin pout n1 c nn pieces k cs ce d a b)
+(defun med3d-plan (pts buls nrm closed od kind override / *MED3D-DUP-TOL* *MED3D-ENDTRIM* bs segs R joints fj gaps al stats avails rs corners i st th d1 d2 tt pin pout n1 c nn pieces k cs ce d a b)
   (setq *MED3D-DUP-TOL* (* *MED3D-DUP-FACTOR* od)
         *MED3D-DROPPED* nil
         bs (med3d-build-segs pts buls nrm closed))
@@ -336,6 +410,11 @@
             closed (cadr bs)
             R      (med3d-bend-radius kind od override)
             joints (med3d-joints segs closed R)
+            fj     (if (and *MED3D-FITS* (= kind "CONDUIT"))
+                     (med3d-fit-joints segs joints closed od)
+                     (list joints nil nil nil))
+            joints (car fj)
+            *MED3D-ENDTRIM* (cadr fj)
             al     (med3d-allocate segs joints closed)
             stats  (car al)
             avails (cadr al)
@@ -344,21 +423,27 @@
             i 0)
       (foreach j joints
         (setq th (nth 1 j) d1 (nth 7 j) d2 (nth 8 j) st (nth i stats))
-        (if (= st "FITTED")
-          (setq tt   (nth 5 j)
-                pin  (med3d-v- (nth 0 j) (med3d-vx d1 tt))
-                pout (med3d-v+ (nth 0 j) (med3d-vx d2 tt))
-                n1   (med3d-unit (med3d-v- d2 (med3d-vx d1 (med3d-dot d1 d2))))
-                c    (med3d-v+ pin (med3d-vx n1 R))
-                nn   (med3d-unit (med3d-cross d1 d2)))
-          (setq tt 0.0 pin (nth 0 j) pout (nth 0 j) c nil nn nil))
+        (cond
+          ((= st "FITTED")
+            (setq tt   (nth 5 j)
+                  pin  (med3d-v- (nth 0 j) (med3d-vx d1 tt))
+                  pout (med3d-v+ (nth 0 j) (med3d-vx d2 tt))
+                  n1   (med3d-unit (med3d-v- d2 (med3d-vx d1 (med3d-dot d1 d2))))
+                  c    (med3d-v+ pin (med3d-vx n1 R))
+                  nn   (med3d-unit (med3d-cross d1 d2))))
+          ((= st "FITTING")            ; conduit body: straights cut back to the hub faces
+            (setq tt 0.0 c nil nn nil
+                  pin  (med3d-v- (nth 0 j) (med3d-vx d1 (nth 9 j)))
+                  pout (med3d-v+ (nth 0 j) (med3d-vx d2 (nth 10 j)))))
+          (T (setq tt 0.0 pin (nth 0 j) pout (nth 0 j) c nil nn nil)))
         (setq corners
                (cons (list (cons "INDEX" (nth 6 j)) (cons "VERTEX" (nth 0 j)) (cons "ANGLE" th)
                            (cons "RADIUS" (if (= st "FITTED") R nil))
                            (cons "TANGENT" tt) (cons "PTIN" pin) (cons "PTOUT" pout)
                            (cons "CENTER" c) (cons "NORMAL" nn) (cons "TIN" d1) (cons "TOUT" d2)
                            (cons "STATUS" st) (cons "NEED" (nth 5 j)) (cons "AVAIL" (nth i avails))
-                           (cons "SEGIN" (nth 2 j)) (cons "SEGOUT" (nth 3 j)))
+                           (cons "SEGIN" (nth 2 j)) (cons "SEGOUT" (nth 3 j))
+                           (cons "FITTING" (if (= st "FITTING") (nth 11 j))))
                      corners)
               i (1+ i)))
       (setq corners (reverse corners) pieces nil k 0)
@@ -368,21 +453,31 @@
         (if (= (car s) "L")
           (progn
             (setq d (med3d-seg-tin s)
-                  a (if (and cs (= (med3d-get "STATUS" cs) "FITTED")) (med3d-get "PTOUT" cs) (nth 1 s))
-                  b (if (and ce (= (med3d-get "STATUS" ce) "FITTED")) (med3d-get "PTIN" ce) (nth 2 s)))
+                  a (cond ((and cs (member (med3d-get "STATUS" cs) '("FITTED" "FITTING"))) (med3d-get "PTOUT" cs))
+                          ((and (= k 0) (not closed) *MED3D-ENDTRIM*)
+                            (med3d-v+ (nth 1 s) (med3d-vx d (car *MED3D-ENDTRIM*))))
+                          (T (nth 1 s)))
+                  b (cond ((and ce (member (med3d-get "STATUS" ce) '("FITTED" "FITTING"))) (med3d-get "PTIN" ce))
+                          ((and (= k (1- (length segs))) (not closed) *MED3D-ENDTRIM*)
+                            (med3d-v- (nth 2 s) (med3d-vx d (cadr *MED3D-ENDTRIM*))))
+                          (T (nth 2 s))))
             (if (> (med3d-dot (med3d-v- b a) d) *MED3D-TOL*)
               (setq pieces (cons (list "L" a b) pieces))))
           (setq pieces (cons (list "A" (nth 1 s) (nth 2 s) (nth 3 s) (nth 4 s) (nth 5 s)) pieces)))
         (if ce
-          (if (= (med3d-get "STATUS" ce) "FITTED")
-            (setq pieces (cons (list "A" (med3d-get "PTIN" ce) (med3d-get "PTOUT" ce)
-                                     (med3d-get "CENTER" ce) (med3d-get "NORMAL" ce)
-                                     (med3d-get "ANGLE" ce))
-                               pieces))
-            (setq pieces (cons (list "S" (med3d-get "VERTEX" ce) rs) pieces))))
+          (cond
+            ((= (med3d-get "STATUS" ce) "FITTED")
+              (setq pieces (cons (list "A" (med3d-get "PTIN" ce) (med3d-get "PTOUT" ce)
+                                       (med3d-get "CENTER" ce) (med3d-get "NORMAL" ce)
+                                       (med3d-get "ANGLE" ce))
+                                 pieces)))
+            ((= (med3d-get "STATUS" ce) "FITTING") (setq gaps T))   ; the body fills the gap
+            (T (setq pieces (cons (list "S" (med3d-get "VERTEX" ce) rs) pieces)))))
         (setq k (1+ k)))
       (list (cons "SEGS" segs) (cons "CORNERS" corners) (cons "PIECES" (reverse pieces))
-            (cons "CLOSED" closed) (cons "OD" od) (cons "R" R)))))
+            (cons "CLOSED" closed) (cons "OD" od) (cons "R" R)
+            (cons "GAPS" gaps) (cons "ENDTRIM" *MED3D-ENDTRIM*)
+            (cons "FITFLAGS" (nth 2 fj)) (cons "FITHITS" (nth 3 fj))))))
 
 ;;; ================================================= AutoCAD side (not pure)
 (defun med3d-dxf (code ed dflt / v)
@@ -553,20 +648,25 @@
 (defun med3d-rtos (x) (if (> x 1e90) "n/a (reversal)" (rtos x 2 3)))
 (defun med3d-deg (a) (rtos (* 180.0 (/ a pi)) 2 1))
 
-(defun med3d-flag-marker (v od h idx / lay s)
-  (setq lay (med3d-ensure-layer (med3d-flag-layer)) s (* 2.0 od))
+;; marker on MED_3DFLAG: 3 axis lines + circle of size s, text txt
+(defun med3d-flag-at (v s txt / lay)
+  (setq lay (med3d-ensure-layer (med3d-flag-layer)))
   (foreach d '((1.0 0.0 0.0) (0.0 1.0 0.0) (0.0 0.0 1.0))
     (entmake (list '(0 . "LINE") (cons 8 lay)
                    (cons 10 (med3d-v- v (med3d-vx d s))) (cons 11 (med3d-v+ v (med3d-vx d s))))))
   (entmake (list '(0 . "CIRCLE") (cons 8 lay) (cons 10 v) (cons 40 s)))
-  (entmake (list '(0 . "TEXT") (cons 8 lay) (cons 10 (med3d-v+ v (list s s 0.0))) (cons 40 od)
-                 (cons 1 (strcat "3D FLAG " h " v" (itoa (1+ idx)))))))
+  (entmake (list '(0 . "TEXT") (cons 8 lay) (cons 10 (med3d-v+ v (list s s 0.0))) (cons 40 (* 0.5 s))
+                 (cons 1 txt))))
+(defun med3d-flag-marker (v od h idx)
+  (med3d-flag-at v (* 2.0 od) (strcat "3D FLAG " h " v" (itoa (1+ idx)))))
 
 (defun med3d-corner-reason (c)
   (cond
     ((= (med3d-get "STATUS" c) "FITTED")
       (strcat "fits: tangent " (rtos (med3d-get "NEED" c) 2 3) " <= available " (rtos (med3d-get "AVAIL" c) 2 3)))
     ((= (med3d-get "STATUS" c) "KINK") "non-tangent joint at a drawn arc")
+    ((= (med3d-get "STATUS" c) "FITTING")
+      (strcat "conduit body " (med3d-get "FITTING" c) ": sharp, legs cut back to the hub faces"))
     ((> (med3d-get "NEED" c) 1e90) "reversal (run doubles back)")
     (T (strcat "tangent " (rtos (med3d-get "NEED" c) 2 3) " > available "
                (rtos (max 0.0 (med3d-get "AVAIL" c)) 2 3)
@@ -597,7 +697,11 @@
       ((= st "KINK")
         (princ (strcat "\nMED3D: run " h " vertex " (itoa (1+ (med3d-get "INDEX" c)))
                        " non-tangent joint at a drawn arc (" (med3d-deg (med3d-get "ANGLE" c))
-                       " deg) - closed with sphere."))))))
+                       " deg) - closed with sphere.")))))
+  (foreach ff (med3d-get "FITFLAGS" plan)
+    (princ (strcat "\nMED3D FLAG: run " h " vertex " (itoa (1+ (nth 2 ff))) " at conduit body " (nth 1 ff)
+                   ": no hub within " (rtos *MED3D-FIT-ANG* 2 0) " deg of the conduit - leg not cut back."))
+    (med3d-flag-at (nth 0 ff) (* 2.0 od) (strcat "3D FLAG " h " body " (nth 1 ff)))))
 
 (defun med3d-clear-flags ( / ss i)
   (if (setq ss (ssget "_X" (list (cons 8 (car (med3d-flag-layer))))))
@@ -878,6 +982,7 @@
 ;; SWEEP one circle along the filleted centerline (planar runs, no sharp corners)
 (defun med3d-draw-sweep (plan lay / n path pc0 a tn circ sol typ)
   (cond
+    ((med3d-get "GAPS" plan) (med3d-dbg "method PIECES: run is cut at a conduit body") nil)
     ((med3d-has-spheres plan) (med3d-dbg "method PIECES: run has sphere corners (flag/kink)") nil)
     ((not (setq n (med3d-planar-normal plan))) (med3d-dbg "method PIECES: run is not planar") nil)
     ((not (setq path (med3d-make-lw-path plan n lay)))
@@ -927,6 +1032,7 @@
         (setq *MED3D-BUILT* (cons s *MED3D-BUILT*)))
       (foreach c (med3d-get "CORNERS" plan)
         (if (= (med3d-get "STATUS" c) "FLAGGED") (setq *MED3D-FLAGGED* (1+ *MED3D-FLAGGED*))))
+      (setq *MED3D-FLAGGED* (+ *MED3D-FLAGGED* (length (med3d-get "FITFLAGS" plan))))
       (setq *MED3D-LAST-PLANS* (cons (append plan (list (cons "SOLID" sol))) *MED3D-LAST-PLANS*))
       (if (not sol) (med3d-skip (med3d-get "HANDLE" plan) kind "no solid created (every piece failed)"))
       (if sol (list sol plan)))))
@@ -964,7 +1070,7 @@
       (setvar "OSMODE" (nth 0 *MED3D-OLD*))
       (setvar "CMDECHO" (nth 1 *MED3D-OLD*))
       (if (tblsearch "LAYER" (nth 2 *MED3D-OLD*)) (setvar "CLAYER" (nth 2 *MED3D-OLD*)))))
-  (setq *error* *MED3D-OLDERR* *MED3D-OLD* nil *MED3D-OLDERR* nil)
+  (setq *error* *MED3D-OLDERR* *MED3D-OLD* nil *MED3D-OLDERR* nil *MED3D-FITS* nil)
   (princ))
 
 (defun med3d-filter (app)
@@ -1088,10 +1194,12 @@
 (defun med3d-summary-line (label n what)
   (princ (strcat "\n  " label (itoa n) " " what)))
 
-;; MEDMAKE3D: tray (+ fittings) via the MAKE3DTRAY worker, then conduit, then
-;; cable via med3d-path-build-all; one [Dwg/Layer] prompt; one combined DWG +
+;; MEDMAKE3D: tray (+ fittings) via the MAKE3DTRAY worker, then the conduit bodies
+;; (MED3DFittings: every MED_FITTING INSERT resolved to a body + its hubs), then
+;; conduit (cut back at the bodies), then the body blocks, then cable via
+;; med3d-path-build-all; one [Dwg/Layer] prompt; one combined DWG +
 ;; one .medprops.json sidecar (Dwg) or solids left in place (Layer).
-(defun med3d-make3d-all ( / fmt tray traysols fitsols con cab skips flagged all ss fname n)
+(defun med3d-make3d-all ( / fmt tray traysols fitsols bodies con cb cab skips flagged all ss fname n)
   (med3d-begin "MEDMAKE3D")
   (setq *MED3D-LAST-PLANS* nil *MED3D-STAGE-ERRORS* nil)
   (med3d-clear-flags)
@@ -1112,13 +1220,28 @@
   (setq traysols (med3d-live (nth 0 tray)) fitsols (med3d-live (nth 1 tray)))
   (med3d-dbg (strcat "MEDMAKE3D tray stage: " (itoa (length traysols)) " tray, "
                      (itoa (length fitsols)) " fitting solid(s)"))
-  ;; 2. conduit, 3. cable
+  ;; 2. conduit bodies: resolve every MED_FITTING INSERT (MED3DFittings.lsp) and
+  ;;    its hub faces, so the conduit stage can cut the runs back to them
+  (if (not medcb-collect)
+    (vl-catch-all-apply 'load (list "MED3DFittings.lsp")))
+  (if medcb-collect
+    (setq bodies (med3d-stage "BODIES" 'medcb-collect nil))
+    (setq *MED3D-STAGE-ERRORS*
+           (cons (list "-" "FITTING" "MED3DFittings.lsp not loaded - conduit bodies skipped") *MED3D-STAGE-ERRORS*)))
+  (setq *MED3D-FITS* (if (car bodies) (vl-remove nil (mapcar 'medcb-fit-rec (car bodies)))))
+  ;; 3. conduit (cut back at the bodies)
   (setq con (med3d-stage "CONDUIT" 'med3d-path-build-all (list "CONDUIT")))
+  (setq *MED3D-FITS* nil)
+  ;; 4. conduit body blocks on the 3D conduit layer (placeholders on MED_3DFLAG)
+  (if (car bodies) (setq cb (med3d-stage "BODIES" 'medcb-place-all (list (car bodies)))))
+  ;; 5. cable
   (setq cab (med3d-stage "CABLE" 'med3d-path-build-all (list "CABLE")))
-  (setq skips   (append (nth 2 tray) (med3d-get "SKIPPED" con) (med3d-get "SKIPPED" cab)
-                        (reverse *MED3D-STAGE-ERRORS*))
-        flagged (+ (if con (med3d-get "FLAGGED" con) 0) (if cab (med3d-get "FLAGGED" cab) 0))
-        all     (med3d-live (append traysols fitsols (med3d-get "SOLIDS" con) (med3d-get "SOLIDS" cab)))
+  (setq skips   (append (nth 2 tray) (med3d-get "SKIPPED" con) (med3d-get "SKIPPED" cb)
+                        (med3d-get "SKIPPED" cab) (reverse *MED3D-STAGE-ERRORS*))
+        flagged (+ (if con (med3d-get "FLAGGED" con) 0) (if cb (med3d-get "FLAGGED" cb) 0)
+                   (if cab (med3d-get "FLAGGED" cab) 0))
+        all     (med3d-live (append traysols fitsols (med3d-get "SOLIDS" con) (med3d-get "REFS" cb)
+                                    (med3d-get "SOLIDS" cab)))
         ss      (med3d-sscat all))
   ;; output
   (cond
@@ -1145,10 +1268,13 @@
   (med3d-summary-line "Conduit       : " (length (med3d-get "SOLIDS" con))
     (strcat "solid(s) from " (itoa (if con (med3d-get "OK" con) 0)) " of "
             (itoa (if con (med3d-get "RUNS" con) 0)) " run(s)"))
+  (med3d-summary-line "Conduit bodies: " (if cb (med3d-get "PLACED" cb) 0)
+    (strcat "block(s), " (itoa (if cb (med3d-get "PH" cb) 0)) " placeholder(s), "
+            (itoa (if (cadr bodies) (cadr bodies) 0)) " fitting(s) not modelled"))
   (med3d-summary-line "Cable         : " (length (med3d-get "SOLIDS" cab))
     (strcat "solid(s) from " (itoa (if cab (med3d-get "OK" cab) 0)) " of "
             (itoa (if cab (med3d-get "RUNS" cab) 0)) " run(s)"))
-  (med3d-summary-line "Flagged corners: " flagged
+  (med3d-summary-line "Flagged       : " flagged
     (if (> flagged 0) (strcat "(markers on " (car (med3d-flag-layer)) ")") ""))
   (med3d-summary-line "Skipped       : " (length skips) "")
   (foreach k skips
@@ -1161,7 +1287,8 @@
   (if med-debug-log
     (vl-catch-all-apply 'med-debug-log
       (list (strcat "MEDMAKE3D " fmt ": tray " (itoa (length traysols)) ", fittings " (itoa (length fitsols))
-                    ", conduit " (itoa (length (med3d-get "SOLIDS" con))) ", cable " (itoa (length (med3d-get "SOLIDS" cab)))
+                    ", conduit " (itoa (length (med3d-get "SOLIDS" con)))
+                    ", bodies " (itoa (if cb (med3d-get "PLACED" cb) 0)) ", cable " (itoa (length (med3d-get "SOLIDS" cab)))
                     ", flagged " (itoa flagged) ", skipped " (itoa (length skips))))))
   (med3d-end))
 

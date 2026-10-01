@@ -31,6 +31,7 @@ Aliases: `MED` and `MC` call `MEDCHG`. Classic DCL: `MEDCHG-CLASSIC`.
 | [Cable palette](cable.md) | `MEDCABLE`, `CABLEPALETTE`, `CABLESET` | Type then cable; `CABLE` draws |
 | [MEDCHG](medchg.md) | `MEDPROPERTIES`, `MEDPROPS`, `MED`, `MC` | Properties palette (entity xdata) |
 | `MEDCHG-CLASSIC` | | Old DCL editor |
+| `MED3DLIB` | `MED3DLIBINSERT`, `MED3DLIBTEST` | 3D block library palette over `Dwg3D` (menu MED Main / ribbon MED Data Tools) |
 | [MEDRECORDS](medrecords.md) | `MEDXDEDIT` | Handle-based multi-xdata grid |
 | [MEDSHOWBOM](medshowbom.md) | `MEDSHOW`, `MEDSHOWSUM` | Browse `MEDProject` for this DWG |
 | `BOM` | | Extract xdata → `MEDProject`. Not live. [database.md](database.md) |

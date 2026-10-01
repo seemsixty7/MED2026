@@ -57,7 +57,7 @@ Code dropdowns list ITEMCODE + ITEMDESC from MEDType. Palette stays as the singl
 
 ## MED 3D Library palette
 
-Command: MED3DLIB. Dockable palette (fixed GUID, remembers position) over the 3D block DWGs in `Dwg3D\`
+Command: MED3DLIB (menu MED Main > MED 3D Library, ribbon/toolbar MED Data Tools > MED 3D Library). Dockable palette (fixed GUID, remembers position) over the 3D block DWGs in `Dwg3D\`
 and their catalog `Dwg3D\Dwg3DCatalog.db` (same SQLite schema and DWG-header thumbnail extraction as the
 standalone `tools\Dwg3DCatalog` app, so both can edit the same DB).
 

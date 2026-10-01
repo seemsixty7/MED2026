@@ -34,7 +34,7 @@ How to read an entry:
 
 - **Test / developer**: [`MED3DPATHTEST`](#med3dpathtest) [`MEDCBGRID`](#medcbgrid) [`MYTEST`](#mytest) [`QVTEST`](#qvtest) [`TEST`](#test) [`TRAYFITTEST`](#trayfittest) [`TRAYLRRETEST`](#traylrretest) [`TRAYRETEST`](#trayretest) [`TRAYTEETEST`](#trayteetest) [`TRAYTEST`](#traytest)
 
-- **.NET (MED-DotNet)**: [`CABLEPALETTE`](#cablepalette) [`CABLESET`](#cableset) [`MED-REBUILDMEDPROPERTIESJSON`](#med-rebuildmedpropertiesjson) [`MEDCABLE`](#medcable) [`MEDCHG`](#medchg) [`MEDDEBUG`](#meddebug) [`MEDPROPERTIES`](#medproperties) [`MEDPROPS`](#medprops) [`MEDREBUILDMEDPROPSJSON`](#medrebuildmedpropsjson) [`MEDRECORDS`](#medrecords) [`MEDSET`](#medset) [`MEDSETTINGS`](#medsettings) [`MEDSHOW`](#medshow) [`MEDSHOWBOM`](#medshowbom) [`MEDSHOWSUM`](#medshowsum) [`MEDTYPE`](#medtype) [`MEDTYPES`](#medtypes) [`MEDXDEDIT`](#medxdedit)
+- **.NET (MED-DotNet)**: [`CABLEPALETTE`](#cablepalette) [`CABLESET`](#cableset) [`MED-REBUILDMEDPROPERTIESJSON`](#med-rebuildmedpropertiesjson) [`MEDCABLE`](#medcable) [`MEDCHG`](#medchg) [`MED3DLIB`](#med3dlib) [`MED3DLIBINSERT`](#med3dlibinsert) [`MED3DLIBTEST`](#med3dlibtest) [`MEDDEBUG`](#meddebug) [`MEDPROPERTIES`](#medproperties) [`MEDPROPS`](#medprops) [`MEDREBUILDMEDPROPSJSON`](#medrebuildmedpropsjson) [`MEDRECORDS`](#medrecords) [`MEDSET`](#medset) [`MEDSETTINGS`](#medsettings) [`MEDSHOW`](#medshow) [`MEDSHOWBOM`](#medshowbom) [`MEDSHOWSUM`](#medshowsum) [`MEDTYPE`](#medtype) [`MEDTYPES`](#medtypes) [`MEDXDEDIT`](#medxdedit)
 
 
 ## A-Z
@@ -1501,6 +1501,31 @@ Command: rebuilds {dwg}.medprops.json for the current drawing.
 - **Menu**: none found
 - **Related**: [`MED-RebuildMedPropertiesJson`](#med-rebuildmedpropertiesjson)
 
+
+### MED3DLIB
+
+Dockable 3D block library palette over `Dwg3D\` and `Dwg3D\Dwg3DCatalog.db` (search, categories, thumbnails, List/Tiles/Grid, Excel bulk edit, insert). See [src/MED-DotNet/README.md](../src/MED-DotNet/README.md).
+
+- **Source**: .NET `[CommandMethod]`, `src\MED-DotNet\MED-DotNet\Dwg3DLib\Dwg3DLibCommands.cs` (loaded with `MED-DotNet.dll`).
+- **Prompts / options**: palette; insert asks for point and rotation.
+- **Menu**: med.cuix Menu: MED Main > MED 3D Library; MEDRibbon.cuix Ribbon: MED Data Tools > MED 3D Library; med.cuix Toolbar: MED Data Tools; med.mnu POP1 + toolbar
+- **Related**: [`MED3DLIBINSERT`](#med3dlibinsert) [`MED3DLIBTEST`](#med3dlibtest)
+
+### MED3DLIBINSERT
+
+Inserts a library DWG from the command line (full path or file name in the library folder).
+
+- **Source**: .NET `[CommandMethod]`, `src\MED-DotNet\MED-DotNet\Dwg3DLib\Dwg3DLibCommands.cs`.
+- **Menu**: none
+- **Related**: [`MED3DLIB`](#med3dlib)
+
+### MED3DLIBTEST
+
+Non-UI self test (works in accoreconsole): prints the DLL, library folder and how it was resolved (saved setting / beside DLL / developer default), reads the DB, rescans a temp copy, Excel export/import dry run, inserts one library DWG. Never writes the real DB.
+
+- **Source**: .NET `[CommandMethod]`, `src\MED-DotNet\MED-DotNet\Dwg3DLib\Dwg3DLibCommands.cs`.
+- **Menu**: none
+- **Related**: [`MED3DLIB`](#med3dlib)
 
 ### MEDRECORDS
 

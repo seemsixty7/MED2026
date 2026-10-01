@@ -71,10 +71,11 @@ namespace MEDDotNet
             Editor ed = doc.Editor;
             try
             {
-                string folder = Dwg3DLibSettings.ResolveFolder();
+                string how;
+                string folder = Dwg3DLibSettings.ResolveFolder(out how);
                 string dbPath = Dwg3DLibSettings.DbPath(folder);
                 ed.WriteMessage("\nMED3DLIBTEST: DLL " + typeof(Dwg3DLibCommands).Assembly.Location);
-                ed.WriteMessage("\nMED3DLIBTEST: folder " + folder + (Directory.Exists(folder) ? "" : " (MISSING)"));
+                ed.WriteMessage("\nMED3DLIBTEST: folder " + folder + " [" + how + "]" + (Directory.Exists(folder) ? "" : " (MISSING)"));
                 ed.WriteMessage("\nMED3DLIBTEST: db " + dbPath + (File.Exists(dbPath) ? "" : " (MISSING)"));
                 if (!File.Exists(dbPath)) { ed.WriteMessage("\nMED3DLIBTEST: FAIL no database"); return; }
 

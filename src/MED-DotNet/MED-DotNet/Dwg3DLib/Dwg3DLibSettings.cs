@@ -77,11 +77,22 @@ namespace MEDDotNet
         /// <summary>The folder to use: saved (if it still exists), else first existing candidate, else developer default.</summary>
         public static string ResolveFolder()
         {
+            string how;
+            return ResolveFolder(out how);
+        }
+
+        /// <summary>As ResolveFolder; how = "saved setting", "beside DLL" or "developer default".</summary>
+        public static string ResolveFolder(out string how)
+        {
             string saved = Get("Folder", "");
-            if (saved.Length > 0 && Directory.Exists(saved)) return saved;
+            if (saved.Length > 0 && Directory.Exists(saved)) { how = "saved setting"; return saved; }
             foreach (var c in Candidates())
                 if (Directory.Exists(c) && (File.Exists(Path.Combine(c, Dwg3DLibDb.DbFileName)) || Directory.GetFiles(c, "*.dwg").Length > 0))
+                {
+                    how = string.Equals(c, DeveloperDefault, StringComparison.OrdinalIgnoreCase) ? "developer default" : "beside DLL";
                     return c;
+                }
+            how = "developer default (not found)";
             return DeveloperDefault;
         }
 

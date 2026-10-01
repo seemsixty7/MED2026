@@ -18,6 +18,7 @@ ID_MEDMAIN     [MED Main]
                [MED Change       ]^C^CMEDCHG 
                [MED Change Classic]^C^CMEDCHG-CLASSIC 
                [MED Records      ]^C^CMEDRECORDS 
+               [MED 3D Library   ]^C^CMED3DLIB 
                [MED Data Copy    ]^C^CMEDCOPY 
                [MED Item Find    ]^C^CMEDFIND 
                [Change Size      ]^C^CCHGSIZE 
@@ -874,6 +875,7 @@ LSP_LOADTXT    [_Button("Load Text Styles", "LSP_LOADTXT", "LSP_LOADTXT_32")]^C^
 ID_MED_Data_Tools_0 [_Toolbar("MED Data Tools", _Floating, _Hide, 130, 565, 1)]
 LSP_MEDCHG      [_Button("MED Change", "LSP_MEDCHG", "LSP_MEDCHG_32")]^C^CMEDCHG 
 LSP_MEDREC      [_Button("MED Records", "LSP_MEDLIST", "LSP_MEDLIST_32")]^C^CMEDRECORDS 
+LSP_MED3DLIB    [_Button("MED 3D Library", "TRAY_3DTRAYOUT", "TRAY_3DTRAYOUT_32")]^C^CMED3DLIB 
 LSP_MEDCHGC     [_Button("MED Change Classic", "LSP_MEDCHG", "LSP_MEDCHG_32")]^C^CMEDCHG-CLASSIC 
 LSP_MEDSET      [_Button("MED Settings", "LSP_MEDSET", "LSP_MEDSET_32")]^C^CMEDSET 
 LSP_MEDLIST     [_Button("MED List", "LSP_MEDLIST", "LSP_MEDLIST_32")]^C^CDDMEDLIST 

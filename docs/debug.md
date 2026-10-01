@@ -48,7 +48,7 @@ MED3DPath (`M3D` / `C3D`): `*MED3D-DEBUG*` now defaults to `nil`, which means "f
 
 ## Guarded entry points
 
-Commands: `MEDDEBUG`, `MEDTYPE`, `MEDTYPES`, `MEDSHOW`, `MEDSHOWBOM`, `MEDSHOWSUM`, `MEDPROPERTIES`, `MEDPROPS`, `MEDRECORDS`, `MEDCHG`, `MEDXDEDIT`, `MEDSETTINGS`, `MEDSET`, `MEDCABLE`, `CABLEPALETTE`, `CABLESET`, `MEDREBUILDMEDPROPSJSON` (sidecar JSON export).
+Commands: `MEDDEBUG`, `MEDTYPE`, `MEDTYPES`, `MEDSHOW`, `MEDSHOWBOM`, `MEDSHOWSUM`, `MEDPROPERTIES`, `MEDPROPS`, `MEDRECORDS`, `MED3DLIB`, `MED3DLIBINSERT`, `MED3DLIBTEST`, `MEDCHG`, `MEDXDEDIT`, `MEDSETTINGS`, `MEDSET`, `MEDCABLE`, `CABLEPALETTE`, `CABLESET`, `MEDREBUILDMEDPROPSJSON` (sidecar JSON export).
 LISP functions: `ProcessSQLStatementNET`, `MED-GetMedProperties`, `MED-SetMedProperties`, `MED-UpsertMedPropertiesJson`, `MED-RebuildMedPropertiesJson`, `MED-RebuildMedPropertiesJsonForFile`, `MED-CableApplyLayer`.
 At load: the conduit/cable OD seed (`MedODSeed`) and the other startup steps report to the log (on screen only in debug).
 

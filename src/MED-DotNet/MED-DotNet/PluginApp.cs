@@ -12,7 +12,7 @@ namespace MEDDotNet
         {
             Document doc = Application.DocumentManager.MdiActiveDocument;
             if (doc != null)
-                doc.Editor.WriteMessage("\nMED-DotNet loaded. CABLE / CABLEPALETTE for cables, MEDCHG / MEDPROPERTIES for entity xdata, MEDSETTINGS for defaults, MEDCHG-CLASSIC for the old DCL, ProcessSQLStatementNET for SQL, MEDDEBUG for debug mode"
+                doc.Editor.WriteMessage("\nMED-DotNet loaded. CABLE / CABLEPALETTE for cables, MEDCHG / MEDPROPERTIES for entity xdata, MEDSETTINGS for defaults, MED3DLIB for the 3D block library, MEDCHG-CLASSIC for the old DCL, ProcessSQLStatementNET for SQL, MEDDEBUG for debug mode"
                     + (MedDebug.Enabled ? " (debug is " + MedDebug.Level + ", log " + MedDebug.LogPath + ")." : "."));
             MedDebug.Startup();
 

@@ -32,3 +32,4 @@ Samples/
 
 # Netlify function deps (npm install under netlify/)
 netlify/node_modules/
+Dwg3D/

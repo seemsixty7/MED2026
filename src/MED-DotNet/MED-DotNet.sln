@@ -4,6 +4,8 @@ VisualStudioVersion = 16.0.31911.196
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MED-DotNet", "MED-DotNet\MED-DotNet.csproj", "{B7C4A1E2-8F91-4D3A-9C55-2E6F0A1B4D77}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MED3DLib", "MED3DLib\MED3DLib.csproj", "{3E8B5C1F-0A47-4D92-B6E3-7C1D9F2A5E80}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -20,5 +22,13 @@ Global
 		{B7C4A1E2-8F91-4D3A-9C55-2E6F0A1B4D77}.Release|Any CPU.Build.0 = Release|Any CPU
 		{B7C4A1E2-8F91-4D3A-9C55-2E6F0A1B4D77}.Release|x64.ActiveCfg = Release|x64
 		{B7C4A1E2-8F91-4D3A-9C55-2E6F0A1B4D77}.Release|x64.Build.0 = Release|x64
+		{3E8B5C1F-0A47-4D92-B6E3-7C1D9F2A5E80}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{3E8B5C1F-0A47-4D92-B6E3-7C1D9F2A5E80}.Debug|Any CPU.Build.0 = Debug|x64
+		{3E8B5C1F-0A47-4D92-B6E3-7C1D9F2A5E80}.Debug|x64.ActiveCfg = Debug|x64
+		{3E8B5C1F-0A47-4D92-B6E3-7C1D9F2A5E80}.Debug|x64.Build.0 = Debug|x64
+		{3E8B5C1F-0A47-4D92-B6E3-7C1D9F2A5E80}.Release|Any CPU.ActiveCfg = Release|x64
+		{3E8B5C1F-0A47-4D92-B6E3-7C1D9F2A5E80}.Release|Any CPU.Build.0 = Release|x64
+		{3E8B5C1F-0A47-4D92-B6E3-7C1D9F2A5E80}.Release|x64.ActiveCfg = Release|x64
+		{3E8B5C1F-0A47-4D92-B6E3-7C1D9F2A5E80}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 EndGlobal

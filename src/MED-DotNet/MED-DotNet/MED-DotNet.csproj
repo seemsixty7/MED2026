@@ -101,6 +101,15 @@
     <Compile Include="MedODSeed.cs" />
     <Compile Include="MedScaleChoice.cs" />
     <Compile Include="MedTypeForm.cs" />
+    <Compile Include="Dwg3DLib\Dwg3DLibCommands.cs" />
+    <Compile Include="Dwg3DLib\Dwg3DLibControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Dwg3DLib\Dwg3DLibDb.cs" />
+    <Compile Include="Dwg3DLib\Dwg3DLibInsert.cs" />
+    <Compile Include="Dwg3DLib\Dwg3DLibSettings.cs" />
+    <Compile Include="Dwg3DLib\Dwg3DScanner.cs" />
+    <Compile Include="Dwg3DLib\Dwg3DThumbnail.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

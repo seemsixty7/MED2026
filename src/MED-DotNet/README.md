@@ -54,3 +54,24 @@ SQL size/code dropdowns and Add Conduit/Cable/etc. stay out of the palette (comm
 Command: MEDRECORDS (alias MEDXDEDIT). Select one entity. Spreadsheet of every MED xdata record on it (multiple conduits/cables/fittings/equipment). Palette Records button does the same when exactly one entity is selected.
 
 Code dropdowns list ITEMCODE + ITEMDESC from MEDType. Palette stays as the single-record editor; if the picked entity has more than one record the fields lock and you use the grid.
+
+## MED 3D Library palette
+
+Command: MED3DLIB. Dockable palette (fixed GUID, remembers position) over the 3D block DWGs in `Dwg3D\`
+and their catalog `Dwg3D\Dwg3DCatalog.db` (same SQLite schema and DWG-header thumbnail extraction as the
+standalone `tools\Dwg3DCatalog` app, so both can edit the same DB).
+
+- Search box (file / description / note / category / source), category filter ((Uncategorized), (Missing files), (No preview)).
+- List with thumbnails (Tiles button = large thumbnails), large preview, editable Description / Category / Note, Save (Ctrl+S; also auto-saves when you move to another row).
+- Insert (or double-click / Enter): imports the DWG as a block named after the file (Database.ReadDwgFile + Database.Insert; an existing block of that name is reused), then jig for the insertion point, rotation prompt (Enter = 0), scale 1. You can also drag a row (or the preview) into the drawing; AutoCAD's own file-drop insert then runs.
+- Open DWG opens the file read-only. Rescan adds new DWGs, flags missing ones and refreshes changed previews (Shift+click = re-extract all). Folder... picks another library folder.
+- MED3DLIBINSERT inserts a library DWG from the command line (full path or file name in the library).
+- MED3DLIBTEST is a non-UI self test (works in accoreconsole): reads the DB, rescans a temp copy of it, inserts one library DWG at 0,0,0.
+
+Library folder: the per-user choice in `%APPDATA%\MED\MED3DLib.settings`, else `Dwg3D` next to the `Support` folder
+the DLL was loaded from (`{dll}\..\Dwg3D`, `{dll}\Dwg3D`), else the developer path. SQLite uses the System.Data.SQLite
++ SQLite.Interop.dll already shipped beside MED-DotNet.dll.
+
+Sources: `MED-DotNet\Dwg3DLib\`. `MED3DLib\MED3DLib.csproj` builds the same sources into a small standalone
+`MED3DLib.dll` for testing; NETLOAD that only where the loaded MED-DotNet.dll does not already contain MED3DLIB
+(both would register the same commands).

@@ -108,6 +108,16 @@ namespace MEDDotNet
                         ed.WriteMessage("\nMED3DLIBTEST: SaveEdits on copy OK (" + e0.File + ")");
                     }
                 }
+                // Excel round trip on the copy: export, read back, dry-run import (expects 0 changes).
+                string tmpX = Path.Combine(tmpDir, "export_test.xlsx");
+                System.Collections.Generic.List<Dwg3DEntry> trows;
+                System.Collections.Generic.List<string> tcats;
+                using (var db = new Dwg3DLibDb(tmpDb)) { trows = db.LoadAll(); tcats = db.Categories(); }
+                Dwg3DExcel.Export(trows, tcats, tmpX, true);
+                var back = Dwg3DExcel.ReadSheet(tmpX);
+                var imp = Dwg3DExcel.Import(tmpDb, tmpX, true);
+                ed.WriteMessage("\nMED3DLIBTEST: xlsx export " + new FileInfo(tmpX).Length + " bytes -> " + tmpX + "; read back " + back.Count
+                    + " rows (first " + (back.Count > 0 ? back[0]["File"] : "-") + "); import dry run: " + imp);
                 try { File.Delete(tmpDb); } catch { }
 
                 var po = new PromptStringOptions("\nLibrary file to insert <first available>: ");

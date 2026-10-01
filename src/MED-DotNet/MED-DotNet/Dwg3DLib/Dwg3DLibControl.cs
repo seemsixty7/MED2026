@@ -14,14 +14,16 @@ namespace MEDDotNet
 
         readonly TextBox _search = new TextBox();
         readonly ComboBox _catFilter = new ComboBox();
-        readonly Button _viewBtn = new Button();
+        readonly ComboBox _viewMode = new ComboBox();
         readonly ListView _list = new ListView();
+        readonly DataGridView _grid = new DataGridView();
+        readonly ContextMenuStrip _excelMenu = new ContextMenuStrip();
         readonly PictureBox _preview = new PictureBox();
         readonly Label _fileLbl = new Label();
         readonly TextBox _desc = new TextBox();
         readonly ComboBox _cat = new ComboBox();
         readonly TextBox _note = new TextBox();
-        readonly Button _save = new Button(), _insert = new Button(), _open = new Button(), _rescan = new Button(), _folderBtn = new Button();
+        readonly Button _save = new Button(), _insert = new Button(), _open = new Button(), _rescan = new Button(), _folderBtn = new Button(), _excelBtn = new Button();
         readonly Label _status = new Label();
         readonly ToolTip _tip = new ToolTip();
         readonly SplitContainer _split = new SplitContainer();
@@ -30,7 +32,9 @@ namespace MEDDotNet
         string _folder;
         List<Dwg3DEntry> _all = new List<Dwg3DEntry>();
         Dwg3DEntry _cur;
-        bool _loading, _dirty, _loaded;
+        bool _loading, _dirty, _loaded, _gridFilling;
+        const string ViewList = "List", ViewTiles = "Tiles", ViewGrid = "Grid";
+        const int ColThumb = 0, ColFile = 1, ColCat = 2, ColDesc = 3, ColNote = 4, ColSource = 5;
         readonly Timer _searchTimer = new Timer { Interval = 250 };
 
         public Dwg3DLibControl()
@@ -54,13 +58,15 @@ namespace MEDDotNet
             _catFilter.DropDownStyle = ComboBoxStyle.DropDownList;
             _catFilter.Dock = DockStyle.Fill;
             _catFilter.SelectedIndexChanged += delegate { if (!_loading) ApplyFilter(); };
-            _viewBtn.Text = "Tiles";
-            _viewBtn.AutoSize = true;
-            _viewBtn.Click += delegate { ToggleView(); };
-            _tip.SetToolTip(_viewBtn, "Switch between list and large thumbnails");
+            _viewMode.DropDownStyle = ComboBoxStyle.DropDownList;
+            _viewMode.Items.AddRange(new object[] { ViewList, ViewTiles, ViewGrid });
+            _viewMode.Width = 64;
+            _viewMode.Margin = new Padding(3, 3, 0, 3);
+            _viewMode.SelectedIndexChanged += delegate { if (!_loading) SetView(_viewMode.SelectedItem as string, true); };
+            _tip.SetToolTip(_viewMode, "List / large thumbnail Tiles / editable Grid");
             top.Controls.Add(_search, 0, 0); top.SetColumnSpan(_search, 2);
             top.Controls.Add(_catFilter, 0, 1);
-            top.Controls.Add(_viewBtn, 1, 1);
+            top.Controls.Add(_viewMode, 1, 1);
 
             // --- list
             _small.ImageSize = new Size(48, 48); _small.ColorDepth = ColorDepth.Depth32Bit;
@@ -81,6 +87,8 @@ namespace MEDDotNet
             _list.ItemDrag += OnItemDrag;
             _list.ColumnClick += OnColumnClick;
             _split.Panel1.Controls.Add(_list);
+            BuildGrid();
+            _split.Panel1.Controls.Add(_grid);
 
             // --- details
             var det = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, Padding = new Padding(4), AutoScroll = true };
@@ -132,14 +140,19 @@ namespace MEDDotNet
             _split.SplitterWidth = 5;
 
             // --- bottom: rescan / folder / status
-            var bottom = new TableLayoutPanel { Dock = DockStyle.Bottom, ColumnCount = 3, AutoSize = true, Padding = new Padding(4, 0, 4, 4) };
+            var bottom = new TableLayoutPanel { Dock = DockStyle.Bottom, ColumnCount = 4, RowCount = 2, AutoSize = true, Padding = new Padding(4, 0, 4, 4) };
+            bottom.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
             bottom.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
             bottom.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
             bottom.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             Btn(_rescan, "Rescan", "Rescan the folder: add new DWGs, flag missing ones, refresh changed previews (Shift+click re-extracts all previews)", delegate { DoRescan(); });
             Btn(_folderBtn, "Folder...", "Choose the 3D library folder (remembered per user)", delegate { ChooseFolder(); });
             _status.AutoSize = true; _status.Dock = DockStyle.Fill; _status.TextAlign = ContentAlignment.MiddleLeft; _status.AutoEllipsis = true;
-            bottom.Controls.Add(_rescan, 0, 0); bottom.Controls.Add(_folderBtn, 1, 0); bottom.Controls.Add(_status, 2, 0);
+            Btn(_excelBtn, "Excel \u25BE", "Export the catalog to an Excel bulk-edit workbook, or import Category / Description / Note from one", delegate { _excelMenu.Show(_excelBtn, new Point(0, _excelBtn.Height)); });
+            _excelMenu.Items.Add("Export to Excel...", null, delegate { DoExport(); });
+            _excelMenu.Items.Add("Import from Excel...", null, delegate { DoImport(); });
+            bottom.Controls.Add(_rescan, 0, 0); bottom.Controls.Add(_folderBtn, 1, 0); bottom.Controls.Add(_excelBtn, 2, 0);
+            bottom.Controls.Add(_status, 0, 1); bottom.SetColumnSpan(_status, 4);
 
             Controls.Add(_split);
             Controls.Add(top);
@@ -148,6 +161,10 @@ namespace MEDDotNet
 
             SetEditorEnabled(false);
             Resize += delegate { FixSplitter(); };
+            string v = Dwg3DLibSettings.Get("View", ViewList);
+            if (v != ViewTiles && v != ViewGrid) v = ViewList;
+            _loading = true; _viewMode.SelectedItem = v; _loading = false;
+            SetView(v, false);
         }
 
         bool _splitInit;
@@ -216,6 +233,8 @@ namespace MEDDotNet
 
         void BuildImages()
         {
+            _gridFilling = true;
+            try { _grid.Rows.Clear(); } finally { _gridFilling = false; }
             _list.BeginUpdate();
             _list.Items.Clear();
             _small.Images.Clear();
@@ -297,6 +316,12 @@ namespace MEDDotNet
                 if (e.Missing) it.ForeColor = Color.Firebrick;
                 items.Add(it);
             }
+            if (IsGrid)
+            {
+                FillGrid(items.Select(i => (Dwg3DEntry)i.Tag).ToList(), keep);
+                Status(items.Count + " of " + _all.Count + " blocks");
+                return;
+            }
             _list.BeginUpdate();
             _list.Items.Clear();
             _list.Items.AddRange(items.ToArray());
@@ -307,19 +332,25 @@ namespace MEDDotNet
             Status(items.Count + " of " + _all.Count + " blocks");
         }
 
-        void ToggleView()
+        string _view = ViewList;
+        bool IsGrid { get { return _view == ViewGrid; } }
+
+        void SetView(string v, bool refill)
         {
-            if (_list.View == View.Details)
+            if (_dirty) SaveCurrent(false);
+            if (_grid.IsCurrentCellInEditMode) _grid.EndEdit();
+            bool grid = v == ViewGrid;
+            _view = v;
+            if (v == ViewTiles)
             {
-                if (_large.Images.Count == 0) AddImages(_large, 110);
+                if (_large.Images.Count == 0 && _all.Count > 0) AddImages(_large, 110);
                 _list.View = View.LargeIcon;
-                _viewBtn.Text = "List";
             }
-            else
-            {
-                _list.View = View.Details;
-                _viewBtn.Text = "Tiles";
-            }
+            else _list.View = View.Details;
+            _grid.Visible = grid;
+            _list.Visible = !grid;
+            Dwg3DLibSettings.Set("View", v);
+            if (refill && _loaded) ApplyFilter();
         }
 
         int _sortCol = -1; bool _sortDesc;
@@ -336,6 +367,7 @@ namespace MEDDotNet
 
         Dwg3DEntry Selected()
         {
+            if (IsGrid) return _grid.CurrentRow != null ? _grid.CurrentRow.Tag as Dwg3DEntry : null;
             return _list.SelectedItems.Count > 0 ? _list.SelectedItems[0].Tag as Dwg3DEntry : null;
         }
 
@@ -405,10 +437,254 @@ namespace MEDDotNet
                 _dirty = false; _save.Enabled = false;
                 foreach (ListViewItem it in _list.Items)
                     if (it.Tag == e) { it.SubItems[1].Text = e.Category; it.SubItems[2].Text = e.Description; break; }
+                SyncGridRow(e);
                 if (c.Length > 0 && !_catFilter.Items.Contains(c)) FillCategories(cats);
                 Status("Saved " + e.File);
             }
             catch (Exception ex) { Status("Save failed: " + ex.Message); MessageBox.Show("Save failed:\n" + ex.Message, "MED 3D Library", MessageBoxButtons.OK, MessageBoxIcon.Warning); }
+        }
+
+        // ------------------------------------------------------------------ grid view
+
+        void BuildGrid()
+        {
+            _grid.Dock = DockStyle.Fill;
+            _grid.Visible = false;
+            _grid.AllowUserToAddRows = false;
+            _grid.AllowUserToDeleteRows = false;
+            _grid.AllowUserToResizeRows = false;
+            _grid.RowHeadersVisible = false;
+            _grid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            _grid.MultiSelect = false;
+            _grid.EditMode = DataGridViewEditMode.EditOnKeystrokeOrF2;
+            _grid.BackgroundColor = SystemColors.Window;
+            _grid.BorderStyle = BorderStyle.None;
+            _grid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None;
+            _grid.RowTemplate.Height = 40;
+            _grid.DefaultCellStyle.WrapMode = DataGridViewTriState.False;
+            _grid.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            _grid.ShowCellToolTips = true;
+
+            var thumb = new DataGridViewImageColumn { Name = "Thumb", HeaderText = "", Width = 44, ImageLayout = DataGridViewImageCellLayout.Zoom, ReadOnly = true, SortMode = DataGridViewColumnSortMode.NotSortable, Resizable = DataGridViewTriState.False };
+            thumb.DefaultCellStyle.NullValue = null;
+            thumb.DefaultCellStyle.BackColor = Color.FromArgb(33, 40, 48);
+            _grid.Columns.Add(thumb);
+            _grid.Columns.Add(TextCol("File", "File", 140, true));
+            _grid.Columns.Add(TextCol("Category", "Category", 110, false));
+            _grid.Columns.Add(TextCol("Description", "Description", 180, false));
+            _grid.Columns.Add(TextCol("Note", "Note", 150, false));
+            _grid.Columns.Add(TextCol("Source", "Source", 200, true));
+            foreach (int c in new[] { ColFile, ColSource }) _grid.Columns[c].DefaultCellStyle.ForeColor = SystemColors.GrayText;
+
+            _grid.SelectionChanged += delegate { if (!_gridFilling && IsGrid) OnSelect(); };
+            _grid.CellDoubleClick += OnGridDoubleClick;
+            _grid.CellClick += delegate (object s, DataGridViewCellEventArgs ev)
+            {
+                if (ev.RowIndex >= 0 && Editable(ev.ColumnIndex) && !_grid.IsCurrentCellInEditMode) _grid.BeginEdit(false);
+            };
+            _grid.CellEndEdit += OnGridCellEndEdit;
+            _grid.EditingControlShowing += OnGridEditingControlShowing;
+            _grid.KeyDown += delegate (object s, KeyEventArgs ev)
+            {
+                if (ev.KeyCode == Keys.Enter && !_grid.IsCurrentCellInEditMode && _grid.CurrentCell != null && !Editable(_grid.CurrentCell.ColumnIndex))
+                { ev.Handled = true; DoInsert(); }
+            };
+            _grid.MouseDown += OnGridMouseDown;
+            _grid.MouseMove += OnGridMouseMove;
+            _grid.Sorted += delegate { Dwg3DEntry e = Selected(); if (e != null && _grid.CurrentRow != null) _grid.FirstDisplayedScrollingRowIndex = Math.Max(0, _grid.CurrentRow.Index - 2); };
+        }
+
+        static DataGridViewTextBoxColumn TextCol(string name, string header, int width, bool ro)
+        {
+            return new DataGridViewTextBoxColumn { Name = name, HeaderText = header, Width = width, ReadOnly = ro, SortMode = DataGridViewColumnSortMode.Automatic };
+        }
+
+        static bool Editable(int col) { return col == ColCat || col == ColDesc || col == ColNote; }
+
+        Image GridThumb(Dwg3DEntry e)
+        {
+            if (e.Small != null) return e.Small;
+            using (var img = Dwg3DThumbnail.FromPng(e.Thumb))
+                e.Small = img != null ? Dwg3DThumbnail.Scaled(img, 40, 40, Color.FromArgb(33, 40, 48)) : Dwg3DThumbnail.Placeholder(40, 40, "-");
+            return e.Small;
+        }
+
+        void FillGrid(List<Dwg3DEntry> rows, long keepId)
+        {
+            DataGridViewColumn sortCol = _grid.SortedColumn;
+            SortOrder order = _grid.SortOrder;
+            _gridFilling = true;
+            try
+            {
+                _grid.Rows.Clear();
+                var arr = new DataGridViewRow[rows.Count];
+                for (int i = 0; i < rows.Count; i++)
+                {
+                    var e = rows[i];
+                    var r = new DataGridViewRow();
+                    r.CreateCells(_grid, GridThumb(e), e.File, e.Category, e.Description, e.Note, e.SourcePath);
+                    r.Tag = e;
+                    if (e.Missing) r.DefaultCellStyle.ForeColor = Color.Firebrick;
+                    r.Cells[ColFile].ToolTipText = e.File + (e.Missing ? "\n(missing file)" : "") + "\nDouble-click to insert, drag into the drawing";
+                    arr[i] = r;
+                }
+                _grid.Rows.AddRange(arr);
+                if (sortCol != null && order != SortOrder.None)
+                    _grid.Sort(sortCol, order == SortOrder.Ascending ? System.ComponentModel.ListSortDirection.Ascending : System.ComponentModel.ListSortDirection.Descending);
+                _grid.ClearSelection();
+                _grid.CurrentCell = null;
+            }
+            finally { _gridFilling = false; }
+            foreach (DataGridViewRow r in _grid.Rows)
+                if (((Dwg3DEntry)r.Tag).Id == keepId)
+                {
+                    _grid.CurrentCell = r.Cells[ColFile];
+                    r.Selected = true;
+                    try { _grid.FirstDisplayedScrollingRowIndex = Math.Max(0, r.Index - 2); } catch { }
+                    return;
+                }
+            ShowEntry(null);
+        }
+
+        void SyncGridRow(Dwg3DEntry e)
+        {
+            foreach (DataGridViewRow r in _grid.Rows)
+                if (r.Tag == e)
+                {
+                    r.Cells[ColCat].Value = e.Category; r.Cells[ColDesc].Value = e.Description; r.Cells[ColNote].Value = e.Note;
+                    break;
+                }
+        }
+
+        void OnGridDoubleClick(object sender, DataGridViewCellEventArgs ev)
+        {
+            if (ev.RowIndex < 0) return;
+            if (Editable(ev.ColumnIndex)) { if (!_grid.IsCurrentCellInEditMode) _grid.BeginEdit(true); return; }
+            DoInsert();
+        }
+
+        void OnGridEditingControlShowing(object sender, DataGridViewEditingControlShowingEventArgs ev)
+        {
+            var tb = ev.Control as TextBox;
+            if (tb == null) return;
+            if (_grid.CurrentCell != null && _grid.CurrentCell.ColumnIndex == ColCat)
+            {
+                var src = new AutoCompleteStringCollection();
+                foreach (var c in _cat.Items) src.Add(c.ToString());
+                foreach (var c in Dwg3DExcel.SuggestedCategories) src.Add(c);
+                tb.AutoCompleteCustomSource = src;
+                tb.AutoCompleteSource = AutoCompleteSource.CustomSource;
+                tb.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
+            }
+            else tb.AutoCompleteMode = AutoCompleteMode.None;
+        }
+
+        void OnGridCellEndEdit(object sender, DataGridViewCellEventArgs ev)
+        {
+            if (ev.RowIndex < 0 || !Editable(ev.ColumnIndex)) return;
+            var row = _grid.Rows[ev.RowIndex];
+            var e = row.Tag as Dwg3DEntry;
+            if (e == null) return;
+            string v = Convert.ToString(row.Cells[ev.ColumnIndex].Value) ?? "";
+            v = ev.ColumnIndex == ColNote ? v.TrimEnd() : v.Trim();
+            string cur = ev.ColumnIndex == ColCat ? e.Category : ev.ColumnIndex == ColDesc ? e.Description : e.Note;
+            if (v == cur) return;
+            if (_dirty && _cur == e) SaveCurrent(false);   // keep the details panel and the cell edit from fighting
+            string oc = e.Category, od = e.Description, on = e.Note;
+            if (ev.ColumnIndex == ColCat) e.Category = v; else if (ev.ColumnIndex == ColDesc) e.Description = v; else e.Note = v;
+            try
+            {
+                List<string> cats;
+                using (var db = new Dwg3DLibDb(Dwg3DLibSettings.DbPath(_folder)))
+                {
+                    db.SaveEdits(e);
+                    cats = db.Categories();
+                }
+                if (ev.ColumnIndex == ColCat && v.Length > 0 && !_catFilter.Items.Contains(v)) FillCategories(cats);
+                if (_cur == e) ShowEntry(e);
+                Status("Saved " + e.File);
+            }
+            catch (Exception ex)
+            {
+                e.Category = oc; e.Description = od; e.Note = on;
+                SyncGridRow(e);
+                Status("Save failed: " + ex.Message);
+            }
+        }
+
+        Rectangle _dragBox = Rectangle.Empty;
+        Dwg3DEntry _dragEntry;
+        void OnGridMouseDown(object sender, MouseEventArgs ev)
+        {
+            _dragBox = Rectangle.Empty; _dragEntry = null;
+            if (ev.Button != MouseButtons.Left) return;
+            var hit = _grid.HitTest(ev.X, ev.Y);
+            if (hit.Type != DataGridViewHitTestType.Cell || hit.RowIndex < 0 || Editable(hit.ColumnIndex)) return;
+            _dragEntry = _grid.Rows[hit.RowIndex].Tag as Dwg3DEntry;
+            Size ds = SystemInformation.DragSize;
+            _dragBox = new Rectangle(new Point(ev.X - ds.Width / 2, ev.Y - ds.Height / 2), ds);
+        }
+
+        void OnGridMouseMove(object sender, MouseEventArgs ev)
+        {
+            if ((ev.Button & MouseButtons.Left) == 0 || _dragEntry == null || _dragBox == Rectangle.Empty || _dragBox.Contains(ev.X, ev.Y)) return;
+            var e = _dragEntry;
+            _dragBox = Rectangle.Empty; _dragEntry = null;
+            if (e.Missing) return;
+            string p = FullPath(e);
+            if (File.Exists(p)) _grid.DoDragDrop(new DataObject(DataFormats.FileDrop, new[] { p }), DragDropEffects.Copy);
+        }
+
+        // ------------------------------------------------------------------ Excel round trip
+
+        void DoExport()
+        {
+            if (_dirty) SaveCurrent(false);
+            if (_all.Count == 0) { Status("Nothing to export."); return; }
+            using (var dlg = new SaveFileDialog { Filter = "Excel workbook (*.xlsx)|*.xlsx", FileName = "Dwg3DCatalog_BulkEdit.xlsx", InitialDirectory = _folder, OverwritePrompt = true })
+            {
+                if (dlg.ShowDialog(this) != DialogResult.OK) return;
+                Cursor old = Cursor.Current;
+                Cursor.Current = Cursors.WaitCursor;
+                try
+                {
+                    List<string> cats;
+                    using (var db = new Dwg3DLibDb(Dwg3DLibSettings.DbPath(_folder))) cats = db.Categories();
+                    var rows = _all.OrderBy(x => x.File, StringComparer.OrdinalIgnoreCase).ToList();
+                    Dwg3DExcel.Export(rows, cats, dlg.FileName, true);
+                    Status("Exported " + rows.Count + " rows to " + dlg.FileName);
+                    if (MessageBox.Show("Exported " + rows.Count + " rows to\n" + dlg.FileName + "\n\nEdit Category / Description / Note, save, then use Excel > Import.\n\nOpen it now?",
+                        "MED 3D Library", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
+                        System.Diagnostics.Process.Start(dlg.FileName);
+                }
+                catch (Exception ex) { Status("Export failed: " + ex.Message); MessageBox.Show("Export failed:\n" + ex.Message, "MED 3D Library", MessageBoxButtons.OK, MessageBoxIcon.Warning); }
+                finally { Cursor.Current = old; }
+            }
+        }
+
+        void DoImport()
+        {
+            if (_dirty) SaveCurrent(false);
+            string dbPath = Dwg3DLibSettings.DbPath(_folder);
+            using (var dlg = new OpenFileDialog { Filter = "Excel workbook (*.xlsx)|*.xlsx", InitialDirectory = _folder, FileName = "Dwg3DCatalog_BulkEdit.xlsx" })
+            {
+                if (dlg.ShowDialog(this) != DialogResult.OK) return;
+                try
+                {
+                    var dry = Dwg3DExcel.Import(dbPath, dlg.FileName, true);
+                    string nf = dry.NotFound.Count > 0 ? "\n\nNot found (first 10):\n" + string.Join("\n", dry.NotFound.Take(10)) : "";
+                    if (dry.Fields == 0) { MessageBox.Show(dry + "\n\nNothing to update." + nf, "MED 3D Library"); return; }
+                    if (MessageBox.Show(dry + nf + "\n\nOnly non-blank cells that differ are applied; (clear) empties a field.\nThe database is backed up first. Import now?",
+                        "MED 3D Library - Import from Excel", MessageBoxButtons.OKCancel, MessageBoxIcon.Question) != DialogResult.OK) return;
+                    var res = Dwg3DExcel.Import(dbPath, dlg.FileName, false);
+                    _cur = null;
+                    Reload(false);
+                    Status(res.ToString());
+                    MessageBox.Show(res + "\n\nBackup: " + res.BackupPath, "MED 3D Library");
+                }
+                catch (IOException ex) { MessageBox.Show("Import failed (close the workbook in Excel first?):\n" + ex.Message, "MED 3D Library", MessageBoxButtons.OK, MessageBoxIcon.Warning); }
+                catch (Exception ex) { MessageBox.Show("Import failed:\n" + ex.Message, "MED 3D Library", MessageBoxButtons.OK, MessageBoxIcon.Warning); }
+            }
         }
 
         // ------------------------------------------------------------------ actions

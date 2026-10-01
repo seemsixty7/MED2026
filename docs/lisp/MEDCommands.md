@@ -1,8 +1,8 @@
 # MEDCommands.lsp
 
-`Support\MEDCommands.lsp` - Catalog/BOM commands (BOM, MEDLIST, DDMEDLIST, MEDSTRIP, CHGSIZE, CHGTAG, MEDDBBACKUP/RESTORE), leaders, text style shortcuts, section marks, isolate.
+`Support\MEDCommands.lsp` - Catalog/BOM commands (BOM, MEDLIST, MEDSTRIP, CHGSIZE, CHGTAG, MEDDBBACKUP/RESTORE), leaders, text style shortcuts, section marks, isolate.
 
-Loaded by MEDCore (order 12). 36 defun(s): 28 command(s), 8 function(s).
+Loaded by MEDCore (order 12). 31 defun(s): 27 command(s), 4 function(s). (`c:ddMEDlist` / DDMEDLIST and its dialog helpers were removed 2026-10.)
 
 Back to [lisp-reference.md](../lisp-reference.md). Commands are described for users in [command-reference.md](../command-reference.md).
 
@@ -34,18 +34,13 @@ Back to [lisp-reference.md](../lisp-reference.md). Commands are described for us
 | 406 | [`c:chgsize`](#cchgsize) | command |
 | 523 | [`c:unj`](#cunj) | command |
 | 553 | [`c:hubs`](#chubs) | command |
-| 617 | [`c:ddMEDlist`](#cddmedlist) | command |
-| 654 | [`medlistprev`](#medlistprev) | function |
-| 665 | [`medlistnext`](#medlistnext) | function |
-| 676 | [`setmdltiles`](#setmdltiles) | function |
-| 701 | [`getmedlistdata`](#getmedlistdata) | function |
-| 842 | [`c:detagupd`](#cdetagupd) | command |
-| 872 | [`c:BOM`](#cbom) | command |
-| 895 | [`MEDFixForExcelParse`](#medfixforexcelparse) | function |
-| 917 | [`c:MEDDBBackup`](#cmeddbbackup) | command |
-| 945 | [`c:MEDDBRestore`](#cmeddbrestore) | command |
-| 955 | [`MEDDatabaseRestore`](#meddatabaserestore) | function |
-| 983 | [`c:chgtag`](#cchgtag) | command |
+| 617 | [`c:detagupd`](#cdetagupd) | command |
+| 647 | [`c:BOM`](#cbom) | command |
+| 670 | [`MEDFixForExcelParse`](#medfixforexcelparse) | function |
+| 692 | [`c:MEDDBBackup`](#cmeddbbackup) | command |
+| 720 | [`c:MEDDBRestore`](#cmeddbrestore) | command |
+| 730 | [`MEDDatabaseRestore`](#meddatabaserestore) | function |
+| 758 | [`c:chgtag`](#cchgtag) | command |
 
 ## c:LoadLayers
 
@@ -300,63 +295,9 @@ Adds hubs to an RS junction box at picked locations. User entry: [HUBS](../comma
 - **Returns**: nothing useful (quiet exit)
 - **Referenced**: 2
 
-## c:ddMEDlist
-
-`(c:ddMEDlist / index_val max_y max_x result tlist1 tlist2 fname fn)`  - line 617-653
-
-DCL list of MED xdata; Next/Previous through a selection; can open classic MEDCHG. User entry: [DDMEDLIST](../command-reference.md#ddmedlist).
-
-- **Arguments**: none
-- **Returns**: nothing useful (quiet exit)
-- **Side effects**: Globals set (not declared local): `MDL_SS`, `MDL_CURENT`, `MDL_NUM`, `MDL_ENTLIST`; Xdata: reads xdata
-- **Referenced**: 1
-
-## medlistprev
-
-`(medlistprev)`  - line 654-664
-
-DDMEDLIST dialog: previous / next entity.
-
-- **Arguments**: none
-- **Returns**: value of the last expression: `(setmdltiles)`
-- **Side effects**: Globals set (not declared local): `MDL_CURENT`, `MDL_ENTLIST`; Xdata: reads xdata
-- **Referenced**: 1
-
-## medlistnext
-
-`(medlistnext)`  - line 665-675
-
-DDMEDLIST dialog: previous / next entity.
-
-- **Arguments**: none
-- **Returns**: value of the last expression: `(setmdltiles)`
-- **Side effects**: Globals set (not declared local): `MDL_CURENT`, `MDL_ENTLIST`; Xdata: reads xdata
-- **Referenced**: 1
-
-## setmdltiles
-
-`(setmdltiles)`  - line 676-699
-
-DDMEDLIST dialog: fills the tiles for the current entity.
-
-- **Arguments**: none
-- **Returns**: value of the last expression: `(cond ((= MDL_NUM 1) ; (princ "1") (mode_tile "selprev" 1) (mode_tile "selnext" 1) ) ((= MDL_NUM (+ MDL_CURENT...`
-- **Referenced**: 3
-
-## getmedlistdata
-
-`(getmedlistdata medent)`  - line 701-839
-
-Returns the MED xdata records of an entity for DDMEDLIST.
-
-- **Arguments**: `medent`
-- **Returns**: value of the last expression: `rtstlst`
-- **Side effects**: Globals set (not declared local): `applist`, `numapps`, `appcnt`, `rtstlst`, `appnm`, `appdata`, `datalen`, `applen`, `numtags`, `tagcnt`, `medtag`, `medsize`, `medcode`, `medrtag`, `meddist` ...; Xdata: reads xdata
-- **Referenced**: 3
-
 ## c:detagupd
 
-`(c:detagupd / index_val max_y max_x result tlist1 tlist2 fname fn)`  - line 842-870
+`(c:detagupd / index_val max_y max_x result tlist1 tlist2 fname fn)`  - line 617-645
 
 Refreshes typical counts on existing detail bubbles. User entry: [DETAGUPD](../command-reference.md#detagupd).
 
@@ -367,7 +308,7 @@ Refreshes typical counts on existing detail bubbles. User entry: [DETAGUPD](../c
 
 ## c:BOM
 
-`(c:BOM)`  - line 872-888
+`(c:BOM)`  - line 647-663
 
 Extracts all MED xdata in the drawing to MEDProject (deletes this drawing's old rows first). Not live. User entry: [BOM](../command-reference.md#bom).
 
@@ -378,7 +319,7 @@ Extracts all MED xdata in the drawing to MEDProject (deletes this drawing's old 
 
 ## MEDFixForExcelParse
 
-`(MEDFixForExcelParse StringToFix)`  - line 895-914
+`(MEDFixForExcelParse StringToFix)`  - line 670-689
 
 Doubles/escapes double quotes in a string so the BOM CSV parses in Excel.
 
@@ -389,7 +330,7 @@ Doubles/escapes double quotes in a string so the BOM CSV parses in Excel.
 
 ## c:MEDDBBackup
 
-`(c:MEDDBBackup)`  - line 917-944
+`(c:MEDDBBackup)`  - line 692-719
 
 Writes a CSV snapshot of MEDType (MEDTYPE-DB-Backup.csv) under the MED directory. User entry: [MEDDBBACKUP](../command-reference.md#meddbbackup).
 
@@ -400,7 +341,7 @@ Writes a CSV snapshot of MEDType (MEDTYPE-DB-Backup.csv) under the MED directory
 
 ## c:MEDDBRestore
 
-`(c:MEDDBRestore)`  - line 945-954
+`(c:MEDDBRestore)`  - line 720-729
 
 Restores MEDType rows from the CSV snapshot; asks project name (ALL) and whether to delete first. User entry: [MEDDBRESTORE](../command-reference.md#meddbrestore).
 
@@ -411,7 +352,7 @@ Restores MEDType rows from the CSV snapshot; asks project name (ALL) and whether
 
 ## MEDDatabaseRestore
 
-`(MEDDatabaseRestore FileImportName ProjectToRestore)`  - line 955-981
+`(MEDDatabaseRestore FileImportName ProjectToRestore)`  - line 730-756
 
 Worker for MEDDBRESTORE: reads the CSV and inserts rows (optionally deleting first).
 
@@ -423,7 +364,7 @@ Worker for MEDDBRESTORE: reads the CSV and inserts rows (optionally deleting fir
 
 ## c:chgtag
 
-`(c:chgtag / newsz chgapp chgss chglen allsiz taglst codlst sizlst dislst msrlst altlst dptlst rtglst medtag medsiz medcod medmsr meddis medalt meddpt xdlist)`  - line 983-1096
+`(c:chgtag / newsz chgapp chgss chglen allsiz taglst codlst sizlst dislst msrlst altlst dptlst rtglst medtag medsiz medcod medmsr meddis medalt meddpt xdlist)`  - line 758-871
 
 Changes the tag in the MED xdata of a selection. (Prompt text still says "New Size".) User entry: [CHGTAG](../command-reference.md#chgtag).
 

@@ -14,7 +14,7 @@ How to read an entry:
 
 - **Setup**: [`BLDIST`](#bldist) [`IOD`](#iod) [`LOADLAYERS`](#loadlayers) [`MED2026SETUP`](#med2026setup) [`MEDDETAIL`](#meddetail) [`MEDDIMSETUP`](#meddimsetup) [`MEDMENU`](#medmenu) [`MEDPLAN`](#medplan) [`MEDWIRING`](#medwiring) [`SETLIM`](#setlim) [`SETPLOT`](#setplot) [`SETUP`](#setup)
 
-- **Catalog, xdata and BOM**: [`ATLSC`](#atlsc) [`ATRSC`](#atrsc) [`BOM`](#bom) [`CHGSIZE`](#chgsize) [`CHGTAG`](#chgtag) [`DDMEDLIST`](#ddmedlist) [`ISOLATE`](#isolate) [`MC`](#mc) [`MCABLE`](#mcable) [`MCON`](#mcon) [`MED`](#med) [`MEDCHG-CLASSIC`](#medchg-classic) [`MEDCOPY`](#medcopy) [`MEDDBBACKUP`](#meddbbackup) [`MEDDBRESTORE`](#meddbrestore) [`MEDFIND`](#medfind) [`MEDLIST`](#medlist) [`MEDSTRIP`](#medstrip) [`MEQUIP`](#mequip) [`MFIT`](#mfit) [`MTRAY`](#mtray) [`TAKEOFF`](#takeoff) [`UNISOLATE`](#unisolate)
+- **Catalog, xdata and BOM**: [`ATLSC`](#atlsc) [`ATRSC`](#atrsc) [`BOM`](#bom) [`CHGSIZE`](#chgsize) [`CHGTAG`](#chgtag) [`ISOLATE`](#isolate) [`MC`](#mc) [`MCABLE`](#mcable) [`MCON`](#mcon) [`MED`](#med) [`MEDCHG-CLASSIC`](#medchg-classic) [`MEDCOPY`](#medcopy) [`MEDDBBACKUP`](#meddbbackup) [`MEDDBRESTORE`](#meddbrestore) [`MEDFIND`](#medfind) [`MEDLIST`](#medlist) [`MEDSTRIP`](#medstrip) [`MEQUIP`](#mequip) [`MFIT`](#mfit) [`MTRAY`](#mtray) [`TAKEOFF`](#takeoff) [`UNISOLATE`](#unisolate)
 
 - **Conduit**: [`2AWAY`](#2away) [`2BREAK`](#2break) [`2LCON`](#2lcon) [`2LFLEX`](#2lflex) [`2TOWARD`](#2toward) [`ADDRE`](#addre) [`CONDUIT`](#conduit) [`CONFIX`](#confix) [`CONSIZE`](#consize) [`DEFINE`](#define) [`F0`](#f0) [`FC`](#fc) [`FLEX`](#flex) [`HUBS`](#hubs) [`OFF2CON`](#off2con) [`UNJ`](#unj)
 
@@ -333,7 +333,7 @@ Shows the block name of a picked insert.
 
 Extracts all MED xdata in the drawing to MEDProject (deletes this drawing's old rows first). Not live.
 
-- **Source**: `Support\MEDCommands.lsp` line 872
+- **Source**: `Support\MEDCommands.lsp` line 647
 - **Prompts / options**: none of its own (calls `medprocesssqlstatement`, `medsendentitydatatobom`, `ssget`)
 - **Menu**: med.cuix Menu: MED Main; med.cuix Menu: MED Main > MED Data to BOM; MEDRibbon.cuix Ribbon: MED Data Tools > MED Data to BOM; med.cuix Toolbar: MED Data Tools (+1 more)
 - **Related**: [`MEDSHOWBOM`](#medshowbom) [`TAKEOFF`](#takeoff)
@@ -534,7 +534,7 @@ Changes the size in the MED xdata of a selection of conduits or fittings.
 
 Changes the tag in the MED xdata of a selection. (Prompt text still says "New Size".)
 
-- **Source**: `Support\MEDCommands.lsp` line 983
+- **Source**: `Support\MEDCommands.lsp` line 758
 - **Prompts / options**: `Select Entities to change TAG:`; `New Size for Selected Entities:`
 - **Menu**: none found (type it)
 - **Related**: [`CHGSIZE`](#chgsize) [`CTAG`](#ctag)
@@ -668,16 +668,6 @@ DDEDIT for TEXT/ATTDEF/MTEXT, DDATTE for INSERT.
 - **Menu**: med.cuix Menu: Text & Attributes; med.cuix Menu: Text & Attributes > Dialog Edit
 - **Related**: [`CT`](#ct)
 
-### DDMEDLIST
-
-DCL list of MED xdata; Next/Previous through a selection; can open classic MEDCHG.
-
-- **Source**: `Support\MEDCommands.lsp` line 617
-- **Prompts / options**: `Select Entity to change:` (via `medchg`)
-- **Menu**: MEDRibbon.cuix Ribbon: MED Data Tools > MED List; med.cuix Toolbar: MED Data Tools; med.cuix Toolbar: MED Data Tools > MED List
-- **Related**: [`MEDLIST`](#medlist) [`MEDCHG-CLASSIC`](#medchg-classic)
-- Image: TODO
-
 ### DEFINE
 
 Attaches the current conduit settings (xdata) to existing geometry of a run.
@@ -710,7 +700,7 @@ Alternate detail bubble dtlhd1.
 
 Refreshes typical counts on existing detail bubbles.
 
-- **Source**: `Support\MEDCommands.lsp` line 842
+- **Source**: `Support\MEDCommands.lsp` line 617
 - **Prompts / options**: none of its own (calls `action_tile`, `add_list`, `end_list`)
 - **Menu**: med.cuix Menu: MED Main; med.cuix Menu: MED Main > Detail Update; MEDRibbon.cuix Ribbon: MED Data Tools > Detail Update; med.cuix Toolbar: MED Data Tools (+1 more)
 - **Related**: [`DETAG`](#detag)
@@ -1360,7 +1350,7 @@ Old DCL MED xdata editor (medchg.lsp).
 - **Source**: `Support\medchg.lsp` line 2
 - **Prompts / options**: `Select Entity to change:` (via `medchg`)
 - **Menu**: med.cuix Menu: MED Main; med.cuix Menu: MED Main > MED Change Classic; MEDRibbon.cuix Ribbon: MED Data Tools > MED Change Classic; med.cuix Toolbar: MED Data Tools (+1 more)
-- **Related**: [`MEDCHG`](#medchg) [`DDMEDLIST`](#ddmedlist)
+- **Related**: [`MEDCHG`](#medchg) [`MEDLIST`](#medlist)
 - Image: TODO
 
 ### MEDCOPY
@@ -1376,7 +1366,7 @@ Copies the MED xdata of one entity onto other selected entities.
 
 Writes a CSV snapshot of MEDType (MEDTYPE-DB-Backup.csv) under the MED directory.
 
-- **Source**: `Support\MEDCommands.lsp` line 917
+- **Source**: `Support\MEDCommands.lsp` line 692
 - **Prompts / options**: none of its own (calls `close`, `fix`, `foreach`)
 - **Menu**: none found (type it)
 - **Related**: [`MEDDBRESTORE`](#meddbrestore)
@@ -1385,7 +1375,7 @@ Writes a CSV snapshot of MEDType (MEDTYPE-DB-Backup.csv) under the MED directory
 
 Restores MEDType rows from the CSV snapshot; asks project name (ALL) and whether to delete first.
 
-- **Source**: `Support\MEDCommands.lsp` line 945
+- **Source**: `Support\MEDCommands.lsp` line 720
 - **Prompts / options**: `Project Name To Restore [ALL for All Projects]:`; `MED Database Restore utility`; `DeleteRecords prior to restore [Yes/No]:` [Yes No] (via `meddatabaserestore`)
 - **Menu**: none found (type it)
 - **Related**: [`MEDDBBACKUP`](#meddbbackup)
@@ -1442,7 +1432,7 @@ Command-line listing of an entity's MED xdata with catalog descriptions.
 - **Source**: `Support\MEDCommands.lsp` line 19
 - **Prompts / options**: `Select Entity to list:`; `Press Return to Continue`
 - **Menu**: med.cuix Menu: MED Main; med.cuix Menu: MED Main > MED List
-- **Related**: [`DDMEDLIST`](#ddmedlist) [`MEDCHG`](#medchg)
+- **Related**: [`MEDPROPERTIES`](#medproperties) [`MEDCHG`](#medchg)
 
 ### MEDMAKE3D
 

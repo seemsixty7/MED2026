@@ -835,7 +835,6 @@ LSP_LOADTXT    [_Button("Load Text Styles", "LSP_LOADTXT", "LSP_LOADTXT")]^C^CLO
 ID_MED_Data_Tools_0 [_Toolbar("MED Data Tools", _Floating, _Hide, 130, 565, 1)]
 LSP_MEDCHG     [_Button("MED Change", "LSP_MEDCHG", "LSP_MEDCHG")]^C^CMEDCHG 
 LSP_MEDSET     [_Button("MED Settings", "LSP_MEDSET", "LSP_MEDSET")]^C^CMEDSET 
-LSP_MEDLIST    [_Button("MED List", "LSP_MEDLIST", "LSP_MEDLIST")]^C^CDDMEDLIST 
 LSP_BOM        [_Button("Bill Of Material Extraction", "LSP_BOM", "LSP_BOM")]^C^CBOM 
 LSP_BOMSS      [_Button("Bill Of Material Extraction via Selection Set", "LSP_BOMSS", "LSP_BOMSS")]^C^CBOMSS 
 LSP_BROWSE     [_Button("Browse Material Extraction", "LSP_BROWSE", "LSP_BROWSE")]^C^CSHOW 

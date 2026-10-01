@@ -37,7 +37,6 @@ Aliases: `MED` and `MC` call `MEDCHG`. Classic DCL: `MEDCHG-CLASSIC`.
 | `BOM` | | Extract xdata → `MEDProject`. Not live. [database.md](database.md) |
 | `MEDDBBACKUP` / `MEDDBRESTORE` | | CSV snapshot of `MEDType` |
 | `MEDLIST` | | Command-line xdata + catalog description |
-| `DDMEDLIST` | | DCL list; Next through a set; can open classic MEDCHG |
 | `MEDSTRIP` | | Remove all MED xdata from a selection |
 | `MCON` `MCABLE` `MTRAY` `MFIT` `MEQUIP` | | Add a MED record to an existing entity |
 | `CHGSIZE` | | Size on a conduit/fitting selection |
@@ -163,7 +162,7 @@ View / erase macros: `ZW` `ZD` `ZP` `ZV` `ZE` `VA` `VR` `EW` `EC` `CW` `CC` `MW`
 | `MEDPACK` | Removed (no `.dbf`) |
 | Access / `MEDTYPE.dbf` / `PROJECT.dbf` | Replaced by SQLite or SQL Server |
 | `TROFF` | Use `TRAYOFF` |
-| `DDCPLIST` | Typo in 2012; use `DDMEDLIST` |
+| `DDMEDLIST` | Removed 2026-10. Use `MEDLIST` (command-line dump) or `MEDPROPERTIES` / `MEDRECORDS` (palette / grid). The 2012 typo `DDCPLIST` went with it |
 | `SHOW` as DCL | Use `MEDSHOWBOM`. The MED Main menu and ribbon "Browse BOM" items still send `SHOW`, which no longer exists ([menu macros with no command](command-reference.md#menu-macros-that-start-no-med-command)) |
 | `MEDSET` DCL | Use the C# `MEDSETTINGS` palette |
 | `LAT` (thaw all) | Not in Support |

@@ -1204,39 +1204,3 @@ Med_Cable : dialog
   }
   ok_cancel_help;
 }
-
-Med_DDMEDlist : dialog
-{
-  label = "Dynamic MEDList";
-  :column
-  {
-    :text
-    {
-      label="MED Data for Current Entity";
-    }
-    :list_box
-    {
-       key="meddatalist";
-    }
-    :row
-    {
-        :button
-    	{
-       	label="<-Previous";
-       	key="selprev";
-    	}
-    	:button
-    	{
-       	label="Next->";
-       	key="selnext";
-    	}
-    }
-    :button
-    {
-    label="MEDCHG this Entity";
-    key="medchg";
-    }
-    ok_only;
-
-  }
-}

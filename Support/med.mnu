@@ -878,7 +878,6 @@ LSP_MEDREC      [_Button("MED Records", "LSP_MEDLIST", "LSP_MEDLIST_32")]^C^CMED
 LSP_MED3DLIB    [_Button("MED 3D Library", "TRAY_3DTRAYOUT", "TRAY_3DTRAYOUT_32")]^C^CMED3DLIB 
 LSP_MEDCHGC     [_Button("MED Change Classic", "LSP_MEDCHG", "LSP_MEDCHG_32")]^C^CMEDCHG-CLASSIC 
 LSP_MEDSET      [_Button("MED Settings", "LSP_MEDSET", "LSP_MEDSET_32")]^C^CMEDSET 
-LSP_MEDLIST     [_Button("MED List", "LSP_MEDLIST", "LSP_MEDLIST_32")]^C^CDDMEDLIST 
 LSP_BOM        [_Button("Bill Of Material Extraction", "LSP_BOM", "LSP_BOM_32")]^C^CBOM 
 LSP_BOMSS      [_Button("Bill Of Material Extraction via Selection Set", "LSP_BOMSS", "LSP_BOMSS_32")]^C^CBOMSS 
 LSP_BROWSE     [_Button("Browse Material Extraction", "LSP_BROWSE", "LSP_BROWSE_32")]^C^CSHOW 

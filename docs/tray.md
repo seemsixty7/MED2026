@@ -65,7 +65,7 @@ Continue tray from the end of the fitting.
 
 [MEDCHG](medchg.md) changes tag, type, size, depth, measure/distance. It does **not** redraw the outline. `TRAYFIX` rebuilds linework from the centerline (tray entities; 2012 said not fittings — the current `TRAYFIX` also attempts fitting outline).
 
-`MEDLIST` / `DDMEDLIST` identify overlapping tray that looks the same on screen.
+`MEDLIST` / `MEDPROPERTIES` identify overlapping tray that looks the same on screen.
 
 ## Tag
 

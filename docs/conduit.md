@@ -45,7 +45,7 @@ Place from the CUI. Always osnap (END, INT, NEA). MED does not preset osnaps.
 - **Size override on:** fitting uses the current Settings size (oversized tee for splices).
 - **User rotate on:** you type the rotation when autorotate guesses wrong.
 
-Identify afterward with `MEDLIST` (command-line dump) or `DDMEDLIST` (DCL, Next through the set, can launch classic `MEDCHG` on the current entity). The 2012 typo `DDCPLIST` was `DDMEDLIST`.
+Identify afterward with `MEDLIST` (command-line dump) or `MEDPROPERTIES` (palette for the selected entity; `MEDRECORDS` for several records). `DDMEDLIST` (and its 2012 typo `DDCPLIST`) was removed in MED2026.
 
 ## Tag
 

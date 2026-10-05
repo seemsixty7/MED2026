@@ -18,6 +18,10 @@ namespace MEDDotNet
         /// <summary>Set by the palette before it sends MED3DLIBINSERT, consumed by the command.</summary>
         internal static string PendingPath;
 
+        /// <summary>When set with HasPendingDropPoint, MED3DLIBINSERT skips the point jig and places at this WCS point (palette drag-drop).</summary>
+        internal static Point3d PendingDropPoint;
+        internal static bool HasPendingDropPoint;
+
         [CommandMethod("MED3DLIB")]
         public void ShowLibrary()
         {
@@ -35,6 +39,12 @@ namespace MEDDotNet
             {
                 string path = PendingPath;
                 PendingPath = null;
+                Point3d? dropPt = null;
+                if (HasPendingDropPoint)
+                {
+                    dropPt = PendingDropPoint;
+                    HasPendingDropPoint = false;
+                }
                 if (string.IsNullOrEmpty(path))
                 {
                     var po = new PromptStringOptions("\nDWG file (full path or name in the 3D library): ");
@@ -42,8 +52,9 @@ namespace MEDDotNet
                     PromptResult r = doc.Editor.GetString(po);
                     if (r.Status != PromptStatus.OK || string.IsNullOrWhiteSpace(r.StringResult)) return;
                     path = ResolveLibraryFile(r.StringResult.Trim().Trim('"'));
+                    dropPt = null; // typed path always uses the point jig
                 }
-                Dwg3DLibInsert.InsertInteractive(doc, path);
+                Dwg3DLibInsert.InsertInteractive(doc, path, dropPt);
             }
             catch (System.Exception ex) { doc.Editor.WriteMessage("\nMED3DLIBINSERT failed: " + ex.Message); }
         }
@@ -191,8 +202,21 @@ namespace MEDDotNet
             Document doc = AcadApp.DocumentManager.MdiActiveDocument;
             if (doc == null) { System.Windows.Forms.MessageBox.Show("Open a drawing first.", "MED 3D Library"); return; }
             Dwg3DLibCommands.PendingPath = path;
+            Dwg3DLibCommands.HasPendingDropPoint = false;
             string cancel = doc.CommandInProgress != null && doc.CommandInProgress.Length > 0 ? "\x03\x03" : "";
             doc.SendStringToExecute(cancel + "MED3DLIBINSERT\n", true, false, false);
+        }
+
+        /// <summary>
+        /// Drag a library DWG into the drawing to INSERT it (not open). Uses Application.DoDragDrop with a custom
+        /// DropTarget and a private data format — never FileDrop, which AutoCAD treats as open.
+        /// </summary>
+        public static void StartDrag(System.Windows.Forms.Control source, string path)
+        {
+            if (source == null || string.IsNullOrEmpty(path) || !File.Exists(path)) return;
+            var data = new System.Windows.Forms.DataObject();
+            data.SetData("MED3DLIB.BlockPath", path);
+            AcadApp.DoDragDrop(source, data, System.Windows.Forms.DragDropEffects.Copy, new Dwg3DLibDropTarget(path));
         }
 
         public static void OpenDwg(string path)
@@ -202,6 +226,43 @@ namespace MEDDotNet
             foreach (Document d in dm)
                 if (string.Equals(d.Name, path, StringComparison.OrdinalIgnoreCase)) { dm.MdiActiveDocument = d; return; }
             dm.Open(path, true);
+        }
+    }
+
+    /// <summary>DropTarget for MED3DLIB palette drags: convert screen point to WCS and run MED3DLIBINSERT at that point.</summary>
+    sealed class Dwg3DLibDropTarget : DropTarget
+    {
+        readonly string _path;
+
+        public Dwg3DLibDropTarget(string path) { _path = path; }
+
+        public override void OnDragEnter(System.Windows.Forms.DragEventArgs e)
+        {
+            e.Effect = System.Windows.Forms.DragDropEffects.Copy;
+        }
+
+        public override void OnDragOver(System.Windows.Forms.DragEventArgs e)
+        {
+            e.Effect = System.Windows.Forms.DragDropEffects.Copy;
+        }
+
+        public override void OnDrop(System.Windows.Forms.DragEventArgs e)
+        {
+            Document doc = AcadApp.DocumentManager.MdiActiveDocument;
+            if (doc == null) return;
+            try
+            {
+                Point3d pos = doc.Editor.PointToWorld(new System.Drawing.Point(e.X, e.Y));
+                Dwg3DLibCommands.PendingPath = _path;
+                Dwg3DLibCommands.PendingDropPoint = pos;
+                Dwg3DLibCommands.HasPendingDropPoint = true;
+                string cancel = doc.CommandInProgress != null && doc.CommandInProgress.Length > 0 ? "\x03\x03" : "";
+                doc.SendStringToExecute(cancel + "MED3DLIBINSERT\n", true, false, false);
+            }
+            catch (System.Exception ex)
+            {
+                try { doc.Editor.WriteMessage("\nMED3DLIB: drop insert failed: " + ex.Message); } catch { }
+            }
         }
     }
 }

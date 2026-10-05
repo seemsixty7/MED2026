@@ -86,6 +86,12 @@ namespace MEDDotNet
         /// <summary>Interactive insert: import, jig for the insertion point, optional rotation prompt. Call from a command (document is locked).</summary>
         public static bool InsertInteractive(Document doc, string dwgPath)
         {
+            return InsertInteractive(doc, dwgPath, null);
+        }
+
+        /// <summary>Interactive insert. When <paramref name="fixedPos"/> is set (palette drag-drop), skip the point jig and place at that WCS point, then prompt for rotation like double-click Insert.</summary>
+        public static bool InsertInteractive(Document doc, string dwgPath, Point3d? fixedPos)
+        {
             Editor ed = doc.Editor;
             Database db = doc.Database;
             if (!File.Exists(dwgPath)) { ed.WriteMessage("\nMED3DLIB: file not found: " + dwgPath); return false; }
@@ -97,25 +103,33 @@ namespace MEDDotNet
             ed.WriteMessage("\nMED3DLIB: block \"" + name + "\"" + (existed ? " (existing definition reused)" : " imported") + ".");
 
             Matrix3d ucs = ed.CurrentUserCoordinateSystem;
-            using (var br = CreateReference(db, btrId, ucs, 0.0))
+            Point3d pos;
+            if (fixedPos.HasValue)
             {
-                var jig = new InsertJig(br, name);
-                PromptResult pr = ed.Drag(jig);
-                if (pr.Status != PromptStatus.OK) { ed.WriteMessage("\nMED3DLIB: cancelled."); return false; }
-                Point3d pos = jig.Position;
-
-                double rot = 0.0;
-                var po = new PromptAngleOptions("\nRotation angle <0>: ");
-                po.AllowNone = true;
-                po.UseBasePoint = true;
-                po.BasePoint = pos.TransformBy(ucs.Inverse());
-                po.UseDashedLine = true;
-                PromptDoubleResult ar = ed.GetAngle(po);
-                if (ar.Status == PromptStatus.Cancel) { ed.WriteMessage("\nMED3DLIB: cancelled."); return false; }
-                if (ar.Status == PromptStatus.OK) rot = ar.Value;
-
-                AddReference(db, btrId, pos, rot, ucs);
+                pos = fixedPos.Value;
             }
+            else
+            {
+                using (var br = CreateReference(db, btrId, ucs, 0.0))
+                {
+                    var jig = new InsertJig(br, name);
+                    PromptResult pr = ed.Drag(jig);
+                    if (pr.Status != PromptStatus.OK) { ed.WriteMessage("\nMED3DLIB: cancelled."); return false; }
+                    pos = jig.Position;
+                }
+            }
+
+            double rot = 0.0;
+            var po = new PromptAngleOptions("\nRotation angle <0>: ");
+            po.AllowNone = true;
+            po.UseBasePoint = true;
+            po.BasePoint = pos.TransformBy(ucs.Inverse());
+            po.UseDashedLine = true;
+            PromptDoubleResult ar = ed.GetAngle(po);
+            if (ar.Status == PromptStatus.Cancel) { ed.WriteMessage("\nMED3DLIB: cancelled."); return false; }
+            if (ar.Status == PromptStatus.OK) rot = ar.Value;
+
+            AddReference(db, btrId, pos, rot, ucs);
             ed.WriteMessage("\nMED3DLIB: inserted " + name + ".");
             return true;
         }

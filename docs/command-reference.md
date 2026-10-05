@@ -1494,10 +1494,10 @@ Command: rebuilds {dwg}.medprops.json for the current drawing.
 
 ### MED3DLIB
 
-Dockable 3D block library palette over `Dwg3D\` and `Dwg3D\Dwg3DCatalog.db` (search, categories, thumbnails, List/Tiles/Grid, Excel bulk edit, insert). See [src/MED-DotNet/README.md](../src/MED-DotNet/README.md).
+Dockable 3D block library palette over `Dwg3D\` and `Dwg3D\Dwg3DCatalog.db` (search, categories, thumbnails, List/Tiles/Grid, Excel bulk edit, insert). Drag from the list, Grid, or preview inserts at the drop point (does not open the DWG; only **Open DWG** opens). See [src/MED-DotNet/README.md](../src/MED-DotNet/README.md).
 
 - **Source**: .NET `[CommandMethod]`, `src\MED-DotNet\MED-DotNet\Dwg3DLib\Dwg3DLibCommands.cs` (loaded with `MED-DotNet.dll`).
-- **Prompts / options**: palette; insert asks for point and rotation.
+- **Prompts / options**: palette; Insert / double-click jigs for point then rotation; drag-drop places at the drop point then prompts for rotation.
 - **Menu**: med.cuix Menu: MED Main > MED 3D Library; MEDRibbon.cuix Ribbon: MED Data Tools > MED 3D Library; med.cuix Toolbar: MED Data Tools; med.mnu POP1 + toolbar
 - **Related**: [`MED3DLIBINSERT`](#med3dlibinsert) [`MED3DLIBTEST`](#med3dlibtest)
 

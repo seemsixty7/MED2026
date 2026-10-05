@@ -632,7 +632,7 @@ namespace MEDDotNet
             _dragBox = Rectangle.Empty; _dragEntry = null;
             if (e.Missing) return;
             string p = FullPath(e);
-            if (File.Exists(p)) _grid.DoDragDrop(new DataObject(DataFormats.FileDrop, new[] { p }), DragDropEffects.Copy);
+            if (File.Exists(p)) Dwg3DLibPalette.StartDrag(_grid, p);
         }
 
         // ------------------------------------------------------------------ Excel round trip
@@ -717,15 +717,14 @@ namespace MEDDotNet
             if (e == null || e.Missing) return;
             string p = FullPath(e);
             if (!File.Exists(p)) return;
-            var data = new DataObject(DataFormats.FileDrop, new[] { p });
-            DoDragDrop(data, DragDropEffects.Copy);
+            Dwg3DLibPalette.StartDrag(_list, p);
         }
 
         void OnPreviewMouseDown(object sender, MouseEventArgs ev)
         {
             if (ev.Button != MouseButtons.Left || _cur == null || _cur.Missing) return;
             string p = FullPath(_cur);
-            if (File.Exists(p)) DoDragDrop(new DataObject(DataFormats.FileDrop, new[] { p }), DragDropEffects.Copy);
+            if (File.Exists(p)) Dwg3DLibPalette.StartDrag(_preview, p);
         }
 
         void DoRescan()

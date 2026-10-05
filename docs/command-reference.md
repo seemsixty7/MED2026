@@ -22,7 +22,7 @@ How to read an entry:
 
 - **Cable and wire**: [`2LINE`](#2line) [`3LINE`](#3line) [`CABLE`](#cable) [`MEDLINE`](#medline) [`RUN3DCABLE`](#run3dcable) [`TSTRIP`](#tstrip) [`WIRES`](#wires)
 
-- **Details and equipment**: [`COM`](#com) [`DETAIL`](#detail) [`GND`](#gnd) [`INS`](#ins) [`JBX`](#jbx) [`LTG`](#ltg) [`MEDBLOCKINSERT`](#medblockinsert) [`MSC`](#msc) [`PLANMOTOR`](#planmotor) [`PWR`](#pwr) [`TRY`](#try)
+- **Details and equipment**: [`COM`](#com) [`DETAIL`](#detail) [`GND`](#gnd) [`INS`](#ins) [`JBX`](#jbx) [`LTG`](#ltg) [`MEDBLOCKINSERT`](#medblockinsert) [`MSC`](#msc) [`MOTOR`](#motor) [`PLANMOTOR`](#planmotor) [`PWR`](#pwr) [`TRY`](#try)
 
 - **Tagging**: [`ABL`](#abl) [`AL`](#al) [`ALEAD`](#alead) [`BC`](#bc) [`BOXCLOUD`](#boxcloud) [`BRACKET`](#bracket) [`CLOUD`](#cloud) [`CTAG`](#ctag) [`CUT`](#cut) [`DETAG`](#detag) [`DETAG2`](#detag2) [`DETAGUPD`](#detagupd) [`GL`](#gl) [`GLEAD`](#glead) [`GR`](#gr) [`GRAB`](#grab) [`HDTAG`](#hdtag) [`HDTAGOLD`](#hdtagold) [`IT`](#it) [`ITAGA`](#itaga) [`ITAGE`](#itage) [`ITAGT`](#itagt) [`LOOPIT`](#loopit) [`MB`](#mb) [`MB1`](#mb1) [`MBL`](#mbl) [`QTA`](#qta) [`QTE`](#qte) [`QTR`](#qtr) [`QTT`](#qtt) [`SECT`](#sect) [`SECTD`](#sectd) [`TTAG`](#ttag) [`TTAGS`](#ttags)
 
@@ -372,7 +372,7 @@ Bracket mark from two points and a direction.
 Selected cable runs to 3D solids on MED_3DCABLE.
 
 - **Source**: `Support\MED3DPath.lsp` line 1337
-- **Prompts / options**: `MEDProperties: drawing not saved — skipped .medprops.json (SAVE then MEDREBUILDMEDPROPSJSON).` (via `medrebuildmedpropsjsonbeside`)
+- **Prompts / options**: `MEDProperties: drawing not saved ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â skipped .medprops.json (SAVE then MEDREBUILDMEDPROPSJSON).` (via `medrebuildmedpropsjsonbeside`)
 - **Menu**: none found (type it)
 - **Related**: [`M3D`](#m3d) [`MAKE3DCABLE`](#make3dcable)
 
@@ -1094,7 +1094,7 @@ Detail insert from that MEDType group (lighting, ground, power, instrument, tray
 Selected conduit runs to 3D solids on MED_3DCONDUIT.
 
 - **Source**: `Support\MED3DPath.lsp` line 1334
-- **Prompts / options**: `MEDProperties: drawing not saved — skipped .medprops.json (SAVE then MEDREBUILDMEDPROPSJSON).` (via `medrebuildmedpropsjsonbeside`)
+- **Prompts / options**: `MEDProperties: drawing not saved ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â skipped .medprops.json (SAVE then MEDREBUILDMEDPROPSJSON).` (via `medrebuildmedpropsjsonbeside`)
 - **Menu**: none found (type it)
 - **Related**: [`C3D`](#c3d) [`MAKE3DCONDUIT`](#make3dconduit) [`MED3DPLAN`](#med3dplan)
 - Image: TODO
@@ -1113,7 +1113,7 @@ Selected conduit runs to 3D solids on MED_3DCONDUIT.
 Every cable run to 3D; Dwg or Layer.
 
 - **Source**: `Support\MED3DPath.lsp` line 1343
-- **Prompts / options**: `Use the PLAN command to return to plan view.`; `MEDProperties: drawing not saved — skipped .medprops.json (SAVE then MEDREBUILDMEDPROPSJSON).` [Dwg Layer] (via `med3d-export`, `medrebuildmedpropsjsonbeside`)
+- **Prompts / options**: `Use the PLAN command to return to plan view.`; `MEDProperties: drawing not saved ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â skipped .medprops.json (SAVE then MEDREBUILDMEDPROPSJSON).` [Dwg Layer] (via `med3d-export`, `medrebuildmedpropsjsonbeside`)
 - **Menu**: none found (type it)
 - **Related**: [`C3D`](#c3d) [`MEDMAKE3D`](#medmake3d)
 
@@ -1122,7 +1122,7 @@ Every cable run to 3D; Dwg or Layer.
 Every conduit run to 3D; Dwg (WBLOCK + .medprops.json) or Layer.
 
 - **Source**: `Support\MED3DPath.lsp` line 1340
-- **Prompts / options**: `Use the PLAN command to return to plan view.`; `MEDProperties: drawing not saved — skipped .medprops.json (SAVE then MEDREBUILDMEDPROPSJSON).` [Dwg Layer] (via `med3d-export`, `medrebuildmedpropsjsonbeside`)
+- **Prompts / options**: `Use the PLAN command to return to plan view.`; `MEDProperties: drawing not saved ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â skipped .medprops.json (SAVE then MEDREBUILDMEDPROPSJSON).` [Dwg Layer] (via `med3d-export`, `medrebuildmedpropsjsonbeside`)
 - **Menu**: none found (type it)
 - **Related**: [`M3D`](#m3d) [`MEDMAKE3D`](#medmake3d)
 
@@ -1449,7 +1449,7 @@ Command-line listing of an entity's MED xdata with catalog descriptions.
 Tray, tray fittings, conduit, conduit bodies and cable to 3D in one go (Dwg/Layer). See 3d.md.
 
 - **Source**: `Support\MED3DPath.lsp` line 1321
-- **Prompts / options**: `MEDMAKE3D output to [Dwg/Layer] <Dwg>:`; `Use the PLAN command to return to plan view.`; `MEDProperties: drawing not saved — skipped .medprops.json (SAVE then MEDREBUILDMEDPROPSJSON).` [Dwg Layer] (via `med3d-make3d-all`, `medrebuildmedpropsjsonbeside`)
+- **Prompts / options**: `MEDMAKE3D output to [Dwg/Layer] <Dwg>:`; `Use the PLAN command to return to plan view.`; `MEDProperties: drawing not saved ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â skipped .medprops.json (SAVE then MEDREBUILDMEDPROPSJSON).` [Dwg Layer] (via `med3d-make3d-all`, `medrebuildmedpropsjsonbeside`)
 - **Menu**: none found (type it)
 - **Related**: [`M3D`](#m3d) [`MAKE3DTRAY`](#make3dtray) [`MED3DVER`](#med3dver)
 - Image: TODO
@@ -1742,14 +1742,27 @@ Closed polyline box from two corners.
 - **Menu**: med.cuix Menu: Misc. Tools; med.cuix Menu: Misc. Tools > Draw Pline Box; MEDRibbon.cuix Ribbon: MEDUtilities > Draw Pline Box; med.cuix Toolbar: Lisp Tools (+3 more)
 - **Related**: [`QC`](#qc)
 
+### MOTOR
+
+Parametric 2D plan motor sized from `MOTOR.DAT` (horizontal or vertical).
+
+- **Source**: `Support\medmotor.lsp` (`C:MOTOR`); drawing helper `(motor msize vert)` also in `Support\QKEY.lsp` (overridden when medmotor loads). Loaded from `Support\ACAD.LSP` after `qkey.lsp`.
+- **Prompts / options**: numbered HP list from `MOTOR.DAT` (or type HP); `Orientation [Horizontal/Vertical]`; `Start Point:`; `Angle of Generation:` (horizontal only); `Select Direction of Motor Box:`
+- **Menu**: med.cuix Toolbar: Lisp Tools > Parametric Motor; MEDRibbon.cuix Ribbon: MED Main > Parametric Motor
+- **Related**: [`PLANMOTOR`](#planmotor)
+- Image: TODO
+
+
 ### PLANMOTOR
 
 Plan motor symbol sized from MOTOR.DAT (horizontal/vertical).
 
+Alias of [MOTOR](#motor) when `medmotor.lsp` is loaded.
+
 - **Source**: `Support\QKEY.lsp` line 1024
 - **Prompts / options**: `Horizontal or Vertical <H>:`; `Start Point:`; `Angle of Genration:`; `Select Direction of Motor Box:`; `Select first point:`; `Select second point:` [Horz Vertical] (via `motor`, `be`)
 - **Menu**: none found (type it)
-- **Related**: [`DETAIL`](#detail)
+- **Related**: [`MOTOR`](#motor) [`DETAIL`](#detail)
 - Image: TODO
 
 ### PLMAKE
@@ -2617,7 +2630,6 @@ These macros are in `med.cuix` / `MEDRibbon.cuix` (and `med.mnu`) but no LISP or
 | --- | --- | --- |
 | `ADDATRIB` | med.cuix Menu: Text & Attributes; med.cuix Menu: Text & Attributes > Add Attribute | Only the helper `(addatrib ...)` exists; the command is `ATADD`. |
 | `INST` | med.cuix Menu: Details; med.cuix Menu: Details > Instrumentation | Details > Instrumentation. `INS` exists; `INST` does not. TODO: confirm with Clint. |
-| `MOTOR` | med.cuix Toolbar: Lisp Tools; med.cuix Toolbar: Lisp Tools > Parametric Motor | Only the helper `(motor size vert)` exists; the command is `PLANMOTOR`. |
 | `T0` | MEDRibbon.cuix Ribbon: Text Styles > 0.09375 Text; med.cuix Toolbar: Text Styles | Macro runs `(c:loadtxt)` then `T0`; no C:T0 is defined (T1-T3 / B1-B3 are, in MEDCommands.lsp). TODO: confirm with Clint. |
 | `VCHAN90` | med.cuix Image menu: Plan Cable Channel and Fittings; med.cuix Image menu: Plan Cable Channel and Fittings > Plan Vertical Fit | Image menu "Plan Vertical Fit"; the command is `CHANV90`. |
 

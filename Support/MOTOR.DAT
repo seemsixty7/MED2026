@@ -3,16 +3,28 @@ Dim A is the length of the motor
 Dim B is the width of the motor
 Dim C is the distance from center line to far edge of motor box
 Dim D is the width of the motor box
-
+~approx sizes interpolated from existing curve / NEMA frames
 
 
 Horse Dim     Dim     Dim     Dim
 Power A       B       C       D
+0.5   8.50    6.50    5.00    2.50
+1     9.50    7.00    5.40    2.60
+1.5   10.50   7.50    5.80    2.75
+2     11.20   8.00    6.20    2.90
+3     12.00   8.70    6.60    3.00
 5     12.81   9.34    7.03    3.12
+7.5   14.60   9.90    7.80    3.40
 10    16.44   10.5    8.69    3.62
+15    18.90   11.5    9.20    4.60
 20    21.31   12.5    9.69    5.52
+25    22.50   13.25   11.20   5.90
 30    23.67   14.0    12.66   6.25
+40    25.10   15.0    13.90   6.60
 50    26.45   16.0    15.20   7.0
+60    27.30   17.0    15.80   7.0
 75    28.06   18.0    16.31   7.0
+100   29.80   19.0    17.80   8.50
 125   31.56   20.0    19.19   10.0
+150   34.00   21.0    19.80   10.0
 200   36.43   22.0    20.50   10.0

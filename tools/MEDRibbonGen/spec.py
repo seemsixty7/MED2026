@@ -82,6 +82,7 @@ MAIN=[
  ('Utilities',[
    ('split','Leaders',[B('Arrow Leader','^C^CALEAD','LSP_ALEAD'),B('Hoop Leader','^C^CGRAB','LSP_GRAB'),B('Loop Leader','^C^CLOOPIT','LSP_LOOPIT')],'L'),
    ('stack',[B('Revision Cloud','^C^CCLOUD','LSP_CLOUD'),B('Box Cloud','^C^CBOXCLOUD','LSP_BOXCLOUD'),B('Draw Pline Box','^C^CPBOX','LSP_PBOX')]),
+  ('L',B('Parametric Motor','^C^CMOTOR','LSP_MOTOR','2D plan motor from MOTOR.DAT')),
    ('stack',[B('Line Break','^C^CLBREAK','LSP_LBREAK'),B('Priority Break','^C^CLB','LSP_LB'),B('Bracket','^C^CBRACKET','LSP_BRACKET')]),
    ('stack',[B('Change Layer','^C^CCL','LSP_CL'),B('Set Current Layer','^C^CSL','LSP_SL'),B('Freeze Layers','^C^CFL','LSP_FL')]),
   ],[
@@ -259,7 +260,7 @@ DETAIL=[
                          B('Reducer','^C^C(setq _FITTCODE 103 _TYPE T) (medblkins _MEDETFIT (strcat "re"    _CLETT) nil nil 1 8)','CON_RE'),
                          detfit('Tee',' 12','t',2,'CON_TEE'),detfit('UNF',' 73','uny',2,'CON_UNION'),detfit('UNY',' 72','uny',2,'CON_UNION'),
                          detfit('X',' 81','x',2,'CON_CROSS')],'L'),
-   ('split','Seals',[detfit('Seal',' 61','eys',2,'CON_SEAL'),detfit('Seal-Drain',' 64','eydside',2,'CON_SEALDR')],'L'),
+   ('split','Seals',[detfit('Seal',' 61','eys',2,'CON_SEAL'),detfit('Seal-Drain',' 64','EYD',2,'CON_SEALDR')],'L'),
    ('L',B('Condulet Icons...','^C^C$i=MED.meddetailfit $i=*','FIT_CONDULET','Classic condulet fittings image menu (all Form 7/8 variants)')),
   ],[]),
  ('GUA Fittings',[
@@ -280,9 +281,9 @@ DETAIL=[
              B('Device Icons...','^C^C$i=MED.meddetaildevices $i=*','CON_DEVICES','Classic devices image menu')]),
   ],[]),
  ('Lighting',[
-   ('split','Fixtures',[detfit('VMV Stanchion','243','vmvstan',1,'CON_LTG'),detfit('VMV Pendant','241','vmvpend',1,'CON_LTG'),
-                        detfit('VMV Wall Mount','242','vmvwall',1,'CON_LTG'),detfit('EVCX Ceiling','251','evcx',1,'CON_LTG'),
-                        detfit('EVCX Pendant','252','evapend',1,'CON_LTG'),
+   ('split','Fixtures',[detfit('VMV Stanchion','243','vmvstan',1,'CON_LTG'),
+                        detfit('EVCX Ceiling','251','evcx',1,'CON_LTG'),
+                        detfit('EVCX Pendant','252','evcxpnd',1,'CON_LTG'),
                         B('Globe','^C^C(setq _FITTCODE 244) (medblkins _MEDETFIT "globe"                   nil nil 1 2)','CON_LTG'),
                         B('Globe 30','^C^C(setq _FITTCODE 245) (medblkins _MEDETFIT "globe30"                 nil nil 1 2)','CON_LTG')],'L'),
    ('stack',[B('UNJ/UNJY','^C^Cunj','CON_UNION','UNJ / UNJY union'),B('Lighting Icons...','^C^C$i=MED.meddetaillight $i=*','CON_LTG','Classic detail lighting image menu')]),

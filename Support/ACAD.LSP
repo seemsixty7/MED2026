@@ -12,6 +12,8 @@
 (load "CSharpAdd")
 (prompt "\nLoading MED User defined Quick Keys")
 (load "qkey.lsp")
+(prompt "\nLoading MED Parametric Motor")
+(load "medmotor.lsp")
 (prompt "\nLoading MED2022")
 (load "MEDCore.lsp")
 

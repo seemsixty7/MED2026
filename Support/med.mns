@@ -55,7 +55,7 @@ ID_Tray_Fix_______0   [Tray Fix      ]^C^CTRAYFIX
 ID_Trim_Multiple__0   [<-Trim Multiple ]^C^CTM 
 ID__Icon_1     [ Icon]$I=MED.MEDTOOLSICON $I=* 
                [->Text & Attributes]
-ID_Add_Attribute______0   [Add Attribute     ]^C^CADDATRIB 
+ID_Add_Attribute______0   [Add Attribute     ]^C^CATADD 
 ID_Attribute_Change___0   [Attribute Change  ]^C^CACX 
 ID_Attribute_Replace__0   [Attribute Replace ]^C^CAC 
 ID_Dialog_Edit________0   [Dialog Edit       ]^C^CDD 
@@ -228,7 +228,7 @@ ID_Wiring_Diagrams_0 [Wiring Diagrams]^C^CMEDWIRING
                  [Fuse w/ Connects   ]^C^C(medblkins _MEDSYM "FUSE"    nil nil _SC -1) 
                  [Thermal Overloads  ]^C^C(medblkins _MEDSYM "TOLOAD"  nil nil _SC -1) 
                  [Magnetic Overloads ]^C^C(medblkins _MEDSYM "MOLOAD"  nil nil _SC -1) 
-                 [<-Main Contact     ]
+                 [<-Main Contact     ]^C^C(medblkins _MEDSYM "CONTACTR" nil nil _SC -1) 
                [ Icon]$I=MED.medwd1lcmpnt $I=* 
 
 ***POP3
@@ -313,7 +313,7 @@ ID_Wiring_Diagrams_0 [Wiring Diagrams]^C^CMEDWIRING
                  [FlexConn]^C^C(setq _FITTCODE 103) (medblkins _MEDETFIT (strcat "ltsc"    _CLETT) nil nil 1 2) 
                  [Reducer ]^C^C(setq _FITTCODE 103 _TYPE T) (medblkins _MEDETFIT (strcat "re"    _CLETT) nil nil 1 8) 
                  [Seal    ]^C^C(setq _FITTCODE  61) (medblkins _MEDETFIT (strcat "eys"     _CLETT) nil nil 1 2) 
-                 [Seal-Drn]^C^C(setq _FITTCODE  64) (medblkins _MEDETFIT (strcat "eydside" _CLETT) nil nil 1 2) 
+                 [Seal-Drn]^C^C(setq _FITTCODE  64) (medblkins _MEDETFIT (strcat "EYD"     _CLETT) nil nil 1 2) 
                  [Tee     ]^C^C(setq _FITTCODE  12) (medblkins _MEDETFIT (strcat "t"       _CLETT) nil nil 1 2) 
                  [UNF     ]^C^C(setq _FITTCODE  73) (medblkins _MEDETFIT (strcat "uny"     _CLETT) nil nil 1 2) 
                  [UNY     ]^C^C(setq _FITTCODE  72) (medblkins _MEDETFIT (strcat "uny"     _CLETT) nil nil 1 2) 
@@ -336,24 +336,37 @@ ID_Wiring_Diagrams_0 [Wiring Diagrams]^C^CMEDWIRING
                [->Devices]
                  [Feed Through](toggle "_FEED" "Device switch Feed through") 
                  [--]
+                 [FSC-W/Plug ]^C^C(setq _FITTCODE  1100) (medblkins _MEDETFIT (strcat "FSCPlugC" _CLETT) nil nil 1.0 2) 
+                 [SideView   ]^C^C(setq _FITTCODE  1100) (medblkins _MEDETFIT (strcat "FSCPlugC" "SIDE" _CLETT) nil nil 1.0 2) 
+                 [2Gang FSC-W/Plugs ]^C^C(setq _FITTCODE  1101) (medblkins _MEDETFIT (strcat "FSC2GPlugC" _CLETT) nil nil 1.0 2) 
+                 [2Gang FSC-W/Switches ]^C^C(setq _FITTCODE  1111) (medblkins _MEDETFIT (strcat "FSC2GSwitchC" _CLETT) nil nil 1.0 2) 
+                 [--]
+                 [Switch    ]^C^C(setq _FITTCODE  206) (medblkins _MEDETFIT (strcat (feedset "eds") _CLETT) nil nil 1.0 2) 
+                 [SideView  ]^C^C(setq _FITTCODE  206) (medblkins _MEDETFIT (strcat (feedset "eds") "sid" _CLETT) nil nil 1.0 2) 
                  [H O A     ]^C^C(setq _FITTCODE  200) (medblkins _MEDETFIT (strcat (feedset "hoas") _CLETT) nil nil 1.0 2) 
                  [Start/Stop]^C^C(setq _FITTCODE  202) (medblkins _MEDETFIT (strcat (feedset "efs") "s-s" _CLETT) nil nil 1.0 2) 
                  [Stop      ]^C^C(setq _FITTCODE  204) (medblkins _MEDETFIT (strcat (feedset "efs") "stp" _CLETT) nil nil 1.0 2) 
                  [--]
                  [Outlet    ]^C^C(setq _FITTCODE  208) (medblkins _MEDETFIT (strcat (feedset "cps") _CLETT) nil nil 1.0 2) 
                  [2 Outlet  ]^C^C(setq _FITTCODE  210) (medblkins _MEDETFIT (strcat "2cps" _CLETT) nil nil 1.0 2) 
-                 [<-SideView]^C^C(setq _FITTCODE  208) (medblkins _MEDETFIT (strcat (feedset "cps") "sid" _CLETT) nil nil 1.0 2) 
+                 [SideView]^C^C(setq _FITTCODE  208) (medblkins _MEDETFIT (strcat (feedset "cps") "sid" _CLETT) nil nil 1.0 2) 
+                 [--]
+                 [DelayedPlug-CESD]^C^C(setq _FITTCODE  1000) (medblkins _MEDETFIT (strcat "CESDFRNT" _CLETT) nil nil 1.0 2) 
+                 [SideView]^C^C(setq _FITTCODE  1000) (medblkins _MEDETFIT (strcat "CESDSIDE" _CLETT) nil nil 1.0 2) 
+                 [Plug-SRD_Cap]^C^C(setq _FITTCODE  1002) (medblkins _MEDETFIT (strcat "SRD-CAP-FRNT" _CLETT) nil nil 1.0 2) 
+                 [SideView]^C^C(setq _FITTCODE  1002) (medblkins _MEDETFIT (strcat "SRD-CAP-SIDE" _CLETT) nil nil 1.0 2) 
+                 [Plug-SRD_Door]^C^C(setq _FITTCODE  1001) (medblkins _MEDETFIT (strcat "SRDFRONT" _CLETT) nil nil 1.0 2) 
+                 [SideView]^C^C(setq _FITTCODE  1001) (medblkins _MEDETFIT (strcat "SRDSIDE" _CLETT) nil nil 1.0 2) 
+                 [<-EPC CB-Plug]^C^C(setq _FITTCODE  1010) (medblkins _MEDETFIT (strcat "EPC_SIDE" _CLETT) nil nil 1.0 2) 
                [ Icons ]$i=MED.meddetaildevices $i=* 
                [--]
                [->Lighting]
                  [VMV Type]
                  [Stansn  ]^C^C(setq _FITTCODE 243) (medblkins _MEDETFIT (strcat "vmvstan" _CLETT) nil nil 1 1) 
-                 [Pendant ]^C^C(setq _FITTCODE 241) (medblkins _MEDETFIT (strcat "vmvpend" _CLETT) nil nil 1 1) 
-                 [Wallmnt ]^C^C(setq _FITTCODE 242) (medblkins _MEDETFIT (strcat "vmvwall" _CLETT) nil nil 1 1) 
                  [--]
                  [EVCXType]
                  [ Ceiling]^C^C(setq _FITTCODE 251) (medblkins _MEDETFIT (strcat "evcx"    _CLETT) nil nil 1 1) 
-                 [ Pendant]^C^C(setq _FITTCODE 252) (medblkins _MEDETFIT (strcat "evapend" _CLETT) nil nil 1 1) 
+                 [ Pendant]^C^C(setq _FITTCODE 252) (medblkins _MEDETFIT (strcat "evcxpnd" _CLETT) nil nil 1 1) 
                  [--]
                  [Globe   ]^C^C(setq _FITTCODE 244) (medblkins _MEDETFIT "globe"                   nil nil 1 2) 
                  [Globe 30]^C^C(setq _FITTCODE 245) (medblkins _MEDETFIT "globe30"                 nil nil 1 2) 
@@ -411,7 +424,6 @@ ID_Wiring_Diagrams_0 [Wiring Diagrams]^C^CMEDWIRING
                  [ Double Start/Stop  ]^C^C(typstrins "typcrdss") 
                  [ Triple Start/Stop  ]^C^C(typstrins "typcrtss") 
                  [ Start/Stop w/Indctr]^C^C(typstrins "typcrssi") 
-                 [ mY tEMP]^C^C(typstrins "mytemp") 
                  [<- Fused Cntrl Xfmr ]^C^C(typstrins "typcrfcx") 
                [ Icon]$I=MED.MEDWDtypcir $I=* 
                [--]
@@ -496,7 +508,7 @@ ID_Wiring_Diagrams_0 [Wiring Diagrams]^C^CMEDWIRING
                [Lighting                 ]^C^CLTG 
                [Grounding                ]^C^CGND 
                [Power                    ]^C^CPWR 
-               [Instrumentation          ]^C^CINST 
+               [Instrumentation          ]^C^CINS 
                [Tray                     ]^C^CTRY 
 
 ***POP4DETMISC
@@ -1175,7 +1187,6 @@ ID__16         [_Flyout("Misc Switches", ICON6962.bmp, ICON_24_BLANK, _OtherIcon
 [MEDplan(1tee,Tee)]^C^C(setq _FITTCODE  11) (medblkins _MEDFIT "1tee"     nil nil _SC 2) 
 [MEDplan(1teed,T-down)]^C^C(setq _FITTCODE  11) (medblkins _MEDFIT "1teed"    nil nil _SC 3) 
 [MEDplan(1teeu,T-up)]^C^C(setq _FITTCODE  11) (medblkins _MEDFIT "1teeu"    nil nil _SC 3) 
-[MEDplan(1teed,T-down to Tee)]^C^C(setq _FITTCODE  11) (medblkins _MEDFIT "2teed"    nil nil _SC 3) 
 [MEDplan(1union,Union)]^C^C(setq _FITTCODE  72) (medblkins _MEDFIT "1union"   nil nil _SC 1) 
 [MEDplan(1cee,'C' Fitting)]^C^C(setq _FITTCODE  50) (medblkins _MEDFIT "1cee"     nil nil _SC 2) 
 [MEDplan(1cap,Recessed Plug)]^C^C(setq _FITTCODE 100) (medblkins _MEDFIT "1cap"     nil nil _SC 2) 
@@ -1233,7 +1244,7 @@ ID__16         [_Flyout("Misc Switches", ICON6962.bmp, ICON_24_BLANK, _OtherIcon
 [Plan Cable Channel and Fittings]
 [MEDplan2(chan4)]^C^C(setq _CHANSIZE 4.0) channel 
 [MEDplan2(chan6)]^C^C(setq _CHANSIZE 6.0) channel 
-[MEDplan2(chanv90,Plan Vertical Fit)]^C^CVCHAN90 
+[MEDplan2(chanv90,Plan Vertical Fit)]^C^CCHANV90 
 [MEDplan2(chanoff,Offset Cable Chan)]^C^CCHANOFF 
 [MEDplan2(chan30,Horizontal 30 deg )]^C^CCHAN30 
 [MEDplan2(chan45,Horizontal 45 deg )]^C^CCHAN45 
@@ -1298,7 +1309,7 @@ ID__16         [_Flyout("Misc Switches", ICON6962.bmp, ICON_24_BLANK, _OtherIcon
 [meddtl(ltscc,Flex connector)]^C^C(setq _FITTCODE 103) (medblkins _MEDETFIT (strcat "ltsc"  _CLETT) nil nil 1 2) 
 [meddtl(rec,Reducer)]^C^C(setq _FITTCODE 103 _TYPE T) (medblkins _MEDETFIT (strcat "re"    _CLETT) nil nil 1 8) 
 [meddtl(eysc,Seal)]^C^C(setq _FITTCODE  61) (medblkins _MEDETFIT (strcat "eys"   _CLETT) nil nil 1 2) 
-[meddtl(eydsidec,Seal Drain)]^C^C(setq _FITTCODE  64) (medblkins _MEDETFIT (strcat "eydside" _CLETT) nil nil 1 2) 
+[meddtl(eydsidec,Seal Drain)]^C^C(setq _FITTCODE  64) (medblkins _MEDETFIT (strcat "EYD-SIDER" _CLETT) nil nil 1 2) 
 [meddtl(tc,Tee)]^C^C(setq _FITTCODE  11) (medblkins _MEDETFIT (strcat "t"     _CLETT) nil nil 1 2) 
 [meddtl(unyc,Union UNY)]^C^C(setq _FITTCODE  72) (medblkins _MEDETFIT (strcat "uny"     _CLETT) nil nil 1 2) 
 [meddtl(unyc,Union UNF)]^C^C(setq _FITTCODE  73) (medblkins _MEDETFIT (strcat "uny"     _CLETT) nil nil 1 2) 
@@ -1325,13 +1336,11 @@ ID__16         [_Flyout("Misc Switches", ICON6962.bmp, ICON_24_BLANK, _OtherIcon
 
 **MEDDETAILLIGHT
 [Detail LIGHTING]
-[meddtl(vmvstane,Stanchion mount   )]^C^C(setq _FITTCODE 403) (medblkins _MEDETFIT (strcat "vmvstan" _CLETT) nil nil 1 1) 
-[meddtl(vmvpendb,Pendant mount     )]^C^C(setq _FITTCODE 401) (medblkins _MEDETFIT (strcat "vmvpend" _CLETT) nil nil 1 1) 
-[meddtl(vmvwallc,Wall mount        )]^C^C(setq _FITTCODE 402) (medblkins _MEDETFIT (strcat "vmvwall" _CLETT) nil nil 1 1) 
-[meddtl(evcxb,evcx ceiling mount   )]^C^C(setq _FITTCODE 411) (medblkins _MEDETFIT (strcat "evcx"    _CLETT) nil nil 1 1) 
-[meddtl(evapendb,eva pendant mount )]^C^C(setq _FITTCODE 412) (medblkins _MEDETFIT (strcat "evapend" _CLETT) nil nil 1 1) 
-[meddtl(globe,globe reflector      )]^C^C(setq _FITTCODE 404) (medblkins _MEDETFIT "globe"                   nil nil 1 2) 
-[meddtl(globe30,30 degree globe    )]^C^C(setq _FITTCODE 405) (medblkins _MEDETFIT "globe30"                 nil nil 1 2) 
+[meddtl(vmvstane,Stanchion mount   )]^C^C(setq _FITTCODE 243) (medblkins _MEDETFIT (strcat "vmvstan" _CLETT) nil nil 1 1) 
+[meddtl(evcxb,evcx ceiling mount   )]^C^C(setq _FITTCODE 251) (medblkins _MEDETFIT (strcat "evcx"    _CLETT) nil nil 1 1) 
+[meddtl(evapendb,eva pendant mount )]^C^C(setq _FITTCODE 252) (medblkins _MEDETFIT (strcat "evcxpnd" _CLETT) nil nil 1 1) 
+[meddtl(globe,globe reflector      )]^C^C(setq _FITTCODE 244) (medblkins _MEDETFIT "globe"                   nil nil 1 2) 
+[meddtl(globe30,30 degree globe    )]^C^C(setq _FITTCODE 245) (medblkins _MEDETFIT "globe30"                 nil nil 1 2) 
 
 **MEDDETAILCONST
 [Detail Construction Materials]

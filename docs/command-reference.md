@@ -14,7 +14,7 @@ How to read an entry:
 
 - **Setup**: [`BLDIST`](#bldist) [`IOD`](#iod) [`LOADLAYERS`](#loadlayers) [`MED2026SETUP`](#med2026setup) [`MEDDETAIL`](#meddetail) [`MEDDIMSETUP`](#meddimsetup) [`MEDMENU`](#medmenu) [`MEDPLAN`](#medplan) [`MEDWIRING`](#medwiring) [`SETLIM`](#setlim) [`SETPLOT`](#setplot) [`SETUP`](#setup)
 
-- **Catalog, xdata and BOM**: [`ATLSC`](#atlsc) [`ATRSC`](#atrsc) [`BOM`](#bom) [`CHGSIZE`](#chgsize) [`CHGTAG`](#chgtag) [`ISOLATE`](#isolate) [`MC`](#mc) [`MCABLE`](#mcable) [`MCON`](#mcon) [`MED`](#med) [`MEDCHG-CLASSIC`](#medchg-classic) [`MEDCOPY`](#medcopy) [`MEDDBBACKUP`](#meddbbackup) [`MEDDBRESTORE`](#meddbrestore) [`MEDFIND`](#medfind) [`MEDLIST`](#medlist) [`MEDSTRIP`](#medstrip) [`MEQUIP`](#mequip) [`MFIT`](#mfit) [`MTRAY`](#mtray) [`TAKEOFF`](#takeoff) [`UNISOLATE`](#unisolate)
+- **Catalog, xdata and BOM**: [`ATLSC`](#atlsc) [`ATRSC`](#atrsc) [`BOM`](#bom) [`BOMSS`](#bomss) [`CHGSIZE`](#chgsize) [`CHGTAG`](#chgtag) [`ISOLATE`](#isolate) [`MC`](#mc) [`MCABLE`](#mcable) [`MCON`](#mcon) [`MED`](#med) [`MEDCHG-CLASSIC`](#medchg-classic) [`MEDCOPY`](#medcopy) [`MEDDBBACKUP`](#meddbbackup) [`MEDDBRESTORE`](#meddbrestore) [`MEDFIND`](#medfind) [`MEDLIST`](#medlist) [`MEDSTRIP`](#medstrip) [`MEQUIP`](#mequip) [`MFIT`](#mfit) [`MTRAY`](#mtray) [`TAKEOFF`](#takeoff) [`UNISOLATE`](#unisolate)
 
 - **Conduit**: [`2AWAY`](#2away) [`2BREAK`](#2break) [`2LCON`](#2lcon) [`2LFLEX`](#2lflex) [`2TOWARD`](#2toward) [`ADDRE`](#addre) [`CONDUIT`](#conduit) [`CONFIX`](#confix) [`CONSIZE`](#consize) [`DEFINE`](#define) [`F0`](#f0) [`FC`](#fc) [`FLEX`](#flex) [`HUBS`](#hubs) [`OFF2CON`](#off2con) [`UNJ`](#unj)
 
@@ -333,10 +333,20 @@ Shows the block name of a picked insert.
 
 Extracts all MED xdata in the drawing to MEDProject (deletes this drawing's old rows first). Not live.
 
-- **Source**: `Support\MEDCommands.lsp` line 647
-- **Prompts / options**: none of its own (calls `medprocesssqlstatement`, `medsendentitydatatobom`, `ssget`)
+- **Source**: `Support\MEDCommands.lsp` (`C:BOM` / `MEDBomFromSelection`)
+- **Prompts / options**: none of its own (ssget "X" MED* xdata; calls `medprocesssqlstatement`, `medsendentitydatatobom`)
 - **Menu**: med.cuix Menu: MED Main; med.cuix Menu: MED Main > MED Data to BOM; MEDRibbon.cuix Ribbon: MED Data Tools > MED Data to BOM; med.cuix Toolbar: MED Data Tools (+1 more)
-- **Related**: [`MEDSHOWBOM`](#medshowbom) [`TAKEOFF`](#takeoff)
+- **Related**: [`BOMSS`](#bomss) [`MEDSHOWBOM`](#medshowbom) [`TAKEOFF`](#takeoff)
+
+### BOMSS
+
+Bill of materials from a user selection of MED entities (same write path as BOM).
+
+- **Source**: `Support\MEDCommands.lsp` (`C:BOMSS` / `MEDBomFromSelection`)
+- **Prompts / options**: `Select MED entities for BOM:` (ssget filtered to MED* xdata). Empty/cancel leaves the BOM unchanged.
+- **Menu**: med.cuix Menu: MED Main > MED BOM Selection; MEDRibbon.cuix Ribbon: MED Data Tools > MED BOM Selection; med.cuix Toolbar: MED Data Tools
+- **Related**: [`BOM`](#bom) [`MEDSHOWBOM`](#medshowbom) [`TAKEOFF`](#takeoff)
+
 
 ### BOXCLOUD
 
@@ -1563,8 +1573,8 @@ Browse MEDProject rows for this drawing (filters, summary, CSV). See [medshowbom
 
 - **Source**: .NET `[CommandMethod]`, `src\MED-DotNet\MED-DotNet\MedShowBomForm.cs` line 19 (loaded with `MED-DotNet.dll`).
 - **Prompts / options**: dialog or palette; no command-line prompts.
-- **Menu**: none found
-- **Related**: [`MEDSHOW`](#medshow) [`MEDSHOWSUM`](#medshowsum) [`BOM`](#bom)
+- **Menu**: med.cuix Menu: MED Main > Browse BOM; MEDRibbon.cuix Ribbon: MED Data Tools > Browse BOM; med.cuix Toolbar: MED Data Tools
+- **Related**: [`MEDSHOW`](#medshow) [`MEDSHOWSUM`](#medshowsum) [`BOM`](#bom) [`BOMSS`](#bomss)
 
 
 ### MEDSHOWSUM
@@ -2596,10 +2606,8 @@ These macros are in `med.cuix` / `MEDRibbon.cuix` (and `med.mnu`) but no LISP or
 | Macro command | Where | Note |
 | --- | --- | --- |
 | `ADDATRIB` | med.cuix Menu: Text & Attributes; med.cuix Menu: Text & Attributes > Add Attribute | Only the helper `(addatrib ...)` exists; the command is `ATADD`. |
-| `BOMSS` | MEDRibbon.cuix Ribbon: MED Data Tools > MED BOM Selection; med.cuix Menu: MED Main | "BOM Selection" - no C:BOMSS anywhere. TODO: confirm with Clint (lost command or drop the item). |
 | `INST` | med.cuix Menu: Details; med.cuix Menu: Details > Instrumentation | Details > Instrumentation. `INS` exists; `INST` does not. TODO: confirm with Clint. |
 | `MOTOR` | med.cuix Toolbar: Lisp Tools; med.cuix Toolbar: Lisp Tools > Parametric Motor | Only the helper `(motor size vert)` exists; the command is `PLANMOTOR`. |
-| `SHOW` | MEDRibbon.cuix Ribbon: MED Data Tools > Browse BOM; med.cuix Menu: MED Main | 2012 BOM browser; replaced by `MEDSHOWBOM`. The menu item does nothing. |
 | `T0` | MEDRibbon.cuix Ribbon: Text Styles > 0.09375 Text; med.cuix Toolbar: Text Styles | Macro runs `(c:loadtxt)` then `T0`; no C:T0 is defined (T1-T3 / B1-B3 are, in MEDCommands.lsp). TODO: confirm with Clint. |
 | `VCHAN90` | med.cuix Image menu: Plan Cable Channel and Fittings; med.cuix Image menu: Plan Cable Channel and Fittings > Plan Vertical Fit | Image menu "Plan Vertical Fit"; the command is `CHANV90`. |
 

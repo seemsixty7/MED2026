@@ -644,20 +644,44 @@
    (princ)
 )
 
-(defun C:BOM()
-	(setq MEDallss (ssget "X" (list (list -3 (list "MED*")))))
-	(if MEDallss
+;;; Shared BOM writer: clears this drawing's MEDProject rows for the current
+;;; user/project/path, then sends each entity in SS to the BOM. SS nil = no-op.
+(defun MEDBomFromSelection (ss / allsslen allcnt boment)
+	(if (and ss (> (sslength ss) 0))
 		(progn
 			(princ "\nDeleting Old Records")
 			(MEDProcessSQLStatement (strcat "DELETE FROM MEDProject WHERE ITEM_DWG_='" (getvar "DWGNAME") "' AND PROJECTNO='" _MEDPROJECT "' AND ITEM_PATH='" (getvar "DWGPREFIX") "' AND USERNAME='" (getvar "loginname") "'" ))
-			(setq allsslen (sslength MEDallss)
+			(setq allsslen (sslength ss)
 				  allcnt   0
 			)
 			(while (< allcnt allsslen)
-				(setq boment (ssname MEDallss allcnt))
+				(setq boment (ssname ss allcnt))
 				(MEDSendEntityDataToBOM boment)
 				(setq allcnt (1+ allcnt))
 			)
+			(princ (strcat "\nBOM updated with " (itoa allsslen) " entit" (if (= allsslen 1) "y." "ies.")))
+		)
+		(princ "\nNo MED entities to send to BOM.")
+	)
+	(princ)
+)
+
+(defun C:BOM (/ MEDallss)
+	(setq MEDallss (ssget "X" (list (list -3 (list "MED*")))))
+	(MEDBomFromSelection MEDallss)
+)
+
+;;; BOM from a user selection (MED xdata filter). Empty/cancel leaves BOM unchanged.
+(defun C:BOMSS (/ ss)
+	(princ "\nSelect MED entities for BOM: ")
+	(setq ss (ssget (list (list -3 (list "MED*")))))
+	(cond
+		((null ss)
+			(princ "\nBOMSS cancelled or no MED entities in selection. BOM unchanged.")
+			(princ)
+		)
+		(T
+			(MEDBomFromSelection ss)
 		)
 	)
 )

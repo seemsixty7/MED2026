@@ -14,7 +14,7 @@ ID_MEDMAIN     [MED Main]
                [MED Settings     ]^C^CMEDSET 
                [MED Data to BOM  ]^C^CBOM 
                [MED BOM Selection]^C^CBOMSS 
-               [Browse BOM       ]^C^CSHOW 
+               [Browse BOM       ]^C^CMEDSHOWBOM 
                [MED Change       ]^C^CMEDCHG 
                [MED Change Classic]^C^CMEDCHG-CLASSIC 
                [MED Records      ]^C^CMEDRECORDS 
@@ -874,13 +874,13 @@ LSP_LOADTXT    [_Button("Load Text Styles", "LSP_LOADTXT", "LSP_LOADTXT_32")]^C^
 **MED_DATA_TOOLS
 ID_MED_Data_Tools_0 [_Toolbar("MED Data Tools", _Floating, _Hide, 130, 565, 1)]
 LSP_MEDCHG      [_Button("MED Change", "LSP_MEDCHG", "LSP_MEDCHG_32")]^C^CMEDCHG 
-LSP_MEDREC      [_Button("MED Records", "LSP_MEDLIST", "LSP_MEDLIST_32")]^C^CMEDRECORDS 
-LSP_MED3DLIB    [_Button("MED 3D Library", "TRAY_3DTRAYOUT", "TRAY_3DTRAYOUT_32")]^C^CMED3DLIB 
-LSP_MEDCHGC     [_Button("MED Change Classic", "LSP_MEDCHG", "LSP_MEDCHG_32")]^C^CMEDCHG-CLASSIC 
+LSP_MEDREC      [_Button("MED Records", "LSP_MEDRECORDS", "LSP_MEDRECORDS_32")]^C^CMEDRECORDS 
+LSP_MED3DLIB    [_Button("MED 3D Library", "LSP_MED3DLIB", "LSP_MED3DLIB_32")]^C^CMED3DLIB 
+LSP_MEDCHGC     [_Button("MED Change Classic", "LSP_MEDCHGCLASSIC", "LSP_MEDCHGCLASSIC_32")]^C^CMEDCHG-CLASSIC 
 LSP_MEDSET      [_Button("MED Settings", "LSP_MEDSET", "LSP_MEDSET_32")]^C^CMEDSET 
 LSP_BOM        [_Button("Bill Of Material Extraction", "LSP_BOM", "LSP_BOM_32")]^C^CBOM 
 LSP_BOMSS      [_Button("Bill Of Material Extraction via Selection Set", "LSP_BOMSS", "LSP_BOMSS_32")]^C^CBOMSS 
-LSP_BROWSE     [_Button("Browse Material Extraction", "LSP_BROWSE", "LSP_BROWSE_32")]^C^CSHOW 
+LSP_BROWSE     [_Button("Browse Material Extraction", "LSP_BROWSE", "LSP_BROWSE_32")]^C^CMEDSHOWBOM 
 LSP_DETAGUPD   [_Button("Detail Tag Update", "LSP_DETAGUPD", "LSP_DETAGUPD_32")]^C^CDETAGUPD 
 LSP_MEDFIND     [_Button("MED Find", "LSP_MEDFIND", "LSP_MEDFIND_32")]^C^CMEDFIND 
 LSP_MEDCOPY     [_Button("MED Data Copy", "LSP_MEDCOPY", "LSP_MEDCOPY_32")]^C^CMEDCOPY 

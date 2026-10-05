@@ -9,7 +9,7 @@ ID_MEDMAIN     [MED Main]
 ID_MED_Settings______0 [MED Settings     ]^C^CMEDSET 
 ID_MED_Data_to_BOM___0 [MED Data to BOM  ]^C^CBOM 
 ID_MED_BOM_Selection_0 [MED BOM Selection]^C^CBOMSS 
-ID_Browse_BOM________0 [Browse BOM       ]^C^CSHOW 
+ID_Browse_BOM________0 [Browse BOM       ]^C^CMEDSHOWBOM 
 ID_MED_Change________0 [MED Change       ]^C^CMEDCHG 
 ID_MED_Data_Copy_____0 [MED Data Copy    ]^C^CMEDCOPY 
 ID_MED_Item_Find_____0 [MED Item Find    ]^C^CMEDFIND 
@@ -837,7 +837,7 @@ LSP_MEDCHG     [_Button("MED Change", "LSP_MEDCHG", "LSP_MEDCHG")]^C^CMEDCHG
 LSP_MEDSET     [_Button("MED Settings", "LSP_MEDSET", "LSP_MEDSET")]^C^CMEDSET 
 LSP_BOM        [_Button("Bill Of Material Extraction", "LSP_BOM", "LSP_BOM")]^C^CBOM 
 LSP_BOMSS      [_Button("Bill Of Material Extraction via Selection Set", "LSP_BOMSS", "LSP_BOMSS")]^C^CBOMSS 
-LSP_BROWSE     [_Button("Browse Material Extraction", "LSP_BROWSE", "LSP_BROWSE")]^C^CSHOW 
+LSP_BROWSE     [_Button("Browse Material Extraction", "LSP_BROWSE", "LSP_BROWSE")]^C^CMEDSHOWBOM 
 LSP_DETAGUPD   [_Button("Detail Tag Update", "LSP_DETAGUPD", "LSP_DETAGUPD")]^C^CDETAGUPD 
 LSP_MEDFIND    [_Button("MED Find", "LSP_MEDFIND", "LSP_MEDFIND")]^C^CMEDFIND 
 LSP_MEDCOPY    [_Button("MED Data Copy", "LSP_MEDCOPY", "LSP_MEDCOPY")]^C^CMEDCOPY 

@@ -70,6 +70,12 @@
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
     <Reference Include="WindowsBase" />
+    <Reference Include="AdWindows">
+      <HintPath>$(AutoCADPath)\AdWindows.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="PresentationFramework" />
+    <Reference Include="System.Xaml" />
     <Reference Include="PresentationCore" />
     <Reference Include="System.Data.SQLite">
       <HintPath>..\packages\Stub.System.Data.SQLite.Core.NetFramework.1.0.118.0\lib\net46\System.Data.SQLite.dll</HintPath>
@@ -80,6 +86,7 @@
     <Compile Include="ProcessSQL.cs" />
     <Compile Include="MedDebug.cs" />
     <Compile Include="PluginApp.cs" />
+    <Compile Include="MedRibbonMode.cs" />
     <Compile Include="MedXdata.cs" />
     <Compile Include="MedPropertiesXData.cs" />
     <Compile Include="MedPropertiesSidecar.cs" />

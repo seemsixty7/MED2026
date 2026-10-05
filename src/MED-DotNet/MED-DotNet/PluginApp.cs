@@ -23,6 +23,10 @@ namespace MEDDotNet
             // Idempotent OD data: MEDConduitOD table + CABLE USER3 (OD in) from Data\seed\*.csv.
             try { MedODSeed.EnsureReady(); }
             catch (System.Exception ex) { MedDebug.Warn("startup: OD seed", ex); }
+
+            // MED ribbon: show MED Main + the current mode tab (default Plan); re-applied when the ribbon is (re)built.
+            try { MedRibbonMode.Startup(); }
+            catch (System.Exception ex) { MedDebug.Warn("startup: ribbon mode", ex); }
         }
 
         public void Terminate()

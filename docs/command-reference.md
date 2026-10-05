@@ -34,7 +34,7 @@ How to read an entry:
 
 - **Test / developer**: [`MED3DPATHTEST`](#med3dpathtest) [`MEDCBGRID`](#medcbgrid) [`MYTEST`](#mytest) [`QVTEST`](#qvtest) [`TEST`](#test) [`TRAYFITTEST`](#trayfittest) [`TRAYLRRETEST`](#traylrretest) [`TRAYRETEST`](#trayretest) [`TRAYTEETEST`](#trayteetest) [`TRAYTEST`](#traytest)
 
-- **.NET (MED-DotNet)**: [`CABLEPALETTE`](#cablepalette) [`CABLESET`](#cableset) [`MED-REBUILDMEDPROPERTIESJSON`](#med-rebuildmedpropertiesjson) [`MEDCABLE`](#medcable) [`MEDCHG`](#medchg) [`MED3DLIB`](#med3dlib) [`MED3DLIBINSERT`](#med3dlibinsert) [`MED3DLIBTEST`](#med3dlibtest) [`MEDDEBUG`](#meddebug) [`MEDPROPERTIES`](#medproperties) [`MEDPROPS`](#medprops) [`MEDREBUILDMEDPROPSJSON`](#medrebuildmedpropsjson) [`MEDRECORDS`](#medrecords) [`MEDSET`](#medset) [`MEDSETTINGS`](#medsettings) [`MEDSHOW`](#medshow) [`MEDSHOWBOM`](#medshowbom) [`MEDSHOWSUM`](#medshowsum) [`MEDTYPE`](#medtype) [`MEDTYPES`](#medtypes) [`MEDXDEDIT`](#medxdedit)
+- **.NET (MED-DotNet)**: [`CABLEPALETTE`](#cablepalette) [`CABLESET`](#cableset) [`MED-REBUILDMEDPROPERTIESJSON`](#med-rebuildmedpropertiesjson) [`MEDCABLE`](#medcable) [`MEDCHG`](#medchg) [`MED3DLIB`](#med3dlib) [`MED3DLIBINSERT`](#med3dlibinsert) [`MED3DLIBTEST`](#med3dlibtest) [`MEDDEBUG`](#meddebug) [`MEDPROPERTIES`](#medproperties) [`MEDPROPS`](#medprops) [`MEDREBUILDMEDPROPSJSON`](#medrebuildmedpropsjson) [`MEDRECORDS`](#medrecords) [`MEDRIBBONMODE`](#medribbonmode) [`MEDSET`](#medset) [`MEDSETTINGS`](#medsettings) [`MEDSHOW`](#medshow) [`MEDSHOWBOM`](#medshowbom) [`MEDSHOWSUM`](#medshowsum) [`MEDTYPE`](#medtype) [`MEDTYPES`](#medtypes) [`MEDXDEDIT`](#medxdedit)
 
 
 ## A-Z
@@ -1535,6 +1535,16 @@ Handle-based multi-record xdata grid for the selected entity. See [medrecords.md
 - **Prompts / options**: dialog or palette; no command-line prompts.
 - **Menu**: med.cuix Menu: MED Main; med.cuix Menu: MED Main > MED Records; MEDRibbon.cuix Ribbon: MED Data Tools > MED Records; med.cuix Toolbar: MED Data Tools (+1 more)
 - **Related**: [`MEDXDEDIT`](#medxdedit) [`MEDCHG`](#medchg)
+
+
+### MEDRIBBONMODE
+
+Switch the MED ribbon mode: shows MED Main plus only the MED Plan, MED Detail or MED Wiring tab (and makes it active). MEDPLAN, MEDDETAIL and MEDWIRING call the same code through the LISP function `(MEDRIBBON-SETMODE "Plan"|"Detail"|"Wiring")` after swapping the pulldowns. The mode is re-applied at startup (default Plan) and whenever the ribbon or workspace is rebuilt.
+
+- **Source**: .NET `[CommandMethod]`, `src\MED-DotNet\MED-DotNet\MedRibbonMode.cs` (loaded with `MED-DotNet.dll`).
+- **Prompts / options**: `MED ribbon mode [Plan/Detail/Wiring] <current>`.
+- **Menu**: None found (MEDPLAN / MEDDETAIL / MEDWIRING buttons on MED Main > Mode switch it too).
+- **Related**: [`MEDPLAN`](#medplan) [`MEDDETAIL`](#meddetail) [`MEDWIRING`](#medwiring)
 
 
 ### MEDSET

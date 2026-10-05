@@ -38,8 +38,33 @@
   (princ)
 )
 
+;; MEDRibbon.cuix is a partial of med.cuix (<PartialMenuFile> in med.cuix), so it normally
+;; loads with med.cuix. Fallback: if MED is loaded but the MEDRIBBON group is not (e.g. an
+;; AutoCAD release that skips a partial nested in a partial), CUILOAD it once. The group check
+;; keeps it from loading twice. Opt out with (setenv "MEDRibbon" "0").
+(defun MED-EnsureRibbonMenu ( / p oldfd err )
+  (if (and (/= (getenv "MEDRibbon") "0")
+           (or (menugroup "MED") (menugroup "Med") (menugroup "med"))
+           (not (menugroup "MEDRIBBON"))
+           (setq p (findfile "MEDRibbon.cuix")))
+    (progn
+      (setq oldfd (getvar "FILEDIA"))
+      (setvar "FILEDIA" 0)
+      (setq err (vl-catch-all-apply 'command-s (list "_.CUILOAD" p)))
+      (setvar "FILEDIA" oldfd)
+      (if (menugroup "MEDRIBBON")
+        (princ "\nMED ribbon menu loaded.")
+        (princ (strcat "\nMED ribbon menu not loaded"
+                       (if (vl-catch-all-error-p err) (strcat ": " (vl-catch-all-error-message err)) ".")))
+      )
+    )
+  )
+  (princ)
+)
+
 ;; acad.lsp cannot NETLOAD (command processor not ready). Demand-load / s::startup will.
 (defun-q MED-DotNet-Startup ()
+  (vl-catch-all-apply 'MED-EnsureRibbonMenu)
   (MED-NetLoad)
 )
 

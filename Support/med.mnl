@@ -1,3 +1,4 @@
+(vl-load-com)
 (setq _MEDMENULIST (list (list 1 "POP1MEDMAIN")
                         (list 2 "POP2CONDUIT" "POP2DETCONDUIT" "POP2ONELINES")
                         (list 3 "POP3TRAY" "POP3DETFITTINGS" "POP3ELEMENTARY")
@@ -5,21 +6,40 @@
                   )
 )
 
+;; MED ribbon mode (MEDRibbon.cuix, a partial of med.cuix): MED Main is always shown,
+;; plus only the tab for the current mode. MEDRIBBON-SETMODE lives in MED-DotNet.dll;
+;; when the DLL is not loaded the pulldown swap still works and this is a no-op.
+(defun MED-RibbonSetMode (mode / r)
+  (if (member (type MEDRIBBON-SETMODE) '(EXRXSUBR SUBR USUBR EXSUBR))
+    (progn
+      (setq r (vl-catch-all-apply 'MEDRIBBON-SETMODE (list mode)))
+      (if (vl-catch-all-error-p r) nil r)
+    )
+  )
+)
+
 (defun C:MEDMENU()
   (command "menu" "acad")
 ; to add an additional menu group add it here.
   (command "menuload" "med")
   (medmenuset 1)
-
+  (MED-RibbonSetMode "Plan")
+  (princ)
 )  
 (defun C:MEDPLAN()
    (medmenuset 1)
+   (MED-RibbonSetMode "Plan")
+   (princ)
 )
 (defun C:MEDDETAIL()
    (medmenuset 2)
+   (MED-RibbonSetMode "Detail")
+   (princ)
 )
 (defun C:MEDWIRING()
    (medmenuset 3)
+   (MED-RibbonSetMode "Wiring")
+   (princ)
 )
 
 (defun medmenuset (medgrppos) ; medgrppos = 1 for Plans  2 for Details and 3 for Wiring Diagrams

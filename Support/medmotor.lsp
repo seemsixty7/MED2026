@@ -98,29 +98,72 @@
   *MED-MOTOR-VERT*
 )
 
-;; Half ellipse: cen, major-axis endpoint (absolute), minor axis length, start/end params
-(defun med-motor-ellipse-half (cen majEnd minLen sang eang / majLen ratio)
-  (setq majLen (distance cen majEnd))
-  (if (> majLen 1e-9)
+;; Layer per MED convention (same rule as pmake): CR_LAYER when set, else CLAYER.
+(defun med-motor-layer ()
+  (if CR_LAYER (list (cons 8 CR_LAYER)) nil)
+)
+
+;; Outward half-ellipse end cap.
+;;   endMid  - midpoint of the motor body end line
+;;   endPt   - one end of that end line (sets the major axis along the line)
+;;   bodyCen - center of the motor body (used to decide which side is "out")
+;;   depth   - how far the cap bulges past the end line
+;; AutoCAD ellipse points are  cen + cos(t)*major + sin(t)*minor, with the
+;; minor axis = (Z x major)*ratio, i.e. the major axis rotated +90 deg.  So
+;; t in 0..PI lies on the +minor side and t in PI..2PI on the -minor side.
+;; We pick whichever half points away from the body, so the cap is correct
+;; regardless of generation angle or which end of the motor it is.
+;; Returns the cap's arc midpoint (or nil if nothing was drawn).
+(defun med-motor-cap (endMid endPt bodyCen depth / maj majLen minDir outDir
+                        outLen outU dotp ratio sang eang mid ent z)
+  (setq z      (if (caddr endMid) (caddr endMid) 0.0)
+        maj    (mapcar '- (list (car endPt) (cadr endPt)) (list (car endMid) (cadr endMid)))
+        majLen (distance (list (car endMid) (cadr endMid)) (list (car endPt) (cadr endPt)))
+        outDir (mapcar '- (list (car endMid) (cadr endMid)) (list (car bodyCen) (cadr bodyCen)))
+        outLen (distance (list (car endMid) (cadr endMid)) (list (car bodyCen) (cadr bodyCen))))
+  (if (and (> majLen 1e-9) (> outLen 1e-9) (> depth 1e-9))
     (progn
-      (setq ratio (/ minLen majLen))
-      (entmake (list
-        '(0 . "ELLIPSE")
-        '(100 . "AcDbEntity")
-        '(100 . "AcDbEllipse")
-        (cons 10 cen)
-        (cons 11 (mapcar '- majEnd cen))
-        (cons 40 ratio)
-        (cons 41 sang)
-        (cons 42 eang)
+      (setq outU (mapcar '(lambda (x) (/ x outLen)) outDir))
+      (if (<= depth majLen)
+        (progn
+          ;; Normal case: major axis along the end line.
+          (setq minDir (list (- (cadr maj)) (car maj))
+                dotp   (+ (* (car minDir) (car outDir)) (* (cadr minDir) (cadr outDir)))
+                ratio  (/ depth majLen))
+          (if (> dotp 0.0)
+            (setq sang 0.0 eang PI)
+            (setq sang PI eang (* 2.0 PI))
+          )
+          (setq ent (list (cons 11 (list (car maj) (cadr maj) 0.0))
+                          (cons 40 ratio) (cons 41 sang) (cons 42 eang)))
+        )
+        (progn
+          ;; Very deep cap (depth > half width, ratio would exceed 1):
+          ;; major axis points outward, arc runs -90..+90 deg around it.
+          (setq ratio (/ majLen depth))
+          (setq ent (list (cons 11 (list (* depth (car outU)) (* depth (cadr outU)) 0.0))
+                          (cons 40 ratio) (cons 41 (* 1.5 PI)) (cons 42 (* 0.5 PI))))
+        )
+      )
+      (setq mid (list (+ (car endMid) (* depth (car outU)))
+                      (+ (cadr endMid) (* depth (cadr outU)))
+                      z))
+      (entmake (append
+        (list '(0 . "ELLIPSE") '(100 . "AcDbEntity"))
+        (med-motor-layer)
+        (list '(100 . "AcDbEllipse")
+              (cons 10 (list (car endMid) (cadr endMid) z)))
+        ent
+        (list '(210 0.0 0.0 1.0))
       ))
+      mid
     )
   )
 )
 
 (defun med-motor-draw (msize vert mtpt mtang mtbxdir / lst row mtra mtrb mtrc mtrd
                         mperc mtrst mtpt1 mtpt2 mtpt3 mtpt4 mtend bxstpt bxpt
-                        bxpt1 bxpt2 bxpt3 bxpt4 oldcmd oldosm )
+                        bxpt1 bxpt2 bxpt3 bxpt4 oldcmd oldosm bcen )
   (setq lst (med-motor-read-dat)
         row (med-motor-lookup msize lst))
   (if (not row)
@@ -142,8 +185,10 @@
         (progn
           (if vert
             (progn
-              (entmake (list '(0 . "CIRCLE") '(100 . "AcDbEntity") '(100 . "AcDbCircle")
-                             (cons 10 mtpt) (cons 40 (* mtrb 0.5))))
+              (entmake (append (list '(0 . "CIRCLE") '(100 . "AcDbEntity"))
+                               (med-motor-layer)
+                               (list '(100 . "AcDbCircle")
+                                     (cons 10 mtpt) (cons 40 (* mtrb 0.5)))))
               (setq bxstpt mtpt)
             )
             (progn
@@ -158,13 +203,14 @@
                         mtpt4 (polar mtpt3 (+ mtang PI) (- mtra (* mperc 2)))
                         bxstpt (polar mtpt mtang (* mtra 0.5)))
                   (pmake (list mtpt1 mtpt2 mtpt3 mtpt4) T)
-                  ;; Start end-cap (outer half toward mtpt). Major along to mtpt1.
-                  (med-motor-ellipse-half mtrst mtpt1 mperc PI (* 2.0 PI))
-                  ;; Far end-cap
+                  ;; Body center = midpoint of the motor length (also bxstpt).
+                  (setq bcen (polar mtpt mtang (* mtra 0.5)))
+                  ;; Start end-cap: end line mtpt1-mtpt4, bulges back toward mtpt.
+                  (med-motor-cap mtrst mtpt1 bcen mperc)
+                  ;; Far end-cap: end line mtpt2-mtpt3, bulges out past mtpt2/mtpt3.
                   (setq mtrst (polar mtpt mtang (- mtra mperc))
-                        mtpt1 (polar mtrst (+ mtang (* PI 0.5)) (* mtrb 0.5))
                         mtend (polar mtpt mtang mtra))
-                  (med-motor-ellipse-half mtrst mtpt1 mperc 0.0 PI)
+                  (med-motor-cap mtrst mtpt2 bcen mperc)
                 )
               )
             )

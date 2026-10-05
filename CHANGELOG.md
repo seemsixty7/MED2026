@@ -70,7 +70,7 @@ MED 3D models are approximations, not copies of manufacturer specifications; use
 
 ### Changed
 - **Patch installer ships all of Support** (DLLs, LISP, menus / CUIX, ribbon, icons, `.dat`) instead of a hand-picked list, except `med.spc`, `ACAD.PGP`, `MEDDataBaseSettings.dat`, `Project.dat`, `MED.registration.json`, `MED.version.txt` (written by the patch) and backups. It also adds the restored menu blocks to `Dwg\` only when missing. Still never `MED.db` or `MEDRegistrations.db`.
-- Installers: optional `Dwg3D` 3D block library component (compile with `/DMedWithDwg3D`); off in this build.
+- Installers: `Dwg3D` 3D block library component (`/DMedWithDwg3D`). The published 1005a Setup and Patch include it: 385 3D blocks plus `Dwg3DCatalog.db` (source paths cleared) in `{app}\Dwg3D`, where MED3DLIB looks first. The catalog is installed only if missing, so palette edits survive. Patch: component "MED 3D block library".
 - `Support\MED-DotNet.dll` rebuilt (MED3DLIB, MEDRIBBONMODE).
 - MEDMAKE3D stage order: tray → conduit bodies (resolve) → conduit → conduit body blocks → cable. The "Flagged corners" summary line is now "Flagged" and includes body flags.
 - The tray fitting walk (`med3d-tray-build`, MAKE3DTRAY / MEDMAKE3D) skips `MED_FITTING` INSERTs (conduit-body blocks). They used to be listed as skipped tray fittings.

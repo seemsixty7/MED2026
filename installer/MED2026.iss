@@ -7,11 +7,18 @@
 ; Optional opt-in install registration -> MooreDesign Netlify (not InstallHer).
 
 #define MyAppName "MED2026"
-#define MyAppVersion "2026.0.0925a"
+#define MyAppVersion "2026.0.1005a"
 #define MyAppPublisher "Dewitt Clinton Moore"
-#define MyOutputBase "MED2026-Setup-0925a"
-#define MedBuildDate "2026-09-25"
-#define MedGitHash "b730213"
+#define MyOutputBase "MED2026-Setup-1005a"
+#define MedBuildDate "2026-10-05"
+#define MedGitHash "eca633b"
+; Optional 3D block library (Dwg3D folder + Dwg3DCatalog.db for the MED3DLIB palette).
+; Off by default: compile with /DMedWithDwg3D to include it. Dwg3D\ is gitignored, so it is
+; taken from the working tree. /DMedDwg3DCatalog="<path>" points at a catalog copy to ship
+; (e.g. one with source_path cleared); default is Dwg3D\Dwg3DCatalog.db.
+#ifndef MedDwg3DCatalog
+  #define MedDwg3DCatalog "Dwg3D\Dwg3DCatalog.db"
+#endif
 #define MedRegisterUrl "https://mooredesign.net/.netlify/functions/med-register"
 
 [Setup]
@@ -32,6 +39,8 @@ PrivilegesRequired=admin
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 LicenseFile=LICENSE
+; Release status + 3D model disclaimer page (shown after the license).
+InfoBeforeFile=installer\MED2026-INFO.txt
 SourceDir=..
 UninstallDisplayName={#MyAppName}
 SetupLogging=yes
@@ -47,10 +56,13 @@ Name: "custom"; Description: "Custom"; Flags: iscustom
 [Components]
 Name: "core"; Description: "MED2026 core (Support, Data, Dwg)"; Types: full compact custom; Flags: fixed
 Name: "navis"; Description: "Navisworks MEDProperties plugin (per-user AppData)"; Types: full custom
+#ifdef MedWithDwg3D
+Name: "lib3d"; Description: "MED 3D block library (Dwg3D, MED3DLIB palette)"; Types: full compact custom
+#endif
 
 [Files]
 ; Core Support pack ? do not ship live .dat settings; Create if missing in [Code]
-Source: "Support\*"; DestDir: "{app}\Support"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: core; Excludes: "MEDDataBaseSettings.dat,Project.dat,*.bak,med.cuix.bak-*,MEDRibbon.cuix.bak-*,acad.rx,MEDMain.odcl,TODO-MEDMainDialogs-CSharpUI.txt,MEDMainDialogs-RedoWithCSharp.lsp,TESTICONONEINCHa.bmp,MEDDataBaseSettings.example.dat,MED.registration.json"
+Source: "Support\*"; DestDir: "{app}\Support"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: core; Excludes: "MEDDataBaseSettings.dat,Project.dat,*.bak,*.bak-*,*.bak*,med.cuix.bak-*,MEDRibbon.cuix.bak-*,acad.rx,MEDMain.odcl,TODO-MEDMainDialogs-CSharpUI.txt,MEDMainDialogs-RedoWithCSharp.lsp,TESTICONONEINCHa.bmp,MEDDataBaseSettings.example.dat,MED.registration.json"
 ; Ship catalog MED.db only. NEVER ship Data\MEDRegistrations.db (desktop roster for Jane/Clint).
 Source: "Data\MED.db"; DestDir: "{app}\Data"; Flags: ignoreversion; Components: core
 Source: "Data\README.txt"; DestDir: "{app}\Data"; Flags: ignoreversion; Components: core
@@ -58,6 +70,11 @@ Source: "Data\README.txt"; DestDir: "{app}\Data"; Flags: ignoreversion; Componen
 Source: "Data\seed\*.csv"; DestDir: "{app}\Data\seed"; Flags: ignoreversion; Components: core
 ; Real block library. Not Samples, not a Dwgs folder. Skip leftover Csch1.
 Source: "Dwg\*"; DestDir: "{app}\Dwg"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: core; Excludes: "Csch1.dwg,csch1.dwg,CSCH1.dwg"
+#ifdef MedWithDwg3D
+; 3D block library beside Support ({app}\Dwg3D is where MED3DLIB looks first). Keep a user-edited catalog.
+Source: "Dwg3D\*.dwg"; DestDir: "{app}\Dwg3D"; Flags: ignoreversion; Components: lib3d
+Source: "{#MedDwg3DCatalog}"; DestDir: "{app}\Dwg3D"; DestName: "Dwg3DCatalog.db"; Flags: onlyifdoesntexist uninsneveruninstall; Components: lib3d
+#endif
 Source: "installer\Install-MED2026.ps1"; DestDir: "{app}\installer"; Flags: ignoreversion; Components: core
 Source: "installer\RestoreMEDProfile.cmd"; DestDir: "{app}"; Flags: ignoreversion; Components: core
 Source: "installer\Register-MEDInstall.ps1"; DestDir: "{app}\installer"; Flags: ignoreversion; Components: core

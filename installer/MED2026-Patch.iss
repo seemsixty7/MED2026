@@ -1,7 +1,8 @@
 ; MED2026 non-admin patch installer
-; Updates Support (MED-DotNet + changed LISP + MED.version.txt), Data\seed\*.csv, and optional
+; Updates all of Support (DLLs, LISP, menus/CUIX, ribbon, icons, .dat) except site files, Data\seed\*.csv,
+; restores missing menu blocks into Dwg (only if absent), and optional
 ; Navisworks MEDProperties plugin under per-user AppData.
-; Does NOT rewrite AutoCAD profiles, MEDDataBaseSettings.dat, Project.dat, med.spc, or MED.db.
+; Does NOT rewrite AutoCAD profiles, MEDDataBaseSettings.dat, Project.dat, med.spc, ACAD.PGP, or MED.db.
 ; OD data reaches existing MED.db via MED-DotNet (MedODSeed) reading Data\seed at load (fills blanks only).
 ; PrivilegesRequired=lowest ? may fail to write C:\MED2026 if that folder is admin-owned.
 ; Opt-in registration: reuse Support\MED.registration.json when present (skip wizard page).
@@ -9,11 +10,18 @@
 ;   MED.version.txt); warns (default No) before downgrading a newer installed version.
 
 #define MyAppName "MED2026"
-#define MyAppVersion "2026.0.0925a"
+#define MyAppVersion "2026.0.1005a"
 #define MyAppPublisher "Dewitt Clinton Moore"
-#define MyOutputBase "MED2026-Patch-0925a"
-#define MedBuildDate "2026-09-25"
-#define MedGitHash "b730213"
+#define MyOutputBase "MED2026-Patch-1005a"
+#define MedBuildDate "2026-10-05"
+#define MedGitHash "eca633b"
+; Optional 3D block library (Dwg3D folder + Dwg3DCatalog.db for the MED3DLIB palette).
+; Off by default: compile with /DMedWithDwg3D to include it. Dwg3D\ is gitignored, so it is
+; taken from the working tree. /DMedDwg3DCatalog="<path>" points at a catalog copy to ship
+; (e.g. one with source_path cleared); default is Dwg3D\Dwg3DCatalog.db.
+#ifndef MedDwg3DCatalog
+  #define MedDwg3DCatalog "Dwg3D\Dwg3DCatalog.db"
+#endif
 #define MedRegisterUrl "https://mooredesign.net/.netlify/functions/med-register"
 
 [Setup]
@@ -53,23 +61,36 @@ Name: "custom"; Description: "Custom"; Flags: iscustom
 [Components]
 Name: "support"; Description: "Update MED Support (DLL + LISP + version file)"; Types: full supportonly custom
 Name: "navis"; Description: "Navisworks MEDProperties plugin (per-user AppData)"; Types: full navisonly custom
+#ifdef MedWithDwg3D
+Name: "lib3d"; Description: "MED 3D block library (Dwg3D, MED3DLIB palette)"; Types: full supportonly custom
+#endif
 
 [Files]
-; Overwrite key Support files into {app}\Support when writable.
-Source: "Support\MED-DotNet.dll"; DestDir: "{app}\Support"; Flags: ignoreversion; Components: support; Check: MedSupportWritable
-Source: "Support\MEDCore.lsp"; DestDir: "{app}\Support"; Flags: ignoreversion; Components: support; Check: MedSupportWritable
-Source: "Support\MEDFunctions.lsp"; DestDir: "{app}\Support"; Flags: ignoreversion; Components: support; Check: MedSupportWritable
-Source: "Support\MED3DTrayFunctions.lsp"; DestDir: "{app}\Support"; Flags: ignoreversion; Components: support; Check: MedSupportWritable
-Source: "Support\MED3DCON.lsp"; DestDir: "{app}\Support"; Flags: ignoreversion; Components: support; Check: MedSupportWritable
-Source: "Support\MED3DPath.lsp"; DestDir: "{app}\Support"; Flags: ignoreversion; Components: support; Check: MedSupportWritable
-Source: "Support\MED3DFittings.lsp"; DestDir: "{app}\Support"; Flags: ignoreversion; Components: support; Check: MedSupportWritable
-; OD seed CSVs only (never Data\MED.db / MEDRegistrations.db, never Support\med.spc).
-Source: "Data\seed\conduit_od.csv"; DestDir: "{app}\Data\seed"; Flags: ignoreversion; Components: support; Check: MedDataSeedWritable
-Source: "Data\seed\cable_od_sources.csv"; DestDir: "{app}\Data\seed"; Flags: ignoreversion; Components: support; Check: MedDataSeedWritable
-Source: "Data\seed\conduit_body_dims.csv"; DestDir: "{app}\Data\seed"; Flags: ignoreversion; Components: support; Check: MedDataSeedWritable
-Source: "Data\seed\conduit_body_sources.csv"; DestDir: "{app}\Data\seed"; Flags: ignoreversion; Components: support; Check: MedDataSeedWritable
-Source: "Data\seed\fitting_body_keys.csv"; DestDir: "{app}\Data\seed"; Flags: ignoreversion; Components: support; Check: MedDataSeedWritable
-Source: "Support\MED.version.txt"; DestDir: "{app}\Support"; Flags: ignoreversion; Components: support; Check: MedSupportWritable
+; Whole Support folder into {app}\Support when writable (was a hand-picked list; menus, ribbon,
+; icons and new LISP changed in 1005a). Never med.spc (site config), ACAD.PGP (site aliases),
+; machine .dat files, the registration JSON or backups. MED.version.txt is written in [Code].
+Source: "Support\*"; DestDir: "{app}\Support"; Flags: ignoreversion; Components: support; Check: MedSupportWritable; \
+    Excludes: "med.spc,med.spc.*,ACAD.PGP,MEDDataBaseSettings.dat,MEDDataBaseSettings.example.dat,Project.dat,MED.registration.json,MED.version.txt,*.bak,*.bak-*,*.bak*,acad.rx,MEDMain.odcl,TODO-MEDMainDialogs-CSharpUI.txt,MEDMainDialogs-RedoWithCSharp.lsp,TESTICONONEINCHa.bmp"
+; OD / conduit body seed CSVs only (never Data\MED.db / MEDRegistrations.db, never Support\med.spc).
+Source: "Data\seed\*.csv"; DestDir: "{app}\Data\seed"; Flags: ignoreversion; Components: support; Check: MedDataSeedWritable
+; Blocks the 1005a menu fixes restored (Dwg\ is gitignored; taken from the working tree). Only added
+; when missing, so a site's own copy of a block is never replaced.
+Source: "Dwg\LTGPNL.DWG"; DestDir: "{app}\Dwg"; Flags: onlyifdoesntexist; Components: support; Check: MedDwgWritable
+Source: "Dwg\SPRNUT.DWG"; DestDir: "{app}\Dwg"; Flags: onlyifdoesntexist; Components: support; Check: MedDwgWritable
+Source: "Dwg\UNISIDE.DWG"; DestDir: "{app}\Dwg"; Flags: onlyifdoesntexist; Components: support; Check: MedDwgWritable
+Source: "Dwg\GLOBE.DWG"; DestDir: "{app}\Dwg"; Flags: onlyifdoesntexist; Components: support; Check: MedDwgWritable
+Source: "Dwg\GLOBE30.DWG"; DestDir: "{app}\Dwg"; Flags: onlyifdoesntexist; Components: support; Check: MedDwgWritable
+Source: "Dwg\EVCXA.DWG"; DestDir: "{app}\Dwg"; Flags: onlyifdoesntexist; Components: support; Check: MedDwgWritable
+Source: "Dwg\EVCXB.DWG"; DestDir: "{app}\Dwg"; Flags: onlyifdoesntexist; Components: support; Check: MedDwgWritable
+Source: "Dwg\EVCXPNDA.DWG"; DestDir: "{app}\Dwg"; Flags: onlyifdoesntexist; Components: support; Check: MedDwgWritable
+Source: "Dwg\EVCXPNDB.DWG"; DestDir: "{app}\Dwg"; Flags: onlyifdoesntexist; Components: support; Check: MedDwgWritable
+Source: "Dwg\VMVSTANE.DWG"; DestDir: "{app}\Dwg"; Flags: onlyifdoesntexist; Components: support; Check: MedDwgWritable
+Source: "Dwg\EYS29B.DWG"; DestDir: "{app}\Dwg"; Flags: onlyifdoesntexist; Components: support; Check: MedDwgWritable
+#ifdef MedWithDwg3D
+; 3D block library ({app}\Dwg3D, created if missing). Keep a user-edited catalog.
+Source: "Dwg3D\*.dwg"; DestDir: "{app}\Dwg3D"; Flags: ignoreversion; Components: lib3d; Check: MedAppWritable
+Source: "{#MedDwg3DCatalog}"; DestDir: "{app}\Dwg3D"; DestName: "Dwg3DCatalog.db"; Flags: onlyifdoesntexist; Components: lib3d; Check: MedAppWritable
+#endif
 Source: "installer\Register-MEDInstall.ps1"; Flags: dontcopy
 
 ; Always try Navis per-user AppData (writable without admin).
@@ -265,7 +286,19 @@ begin
   Result := SupportWritableCached;
 end;
 
-{ Data\seed goes under {app}\Data (must already exist = real install) and needs Support writable too. }
+{ Dwg (must already exist = real install) and needs Support writable too. }
+function MedDwgWritable: Boolean;
+begin
+  Result := MedSupportWritable and ProbeSupportWritable(ExpandConstant('{app}\Dwg'));
+end;
+
+{ The app folder itself (for a new Dwg3D folder); requires a writable, real install. }
+function MedAppWritable: Boolean;
+begin
+  Result := MedSupportWritable and ProbeSupportWritable(ExpandConstant('{app}'));
+end;
+
+{ Data\seed goes under the app's Data folder (must already exist = real install) and needs Support writable too. }
 function MedDataSeedWritable: Boolean;
 begin
   Result := MedSupportWritable and ProbeSupportWritable(ExpandConstant('{app}\Data'));

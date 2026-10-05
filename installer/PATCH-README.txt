@@ -1,30 +1,38 @@
-MED2026 Patch installer
-=======================
+MED2026 Patch installer - 2026.0.1005a (WORK IN PROGRESS)
+=========================================================
+
+IMPORTANT: MED 3D models are approximations, not copies of manufacturer
+specifications; users must verify all dimensions.
+
+This build is a work-in-progress pre-release. Test it before rolling it out
+to production seats.
 
 This patch updates an existing MED2026 install without requiring administrator
 rights when the install folder is writable by your account.
 
 What it updates
 ---------------
-- Support\MED-DotNet.dll
-- Support\MEDCore.lsp, MEDFunctions.lsp, MED3DTrayFunctions.lsp, MED3DCON.lsp,
-  MED3DPath.lsp, MED3DFittings.lsp
-- Data\seed\conduit_od.csv, Data\seed\cable_od_sources.csv (OD seed data;
-  MED-DotNet creates/fills MEDConduitOD and blank CABLE USER3 values in your
-  existing database at load - it never replaces MED.db or overwrites values)
-- Data\seed\conduit_body_dims.csv, Data\seed\conduit_body_sources.csv (conduit
-  body dimensions; MED-DotNet creates/fills MEDConduitBody the same way)
-- Data\seed\fitting_body_keys.csv (conduit body key per fitting code; MED-DotNet
-  fills blank MEDType.ITEMKEY2 on matching FITTING rows, never overwrites)
-- Support\MED.version.txt (channel=patch)
+- Everything in Support\ (MED-DotNet.dll, MED.dll / MEDRibbon.dll, all LISP,
+  med.cuix and MEDRibbon.cuix, med.mnu / mns / mnl / mnr / dcl, toolbar icons,
+  slide libraries, MOTOR.DAT, medblck.dat, ...), EXCEPT the site files listed
+  under "What it does NOT touch"
+- Support\MED.version.txt (written as channel=patch)
+- Data\seed\*.csv (conduit OD, cable OD, conduit body dimensions, fitting body
+  keys). MED-DotNet fills blank values in your existing database at load - it
+  never replaces MED.db or overwrites values.
+- Dwg\: adds the blocks the 1005a menu fixes need (LTGPNL, SPRNUT, UNISIDE,
+  GLOBE, GLOBE30, EVCXA, EVCXB, EVCXPNDA, EVCXPNDB, VMVSTANE, EYS29B) only if
+  they are missing. Existing blocks are never replaced.
 - Navisworks MEDProperties plugin under your per-user AppData
   (Manage 2024 / Simulate 2024 Plugins\MEDPropertiesPlugin\)
 
 What it does NOT touch
 ----------------------
 - AutoCAD profile / registry
-- MEDDataBaseSettings.dat, Project.dat, MED.db (file), med.spc
-- Block library (Dwg)
+- Support\med.spc, Support\ACAD.PGP, MEDDataBaseSettings.dat, Project.dat,
+  MED.registration.json
+- Data\MED.db (file) and Data\MEDRegistrations.db
+- Any other block in Dwg\
 
 Safety guards
 -------------
@@ -40,7 +48,9 @@ Safety guards
 
 After install
 -------------
-Restart AutoCAD and Navisworks so they reload the DLL / plugin.
+Restart AutoCAD and Navisworks so they reload the DLL / plugin and menus.
+If the MED menus or the MED ribbon tabs look old, run CUILOAD and reload
+med.cuix (MEDRibbon.cuix loads with it).
 
 If C:\MED2026 is not writable
 -----------------------------

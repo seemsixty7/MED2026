@@ -2,7 +2,18 @@
 
 ## Unreleased
 
+## 2026.0.1005a - 2026-10-05 (WORK IN PROGRESS pre-release)
+
+MED 3D models are approximations, not copies of manufacturer specifications; users must verify all dimensions.
+
 ### Added
+- **MED3DLIB: 3D block library palette** (MED-DotNet). Dockable palette over `Dwg3D\` + `Dwg3D\Dwg3DCatalog.db`: search, category filter, List / Tiles / Grid views, thumbnails, inline edit of Description / Category / Note, Excel bulk-edit export / import, Rescan, Folder... Insert by button, double-click or drag-drop (drag inserts at the drop point; only **Open DWG** opens the file). Commands `MED3DLIB`, `MED3DLIBINSERT`, `MED3DLIBTEST`. On the MED Main menu, the MED Data Tools toolbar and the ribbon.
+- **MED ribbons** (`MEDRibbon.cuix`, a partial of `med.cuix`; images in `MEDRibbon.dll`): MED Main tab plus Plan / Detail / Wiring tabs (31 panels, split buttons for size families, slide-outs for rare items). New `MEDRIBBONMODE` command / `(MEDRIBBON-SETMODE)`: MED Main + the current mode's tab; MEDPLAN / MEDDETAIL / MEDWIRING / MEDMENU switch it.
+- **MOTOR command** (Parametric Motor, `Support\medmotor.lsp`): pick a size from `MOTOR.DAT` (or type an HP), Horizontal / Vertical, start point, angle (horizontal), junction box side; 2D only. `MOTOR.DAT` keeps the 8 existing sizes (5 - 200 HP) and adds 12 (0.5 - 150 HP; dimensions approximate from NEMA frames). Lisp Tools toolbar button and a MED Main ribbon button. PLANMOTOR runs MOTOR.
+- `BOMSS` (BOM on a selection set) restored; Browse BOM runs `MEDSHOWBOM`; new MEDRECORDS / MEDCHG-CLASSIC / MED3DLIB icons.
+- FSC, CESD, SRD, EPC and Switch (with side view) added to the Devices menus in `med.cuix` / `med.mns` to match `med.mnu`.
+- Installer: a release status + 3D disclaimer page in Setup (`installer\MED2026-INFO.txt`) and the disclaimer at the top of the Patch info page.
+- Docs: `docs/command-reference.md`, `docs/lisp-reference.md` + `docs/lisp/`, `docs/3d-guide.md`, `docs/doc-audit.csv`.
 - **EYD mirrored: drain at the lower end (MED3DFittings r12, Clint's AutoCAD test of r11; EYS r10 unchanged).** In a vertical run the r11 drain plug / ECD came out at the top. The EYD features are now mirrored along X: pour hub with the drain plug toward +X (RUN), leaning boss toward −X, ECD 45° toward +X. `1SEALDR` draws its drain at local +X and MEDMAKE3D keeps the drawn rotation, so block +X = the symbol's drain end = the lower end of a vertical-down run. EYD blocks get `MEDCB geom r12` (older renamed `<name>_PRE_R12`). Tests: pour hub at +0.14 A, boss leaning −X, drain 45° toward +X, stale r11 EYD renamed; new matrix check `eyd-vertical` (1SEALDR at −90° → drain end WCS −Y); EYS geometry unchanged.
 - **EYD = the EYS with a drain plug (MED3DFittings r11, Clint's markup of r10; EYS r10 approved, unchanged).** The EYD is exactly the EYS (centred body, pour hub, leaning boss) with no underside opening; the pour hub's standard plug is replaced by a drain plug with a 1/2" nipple and the ECD11, angled 45° toward −X (points down when mounted vertically). The r10 lower opening and its small-size offset are removed. Only the nipple / ECD may pass the turning radius. EYD blocks get `MEDCB geom r11` (older renamed `<name>_PRE_R11`); EYS stays r10. Tests: no underside opening, drain seated in the pour hub plug, drain axis 45° toward −X, EYS geometry unchanged.
 - **EYS / EYD after Clint's AutoCAD test (MED3DFittings r10).** The body is now centred - a cylinder of dia `b` concentric with the conduit axis (the r7 - r9 eccentric bulge did not line up with the conduit); pour hub and leaning boss still on +Z, everything within the turning radius. The EYD is upright (r9 was mirrored): the EYS plus the lower large opening (−Z, opposite the pour hub) with a special plug, a 1/2" nipple and the ECD11 drain pointing down at 45° toward −X. EYS / EYD blocks get `MEDCB geom r10`; older ones are renamed `<name>_PRE_R10` and rebuilt. Tests: concentric body, pour hub / boss up on both, EYD lower opening, drain at 45° down toward −X and lowest, only the drain past `D`; r9 → `_PRE_R10` renames.
@@ -58,6 +69,9 @@
 - **MED debug mode** (MED-DotNet). New `MEDDEBUG` command (On / Off / Verbose / Status), saved per user in `HKCU\Software\MooreDesign\MED2026` (`DebugLevel`). Logs go to `%LOCALAPPDATA%\MED2026\logs\med-YYYYMMDD.log`: errors are always logged, debug notes only when debug is on, and files are kept 7 days. LISP can read the level with `(med-debug-p)`, `(med-debug-level)`, `(med-debug-log ...)`, `*MED-DEBUG*` and `*MED-DEBUG-LEVEL*`. MED commands and LISP functions are guarded, so an exception is reported instead of reaching AutoCAD. See `docs/debug.md`.
 
 ### Changed
+- **Patch installer ships all of Support** (DLLs, LISP, menus / CUIX, ribbon, icons, `.dat`) instead of a hand-picked list, except `med.spc`, `ACAD.PGP`, `MEDDataBaseSettings.dat`, `Project.dat`, `MED.registration.json`, `MED.version.txt` (written by the patch) and backups. It also adds the restored menu blocks to `Dwg\` only when missing. Still never `MED.db` or `MEDRegistrations.db`.
+- Installers: optional `Dwg3D` 3D block library component (compile with `/DMedWithDwg3D`); off in this build.
+- `Support\MED-DotNet.dll` rebuilt (MED3DLIB, MEDRIBBONMODE).
 - MEDMAKE3D stage order: tray → conduit bodies (resolve) → conduit → conduit body blocks → cable. The "Flagged corners" summary line is now "Flagged" and includes body flags.
 - The tray fitting walk (`med3d-tray-build`, MAKE3DTRAY / MEDMAKE3D) skips `MED_FITTING` INSERTs (conduit-body blocks). They used to be listed as skipped tray fittings.
 - `ProcessSQLStatementNET`: `n row(s)`, `No Rows` and `n row(s) affected` are only shown when `MEDDEBUG` is Verbose (and `*MED-SQL-QUIET*` is not set). Errors show one line normally; with debug on they add the exception type, inner exceptions, SQL text and stack trace.
@@ -75,7 +89,17 @@
 - The 2012 commands in `MED3DCON.lsp` are renamed `M3DOLD` / `MAKE3DCONDUITOLD`; `M3D` and `MAKE3DCONDUIT` now come from `MED3DPath.lsp`.
 
 ### Fixed
+- **MED pulldowns**: Add Attribute (`ADDATRIB` -> `ATADD`), Instrumentation (`INST` -> `INS`), Main Contact (empty macro -> `CONTACTR`), Plan Vertical Fit (`VCHAN90` -> `CHANV90`), Seal-Drn / Seal Drain picture (`eydside` -> `EYD` / `EYD-SIDER`), EVCX Pendant (`evapend` -> `evcxpnd`), detail lighting BOM codes (403/411/412/404/405 -> 243/251/252/244/245), FSC items in `med.mnu` use the C blocks.
+- Blocks restored to `Dwg\` from MED2012 for existing menu items: LTGPNL, SPRNUT, UNISIDE, GLOBE, GLOBE30, EVCXA/B, EVCXPNDA/B, VMVSTANE, EYS29B.
+- MOTOR: the far end cap of a horizontal motor bulged into the body; caps are drawn on the motor layer.
+- `medblck.dat`: `1re` break distance 0.9125 -> 0.09125.
+- Setup copied a stale `installer\MED2026-ProfileSetup.lsp` over the Support copy, which unloaded `MEDRibbon.cuix`; the two are in sync.
+- `installer\MED2026-Patch.iss` failed to compile (a `{app}` inside a Pascal `{ }` comment).
 - Fitting menu (`med.mnu`, `med.cuix`, `MEDRibbon.cuix`): the X (`1exs`) image-menu entry inserted fitting code 30 (Form 7 LB) instead of 80. Tee up (`1teeu`, `1teeuo`) was inserted with vertical data "down" (3) instead of "up" (6).
 - Old conduit 3D (`MED3DCON.lsp`): `EXTRUDE` streams still sent the pre-2007 taper-angle `""`, which re-ran EXTRUDE and fed later commands into the wrong prompts; straights now `entmake` the circle square to the segment and use `_Direction`. 2D heavy / 3D POLYLINE runs were measured but never drawn; running OSNAPs were live during the export (now off, restored on exit/error); a missing OD crashed with `(* nil 0.5)`.
 - MEDTYPE CSV import truncated ITEM_GRP to 12 characters (`Residential Cable` → `Residential `); limit is now 40.
 - `docs/database.md` listed USER3 as unused (EQUIP uses it for the project remap).
+
+### Removed
+- `DDMEDLIST` and its dialog (use MEDLIST / MEDPROPERTIES).
+- Menu items with no command or block: mY tEMP (Elementary > Typical Circuits), the blank item under Detail > Panels (`med.mnu`; its unclosed submenu hid the Lighting menu), VMV Pendant and VMV Wall Mount (pulldown, picture menu, ribbon), the T-down to Tee picture (`2teed`).

@@ -1,0 +1,23 @@
+MED2026 2026.0.1005a
+====================
+
+Release status: WORK IN PROGRESS (pre-release). Features and documentation are
+still being reviewed. Test this build before rolling it out to production seats.
+
+IMPORTANT - 3D models
+---------------------
+MED 3D models are approximations, not copies of manufacturer specifications;
+users must verify all dimensions.
+
+This applies to the conduit body / fitting solids made by MEDMAKE3D and to the
+blocks in the MED 3D block library (MED3DLIB).
+
+What this installer does
+------------------------
+- Installs MED2026 under the folder you choose (default C:\MED2026):
+  Support, Data (catalog MED.db and seed data), Dwg (block library)
+- Creates the MED2026 AutoCAD profile and desktop shortcut
+- Optionally installs the Navisworks MEDProperties plugin
+- Keeps existing MEDDataBaseSettings.dat, Project.dat and MED.registration.json
+
+Restart AutoCAD after installing.

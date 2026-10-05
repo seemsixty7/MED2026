@@ -98,12 +98,10 @@
   )
 )
 
+;; MEDRibbon.cuix (MED Main / Plan / Detail / Wiring tabs) is a partial of med.cuix and loads
+;; with it. Setup no longer unloads it. Kept as a no-op for anything that still calls it.
 (defun MED2026-UnloadRibbon ( )
-  (foreach g '("MEDRibbon" "MEDRIBBON" "MedRibbon")
-    (if (menugroup g)
-      (vl-catch-all-apply 'command-s (list "_.CUIUNLOAD" g))
-    )
-  )
+  nil
 )
 
 (defun MED2026-MedGroupLoaded ( / )
@@ -167,13 +165,12 @@
     (vla-get-system (vla-get-preferences (vlax-get-acad-object)))
     :vlax-true
   )
-  (MED2026-UnloadRibbon)
   (MED2026-LoadMedMenu support)
   (if (and (findfile "ACAD.LSP") (not (boundp 'C:MEDCHG)))
     (vl-catch-all-apply 'load (list "ACAD.LSP"))
   )
   (MED2026-StripRunOnce)
-  (princ "\nMED2026 profile updated (CUILOAD med.cuix if needed, MENUBAR=1, no enterprise menu).")
+  (princ "\nMED2026 profile updated (CUILOAD med.cuix if needed, MEDRibbon.cuix loads with it, MENUBAR=1, no enterprise menu).")
   (princ)
 )
 

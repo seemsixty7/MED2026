@@ -87,9 +87,10 @@ FormSubmit may require a one-time confirmation click the first time mail is sent
 
 - **PrivilegesRequired=lowest** (no UAC elevation)
 - Detects install dir from env `MED2026`, else `{sd}\MED2026`, else suggests `{userdocs}\MED2026`
-- Overwrites Support DLL + changed LISP + `MED.version.txt` **when `{app}\Support` is writable**
+- Overwrites all of Support (DLLs, LISP, menus / CUIX, ribbon, icons, `.dat`) **when `{app}\Support` is writable**, except `med.spc`, `ACAD.PGP`, `MEDDataBaseSettings.dat`, `Project.dat`, `MED.registration.json` and backups; writes `MED.version.txt` (`channel=patch`)
+- Adds blocks that menu fixes restored to `{app}\Dwg` only when missing (never replaces a block)
 - Always can install the Navisworks plugin under `%AppData%\Autodesk\...` (per-user)
-- Does **not** rewrite AutoCAD profile, `.dat` settings, or `MED.db`
+- Does **not** rewrite AutoCAD profile, `.dat` settings, `med.spc`, `ACAD.PGP`, `MED.db` or `MEDRegistrations.db`
 - Reuses `MED.registration.json` when opted in (skips page; POSTs version update)
 - Restart AutoCAD and Navisworks after patching
 
@@ -125,5 +126,7 @@ copy MEDPropertiesPlugin.dll -> installer\staging\Navis\MEDPropertiesPlugin\
 ISCC installer\MED2026.iss
 ISCC installer\MED2026-Patch.iss
 ```
+
+Optional 3D block library (`Dwg3D\`, gitignored, taken from the working tree): add `/DMedWithDwg3D` to both ISCC lines, and `/DMedDwg3DCatalog="<path>"` to ship a catalog copy other than `Dwg3D\Dwg3DCatalog.db` (e.g. with `source_path` cleared). The catalog is installed only if missing, so palette edits survive.
 
 If Dropbox locks `installer\Output`, compile with `/O` to `%LOCALAPPDATA%\Temp\MED2026-Output` then copy the EXEs into `installer\Output`.

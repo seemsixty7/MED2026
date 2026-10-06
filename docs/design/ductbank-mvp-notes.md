@@ -1,4 +1,4 @@
-# Ductbank routing: build notes (MVP2, 2026-10-06)
+# Ductbank routing: build notes (MVP2 + MVP3, 2026-10-06)
 
 This is on `master` in the live repo (Clint's standing rule: no separate branch or environment). It implements the design in `ductbank-routing.md` (Draft 2). User page: [`docs/ductbank.md`](../ductbank.md).
 
@@ -137,3 +137,12 @@ The round trip (form `BuildSpec` -> `dbk-spec-in` -> generate) was checked with 
 - ductbank elbows: 24/24
 - 3D model layer: 5 entities
 - output DWG: 61 solids (RUN 16, RISER 16, ELBOW 24 as FITTING, SPACER 4, ENVELOPE 1)
+
+## MVP3 (2026-10-06): stub-up encasement, plain route reference, DBEDIT
+
+- **Stub-up encasement.** Setting `ENCH` (Auto | Top | elevation; `_DBKENCASE`, code default `"Auto"`). dbk-solve computes `SWEEPTOP` = max(ZC + RV) and `ENCZA` / `ENCZB` per stub-up end (clamped to the top EL, with flags below the sweep top or at/below the trunk top). The turn-up is drawn by `dbk-tu-solid` (MEDDuctbank p9): a profile in the vertical plane of the end leg runs from the end face (min ALONG - maxOD/2 - end cover) up to the encasement top and back down along the inner elbow arc (radius RV - OD/2 - cover) to about 1" below the trunk top. It is extruded across LSA..RSA and UNIONed into the ENV3D solid (`TURNUPS=n`, `ENCZA/ENCZB` on the solid). Plan: `ROLE=TURNUP` outline on MED_DBENVELOPE plus a `NOTE=TURNUP` text. Section 1-1: hidden outline + note.
+- **Plain route.** `dbk-setup-ref` accepts LWPOLYLINE / POLYLINE / LINE with no MED_CONDUIT. The size / type come from the dialog (Ref size / type, `REFSIZE` / `REFCODE` in the spec) or two prompts in `-DUCTBANK` (default last used / `_DBKREFSIZE` 4" / `_DBKCONCODE`). The reference goes to MED_DBREF with `REFPLAIN=1` and no MED_CONDUIT. DBDELETE strips DBANK_DATA only.
+- **Bank record.** The envelope DBANK_DATA now also holds COVE SPEND STUBSTR SEP SECTSCALE TAGPAT TOPA TOPB WRAPSET M3DON SECTX SECTY ENCH ENCZA ENCZB SWEEPTOP REFPLAIN and one `P=pos|tag|size|code|C/D` per position.
+- **DBEDIT / -DBEDIT.** `dbk-edit-load` reads the bank record and the reference route. It applies the stored globals (and restores the session ones afterwards), sets `*DBK-EDITING*` (bank ID kept, no collision error, spec `MODE=EDIT`), and runs the dialog loop or the text flow. `dbk-commit` erases every old member except the REF and calls `dbk-build` with the stored section point. Banks without `P=` records fall back to the conduits' MED_CONDUIT data.
+- **Dialog.** 1240x864. New controls: Ref size / type (plain only), Encasement top EL (editable combo) with a hint showing the sweep EL, a stub-section turn-up preview, `VIEW=STUB`, and `MODE=EDIT` (title, read-only bank ID, **Rebuild**). New spec keys: MODE REFPLAIN REFTYPE REFSIZE REFCODE ENCH BOTZ TOPZ SWEEPTOPZ ENCZA ENCZB.
+- **Tests (accoreconsole, sample copies):** default (26/26), `-Enc -30` (26/26), `-Enc Top` (26/26), `-Plain` (27/27), `-Edit` (40/40), `-Plain -Edit` (41/41), `-Size 4` + DBDELETE (24/24), `-Rgs` (26/26), `-Plain -Size 4` + DBDELETE (25/25). MEDMAKE3D (scripted AutoCAD) on the default and Top results: 61 solids each (RUN 16, RISER 16, ELBOW 24, SPACER 4, ENVELOPE 1); envelope bbox top Z -18.5 (Auto) and 0.0 (Top). Live AutoCAD: DUCTBANK dialog OK, then DBEDIT dialog Rebuild: 170 bank entities / 5 model solids / 188 drawing entities before and after.

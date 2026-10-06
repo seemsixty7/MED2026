@@ -65,8 +65,10 @@
 (setq *DBK-PVCOD* '((0.5 . 0.840) (0.75 . 1.050) (1.0 . 1.315) (1.25 . 1.660) (1.5 . 1.900)
                     (2.0 . 2.375) (2.5 . 2.875) (3.0 . 3.500) (3.5 . 4.000) (4.0 . 4.500)
                     (5.0 . 5.563) (6.0 . 6.625)))
-(setq *DBK-CODES* '(160 161 162 163 164 165 170 171 172 521 522 523 524 525 526 527 528 529 530 531
-                    568 569 570 571))
+;; every FITTING code in Data\seed\ductbank_medtype.csv except 89 (an old row, filled by DBSEED)
+(setq *DBK-CODES* '(160 161 162 163 164 165 170 171 172) i 571)
+(while (>= i 521) (setq *DBK-CODES* (append *DBK-CODES* (list i)) i (1- i)))
+(setq *DBK-CODES* (vl-sort *DBK-CODES* '<) i nil)
 
 ;;; ------------------------------------------------------------------ helpers
 (defun dbk-v+ (a b) (mapcar '+ a b))
@@ -174,7 +176,8 @@
                   (list (strcat "SELECT ITEMCODE FROM MEDType WHERE ITEMTYPE='FITTING' AND ITEMCODE IN ("
                                 (substr (apply 'strcat (mapcar '(lambda (c) (strcat "," (itoa c))) *DBK-CODES*)) 2)
                                 ")"))))
-      (if (and res (not (vl-catch-all-error-p res)) (listp res))
+      ;; MEDProcessSQLStatement returns nil for an empty result (header only when rows exist)
+      (if (and (not (vl-catch-all-error-p res)) (listp res))
         (progn
           (foreach row (cdr res)
             (if (and (listp row) (car row))
@@ -1131,7 +1134,9 @@
     (setq i (1+ i)))
   (reverse (cons cur out)))
 
-(defun c:DBSEED ( / f csv fh line rows miss n r)
+(defun c:DBSEED ( / f csv fh line rows res have blank add fill n r q)
+  ;; Idempotent: inserts the CSV rows whose ITEMTYPE/ITEMCODE is missing from MEDType and fills
+  ;; rows that exist with a blank ITEMDESC (e.g. the old FITTING 89 placeholder). Never overwrites text.
   (setq f (findfile "MEDDuctbank.lsp"))
   (setq csv (if f (strcat (vl-filename-directory f) "\\..\\Data\\seed\\ductbank_medtype.csv")))
   (cond
@@ -1143,20 +1148,41 @@
       (while (setq line (read-line fh))
         (if (> (strlen line) 3) (setq rows (cons (dbk-csv-split line) rows))))
       (close fh)
-      (setq rows (reverse rows) miss (dbk-missing-codes))
-      (if (listp miss) (setq rows (vl-remove-if-not '(lambda (r) (member (atoi (cadr r)) miss)) rows)))
-      (if (null rows) (dbk-say "DBSEED: all ductbank codes are already in MEDType.")
-        (if (= "Yes" (dbk-ask-kw (strcat "Add " (itoa (length rows)) " missing ductbank rows to MEDType") "Yes No" "Yes"))
-          (progn
-            (setq n 0)
-            (foreach row rows
-              (setq r (vl-catch-all-apply 'MEDProcessSQLStatement
-                        (list (strcat "INSERT INTO MEDType (ITEMTYPE, ITEMCODE, ITEMDESC) SELECT '" (car row) "', " (cadr row) ", '"
-                                      (dbk-subst-all "''" "'" (caddr row)) "' WHERE NOT EXISTS (SELECT 1 FROM MEDType WHERE ITEMTYPE='"
-                                      (car row) "' AND ITEMCODE=" (cadr row) ")"))))
-              (if (not (vl-catch-all-error-p r)) (setq n (1+ n))))
-            (setq miss (dbk-missing-codes))
-            (dbk-say (strcat "DBSEED: sent " (itoa n) " INSERT(s); still missing: " (if (listp miss) (itoa (length miss)) "?"))))))))
+      (setq rows (reverse rows))
+      (setq res (vl-catch-all-apply 'MEDProcessSQLStatement
+                  (list (strcat "SELECT ITEMCODE, ITEMDESC FROM MEDType WHERE ITEMTYPE='FITTING' AND ITEMCODE IN ("
+                                (dbk-joinstr (mapcar 'cadr rows) ",") ")"))))
+      (if (or (vl-catch-all-error-p res) (not (listp res)))
+        (dbk-say "DBSEED: could not read MEDType.")
+        (progn
+          (foreach row (cdr res)
+            (if (and (listp row) (car row))
+              (progn
+                (setq n (if (= (type (car row)) 'STR) (atoi (car row)) (fix (car row))))
+                (setq have (cons n have))
+                (if (or (null (cadr row)) (= (vl-string-trim " " (vl-princ-to-string (cadr row))) "")) (setq blank (cons n blank))))))
+          (setq add (vl-remove-if '(lambda (r) (member (atoi (cadr r)) have)) rows)
+                fill (vl-remove-if-not '(lambda (r) (member (atoi (cadr r)) blank)) rows))
+          (if (and (null add) (null fill))
+            (dbk-say (strcat "DBSEED: all " (itoa (length rows)) " ductbank rows are already in MEDType."))
+            (if (= "Yes" (dbk-ask-kw (strcat "Add " (itoa (length add)) " MEDType row(s) and fill " (itoa (length fill))
+                                             " blank description(s)") "Yes No" "Yes"))
+              (progn
+                (setq n 0)
+                (foreach row add
+                  (setq q (dbk-subst-all "''" "'" (caddr row)))
+                  (setq r (vl-catch-all-apply 'MEDProcessSQLStatement
+                            (list (strcat "INSERT INTO MEDType (ITEMTYPE, ITEMCODE, ITEMDESC) SELECT '" (car row) "', " (cadr row) ", N'" q
+                                          "' WHERE NOT EXISTS (SELECT 1 FROM MEDType WHERE ITEMTYPE='" (car row) "' AND ITEMCODE=" (cadr row) ")"))))
+                  (if (not (vl-catch-all-error-p r)) (setq n (1+ n))))
+                (foreach row fill
+                  (setq q (dbk-subst-all "''" "'" (caddr row)))
+                  (vl-catch-all-apply 'MEDProcessSQLStatement
+                    (list (strcat "UPDATE MEDType SET ITEMDESC=N'" q "' WHERE ITEMTYPE='" (car row) "' AND ITEMCODE=" (cadr row)
+                                  " AND LTRIM(RTRIM(ITEMDESC))=''"))))
+                (setq r (dbk-missing-codes))
+                (dbk-say (strcat "DBSEED: sent " (itoa n) " INSERT(s) and " (itoa (length fill)) " UPDATE(s); ductbank codes still missing: "
+                                 (if (listp r) (itoa (length r)) "?"))))))))))
   (princ))
 
 (princ "\rMEDDuctbank loaded: DUCTBANK DBLIST DBDELETE DBSEED (2D plan + sections, no 3D).")

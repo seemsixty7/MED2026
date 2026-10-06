@@ -155,6 +155,31 @@
 
 
 ;;
+;;
+;;  Underground ductbank (MEDDuctbank.lsp: DUCTBANK, DBLIST, DBDELETE, DBSEED)
+;;  These are the code defaults; change a value here to override it. Lengths in drawing inches.
+;;
+(setq _DBKCOVERTOP     3.0)   ; concrete cover over the top conduit OD
+(setq _DBKCOVERBOT     3.0)   ; minimum cover under the bottom conduit OD (spacer seat governs if larger)
+(setq _DBKCOVERLEFT    2.0)   ; side cover from OD, left looking from the section end
+(setq _DBKCOVERRIGHT   2.0)   ; side cover from OD, right
+(setq _DBKCOVEREND     2.0)   ; envelope end beyond the outermost stub-up OD
+(setq _DBKMINGAP       2.0)   ; minimum clear gap OD to OD (checks only)
+(setq _DBKSEP          2.0)   ; Carlon Snap-N-Stac separation: 1.5, 2 or 3
+(setq _DBKSPINT       96.0)   ; maximum spacer station interval (8 ft)
+(setq _DBKSPEND       12.0)   ; first spacer station from each end of a straight trunk portion
+(setq _DBKTRANSL      60.0)   ; stub-up to trunk transition (taper) length
+(setq _DBKMAXTAPER     5.0)   ; taper angle (deg) above which DUCTBANK flags the transition
+(setq _DBKSTUBSTRAIGHT 12.0)  ; straight between the stub-up elbows and the transition
+(setq _DBKMINSIZE      1.0)   ; minimum underground trade size
+(setq _DBKCONCODE      3)     ; bank conduit type code (3 = PVC, encased)
+(setq _DBKRISERCODE    3)     ; riser (stub-up) conduit type code
+(setq _DBKADAPTER    170)     ; adapter fitting code at each end of a coated RGS elbow
+(setq _DBKREDUCERMODE "CENTER") ; reducer inserts center the small conduit in the seat
+(setq _DBKTAGPAT "{BANK}-{POS}") ; default tag pattern
+(setq _DBKSECTSCALE    1.0)   ; section drawing scale factor
+(setq _DBKPLANTEXT     1.0)   ; plan text height
+(setq _DBKSECTTEXT     0.5)   ; section text height
 ;;  Here is where the default text styles are loaded
 ;;
 

@@ -444,8 +444,11 @@
 	     	 (setq trayent (ssname 3douttray trayoutcnt)
 	     	       mark    (entlast))
 	     	 ;; block fittings (conduit bodies, couplings ...) are not tray outlines:
-	     	 ;; MEDMAKE3D handles them in its conduit body stage (MED3DFittings.lsp)
-	     	 (if (/= (cdr (assoc 0 (entget trayent))) "INSERT")
+	     	 ;; MEDMAKE3D handles them in its conduit body stage (MED3DFittings.lsp).
+	     	 ;; Ductbank elbows (DBANK_DATA) carry MED_FITTING on a 2D arc polyline but are
+	     	 ;; conduit elbows, not tray fitting outlines: skip them too.
+	     	 (if (and (/= (cdr (assoc 0 (entget trayent))) "INSERT")
+	     	          (not (assoc -3 (entget trayent (list "DBANK_DATA")))))
 	     	   (progn
 	     	     (MEDSet3DTrayLayer trayent)
 	     	     (MEDConvertTrayFittingsTo3D trayent)

@@ -87,7 +87,7 @@ class Mock:
         for e in reversed(self.ents):
             if not e.deleted and e.typ not in ('VERTEX', 'SEQEND', 'LAYER'): return e
         return None
-    def entget(self, e):
+    def entget(self, e, apps=None):   # apps: xdata app filter (mock entities carry no xdata)
         if e is None or e.deleted: return None
         if e.ed is None: return [Pair(-1, e), Pair(0, e.typ), Pair(5, f'H{e.id}')]
         return [Pair(-1, e), Pair(5, f'H{e.id}')] + [it for it in e.ed]

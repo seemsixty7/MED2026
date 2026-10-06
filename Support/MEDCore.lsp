@@ -77,6 +77,11 @@
 (if (findfile "MED3DFittings.lsp")
   (if (vl-catch-all-error-p (vl-catch-all-apply (quote load) (list "MED3DFittings.lsp")))
     (princ "\nMED3DFittings.lsp failed to load; APPLOAD it to see the error.")))
+;; Underground ductbank routing (DUCTBANK, DBLIST, DBDELETE, DBSEED). Its _DBK* defaults are set in
+;; code, so med.spc (loaded next) only needs the lines to override them.
+(if (findfile "MEDDuctbank.lsp")
+  (if (vl-catch-all-error-p (vl-catch-all-apply (quote load) (list "MEDDuctbank.lsp")))
+    (princ "\nMEDDuctbank.lsp failed to load; APPLOAD it to see the error.")))
 (load "med.spc")         ;Checked 02/05/2022
 
 (if (/= (getvar "USERR2") 0.0)

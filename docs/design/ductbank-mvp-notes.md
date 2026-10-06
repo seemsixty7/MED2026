@@ -146,3 +146,39 @@ The round trip (form `BuildSpec` -> `dbk-spec-in` -> generate) was checked with 
 - **DBEDIT / -DBEDIT.** `dbk-edit-load` reads the bank record and the reference route. It applies the stored globals (and restores the session ones afterwards), sets `*DBK-EDITING*` (bank ID kept, no collision error, spec `MODE=EDIT`), and runs the dialog loop or the text flow. `dbk-commit` erases every old member except the REF and calls `dbk-build` with the stored section point. Banks without `P=` records fall back to the conduits' MED_CONDUIT data.
 - **Dialog.** 1240x864. New controls: Ref size / type (plain only), Encasement top EL (editable combo) with a hint showing the sweep EL, a stub-section turn-up preview, `VIEW=STUB`, and `MODE=EDIT` (title, read-only bank ID, **Rebuild**). New spec keys: MODE REFPLAIN REFTYPE REFSIZE REFCODE ENCH BOTZ TOPZ SWEEPTOPZ ENCZA ENCZB.
 - **Tests (accoreconsole, sample copies):** default (26/26), `-Enc -30` (26/26), `-Enc Top` (26/26), `-Plain` (27/27), `-Edit` (40/40), `-Plain -Edit` (41/41), `-Size 4` + DBDELETE (24/24), `-Rgs` (26/26), `-Plain -Size 4` + DBDELETE (25/25). MEDMAKE3D (scripted AutoCAD) on the default and Top results: 61 solids each (RUN 16, RISER 16, ELBOW 24, SPACER 4, ENVELOPE 1); envelope bbox top Z -18.5 (Auto) and 0.0 (Top). Live AutoCAD: DUCTBANK dialog OK, then DBEDIT dialog Rebuild: 170 bank entities / 5 model solids / 188 drawing entities before and after.
+
+## Chamfered concrete at bends (2026-10-06)
+
+- **Setting.** `_DBKBENDCONC` ("Chamfer" | "Sweep", code default "Chamfer", med.spc comment line). Stored as `BENDCONC=` on the envelope record, in `*DBK-EDIT-GLOBALS*` (DBEDIT keeps the bank's value and restores the session one), spec key `BENDCONC`, `-DUCTBANK` Options > Bends, dialog Cover box **Bends** combo. DBLIST, the print grid and the dialog envelope summary show it.
+- **Plan (p5 `dbk-bend-cut`).** Per side of each corner: a face square to the bisector, m = unit miter x sign(ext - RELT(gov)). Every position's elbow (CRN radius and tangent points, center = tin - normIn x turnSign x r, 32 samples, both tiers) is offset by (elbow OD)/2 + side cover. The elbow OD is the PVC-coated RGS OD (`dbk-od 2`). The face goes at the max of (point . m). Outside: the convex corner is cut when that max is short of the sharp corner (tangent at mid-bend for equal radii). Inside: the reflex corner is filled out to the max when the cover points reach past it (the chord through the cover-arc ends for equal radii). The sharp corner is kept when it already covers everything.
+- **Sweep.** The governing arc as before. `dbk-bend-poke` checks every position's cover points against that arc (in the sector). If one pokes out (mixed radii: the sample with B2 = 4" R36 poked 3" out of the inside arc in 6b0a15e), that side uses `dbk-bend-cut` and a "Note: Bend n inside/outside ..." line is printed.
+- **Turn-up (p9).** `dbk-tu-od` = max(position OD, stub material OD). The back edge on [cz - rr, cz] is the 45 deg chord `s = cx - rr + (cz - z)` (Chamfer) or the arc (Sweep), with rr = RV - stubOD/2 - end cover. The riser back is at ALONG + stubOD/2 + end cover. Key z values are cz and cz - rr.
+- **Wording.** Dialog: "Stub pitch center to center (in)" with **across** / **along** boxes on their own row and tooltips (column to column / row to row). The Cover box row 3 now holds Min gap + Bends. ClientSize is 1240x890. Prompts: "Stub-up pitch center to center across (column to column)" / "... along (row to row)". The flag reads "Stub-up pitch (center to center across)". The help text is updated.
+- **Tests.** `dbkt-bend-cover`:
+  - outline arcs (none for Chamfer)
+  - BENDCONC stored
+  - plan elbows (49 samples each): distance to the outline minus the position OD/2 is at least the side cover
+  - outside chamfer faces: the same with the coated elbow OD
+  - stub elbows in the turn-up (s, z) frame: distance to the back edge above the trunk top plus the trunk-top ray, minus the elbow OD/2, is at least min(end, top) cover
+
+  It runs again after the `-Edit` rebuild (mixed R24 / R36). New switch `-Sweep`.
+
+  Results:
+
+  | Run | Passed |
+  | --- | --- |
+  | default, `-Enc -30`, `-Enc Top`, `-Rgs` | 31/31 |
+  | `-Plain` | 32/32 |
+  | `-Edit` | 50/50 |
+  | `-Plain -Edit` | 51/51 |
+  | `-Size 4` | 29/29 |
+  | `-Plain -Size 4` | 30/30 |
+  | `-Sweep` | 30/30 |
+  | `-Sweep -Edit` | 48/48 |
+
+  Minimum cover (side and end covers 2"):
+
+  - plan elbows and chamfer faces: 2.000
+  - turn-up: 2.068 (3"), 2.140 (4"), 2.160 (mixed)
+
+  MEDMAKE3D on the default result: 61 solids (RUN 16, RISER 16, ELBOW 24, SPACER 4, ENVELOPE 1), envelope volume 198890.6 in3 (one solid).

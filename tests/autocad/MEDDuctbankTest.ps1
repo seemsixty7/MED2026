@@ -10,8 +10,9 @@
 #   ... -Plain            reference = plain 3DPOLY made from the sample reference's vertices (no MED data; size 3, type 3)
 #   ... -Edit             after the checks: move the MED_DBREF route 12" east, -DBEDIT: retag A1 -> MV-101, B2 -> 4",
 #                       rebuild in place, DBKTEDITCHK (no orphans / duplicates, edited route used)
+#   ... -Sweep            Options > Bends > Sweep (concrete follows the elbow arcs; default Chamfer)
 # Uses -DUCTBANK (command line); accoreconsole has no WinForms UI, so DUCTBANK would fall back to it anyway.
-param([double]$Size = 0, [string]$Name = "dbktest", [string]$Sample = "", [switch]$Rgs, [string]$Enc = "", [switch]$Plain, [switch]$Edit,
+param([double]$Size = 0, [string]$Name = "dbktest", [string]$Sample = "", [switch]$Rgs, [string]$Enc = "", [switch]$Plain, [switch]$Edit, [switch]$Sweep,
       [string]$Accore = "C:\Program Files\Autodesk\AutoCAD 2024\accoreconsole.exe")
 $repo = (Resolve-Path "$PSScriptRoot\..\..").Path
 $fw = $repo.Replace('\', '/')
@@ -26,6 +27,7 @@ else { $answers = ""; $wt = 24.0; $ht = 15.63; $del = "" }
 if ($Rgs) { $answers += "O`nSTU`nRgs`nYes`n"; $mat = "*DBKT-STUBCODE* 1 *DBKT-WRAP* T" } else { $mat = "*DBKT-STUBCODE* 2 *DBKT-WRAP* nil" }
 # stub-up encasement: both sample ends stub up -> 2 turn-ups. Auto (3") = sweep top EL -18.5 (tier 2 CL -42.5 + R24)
 if ($Enc) { $answers += "O`nENcasement`n$Enc`n" }
+if ($Sweep) { $answers += "O`nBends`nSweep`n" }
 $encz = if ($Enc -match '^[Tt]') { "0.0" } elseif ($Enc) { $Enc } elseif ($Size -eq 4) { "nil" } else { "-18.5" }
 $mat += " *DBKT-TURNUPS* 2 *DBKT-ENCZ* $encz"
 if ($Plain) { $pre = "(setq *DBKT-REFH* `"264`")`nDBKTPLAIN`n"; $pick = ""; $refans = "3`n3`n"; $reftag = ""; $mat += " *DBKT-PLAIN* T" }

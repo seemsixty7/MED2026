@@ -14,7 +14,7 @@ Design background: [design/ductbank-routing.md](design/ductbank-routing.md). Bui
 | `-DUCTBANK` | The same command at the command line (standard AutoCAD dash convention). `DUCTBANK` also falls back to this when `MED-DotNet.dll` is not loaded, or when there is no UI (accoreconsole). |
 | `DBEDIT` | Pick any part of a bank. The dialog reopens with that bank's stored settings; **Rebuild** erases the old bank (2D and 3D) and regenerates it in place with the same bank ID. |
 | `-DBEDIT` | The same at the command line (the `-DUCTBANK` prompts, then the Tag/Size/Type/Options loop). |
-| `DBLIST` | Lists a bank: positions, tags, sizes, lengths, elbows, stations, stub-up material, stub-up encasement, reference route and 3D solid count. |
+| `DBLIST` | Lists a bank: positions, tags, sizes, lengths, elbows, stations, stub-up material, stub-up encasement, concrete at bends, reference route and 3D solid count. |
 | `DBDELETE` | Erases a bank (including its 3D solids) and restores the reference route: a MED conduit gets its MED data back, a plain polyline goes back to its layer with no data. |
 | `DBSEED` | Adds the ductbank catalog codes to `MEDType`. It is idempotent and only adds missing codes (`Data\seed\ductbank_medtype.csv`). |
 
@@ -36,6 +36,7 @@ The defaults handle everything else:
 | Transition | 60" |
 | Stub-up material | PVC-coated RGS |
 | Stub-up encasement | Auto (top of the elbow sweep) |
+| Concrete at bends | Chamfer (straight faces, cover kept) |
 | 3D solids | On |
 
 ## Dialog layout
@@ -43,14 +44,14 @@ The defaults handle everything else:
 - **Left column:**
   - **Bank:** ID, rows, conduits per row (for example `4,4`), **Ref size / type** (enabled for a plain route only) and the reference info.
   - **Main trunk spacers:** family, separation, part (Auto or a catalog part), interval and first-station offset, plus the solved pitch and seat.
-  - **Cover from conduit OD:** top, bottom, end, left, right and minimum clear gap.
-  - **Stub-up zone:** End A / End B (Stubup / Open) and their top elevations, stub pitch across and along, transition and stub straight, section end, **Risers + stub elbows** material (PVC-coated RGS or plain RGS), the **Tape wrap** box for plain RGS and **Encasement top EL** (Auto, Top or an elevation; the hint shows the elbow sweep top EL).
+  - **Cover from conduit OD:** top, bottom, end, left, right, **Min gap** (minimum clear gap OD to OD, checks only) and **Bends** (Chamfer or Sweep, see [Concrete at bends](#concrete-at-bends-chamfer)).
+  - **Stub-up zone:** End A / End B (Stubup / Open) and their top elevations, **Stub pitch center to center** (across = column to column, along = row to row; the tooltips say the same), transition and stub straight, section end, **Risers + stub elbows** material (PVC-coated RGS or plain RGS), the **Tape wrap** box for plain RGS and **Encasement top EL** (Auto, Top or an elevation; the hint shows the elbow sweep top EL). `-DUCTBANK` asks *Stub-up pitch center to center across (column to column)* and *Stub-up pitch center to center along (row to row)*.
   - **Output:** 3D envelope and spacer solids, section scale, and **Pick section location** (otherwise the sections are placed automatically to the right of the bank).
 - **Middle column:**
   - **Position grid:** one card per position, top row A first, columns left to right looking from the stub-up end. REF marks the reference position; the selected card is highlighted.
   - **Selected-position editor:** Tag, Size, Type, **Set as REF**, **Size to all**, **Type to all**, **Auto tags** and the tag pattern.
   - **Calc reminder:** MED does not calculate cable fill, ampacity derating, voltage drop, pulling tension or burial depth.
-  - **Envelope (last check):** trunk W x H, elevations, stub zone, elbows, spacers and bank length.
+  - **Envelope (last check):** trunk W x H, elevations, stub zone, elbows, turn-up, concrete at bends, spacers and bank length.
 - **Right column:**
   - **Cheat image:** trunk or stub-up section with the envelope, the spacer pieces (green) and each conduit at its OD. The current conduit is gold. The stub-up section also shows the concrete turn-up beyond (light hatch, dashed outline, risers dashed) up to the encasement top.
   - **Checks:** X = error (blocks OK), ! = flag (review), i = note.
@@ -63,7 +64,7 @@ At each stub-up end, the concrete turns up around the stub elbows and risers. It
   - **Auto** (default): the top of the highest stub elbow sweep (the end of the R24 / R36 bend). For the 3" sample that is EL -18.5.
   - **Top**: the stub-up top EL (grade).
   - **an elevation**: any value up to the stub-up top EL. Higher values are clamped to the top EL. A value below the sweep top is accepted with a flag (the elbow tops are not encased). A value at or below the trunk top means no turn-up (flag).
-- **3D:** the turn-up is modelled as a profile in the vertical plane of the end leg and extruded across the stub zone width. The profile runs from the end face (stub OD + end cover) back along the elbow sweep (inner elbow radius minus OD/2 and cover) and up to the encasement top. It is unioned into the `3DMEDModel-Ductbank` envelope solid, so the bank still has one envelope solid. `MEDMAKE3D` exports it with the envelope.
+- **3D:** the turn-up is modelled as a profile in the vertical plane of the end leg and extruded across the stub zone width. The profile runs from the end face (stub OD + end cover) back along the elbow sweep and up to the encasement top. Along the sweep the back face is a 45 deg **chamfer** on the chord of the cover arc (inner elbow radius minus riser OD/2 and end cover), or follows that arc with `_DBKBENDCONC` Sweep. It is unioned into the `3DMEDModel-Ductbank` envelope solid, so the bank still has one envelope solid. `MEDMAKE3D` exports it with the envelope.
 - **Plan:** a closed outline on `MED_DBENVELOPE` at the turn-up top elevation, with the note `CONCRETE TURN-UP TO EL x`.
 - **Section 1-1 (stub-up section):** a hidden-line outline of the turn-up beyond, the note `CONCRETE TURN-UP BEYOND, TOP EL x`, and the turn-up EL in the subtitle.
 - **Stored:** `ENCH` (the setting) and `ENCZA` / `ENCZB` (the solved elevations) in the bank record. `DBEDIT` reuses them.
@@ -71,6 +72,33 @@ At each stub-up end, the concrete turns up around the stub elbows and risers. It
 ![Stub-up section with the turn-up](images/ductbank-dialog-turnup.png)
 
 ![3D export: turn-up at end A](images/ductbank-3d-turnup.png)
+
+## Concrete at bends (chamfer)
+
+Concrete is formed with straight faces, so by default (`_DBKBENDCONC` = `"Chamfer"`) the envelope is **chamfered** at every bend instead of swept:
+
+- **Plan bends, outside:** one straight chamfer per bend, square to the bend bisector. It is tangent to the cover over the outermost elbow at mid-bend, measured to the elbow's own OD (PVC-coated RGS, slightly over the PVC OD). Everywhere else along the elbow the cover is larger.
+- **Plan bends, inside:** a square (sharp) inside corner would cut into the inner elbows (about 3" short for the R24 3" bank), so the inside gets a chamfer too, on the chord of the cover arc. The chord is closer to the bend center than the arc, so it adds concrete and keeps the cover.
+- **Mixed radii** (for example one 4" R36 among 3" R24): each chamfer is pushed out just far enough for every position's elbow (both tiers, its own radius and OD), so a larger-radius elbow that cuts inside its neighbours is still covered.
+- **Stub-up turn-up:** the back face along the vertical elbow sweep is a 45 deg chamfer on the chord of the cover arc (see above). The outside of the vertical bend (end face down to the bottom) was already square.
+- **3D:** the `3DMEDModel-Ductbank` envelope is the plan outline extruded, with the turn-ups unioned in, so the chamfers carry into the solid. It stays one solid.
+- **Sections and notes:** unchanged. The sections cut the straight trunk and the stub zone, not the bends.
+- **Sweep:** `_DBKBENDCONC "Sweep"`, the dialog **Bends** box or `-DUCTBANK` Options > Bends puts back the concentric arcs (the previous geometry). If another position's elbow would poke out of the swept arc (mixed radii), that side is chamfered instead and the command line says so.
+- **Stored:** `BENDCONC` in the bank record. `DBEDIT` keeps the bank's setting; `DBLIST` shows it. Banks built before this option list as swept until they are rebuilt.
+
+The tests measure the cover at the bends (see [Testing](#testing)). With the default 2" side and end covers:
+
+- at the chamfer faces, to the coated elbow OD: 2.00" minimum
+- over every plan elbow, to the position OD: 2.00" minimum
+- stub elbows to the turn-up faces: 2.07" (3") / 2.14" (4")
+
+The trunk sides and the stub zone are still sized on the position (PVC) OD, so the coated elbows and risers sit 0.04" (the coating) closer to the straight faces at their ends. That is unchanged from the previous version.
+
+![Plan corner: chamfer (default) vs sweep](images/ductbank-plan-corner-chamfer.png)
+
+![3D: chamfered plan bend](images/ductbank-3d-chamfer-bend.png)
+
+![3D: chamfered stub-up turn-up](images/ductbank-3d-chamfer-turnup.png)
 
 ## Plain 3D polyline reference
 
@@ -134,6 +162,7 @@ Every variable has a default in code. `med.spc` only overrides it.
 | `_DBKUSEDIALOG` | 1 | 0 makes `DUCTBANK` always use the command line |
 | `_DBKENCASE` | `"Auto"` | Stub-up encasement top: `"Auto"` (top of the elbow sweep), `"Top"` (stub-up top EL) or an elevation |
 | `_DBKREFSIZE` | 4.0 | Plain route reference: default reference conduit size (the last value used wins) |
+| `_DBKBENDCONC` | `"Chamfer"` | Concrete at bends (plan bends and the stub-up turn-ups): `"Chamfer"` (straight faces sized for cover) or `"Sweep"` (follows the elbow arcs) |
 | `_DBKRISERCODE` | 2 | Stub-up riser and elbow material: 2 = PVC-coated RGS, 1 = plain RGS |
 | `_DBKSTUBWRAP` | 1 | Tape wrap (code 174) for plain RGS stub-ups |
 | `_DBKMODEL3D` | 1 | Build 3D envelope and spacer solids |
@@ -156,9 +185,18 @@ The summary shows `Ductbank elbow:` and `3D model layer:` lines.
 
 | Switch | What it adds |
 | --- | --- |
-| (none) | 3" bank as drawn, default encasement (turn-up to EL -18.5 at both ends) |
+| (none) | 3" bank as drawn, default encasement (turn-up to EL -18.5 at both ends), concrete at bends Chamfer |
 | `-Size 4` | 4" variant, then `DBDELETE` |
 | `-Rgs` | plain RGS stub-ups, wrapped |
 | `-Enc -30` / `-Enc Top` | custom encasement top |
 | `-Plain` | reference = plain 3DPOLY made from the sample reference's vertices (size 3, type 3) |
-| `-Edit` | after the checks: moves the `MED_DBREF` route 12" east, `-DBEDIT` retags A1 to MV-101 and sets B2 to 4", then checks counts, handles, orphans, duplicate solids and the edited route |
+| `-Edit` | after the checks: moves the `MED_DBREF` route 12" east, `-DBEDIT` retags A1 to MV-101 and sets B2 to 4", then checks counts, handles, orphans, duplicate solids, the edited route and the cover at the bends again (mixed R24 / R36) |
+| `-Sweep` | Options > Bends > Sweep (the old swept concrete) |
+
+Every run also checks the concrete at the bends:
+
+- the plan outline has no arcs (Chamfer) or has the swept arcs (Sweep)
+- `BENDCONC` is stored on the bank record
+- plan elbows: the minimum distance from the elbow OD to the envelope face is at least the side cover (49 samples per elbow)
+- the outside chamfer: the same, to the coated elbow OD
+- stub elbows: the minimum distance to the turn-up faces is at least the end cover

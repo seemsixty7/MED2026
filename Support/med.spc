@@ -186,6 +186,7 @@
 (setq _DBKUSEDIALOG    1)     ; DUCTBANK: 1 = grid dialog (MED-DotNet), 0 = command line (-DUCTBANK)
 (setq _DBKENCASE  "Auto")   ; stub-up encasement (turn-up) top: "Auto" = top of the elbow sweep, "Top" = stub-up top EL, or an elevation
 (setq _DBKREFSIZE     4.0)   ; plain 3D polyline reference: default reference conduit size (last used wins)
+(setq _DBKBENDCONC    "Chamfer") ; concrete at bends: "Chamfer" (straight chamfer, cover kept) or "Sweep" (follows the elbow arcs)
 ;;
 ;;  3D model layers: entities on layers whose names start with this prefix stay in the 2D
 ;;  drawing (frozen, off or just on their own layer) and MEDMAKE3D / MAKE3DCONDUIT copy them

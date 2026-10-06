@@ -146,7 +146,8 @@
         (foreach q (dbkt-pts e)
           (if (and (= (cdr (assoc 0 (entget e))) "LWPOLYLINE") (equal (cdr (assoc 210 (entget e))) '(0.0 0.0 1.0) 1e-9))
             (if (not (dbkt-inside env q)) (setq ok nil)))))
-      (dbkt-check "all plan conduit vertices inside the envelope outline" ok "")))
+      (dbkt-check "all plan conduit vertices inside the envelope outline" ok "")
+      (dbkt-bend-cover env elbows)))
   (dbkt-check "spacer stations = expected" (= (length spacers) *DBKT-STATIONS*) (strcat (itoa (length spacers)) " vs " (itoa *DBKT-STATIONS*)))
   ;; BOM: capture statements
   (if (not (dbk-doc)) (progn (setq *DBKT-POLYLEN* polylen) (defun polylen (e) (dbk-curvelen e))))
@@ -192,6 +193,105 @@
   (dbkt-w (strcat (itoa *DBKT-PASS*) " passed, " (itoa (length *DBKT-FAIL*)) " failed"))
   (foreach x (reverse *DBKT-FAIL*) (dbkt-w (strcat "  FAILED: " x)))
   (close *DBKT-F*)
+  (princ))
+
+;; ---- concrete cover at the bends (_DBKBENDCONC Chamfer / Sweep)
+;; 2D distance point - segment
+(defun dbkt-segd (q a b / ab t1 l2)
+  (setq ab (mapcar '- b a) l2 (+ (* (car ab) (car ab)) (* (cadr ab) (cadr ab))))
+  (setq t1 (if (> l2 1e-12) (max 0.0 (min 1.0 (/ (+ (* (- (car q) (car a)) (car ab)) (* (- (cadr q) (cadr a)) (cadr ab))) l2))) 0.0))
+  (distance (list (car q) (cadr q)) (list (+ (car a) (* t1 (car ab))) (+ (cadr a) (* t1 (cadr ab))))))
+(defun dbkt-samples (e n / l k out)
+  (setq l (vlax-curve-getDistAtParam e (vlax-curve-getEndParam e)) k 0)
+  (repeat (1+ n) (setq out (cons (vlax-curve-getPointAtDist e (* l (/ (float k) n))) out) k (1+ k)))
+  out)
+;; plan bends: elbow surface to the envelope outline >= side cover; stub elbows: elbow surface to
+;; the turn-up faces (back edge + end face above the trunk top, trunk top face beyond) >= cover
+(defun dbkt-cross (a b) (- (* (car a) (cadr b)) (* (cadr a) (car b))))
+(defun dbkt-bend-cover (env elbows / wmin vx chs k a b c pc m dnom dact dch nch p zenv covreq od q d dmin nb bulges e end fr prof top face pts segs s z sp
+                                     dstub covstub n)
+  (setq zenv (cdr (assoc 38 (entget env))) covreq (min (atof (dbk-xdval env "COVL")) (atof (dbk-xdval env "COVR")))
+        dmin nil nb 0 nch 0)
+  (setq bulges (vl-remove-if '(lambda (x) (or (/= (car x) 42) (< (abs (cdr x)) 1e-9))) (entget env)))
+  (dbkt-w (strcat "Concrete at bends: " (cond ((dbk-xdval env "BENDCONC")) ("?")) ", outline arcs " (itoa (length bulges))))
+  (if *DBK-CORNERS*
+    (dbkt-check (strcat "plan outline " (if (dbk-chamfer-p) "has no arcs (chamfered bends)" "has the swept bend arcs"))
+                (if (dbk-chamfer-p) (null bulges) (> (length bulges) 0)) (itoa (length bulges))))
+  (dbkt-check "BENDCONC stored on the bank record" (= (dbk-xdval env "BENDCONC") (dbk-bendstr)) (vl-princ-to-string (dbk-xdval env "BENDCONC")))
+  ;; outer chamfer segments: near a bend, not parallel to a route leg, outside the turn (bank centerline)
+  (setq vx (mapcar '(lambda (q) (list (car q) (cadr q))) (dbkt-pts env)) chs nil k 0)
+  (if (dbk-chamfer-p)
+    (while (< k (length vx))
+      (setq a (nth k vx) b (nth (rem (1+ k) (length vx)) vx))
+      (if (and (> (distance a b) 1e-6)
+               (vl-every '(lambda (sg) (> (abs (dbkt-cross (dbk-unit (mapcar '- b a)) (nth 2 sg))) 0.01)) *DBK-SEGS*))
+        (foreach c *DBK-CORNERS*
+          (setq pc (dbk-v+ (list (car (nth 0 c)) (cadr (nth 0 c))) (dbk-v* (nth 7 c) (/ (+ (dbk-get *DBKS* "LEXT") (dbk-get *DBKS* "REXT")) 2.0)))
+                m (dbk-v* (mapcar '+ a b) 0.5))
+          (if (and (< (distance m pc) (+ 60.0 (dbk-get *DBKS* "WT")))
+                   (< (* (dbkt-cross (nth 1 c) (nth 2 c)) (dbkt-cross (nth 1 c) (mapcar '- m pc))) 0.0))
+            (setq chs (cons k chs)))))
+      (setq k (1+ k))))
+  (setq dnom nil dact nil dch nil)
+  (foreach e elbows
+    (if (wcmatch (dbk-xdval e "PART") "BEND*")
+      (progn
+        (setq od (atof (dbk-xdval e "OD")) nb (1+ nb)
+              p (car (vl-remove-if-not '(lambda (x) (= (dbk-get x "POS") (dbk-xdval e "POS"))) (dbk-get *DBK* "PL"))))
+        (foreach q (dbkt-samples e 48)
+          (setq q (list (car q) (cadr q) zenv) sp (vlax-curve-getClosestPointTo env q)
+                d (distance (list (car q) (cadr q)) (list (car sp) (cadr sp))))
+          (if (not (dbkt-inside env q)) (setq d (- d)))
+          ;; envelope design OD (the position OD) over the whole elbow
+          (if (or (null dnom) (< (- d (/ (dbk-get p "OD") 2.0)) dnom))
+            (setq dnom (- d (/ (dbk-get p "OD") 2.0)) wmin (strcat (dbk-xdval e "POS") " " (dbk-xdval e "PART") " at " (rtos (car q) 2 2) "," (rtos (cadr q) 2 2))))
+          (if (or (null dact) (< (- d (/ od 2.0)) dact)) (setq dact (- d (/ od 2.0))))
+          ;; the elbow's own OD (coated RGS) where the nearest envelope face is an outside chamfer
+          (if (member (fix (vlax-curve-getParamAtPoint env sp)) chs)
+            (if (or (null dch) (< (- d (/ od 2.0)) dch)) (setq dch (- d (/ od 2.0)) nch (1+ nch))  (setq nch (1+ nch))))))))
+  (if (> nb 0)
+    (progn
+      (dbkt-check (strcat "plan bend cover: elbow (position OD) to envelope face >= side cover " (rtos covreq 2 2) " (" (itoa nb) " elbows x 49 samples)")
+                  (>= dnom (- covreq 0.005)) (strcat "min " (rtos dnom 2 3) " (" wmin ")"))
+      (if (dbk-chamfer-p)
+        (dbkt-check (strcat "outside chamfer cover: coated elbow OD to chamfer face >= " (rtos covreq 2 2) " (" (itoa (length chs)) " chamfer faces, " (itoa nch) " samples)")
+                    (and dch (>= dch (- covreq 0.005))) (if dch (strcat "min " (rtos dch 2 3)) "no samples")))
+      (dbkt-w (strcat "  info: coated elbow OD to nearest envelope face anywhere, min " (rtos dact 2 3)
+                      " (at the elbow ends the trunk sides are sized on the position OD, as in 6b0a15e)"))))
+  ;; stub elbows vs the turn-up profile
+  (setq dstub nil n 0 top (dbk-get *DBKS* "TOP") covstub (min _DBKCOVEREND (atof (dbk-xdval env "COVT"))))
+  (foreach end '("A" "B")
+    (if (setq z (dbk-get *DBKS* (strcat "ENCZ" end)))
+      (progn
+        (setq fr (dbk-tu-frame end) prof (dbk-tu-profile z) face (dbk-tu-face))
+        ;; real faces: profile edges above the trunk top except the top edge, plus the trunk top beyond
+        (setq segs nil pts prof)
+        (while (cdr pts)
+          (if (and (>= (min (cadr (car pts)) (cadr (cadr pts))) (- top 1e-6))
+                   (not (and (dbkt-near (cadr (car pts)) z 1e-6) (dbkt-near (cadr (cadr pts)) z 1e-6))))
+            (setq segs (cons (list (car pts) (cadr pts)) segs)))
+          (setq pts (cdr pts)))
+        (setq segs (cons (list (list (dbk-tu-back top) top) (list (+ (dbk-tu-back top) 1000.0) top)) segs))
+        ;; the back edge crosses the trunk top inside a profile edge: add its upper part
+        (setq pts prof)
+        (while (cdr pts)
+          (if (and (< (cadr (cadr pts)) top) (> (cadr (car pts)) top))
+            (setq segs (cons (list (car pts) (list (dbk-tu-back top) top)) segs)))
+          (setq pts (cdr pts)))
+        (foreach e elbows
+          (if (= (dbk-xdval e "PART") (strcat "STUB" end))
+            (progn
+              (setq od (atof (dbk-xdval e "OD")) n (1+ n))
+              (foreach q (dbkt-samples e 48)
+                (setq s (+ (* (- (car q) (car (car fr))) (car (cadr fr))) (* (- (cadr q) (cadr (car fr))) (cadr (cadr fr)))))
+                (if (and (> (caddr q) (- top (/ od 2.0) covstub)) (< (caddr q) (- z 1e-6)))
+                  (progn
+                    (setq d (- (apply 'min (mapcar '(lambda (sg) (dbkt-segd (list s (caddr q)) (car sg) (cadr sg))) segs)) (/ od 2.0)))
+                    (if (or (> s (dbk-tu-back (caddr q))) (< s face)) (setq d (- d)))
+                    (if (or (null dstub) (< d dstub)) (setq dstub d)))))))))))
+  (if dstub
+    (dbkt-check (strcat "turn-up cover: stub elbow OD to turn-up face >= " (rtos covstub 2 2) " (" (itoa n) " stub elbows, " (dbk-bendstr) ")")
+                (>= dstub (- covstub 0.005)) (strcat "min " (rtos dstub 2 3))))
   (princ))
 
 ;; point in closed LWPOLYLINE (ray casting on a densified outline: arcs sampled)
@@ -312,6 +412,8 @@
                    (vl-some '(lambda (r / f) (setq f (dbk-split r "|")) (and (= (car f) "B2") (equal (atof (nth 2 f)) *DBKT-ESIZE* 1e-6))) recs)) "")
   (dbkt-w (strcat "Envelope after DBEDIT: W " (dbk-xdval env "WT") " H " (dbk-xdval env "HT") " part " (dbk-xdval env "SPACER")
                   " turn-ups " (cond ((dbk-xdval (car (dbkt-ents "ENV3D")) "TURNUPS")) ("?"))))
+  (dbkt-w "Concrete cover at the bends after the rebuild (B2 now 4\", R36):")
+  (dbkt-bend-cover (car (dbkt-ents "ENVELOPE")) (dbkt-ents "ELBOW"))
   (dbkt-w (strcat (itoa *DBKT-PASS*) " passed, " (itoa (length *DBKT-FAIL*)) " failed (cumulative)"))
   (foreach x (reverse *DBKT-FAIL*) (dbkt-w (strcat "  FAILED: " x)))
   (close *DBKT-F*)

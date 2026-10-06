@@ -49,6 +49,9 @@
 (dbk-def '_DBKENCASE "Auto")       ; stub-up encasement turn-up top: "Auto" = top of the stub elbow sweep,
                                    ; "Top" = the stub-up top EL (grade), or an elevation (drawing units)
 (dbk-def '_DBKREFSIZE 4.0)         ; plain route reference (no MED data): default trade size
+(dbk-def '_DBKBENDCONC "Chamfer")  ; concrete at bends: "Chamfer" = straight chamfers (plan bends, outside tangent
+                                   ; to the cover arc, inside on its chord; turn-up on the chord of the stub
+                                   ; elbow sweep), "Sweep" = concentric arcs that follow the elbows
 (dbk-def '_MED3DMODELPREFIX "3DMEDModel-") ; shared with MEDMAKE3D (MED3DPath.lsp)
 (dbk-def '_DBKADAPTER 170)         ; PVC female adapter (elbow records 2 and 3)
 (dbk-def '_DBKREDUCERMODE "CENTER"); S287F / S287J: CENTER (assumed) or BOTTOM
@@ -167,6 +170,8 @@
 (defun dbk-enclabel (v)
   (setq v (dbk-encval v))
   (cond ((numberp v) (strcat "EL " (dbk-encstr v))) ((= v "Top") "Top = stub-up top EL") (T "Auto = top of the elbow sweep")))
+(defun dbk-chamfer-p () (not (wcmatch (strcase (vl-princ-to-string _DBKBENDCONC)) "S*")))
+(defun dbk-bendstr () (if (dbk-chamfer-p) "Chamfer" "Sweep"))
 (defun dbk-joinstr (l sep / s) (if l (progn (setq s (car l)) (foreach x (cdr l) (setq s (strcat s sep x))) s) ""))
 (defun dbk-disclaimer ()
   (if (= (type med3d-disclaimer) 'USUBR) (med3d-disclaimer)
@@ -534,7 +539,7 @@
   ;; stub spacing vs trunk spacing, taper
   (setq ang (dbk-max (mapcar '(lambda (p) (dbk-deg (atan (abs (- (dbk-get p "RELS") (dbk-get p "RELT"))) lt))) pl)))
   (if (and (or stuba stubb) (> (abs (- sx pitchh)) 0.005))
-    (setq flags (cons (strcat "Stub-up pitch " (dbk-r2 sx) "\" kept at the stub-ups; the trunk uses the spacer pitch "
+    (setq flags (cons (strcat "Stub-up pitch (center to center across) " (dbk-r2 sx) "\" kept at the stub-ups; the trunk uses the spacer pitch "
                               (dbk-r2 pitchh) "\"" (if part (strcat " (" (car part) ")") "")
                               ", tapered over the " (dbk-r2 lt) "\" transition (max " (dbk-r2 ang) " deg).") flags)))
   (if (and (or stuba stubb) (> ang _DBKMAXTAPER))
@@ -678,7 +683,8 @@
                    " R" (rtos _DBKCOVERRIGHT 2 1) "   top of concrete EL " (dbk-r2 (dbk-get *DBKS* "TOP"))))
   (dbk-say (strcat "  Elbows: stub-up R" (dbk-joinnum (dbk-uniq (mapcar '(lambda (p) (dbk-get p "RV")) pl)))
                    (if *DBK-CORNERS* (strcat "  plan R" (dbk-joinnum (dbk-uniq (apply 'append (mapcar '(lambda (p) (dbk-get p "RP")) pl))))
-                                             "(" (itoa (length *DBK-CORNERS*)) " plan bend(s))") "")))
+                                             "(" (itoa (length *DBK-CORNERS*)) " plan bend(s))") "")
+                   "   concrete at bends: " (if (dbk-chamfer-p) "chamfered" "swept")))
   (if (or (dbk-get *DBKS* "ENCZA") (dbk-get *DBKS* "ENCZB"))
     (dbk-say (strcat "  Stub-up encasement (" (dbk-enclabel (dbk-get *DBK* "ENCH")) "): concrete turn-up to EL"
                      (if (dbk-get *DBKS* "ENCZA") (strcat " " (dbk-r2 (dbk-get *DBKS* "ENCZA")) " at end A") "")
@@ -794,8 +800,53 @@
   (if (and (= mat 1) wrap) (setq codes (append codes (list *DBK-WRAPCODE*))))
   (bld_fitting codes (mapcar '(lambda (c) sz) codes) (mapcar '(lambda (c) tag) codes)
                (mapcar '(lambda (c) 0.0) codes) (mapcar '(lambda (c) 0.0) codes) (mapcar '(lambda (c) 0.0) codes)))
+;; ---- concrete at plan bends (_DBKBENDCONC)
+(defun dbk-2d (p) (list (car p) (cadr p)))
+(defun dbk-rot (v a) (list (- (* (car v) (cos a)) (* (cadr v) (sin a))) (+ (* (car v) (sin a)) (* (cadr v) (cos a)))))
+;; cover points of position p's elbow at corner ci on one side: side = 1 outside (away from its
+;; center), -1 inside; od = OD used for the cover (elbow OD or position OD); n samples
+(defun dbk-bend-covpts (c ci p side od cov n / cr r tin o v0 sg k a v out)
+  (setq cr (nth ci (dbk-get p "CRN")) r (nth 5 cr) tin (dbk-2d (nth 0 cr))
+        o (dbk-v- tin (dbk-v* (dbk-2d (nth 3 c)) (* (nth 6 c) r))) v0 (dbk-v- tin o)
+        sg (if (< (- (* (car (nth 1 c)) (cadr (nth 2 c))) (* (cadr (nth 1 c)) (car (nth 2 c)))) 0.0) -1.0 1.0) k 0)
+  (if (> r 0.01)
+    (repeat (1+ n)
+      (setq a (* sg (nth 6 cr) (/ (float k) n)) v (dbk-rot v0 a)
+            out (cons (dbk-v+ (dbk-v+ o v) (dbk-v* (dbk-unit v) (* side (+ (/ od 2.0) cov)))) out) k (1+ k))))
+  out)
+(defun dbk-elbow-od (p) (max (dbk-get p "OD") (dbk-od 2 (dbk-get p "SIZE"))))
+;; chamfer for one side of corner ci: face square to the bisector (m points from the bank toward
+;; that side's void) at the max of m over every position's cover points; returns (P1 P2), or the
+;; sharp corner when it is enough
+(defun dbk-bend-cut (c ci ext g / dl side cov m q qm cm v u1 u2 pts)
+  (setq dl (- ext (dbk-get g "RELT")) side (if (> (* (nth 6 c) dl) 0.0) 1.0 -1.0)
+        cov (- (abs dl) (/ (dbk-get g "OD") 2.0))
+        m (dbk-v* (dbk-unit (dbk-2d (nth 7 c))) (if (> dl 0.0) 1.0 -1.0))
+        q (dbk-2d (dbk-v+ (nth 0 c) (dbk-v* (nth 7 c) ext))) qm (dbk-dot q m))
+  (foreach p (dbk-get *DBK* "PL")
+    (foreach x (dbk-bend-covpts c ci p side (dbk-elbow-od p) cov 32)
+      (setq v (dbk-dot x m)) (if (or (null cm) (> v cm)) (setq cm v))))
+  (setq u1 (dbk-dot (dbk-2d (nth 1 c)) m) u2 (dbk-dot (dbk-2d (nth 2 c)) m))
+  ;; outside: cut the convex corner when a cover point is short of it; inside: fill the reflex
+  ;; corner out to the cover points when they reach past it (else the sharp corner is enough)
+  (if (or (null cm) (if (> side 0.0) (<= qm cm) (>= qm cm)) (< (abs u1) 1e-9) (< (abs u2) 1e-9))
+    (list q)
+    (list (dbk-v+ q (dbk-v* (dbk-2d (nth 1 c)) (/ (- cm qm) u1))) (dbk-v+ q (dbk-v* (dbk-2d (nth 2 c)) (/ (- cm qm) u2))))))
+;; Sweep: T when another position's elbow (position OD + cover) pokes out of the governing arc
+(defun dbk-bend-poke (c ci ext g rr / dl side cov cr o u hit d)
+  (setq dl (- ext (dbk-get g "RELT")) side (if (> (* (nth 6 c) dl) 0.0) 1.0 -1.0)
+        cov (- (abs dl) (/ (dbk-get g "OD") 2.0)) cr (nth ci (dbk-get g "CRN"))
+        o (dbk-v- (dbk-2d (nth 0 cr)) (dbk-v* (dbk-2d (nth 3 c)) (* (nth 6 c) (nth 5 cr)))))
+  (setq u (dbk-unit (dbk-v- (dbk-v* (dbk-v+ (dbk-2d (nth 0 cr)) (dbk-2d (nth 1 cr))) 0.5) o)))
+  (foreach p (dbk-get *DBK* "PL")
+    (foreach x (dbk-bend-covpts c ci p side (dbk-get p "OD") cov 32)
+      (setq d (dbk-len (dbk-v- x o)))
+      (if (and (> d 1e-6) (>= (dbk-dot (dbk-v- x o) u) (- (* d (cos (/ (nth 5 c) 2.0))) 1e-6))
+               (if (> side 0.0) (> d (+ rr 0.005)) (< d (- rr 0.005))))
+        (setq hit T))))
+  hit)
 ;; one side of the plan outline (start-based lateral ext), list of (pt2d bulge)
-(defun dbk-side (ext exta extb g / out ci dl cr rr stuba stubb sza szb face)
+(defun dbk-side (ext exta extb g / out ci dl cr rr stuba stubb sza szb face t1 t2)
   (setq stuba (= (dbk-get *DBK* "ENDA") "Stubup") stubb (= (dbk-get *DBK* "ENDB") "Stubup")
         sza (dbk-get *DBKS* "SZA") szb (dbk-get *DBKS* "SZB")
         face (- (dbk-min (mapcar '(lambda (p) (dbk-get p "ALONG")) (dbk-get *DBK* "PL")))
@@ -805,12 +856,26 @@
     (setq out (list (list (dbk-pa 0.0 ext) 0.0))))
   (setq ci 0)
   (foreach c *DBK-CORNERS*
-    ;; follow the governing conduit's own elbow, offset by cover (concentric arc)
+    ;; the governing conduit's own elbow offset by its OD/2 + cover is the cover arc (radius rr).
+    ;; Sweep: the concrete follows that arc. Chamfer (default): one straight face per side,
+    ;; square to the bend bisector, pushed out just far enough that EVERY position's elbow keeps
+    ;; its cover (dbk-bend-cut: max over all elbows, both tiers, own radius, the elbow's own OD =
+    ;; PVC-coated RGS). Outside of the bend that face is tangent to the outermost cover arc at
+    ;; mid-bend; inside it is the chord through the cover arc ends (a square inside corner would cut
+    ;; into the inner elbows: R24 3" bank ~3" short). Mixed radii (e.g. one 4" R36 among 3" R24)
+    ;; are covered too. Sweep falls back to the chamfer on a side where another position's elbow
+    ;; would poke out of the governing arc (mixed radii), with a note.
     (setq cr (nth ci (dbk-get g "CRN")) dl (- ext (dbk-get g "RELT")) rr (+ (nth 5 cr) (* (nth 6 c) dl)))
-    (if (> rr 0.01)
-      (setq out (append out (list (list (dbk-v+ (nth 0 cr) (dbk-v* (nth 3 c) dl)) (nth 2 cr))
-                                  (list (dbk-v+ (nth 1 cr) (dbk-v* (nth 4 c) dl)) 0.0))))
-      (setq out (append out (list (list (dbk-v+ (nth 0 c) (dbk-v* (nth 7 c) ext)) 0.0)))))
+    (setq t1 (dbk-v+ (nth 0 cr) (dbk-v* (nth 3 c) dl)) t2 (dbk-v+ (nth 1 cr) (dbk-v* (nth 4 c) dl)))
+    (cond
+      ((<= rr 0.01) (setq out (append out (list (list (dbk-2d (dbk-v+ (nth 0 c) (dbk-v* (nth 7 c) ext))) 0.0)))))
+      ((and (not (dbk-chamfer-p)) (not (dbk-bend-poke c ci ext g rr)))
+        (setq out (append out (list (list t1 (nth 2 cr)) (list t2 0.0)))))
+      (T
+        (if (not (dbk-chamfer-p))
+          (setq *DBK-BENDNOTES* (cons (strcat "Bend " (itoa (1+ ci)) " " (if (> (* (nth 6 c) dl) 0.0) "outside" "inside")
+                                              ": mixed elbow radii poke out of the swept arc, chamfered there to keep cover.") *DBK-BENDNOTES*)))
+        (setq out (append out (mapcar '(lambda (q) (list q 0.0)) (dbk-bend-cut c ci ext g))))))
     (setq ci (1+ ci)))
   (if stubb
     (setq out (append out (list (list (dbk-pb (+ szb _DBKTRANSL) ext) 0.0) (list (dbk-pb szb extb) 0.0) (list (dbk-pb face extb) 0.0))))
@@ -941,8 +1006,10 @@
         (dbk-add (entlast)))))
   ;; plan outline: right side forward + left side reversed (bulges negated)
   (setq gl (dbk-findpos pl (dbk-get *DBKS* "GL")) gr (dbk-findpos pl (dbk-get *DBKS* "GR")))
+  (setq *DBK-BENDNOTES* nil)
   (setq rsd (dbk-side (dbk-get *DBKS* "REXT") (dbk-get *DBKS* "RSA") (dbk-get *DBKS* "RSA") gr)
         lsd (dbk-side (dbk-get *DBKS* "LEXT") (dbk-get *DBKS* "LSA") (dbk-get *DBKS* "LSA") gl))
+  (foreach x (reverse *DBK-BENDNOTES*) (princ (strcat "\n  Note: " x)))
   (setq vtx (mapcar 'car rsd) bnd (append (reverse (cdr (reverse (mapcar 'cadr rsd)))) '(0.0)))
   (setq k (1- (length lsd)))
   (while (>= k 0)
@@ -1020,7 +1087,7 @@
                       (strcat "ENCZA=" (if (dbk-get *DBKS* "ENCZA") (dbk-r4 (dbk-get *DBKS* "ENCZA")) ""))
                       (strcat "ENCZB=" (if (dbk-get *DBKS* "ENCZB") (dbk-r4 (dbk-get *DBKS* "ENCZB")) ""))
                       (strcat "SWEEPTOP=" (dbk-r4 (dbk-get *DBKS* "SWEEPTOP")))
-                      (strcat "REFPLAIN=" (if plain "1" "0")))
+                      (strcat "REFPLAIN=" (if plain "1" "0")) (strcat "BENDCONC=" (dbk-bendstr)))
                 (mapcar '(lambda (p) (strcat "P=" (dbk-bar (list (dbk-get p "POS") (vl-string-translate "|" "/" (dbk-tag p))
                                                                  (dbk-get p "SIZE") (dbk-get p "CODE") (if (dbk-get p "TAG") "C" "D")))))
                         pl)
@@ -1189,18 +1256,24 @@
 ;;; The concrete turns up at each stub-up end and wraps the stub elbows and risers. Profile in
 ;;; the vertical plane along the first (end A) / last (end B) leg, stations s measured from that
 ;;; end: front face = the envelope end face (s = face), back edge = the inner side of the
-;;; stub elbows (offset by OD/2 + end cover toward the elbow center) and the riser backs above
-;;; the sweep. Width = the stub zone envelope (lateral LSA..RSA, side covers included).
+;;; stub elbows (offset by OD/2 + end cover toward the elbow center; with _DBKBENDCONC Chamfer
+;;; the chord of that arc instead of the arc) and the riser backs above the sweep. Width = the stub zone envelope (lateral LSA..RSA, side covers included).
 (defun dbk-tu-face ()
   (- (dbk-min (mapcar '(lambda (p) (dbk-get p "ALONG")) (dbk-get *DBK* "PL")))
      (+ (/ (dbk-get *DBKS* "MAXOD") 2.0) _DBKCOVEREND)))
+;; stub-up riser / stub elbow OD (the stub material: PVC-coated or plain RGS), never under the position OD
+(defun dbk-tu-od (p)
+  (max (dbk-get p "OD") (dbk-od (if (= (dbk-get *DBK* "STUBCODE") 1) 1 2) (dbk-get p "SIZE"))))
 ;; back edge station at elevation z (max over every position)
-(defun dbk-tu-back (z / out cx cz rr s)
+(defun dbk-tu-back (z / out cx cz rr s od)
   (foreach p (dbk-get *DBK* "PL")
-    (setq cx (+ (dbk-get p "ALONG") (dbk-get p "RV")) cz (+ (dbk-get p "ZC") (dbk-get p "RV"))
-          rr (- (dbk-get p "RV") (/ (dbk-get p "OD") 2.0) _DBKCOVEREND))
-    (setq s (cond ((>= z cz) (+ (dbk-get p "ALONG") (/ (dbk-get p "OD") 2.0) _DBKCOVEREND))
-                  ((and (> rr 0.01) (>= z (- cz rr))) (- cx (sqrt (max 0.0 (- (* rr rr) (* (- cz z) (- cz z)))))))
+    (setq od (dbk-tu-od p) cx (+ (dbk-get p "ALONG") (dbk-get p "RV")) cz (+ (dbk-get p "ZC") (dbk-get p "RV"))
+          rr (- (dbk-get p "RV") (/ od 2.0) _DBKCOVEREND))
+    (setq s (cond ((>= z cz) (+ (dbk-get p "ALONG") (/ od 2.0) _DBKCOVEREND))
+                  ((and (> rr 0.01) (>= z (- cz rr)))
+                    (if (dbk-chamfer-p)
+                      (+ (- cx rr) (- cz z))   ; chamfer: chord of the inner cover arc (45 deg), cover kept
+                      (- cx (sqrt (max 0.0 (- (* rr rr) (* (- cz z) (- cz z))))))))
                   (T cx)))
     (if (or (null out) (> s out)) (setq out s)))
   out)
@@ -1211,7 +1284,7 @@
   (repeat (1- n) (setq zs (cons (+ zb (* (- encz zb) (/ (float k) n))) zs) k (1+ k)))
   (foreach p (dbk-get *DBK* "PL")
     (foreach z (list (+ (dbk-get p "ZC") (dbk-get p "RV"))
-                     (+ (dbk-get p "ZC") (/ (dbk-get p "OD") 2.0) _DBKCOVEREND))
+                     (+ (dbk-get p "ZC") (/ (dbk-tu-od p) 2.0) _DBKCOVEREND))
       (if (and (< z encz) (> z zb)) (setq zs (cons z zs)))))
   (setq zs (vl-sort (dbk-uniq (mapcar '(lambda (z) (atof (rtos z 2 6))) zs)) '>))
   (setq pts (list (list face zb) (list face encz)))
@@ -1286,6 +1359,10 @@
                                                                                               (if (dbk-get *DBKS* "ENCZB") (strcat (dbk-r2 (dbk-get *DBKS* "ENCZB")) " B")))) ", ")
                                                   ", sweep top EL " (dbk-r2 (dbk-get *DBKS* "SWEEPTOP")))
                                           "none"))))))
+  (if (or *DBK-CORNERS* (dbk-get *DBKS* "ENCZA") (dbk-get *DBKS* "ENCZB"))
+    (setq out (append out (list (strcat "Concrete at bends: " (if (dbk-chamfer-p) "chamfered" "swept")
+                                        (if *DBK-CORNERS* (strcat " (" (itoa (length *DBK-CORNERS*)) " plan bend(s)"
+                                                                  (if (dbk-get *DBKS* "ENCZA") " + turn-ups)" (if (dbk-get *DBKS* "ENCZB") " + turn-ups)" ")"))) " (turn-ups)"))))))
   (setq out (append out (list (if part (strcat "Spacer " (car part) ": " (itoa (length (dbk-get *DBKS* "STATIONS"))) " stations x "
                                                (itoa (dbk-get *DBKS* "PIECES")) " pieces, pitch " (dbk-r2 (nth 5 part)) " x " (dbk-r2 (nth 4 part)))
                                 "Spacer: none (no Snap-N-Stac part for this size)")
@@ -1316,7 +1393,7 @@
                   (dbk-kv "MODE" (if *DBK-EDITING* "EDIT" "NEW"))
                   (dbk-kv "REFPLAIN" (if (dbk-get *DBK* "REFPLAIN") 1 0)) (dbk-kv "REFTYPE" (cond ((dbk-get *DBK* "REFTYPE")) ("")))
                   (dbk-kv "REFSIZE" (dbk-get *DBK* "REFSIZE")) (dbk-kv "REFCODE" (dbk-get *DBK* "REFCODE"))
-                  (dbk-kv "ENCH" (dbk-encstr (dbk-get *DBK* "ENCH")))
+                  (dbk-kv "ENCH" (dbk-encstr (dbk-get *DBK* "ENCH"))) (dbk-kv "BENDCONC" (dbk-bendstr))
                   (dbk-kv "BOTZ" bot) (dbk-kv "TOPZ" (dbk-get *DBKS* "TOP")) (dbk-kv "SWEEPTOPZ" (dbk-get *DBKS* "SWEEPTOP"))
                   (dbk-kv "ENCZA" (dbk-get *DBKS* "ENCZA")) (dbk-kv "ENCZB" (dbk-get *DBKS* "ENCZB"))))
   (foreach c codes (setq out (append out (list (strcat "CODE=" (dbk-bar (list (car c) (dbk-typeabbr (car c)) (cadr c))))))))
@@ -1364,6 +1441,7 @@
                (if (and (> v 0.0) (> k 0) (or (not (equal v (dbk-get *DBK* "REFSIZE") 1e-6)) (/= k (dbk-get *DBK* "REFCODE"))))
                  (dbk-set-refsize v k))))
       (setq *DBK* (dbk-put *DBK* "ENCH" (dbk-encval (dbk-kvs "ENCH" (dbk-encstr (dbk-get *DBK* "ENCH"))))))
+      (setq _DBKBENDCONC (if (wcmatch (strcase (dbk-kvs "BENDCONC" (dbk-bendstr))) "S*") "Sweep" "Chamfer"))
       (setq rows (fix (dbk-kvn "ROWS" (dbk-get *DBK* "ROWS")))
             counts (mapcar 'atoi (dbk-split (dbk-kvs "COUNTS" (dbk-joinstr (mapcar 'itoa (dbk-get *DBK* "COUNTS")) ",")) ",")))
       (setq rows (max 1 (min 9 rows)) counts (mapcar '(lambda (c) (max 1 (min 12 c))) counts))
@@ -1447,8 +1525,8 @@
   done)
 
 (defun dbk-options ( / k)
-  (initget "Cover Gap Interval Transition STRaight SEparation Part STUbmaterial ENcasement Model3d SCale Done")
-  (setq k (getkword "\nOptions [Cover/Gap/Interval/Transition/STRaight/SEparation/Part/STUbmaterial/ENcasement/Model3d/SCale/Done] <Done>: "))
+  (initget "Cover Gap Interval Transition STRaight SEparation Part STUbmaterial ENcasement Bends Model3d SCale Done")
+  (setq k (getkword "\nOptions [Cover/Gap/Interval/Transition/STRaight/SEparation/Part/STUbmaterial/ENcasement/Bends/Model3d/SCale/Done] <Done>: "))
   (cond
     ((= k "Cover")
       (setq _DBKCOVERTOP (dbk-ask-real "Cover top" _DBKCOVERTOP) _DBKCOVERBOT (dbk-ask-real "Cover bottom (minimum)" _DBKCOVERBOT)
@@ -1475,6 +1553,8 @@
                                (dbk-r2 (dbk-get *DBKS* "SWEEPTOP")) ", Top = stub-up top EL) <"
                                (dbk-encstr (dbk-encval (dbk-get *DBK* "ENCH"))) ">: ")))
       (if k (setq *DBK* (dbk-put *DBK* "ENCH" (dbk-encval k)))))
+    ((= k "Bends")
+      (setq _DBKBENDCONC (dbk-ask-kw "Concrete at bends (plan bends and the stub-up turn-up)" "Chamfer Sweep" (dbk-bendstr))))
     ((= k "Model3d")
       (setq *DBK* (dbk-put *DBK* "MODEL3D" (if (= "Yes" (dbk-ask-kw (strcat "3D envelope + spacer solids on " (dbk-model-layer)) "Yes No"
                                                                   (if (= (dbk-get *DBK* "MODEL3D") 1) "Yes" "No"))) 1 0))))
@@ -1597,8 +1677,8 @@
     (setq *DBK* (dbk-put *DBK* "TOPB" (dbk-ask-real "End B stub-up top elevation" (dbk-get *DBK* "TOPB")))))
   (if (or (= (dbk-get *DBK* "ENDA") "Stubup") (= (dbk-get *DBK* "ENDB") "Stubup"))
     (progn
-      (setq *DBK* (dbk-put *DBK* "SX" (dbk-ask-real "Stub-up pitch across (center to center)" (dbk-get *DBK* "SX"))))
-      (setq *DBK* (dbk-put *DBK* "SY" (dbk-ask-real "Stub-up pitch along the run (row to row)" (dbk-get *DBK* "SY"))))
+      (setq *DBK* (dbk-put *DBK* "SX" (dbk-ask-real "Stub-up pitch center to center across (column to column)" (dbk-get *DBK* "SX"))))
+      (setq *DBK* (dbk-put *DBK* "SY" (dbk-ask-real "Stub-up pitch center to center along (row to row)" (dbk-get *DBK* "SY"))))
       (setq *DBK-LASTSX* (dbk-get *DBK* "SX") *DBK-LASTSY* (dbk-get *DBK* "SY"))))
   (setq *DBK* (dbk-put *DBK* "SECTEND"
                 (cond ((and (= (dbk-get *DBK* "ENDA") "Stubup") (= (dbk-get *DBK* "ENDB") "Stubup"))
@@ -1738,7 +1818,7 @@
 ;;; old members (and 3D solids) and regenerates in place with the same bank ID. The session
 ;;; settings (_DBK* covers, interval, ...) are restored afterwards.
 (setq *DBK-EDIT-GLOBALS* '(_DBKCOVERTOP _DBKCOVERBOT _DBKCOVERLEFT _DBKCOVERRIGHT _DBKCOVEREND _DBKMINGAP _DBKSPINT
-                          _DBKSPEND _DBKTRANSL _DBKSTUBSTRAIGHT _DBKSEP _DBKSECTSCALE _DBKTAGPAT))
+                          _DBKSPEND _DBKTRANSL _DBKSTUBSTRAIGHT _DBKSEP _DBKSECTSCALE _DBKTAGPAT _DBKBENDCONC))
 (defun dbk-globals-save () (mapcar '(lambda (s) (cons s (eval s))) *DBK-EDIT-GLOBALS*))
 (defun dbk-globals-restore (l) (foreach x l (set (car x) (cdr x))))
 (defun dbk-edit-load (e / bank ents env ref info v n pl f p tgs conds)
@@ -1764,7 +1844,8 @@
                 _DBKCOVEREND (dbk-ev "COVE" _DBKCOVEREND) _DBKMINGAP (dbk-ev "GAP" _DBKMINGAP)
                 _DBKSPINT (dbk-ev "SPINT" _DBKSPINT) _DBKSPEND (dbk-ev "SPEND" _DBKSPEND) _DBKTRANSL (dbk-ev "TRANSL" _DBKTRANSL)
                 _DBKSTUBSTRAIGHT (dbk-ev "STUBSTR" _DBKSTUBSTRAIGHT) _DBKSEP (dbk-ev "SEP" _DBKSEP)
-                _DBKSECTSCALE (dbk-ev "SECTSCALE" _DBKSECTSCALE) _DBKTAGPAT (dbk-es "TAGPAT" _DBKTAGPAT))
+                _DBKSECTSCALE (dbk-ev "SECTSCALE" _DBKSECTSCALE) _DBKTAGPAT (dbk-es "TAGPAT" _DBKTAGPAT)
+                _DBKBENDCONC (dbk-es "BENDCONC" _DBKBENDCONC))
           (setq info (list (cond ((dbk-xdval ref "REFTAG")) ("")) (dbk-ev-ref ref "REFSIZE" _DBKREFSIZE)
                            (fix (dbk-ev-ref ref "REFCODE" _DBKCONCODE)) (dbk-ev-ref ref "REFDIST" 0.0)
                            (cond ((dbk-xdval ref "REFMESR")) ("T")) (= (dbk-xdval ref "REFPLAIN") "1")))
@@ -1859,7 +1940,8 @@
                            (strcat "turn-up to EL" (if (/= (cond ((dbk-xdval env "ENCZA")) ("")) "") (strcat " " (rtos (atof (dbk-xdval env "ENCZA")) 2 2) " (end A)") "")
                                    (if (/= (cond ((dbk-xdval env "ENCZB")) ("")) "") (strcat " " (rtos (atof (dbk-xdval env "ENCZB")) 2 2) " (end B)") "")
                                    ", setting " (dbk-enclabel (cond ((dbk-xdval env "ENCH")) ("Auto"))))
-                           (if (dbk-xdval env "ENCH") "none" "not stored (bank built before MVP3; DBEDIT adds it)"))))
+                           (if (dbk-xdval env "ENCH") "none" "not stored (bank built before MVP3; DBEDIT adds it)"))
+                         ", concrete at bends: " (cond ((= (dbk-xdval env "BENDCONC") "Sweep") "swept") ((dbk-xdval env "BENDCONC") "chamfered") (T "swept (built before the chamfer option)"))))
         (dbk-say (strcat "  reference: " (cond ((null ref) "missing!")
                                                 ((= (dbk-xdval ref "REFPLAIN") "1") (strcat "plain " (cond ((dbk-xdval ref "REFTYPE")) ("route"))
                                                                                             " (no MED data), handle " (cdr (assoc 5 (entget ref)))))

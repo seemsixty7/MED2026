@@ -40,7 +40,8 @@ namespace MEDDotNet
         // controls
         TextBox _bank, _counts, _interval, _first, _covT, _covB, _covL, _covR, _covE, _gap, _topA, _topB, _sx, _sy, _transl, _straight, _scale, _tag, _tagPat;
         NumericUpDown _rows;
-        ComboBox _family, _sep, _part, _endA, _endB, _sectEnd, _mat, _size, _type, _refSizeCb, _refTypeCb, _enc;
+        ComboBox _family, _sep, _part, _endA, _endB, _sectEnd, _mat, _size, _type, _refSizeCb, _refTypeCb, _enc, _bends;
+        readonly ToolTip _tips = new ToolTip { AutoPopDelay = 15000, InitialDelay = 400 };
         CheckBox _wrap, _model3d, _sectPick;
         Label _refInfo, _pitch, _selLabel, _envelope, _status, _layerInfo, _encHint;
         Button _okBtn;
@@ -57,7 +58,8 @@ namespace MEDDotNet
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false; MinimizeBox = false; ShowInTaskbar = false;
             StartPosition = FormStartPosition.CenterParent;
-            ClientSize = new Size(1240, 864);
+            ClientSize = new Size(1240, 890);
+            FormClosed += (s, e) => _tips.Dispose();
             BackColor = SystemColors.Control;
             _loading = true;
             BuildLeft();
@@ -216,27 +218,35 @@ namespace MEDDotNet
             Lbl(g, "End", 210, 22); _covE = Txt(g, 244, 20, 44, "");
             Lbl(g, "Left", 10, 48); _covL = Txt(g, 52, 46, 44, "");
             Lbl(g, "Right", 104, 48); _covR = Txt(g, 158, 46, 44, "");
-            Lbl(g, "Min clear gap OD to OD", 10, 74); _gap = Txt(g, 158, 72, 44, "");
+            var gl = Lbl(g, "Min gap", 10, 74); _gap = Txt(g, 58, 72, 38, "");
+            _tips.SetToolTip(gl, "Minimum clear gap OD to OD (checks only)"); _tips.SetToolTip(_gap, "Minimum clear gap OD to OD (checks only)");
+            var bl = Lbl(g, "Bends", 104, 74); _bends = Cmb(g, 158, 72, 90, new[] { "Chamfer", "Sweep" });
+            const string bt = "Concrete at bends (plan bends and the stub-up turn-up):\nChamfer = straight chamfer on the outside, sized so the cover over the outermost elbow is never less than the side/top cover (inside on the chord of the cover arc).\nSweep = concrete follows the elbow arcs.";
+            _tips.SetToolTip(bl, bt); _tips.SetToolTip(_bends, bt);
             y += 108;
-            g = Group(this, "Stub-up zone", x, y, w, 272);
+            g = Group(this, "Stub-up zone", x, y, w, 298);
             Lbl(g, "End A", 10, 20); _endA = Cmb(g, 60, 20, 80, new[] { "Stubup", "Open" });
             Lbl(g, "top EL", 150, 20); _topA = Txt(g, 200, 20, 60, "");
             Lbl(g, "End B", 10, 46); _endB = Cmb(g, 60, 46, 80, new[] { "Stubup", "Open" });
             Lbl(g, "top EL", 150, 46); _topB = Txt(g, 200, 46, 60, "");
-            Lbl(g, "Stub pitch across / along", 10, 72); _sx = Txt(g, 170, 72, 50, ""); _sy = Txt(g, 226, 72, 50, "");
-            Lbl(g, "Transition / stub straight", 10, 98); _transl = Txt(g, 170, 98, 50, ""); _straight = Txt(g, 226, 98, 50, "");
-            Lbl(g, "Section at stub-up end", 10, 124); _sectEnd = Cmb(g, 170, 124, 50, new[] { "A", "B" });
-            Lbl(g, "Risers + stub elbows", 10, 152); _mat = Cmb(g, 140, 152, 150, new[] { "PVC-coated RGS", "Plain RGS" });
+            Lbl(g, "Stub pitch center to center (in)", 10, 72);
+            var la = Lbl(g, "across", 24, 98); _sx = Txt(g, 72, 98, 50, "");
+            var lb = Lbl(g, "along", 150, 98); _sy = Txt(g, 196, 98, 50, "");
+            foreach (Control c in new Control[] { la, _sx }) _tips.SetToolTip(c, "Stub-up pitch center to center across = column to column");
+            foreach (Control c in new Control[] { lb, _sy }) _tips.SetToolTip(c, "Stub-up pitch center to center along = row to row");
+            Lbl(g, "Transition / stub straight", 10, 124); _transl = Txt(g, 170, 124, 50, ""); _straight = Txt(g, 226, 124, 50, "");
+            Lbl(g, "Section at stub-up end", 10, 150); _sectEnd = Cmb(g, 170, 150, 50, new[] { "A", "B" });
+            Lbl(g, "Risers + stub elbows", 10, 178); _mat = Cmb(g, 140, 178, 150, new[] { "PVC-coated RGS", "Plain RGS" });
             _mat.SelectedIndexChanged += (s, e) => { if (_wrap != null) _wrap.Enabled = _mat.SelectedIndex == 1; };
-            _wrap = new CheckBox { Text = "Tape wrap plain RGS (note + BOM 174)", Left = 10, Top = 180, Width = 280 };
+            _wrap = new CheckBox { Text = "Tape wrap plain RGS (note + BOM 174)", Left = 10, Top = 206, Width = 280 };
             _wrap.CheckedChanged += (s, e) => Changed(); g.Controls.Add(_wrap);
-            Lbl(g, "Encasement top EL", 10, 206);
-            _enc = new ComboBox { Left = 140, Top = 206, Width = 90, DropDownStyle = ComboBoxStyle.DropDown };
+            Lbl(g, "Encasement top EL", 10, 232);
+            _enc = new ComboBox { Left = 140, Top = 232, Width = 90, DropDownStyle = ComboBoxStyle.DropDown };
             _enc.Items.Add("Auto"); _enc.Items.Add("Top");
             _enc.TextChanged += (s, e) => Changed(); g.Controls.Add(_enc);
-            Lbl(g, "(turn-up)", 236, 206).ForeColor = SystemColors.GrayText;
-            _encHint = Lbl(g, "", 10, 232, 285); _encHint.Height = 32; _encHint.ForeColor = SystemColors.GrayText;
-            y += 276;
+            Lbl(g, "(turn-up)", 236, 232).ForeColor = SystemColors.GrayText;
+            _encHint = Lbl(g, "", 10, 258, 285); _encHint.Height = 32; _encHint.ForeColor = SystemColors.GrayText;
+            y += 302;
             g = Group(this, "Output", x, y, w, 96);
             _model3d = new CheckBox { Text = "3D envelope + spacer solids", Left = 10, Top = 18, Width = 280 };
             _model3d.CheckedChanged += (s, e) => Changed(); g.Controls.Add(_model3d);
@@ -276,8 +286,8 @@ namespace MEDDotNet
             var rem = new Label { Left = 10, Top = 152, Width = 450, Height = 38, BackColor = Color.FromArgb(255, 248, 205), BorderStyle = BorderStyle.FixedSingle,
                 Text = "REMINDER: MED does not calculate cable fill, ampacity derating (mutual heating), voltage drop, pulling tension or burial depth." };
             g.Controls.Add(rem);
-            g = Group(this, "Envelope (last check)", x, 544, w, 266);
-            _envelope = new Label { Left = 10, Top = 22, Width = w - 20, Height = 236, Font = new Font("Consolas", 9f) };
+            g = Group(this, "Envelope (last check)", x, 544, w, 292);
+            _envelope = new Label { Left = 10, Top = 22, Width = w - 20, Height = 262, Font = new Font("Consolas", 9f) };
             g.Controls.Add(_envelope);
         }
         Button Btn(Control p, string t, int x, int y, int w, EventHandler h)
@@ -298,8 +308,8 @@ namespace MEDDotNet
             _cheat = new DoubleBufferedPanel { Left = 10, Top = 44, Width = w - 20, Height = 366, BackColor = Color.White, BorderStyle = BorderStyle.FixedSingle };
             _cheat.Paint += PaintCheat;
             g.Controls.Add(_cheat);
-            g = Group(this, "Checks", x, 430, w, 380);
-            _checks = new ListBox { Left = 10, Top = 20, Width = w - 20, Height = 352, DrawMode = DrawMode.OwnerDrawVariable, IntegralHeight = false, HorizontalScrollbar = false };
+            g = Group(this, "Checks", x, 430, w, 406);
+            _checks = new ListBox { Left = 10, Top = 20, Width = w - 20, Height = 378, DrawMode = DrawMode.OwnerDrawVariable, IntegralHeight = false, HorizontalScrollbar = false };
             _checks.MeasureItem += (s, e) => { var t = _checks.Items[e.Index].ToString(); var sz = e.Graphics.MeasureString(t, _checks.Font, _checks.Width - 24); e.ItemHeight = (int)Math.Ceiling(sz.Height) + 4; };
             _checks.DrawItem += DrawCheck;
             g.Controls.Add(_checks);
@@ -308,12 +318,12 @@ namespace MEDDotNet
         // ------------------------------------------------------------------ bottom
         void BuildBottom()
         {
-            _status = new Label { Left = 10, Top = 824, Width = 820, Height = 30, ForeColor = Color.FromArgb(0, 90, 0) };
+            _status = new Label { Left = 10, Top = 850, Width = 820, Height = 30, ForeColor = Color.FromArgb(0, 90, 0) };
             Controls.Add(_status);
-            var help = Btn(this, "Help", 836, 822, 90, (s, e) => ShowHelp());
-            var check = Btn(this, "Check", 932, 822, 90, (s, e) => Finish("CHECK"));
-            var ok = Btn(this, "OK", 1028, 822, 96, (s, e) => Finish("OK"));
-            var cancel = Btn(this, "Cancel", 1130, 822, 100, (s, e) => Finish("CANCEL"));
+            var help = Btn(this, "Help", 836, 848, 90, (s, e) => ShowHelp());
+            var check = Btn(this, "Check", 932, 848, 90, (s, e) => Finish("CHECK"));
+            var ok = Btn(this, "OK", 1028, 848, 96, (s, e) => Finish("OK"));
+            var cancel = Btn(this, "Cancel", 1130, 848, 100, (s, e) => Finish("CANCEL"));
             AcceptButton = ok; CancelButton = cancel;
             ok.Font = new Font(Font, FontStyle.Bold);
             if (_edit) ok.Text = "Rebuild";
@@ -345,6 +355,7 @@ namespace MEDDotNet
             _scale.Text = N(D(Get("SECTSCALE", "1")));
             _tagPat.Text = Get("TAGPAT", "{BANK}-{POS}");
             _enc.Text = Get("ENCH", "Auto");
+            Pick(_bends, Get("BENDCONC", "Chamfer").StartsWith("S", StringComparison.OrdinalIgnoreCase) ? "Sweep" : "Chamfer");
             if (Get("VIEW", "").ToUpperInvariant() == "STUB") _viewStub.Checked = true;
             if (_edit) { _bank.ReadOnly = true; _bank.BackColor = SystemColors.Control; }
             _refSizeCb.SelectedIndex = _refSizes.FindIndex(s => Math.Abs(s - _refSize) < 1e-6);
@@ -716,6 +727,7 @@ namespace MEDDotNet
             kv("STUBCODE", _mat.SelectedIndex == 1 ? "1" : "2"); kv("WRAP", _wrap.Checked ? "1" : "0");
             kv("MODEL3D", _model3d.Checked ? "1" : "0"); kv("SECTPICK", _sectPick.Checked ? "1" : "0"); kv("TAGPAT", _tagPat.Text.Trim());
             string ench = (_enc.Text ?? "").Trim();
+            kv("BENDCONC", (_bends.SelectedItem as string) ?? "Chamfer");
             kv("ENCH", ench == "" || ench.StartsWith("A", StringComparison.OrdinalIgnoreCase) ? "Auto" : ench.StartsWith("T", StringComparison.OrdinalIgnoreCase) ? "Top" : ench);
             if (_plain) { kv("REFSIZE", N(_refSize)); kv("REFCODE", _refCode.ToString()); }
             foreach (var p in _pos)
@@ -731,9 +743,11 @@ namespace MEDDotNet
                 "2. Click a card to set its tag, size and type; 'Size to all' / 'Type to all' copy the selected card.\n" +
                 "3. Spacers default to Carlon Snap-N-Stac (Auto part from the largest conduit and the separation).\n" +
                 "4. Stub-up risers and elbows default to PVC-coated RGS; plain RGS can be tape wrapped (WRAP note, BOM 174).\n" +
-                "5. Encasement top EL: the concrete turns up around the stub elbows and risers. Auto = top of the elbow sweep, Top = the stub-up top EL, or type an elevation.\n" +
-                "6. A plain 3D polyline / polyline / line can be the reference route: set its size and type in the Bank box.\n" +
-                "7. Check re-solves and refreshes the checks and envelope; OK solves and generates (blocked while there are errors).\n\n" +
+                "5. Stub pitch center to center: across = column to column, along = row to row (at the stub-ups; the trunk uses the spacer pitch).\n" +
+                "6. Encasement top EL: the concrete turns up around the stub elbows and risers. Auto = top of the elbow sweep, Top = the stub-up top EL, or type an elevation.\n" +
+                "7. Bends (Cover box): Chamfer (default) = straight concrete chamfer on the outside of each plan bend and of the stub-up turn-up, sized so every elbow keeps at least the side/top/end cover; Sweep = concrete follows the elbow arcs.\n" +
+                "8. A plain 3D polyline / polyline / line can be the reference route: set its size and type in the Bank box.\n" +
+                "9. Check re-solves and refreshes the checks and envelope; OK solves and generates (blocked while there are errors).\n\n" +
                 "DBEDIT reopens this dialog for an existing bank and rebuilds it in place (same ID) from the reference route on MED_DBREF.\n" +
                 "The envelope and spacer stations are also modelled as 3D solids on the 3DMEDModel- layer, which MEDMAKE3D pulls into the 3D export.\n" +
                 Med3DNotice.Text + "\n\nCommand-line versions: -DUCTBANK, -DBEDIT.",

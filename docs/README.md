@@ -37,6 +37,7 @@ LISP in `Support` still routes raceway, places details, tags, and extracts BOM.
 - [Cable](cable.md) — `MEDCABLE` palette (type then cable), related tag, lisp `CABLE` to draw
 - [Details / equipment](detail.md) — `DETAIL`, `LTG` / `GND` / `PWR` / `INS` / `TRY`, `DETAG`
 - [Detail conduit (two-line)](detail-conduit.md) — `2LCON`, away / toward / break
+- [Ductbank](ductbank.md) — `DUCTBANK` dialog / `-DUCTBANK`, stub-up material, 3D envelope and spacers
 - [Tagging](tagging.md) — `CTAG`, `TTAG`, balloons, section marks
 - [3D extract](3d.md) — `MEDMAKE3D`, `MAKE3DTRAY`, `M3D` / `C3D`, conduit bodies (`MEDCBINS`); overview in [3D guide](3d-guide.md), symbol matrix in [3d-fitting-matrix.md](3d-fitting-matrix.md)
 - [Utilities](utilities.md) — text, layers, leaders, quick keys

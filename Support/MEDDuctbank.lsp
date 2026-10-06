@@ -3,8 +3,12 @@
 ;;; Commands: DUCTBANK (build a bank from a routed reference conduit),
 ;;;           DBLIST (list a bank), DBDELETE (erase a bank, restore the reference),
 ;;;           DBSEED (add the ductbank fitting / spacer codes to MEDType).
-;;; Command-line flow (the WinForms grid dialog is a later phase). 2D plan + sections,
-;;; flat trunk only, no 3D. Underground defaults: encased PVC (code 3), 1" minimum,
+;;; DUCTBANK opens the MED-DotNet dialog (MED-DuctbankDialog); -DUCTBANK is the command-line
+;;; flow (also the fallback when the DLL is not loaded). 2D plan + sections, flat trunk; the
+;;; concrete envelope and spacer stations are also modelled as 3D solids on layer
+;;; <_MED3DMODELPREFIX>Ductbank (3DMEDModel-Ductbank), which MEDMAKE3D pulls into the 3D export.
+;;; Underground defaults: encased PVC (code 3), 1" minimum, stub-up risers and stub elbows
+;;; PVC-coated RGS (option: plain RGS, tape wrap noted),
 ;;; stock elbows R24 under 4" / R36 at 4" and up (nested rule may raise), no spacers
 ;;; in bends, elbows as broken segments carrying 3 MED_FITTING records
 ;;; (PVC-coated RGS elbow + adapter + adapter), Carlon Snap-N-Stac 2" separation,
@@ -13,7 +17,7 @@
 (princ "\nLoading MEDDuctbank...")
 (vl-load-com)
 (regapp "DBANK_DATA")
-(setq *DBK-VERSION* "2026-10-06 MVP1")
+(setq *DBK-VERSION* "2026-10-06 MVP2")
 
 ;;; ------------------------------------------------------------------ defaults
 ;;; med.spc may set any of these; the patch never overwrites med.spc, so every
@@ -33,7 +37,14 @@
 (dbk-def '_DBKSTUBSTRAIGHT 12.0)   ; straight between the last stub elbow and the transition
 (dbk-def '_DBKMINSIZE 1.0)         ; minimum underground conduit trade size
 (dbk-def '_DBKCONCODE 3)           ; straights: Rigid non-metallic (PVC)
-(dbk-def '_DBKRISERCODE 3)         ; stub-up risers above the vertical elbow
+(dbk-def '_DBKRISERCODE 2)         ; stub-up risers + stub elbows: 2 PVC-coated RGS, 1 plain RGS
+(dbk-def '_DBKSTUBWRAP 1)          ; plain RGS stub-ups: 1 = tape wrap noted (BOM code 174), 0 = no wrap
+(dbk-def '_DBKMODEL3D 1)           ; 1 = model the envelope + spacer stations as 3D solids
+(dbk-def '_DBKMODELSUFFIX "Ductbank") ; 3D model layer = _MED3DMODELPREFIX + this
+(dbk-def '_DBKSPTHICK 2.0)         ; spacer thickness along the run (3D model only)
+(dbk-def '_DBKUSEDIALOG 1)         ; DUCTBANK: 1 = grid dialog when MED-DotNet is loaded, 0 = always command line
+(dbk-def '_DBKSECTPICK 0)          ; dialog: 1 = pick the section location after OK
+(dbk-def '_MED3DMODELPREFIX "3DMEDModel-") ; shared with MEDMAKE3D (MED3DPath.lsp)
 (dbk-def '_DBKADAPTER 170)         ; PVC female adapter (elbow records 2 and 3)
 (dbk-def '_DBKREDUCERMODE "CENTER"); S287F / S287J: CENTER (assumed) or BOTTOM
 (dbk-def '_DBKTAGPAT "{BANK}-{POS}")
@@ -61,12 +72,18 @@
 (setq *DBK-ELBOWS* '((90 (24.0 . 160) (36.0 . 161) (48.0 . 162))
                      (45 (24.0 . 163) (36.0 . 164) (48.0 . 165))))
 (setq *DBK-STOCKR* '(24.0 36.0 48.0))
+;; plain RGS elbows (stub-ups with _DBKRISERCODE 1): existing MEDType 89/90/91 + seeded 166-169
+(setq *DBK-ELBOWS-RGS* '((90 (18.0 . 89) (24.0 . 90) (36.0 . 91) (48.0 . 166))
+                         (45 (24.0 . 167) (36.0 . 168) (48.0 . 169))))
+;; riser-side coupling of a stub elbow: PVC-coated RGS 173 (seeded), plain RGS 8 (existing)
+(setq *DBK-COUPLING* '((2 . 173) (1 . 8)))
+(setq *DBK-WRAPCODE* 174)               ; tape wrap, plain RGS stub-up (one record per stub-up)
 ;; PVC Sch 40 OD fallback when MEDConduitOD has no row
 (setq *DBK-PVCOD* '((0.5 . 0.840) (0.75 . 1.050) (1.0 . 1.315) (1.25 . 1.660) (1.5 . 1.900)
                     (2.0 . 2.375) (2.5 . 2.875) (3.0 . 3.500) (3.5 . 4.000) (4.0 . 4.500)
                     (5.0 . 5.563) (6.0 . 6.625)))
 ;; every FITTING code in Data\seed\ductbank_medtype.csv except 89 (an old row, filled by DBSEED)
-(setq *DBK-CODES* '(160 161 162 163 164 165 170 171 172) i 571)
+(setq *DBK-CODES* '(160 161 162 163 164 165 166 167 168 169 170 171 172 173 174) i 571)
 (while (>= i 521) (setq *DBK-CODES* (append *DBK-CODES* (list i)) i (1- i)))
 (setq *DBK-CODES* (vl-sort *DBK-CODES* '<) i nil)
 
@@ -123,6 +140,10 @@
         (setq r (substr (cdr it) (+ 2 (strlen key)))))))
   r)
 (defun dbk-joinstr (l sep / s) (setq s "") (foreach x l (setq s (if (= s "") x (strcat s sep x)))) s)
+(defun dbk-disclaimer ()
+  (if (= (type med3d-disclaimer) 'USUBR) (med3d-disclaimer)
+    (princ "\nNOTE: 3D models are approximations for layout and coordination only and are not reproductions of manufacturer specifications. Verify all dimensions against manufacturer data.")))
+(defun dbk-model-layer () (strcat (if (= (type _MED3DMODELPREFIX) 'STR) _MED3DMODELPREFIX "3DMEDModel-") _DBKMODELSUFFIX))
 (defun dbk-say (s) (princ (strcat "\n" s)))
 
 ;;; ------------------------------------------------------------------ prompts
@@ -168,6 +189,10 @@
 (defun dbk-elbow-code (deg r / tb)
   (setq tb (cdr (assoc (if (< (abs (- deg 45.0)) 0.5) 45 90) *DBK-ELBOWS*)))
   (cond ((cdr (assoc r tb))) (T (cdr (last tb)))))
+(defun dbk-stub-elbow-code (r mat / tb)
+  (if (= mat 1)
+    (progn (setq tb (cdr (assoc 90 *DBK-ELBOWS-RGS*))) (cond ((cdr (assoc r tb))) (T (cdr (last tb)))))
+    (dbk-elbow-code 90.0 r)))
 (defun dbk-sql-ok () (and MED-DotNet-Ready (MED-DotNet-Ready) MEDProcessSQLStatement))
 (defun dbk-missing-codes ( / res have)
   (if (dbk-sql-ok)
@@ -338,6 +363,19 @@
   (setq maxsize (dbk-max (mapcar '(lambda (p) (dbk-get p "SIZE")) pl))
         maxod (dbk-max (mapcar '(lambda (p) (dbk-get p "OD")) pl)))
   (setq part (dbk-spacer-part maxsize _DBKSEP))
+  ;; spacer part override (dialog Part / -DUCTBANK Options), else Auto
+  (setq k (dbk-get *DBK* "PARTOVR"))
+  (if (and (= (type k) 'STR) (/= k "") (/= (strcase k) "AUTO"))
+    (cond
+      ((null (setq s (assoc (strcase k) *DBK-SNAPNSTAC*)))
+        (setq flags (cons (strcat "Spacer part " k " is not in the Snap-N-Stac table: Auto part used.") flags)))
+      ((< (nth 1 s) (- maxsize 1e-6))
+        (setq errs (cons (strcat "Spacer part " (car s) " (" (dbk-sz (nth 1 s)) ") is smaller than the largest conduit ("
+                                 (dbk-sz maxsize) "): pick a larger part or Auto.") errs)))
+      (T (if (and part (> (nth 1 s) (+ (nth 1 part) 1e-6)))
+           (setq flags (cons (strcat "Spacer part " (car s) " chosen (Auto would be " (car part) ").") flags)))
+         (setq part s))))
+  (setq k nil s nil)
   (if part
     (setq pitchh (nth 5 part) pitchv (nth 4 part) seatbot (nth 6 part) partsz (nth 1 part) partod (nth 2 part))
     (setq pitchh (+ maxod _DBKMINGAP) pitchv (+ maxod _DBKMINGAP) seatbot _DBKCOVERBOT partsz nil partod nil
@@ -478,6 +516,11 @@
   (if (and part (> (abs (- (nth 7 part) (+ seatbot (/ partod 2.0)))) 0.01))
     (setq flags (cons (strcat "Catalog center " (dbk-r2 (nth 7 part)) "\" vs seat bottom + OD/2 = "
                               (dbk-r2 (+ seatbot (/ partod 2.0))) "\": seat rule used (verify with Carlon).") flags)))
+  (if (or stuba stubb)
+    (if (= (dbk-get *DBK* "STUBCODE") 1)
+      (setq flags (cons (if (= (dbk-get *DBK* "WRAP") 1)
+                          "Stub-ups are plain RGS: tape wrap noted at each stub-up (BOM code 174)."
+                          "Stub-ups are plain RGS, no wrap: verify corrosion protection where it enters the concrete / soil.") flags))))
   (if (/= (dbk-get *DBK* "REFCODE") _DBKCONCODE)
     (setq flags (cons (strcat "Reference conduit is " (dbk-typeabbr (dbk-get *DBK* "REFCODE")) " (code "
                               (itoa (dbk-get *DBK* "REFCODE")) "); bank positions default to encased PVC (code "
@@ -682,8 +725,16 @@
 (defun dbk-add (e) (if e (setq *DBK-HANDLES* (cons (cdr (assoc 5 (entget e))) *DBK-HANDLES*))) e)
 (defun dbk-xdpos (role bank p extra)
   (dbk-xd (append (list (strcat "ROLE=" role) (strcat "BANK=" bank) (strcat "POS=" (dbk-get p "POS"))) extra (list "GEN=1"))))
+;; plan bend: PVC-coated RGS elbow + 2 PVC female adapters (encased PVC both sides)
 (defun dbk-elbow-xd (code sz tag)
   (bld_fitting (list code _DBKADAPTER _DBKADAPTER) (list sz sz sz) (list tag tag tag) '(0.0 0.0 0.0) '(0.0 0.0 0.0) '(0.0 0.0 0.0)))
+;; stub-up elbow: elbow (coated or plain RGS) + PVC female adapter (trunk side) + RGS coupling
+;; (riser side, coated 173 / plain 8) + tape wrap 174 for a wrapped plain RGS stub-up
+(defun dbk-stub-elbow-xd (code sz tag mat wrap / codes)
+  (setq codes (list code _DBKADAPTER (cond ((cdr (assoc mat *DBK-COUPLING*))) (T 173))))
+  (if (and (= mat 1) wrap) (setq codes (append codes (list *DBK-WRAPCODE*))))
+  (bld_fitting codes (mapcar '(lambda (c) sz) codes) (mapcar '(lambda (c) tag) codes)
+               (mapcar '(lambda (c) 0.0) codes) (mapcar '(lambda (c) 0.0) codes) (mapcar '(lambda (c) 0.0) codes)))
 ;; one side of the plan outline (start-based lateral ext), list of (pt2d bulge)
 (defun dbk-side (ext exta extb g / out ci dl cr rr stuba stubb sza szb face)
   (setq stuba (= (dbk-get *DBK* "ENDA") "Stubup") stubb (= (dbk-get *DBK* "ENDB") "Stubup")
@@ -709,13 +760,14 @@
 
 (defun dbk-generate (secpt / pl bank conlay lt sgn stuba stubb sza szb segs topa topb p tag sz code od zc rels relt
                        along rv crn cur v e xdc sa ha hv ctr k ent part stations st pp center wdt codes sizes tags a
-                       nsta env lsd rsd gl gr q cut x0 y0 sc ins ws vtx bnd clines nconds nelb nfit)
+                       nsta env lsd rsd gl gr q cut x0 y0 sc ins ws vtx bnd clines nconds nelb nfit mat wrap ecode m3d)
   (setq pl (dbk-get *DBK* "PL") bank (dbk-get *DBK* "BANK") part (dbk-get *DBKS* "PART")
         sgn (dbk-get *DBKS* "SGN") stuba (= (dbk-get *DBK* "ENDA") "Stubup") stubb (= (dbk-get *DBK* "ENDB") "Stubup")
         sza (dbk-get *DBKS* "SZA") szb (dbk-get *DBKS* "SZB") segs *DBK-SEGS*
         topa (dbk-get *DBK* "TOPA") topb (dbk-get *DBK* "TOPB")
         conlay (dbk-get *DBK* "REFLAYER") lt (if U_CON (dbk-ltype U_CON)) nconds 0 nelb 0 nfit 0
-        *DBK-HANDLES* nil)
+        *DBK-HANDLES* nil mat (if (= (dbk-get *DBK* "STUBCODE") 1) 1 2)
+        wrap (and (= mat 1) (= (dbk-get *DBK* "WRAP") 1)))
   (foreach ly '(("MED_DBENVELOPE" 8) ("MED_DBSPACER" 4) ("MED_DBSECTION" 7) ("MED_DBSTUB" 6) ("MED_DBTEXT" 2) ("MED_DBREF" 8))
     (dbk-layer (car ly) (cadr ly)))
   (dbk-spacer-block)
@@ -759,7 +811,8 @@
           (dbk-add (dbk-mk-lw conlay (list (nth 0 a) (nth 1 a)) (list (nth 2 a) 0.0) zc '(0.0 0.0 1.0) nil
                               (list (dbk-elbow-xd (dbk-elbow-code (dbk-deg (nth 6 a)) (nth 5 a)) sz tag)
                                     (dbk-xdpos "ELBOW" bank p (list (strcat "PART=BEND" (itoa k)) (strcat "RAD=" (rtos (nth 5 a) 2 2))
-                                                                    (strcat "ANG=" (rtos (dbk-deg (nth 6 a)) 2 2))))) lt))
+                                                                    (strcat "ANG=" (rtos (dbk-deg (nth 6 a)) 2 2))
+                                                                    (strcat "OD=" (dbk-r4 (dbk-od 2 sz))) "MAT=2"))) lt))
           (setq nelb (1+ nelb) nfit (+ nfit 3) cur (list (list (nth 1 a) 0.0 nil)) k (1+ k)))))
     (dbk-add (dbk-mk-lw conlay (mapcar 'car cur) (mapcar '(lambda (x) 0.0) cur) zc '(0.0 0.0 1.0) nil
                         (list (bld_conduit code sz tag nil "T") (dbk-xdpos "CONDUIT" bank p (append xdc (list (strcat "PART=RUN" (itoa k)))))) lt))
@@ -771,16 +824,25 @@
             (setq sa (dbk-pa along rels) ha (dbk-pa (+ along rv) rels) q topa)
             (setq sa (dbk-pb along rels) ha (dbk-pb (+ along rv) rels) q topb))
           (setq hv (dbk-p3 sa (+ zc rv)) ctr (dbk-p3 ha (+ zc rv)))
+          (setq ecode (dbk-stub-elbow-code rv mat))
           (dbk-add (dbk-mk-varc conlay (dbk-p3 ha zc) hv ctr
-                                (list (dbk-elbow-xd (dbk-elbow-code 90.0 rv) sz tag)
-                                      (dbk-xdpos "ELBOW" bank p (list (strcat "PART=STUB" end) (strcat "RAD=" (rtos rv 2 2)) "ANG=90.00"))) lt))
-          (setq nelb (1+ nelb) nfit (+ nfit 3))
+                                (list (dbk-stub-elbow-xd ecode sz tag mat wrap)
+                                      (dbk-xdpos "ELBOW" bank p (list (strcat "PART=STUB" end) (strcat "RAD=" (rtos rv 2 2)) "ANG=90.00"
+                                                                      (strcat "OD=" (dbk-r4 (dbk-od mat sz))) (strcat "MAT=" (itoa mat))
+                                                                      (strcat "WRAP=" (if wrap "1" "0"))))) lt))
+          (setq nelb (1+ nelb) nfit (+ nfit (if wrap 4 3)))
           (if (> (- q (+ zc rv)) 0.01)
             (progn
               (dbk-add (dbk-mk-3dp conlay (list (dbk-p3 sa q) hv)
-                                   (list (bld_conduit _DBKRISERCODE sz tag nil "T") (dbk-xdpos "RISER" bank p (list (strcat "PART=RISER" end)))) lt))
+                                   (list (bld_conduit mat sz tag nil "T")
+                                         (dbk-xdpos "RISER" bank p (list (strcat "PART=RISER" end) (strcat "MAT=" (itoa mat))
+                                                                         (strcat "WRAP=" (if wrap "1" "0"))))) lt))
               (setq nconds (1+ nconds))))
-          (dbk-add (dbk-mk-circle "MED_DBSTUB" (dbk-p3 sa q) (/ od 2.0) (list (dbk-xdpos "STUB" bank p (list (strcat "END=" end))))))
+          (dbk-add (dbk-mk-circle "MED_DBSTUB" (dbk-p3 sa q) (/ (dbk-od mat sz) 2.0) (list (dbk-xdpos "STUB" bank p (list (strcat "END=" end))))))
+          (if wrap
+            (dbk-add (dbk-mk-text "MED_DBTEXT" (dbk-p3 (dbk-v+ sa (list (* 0.6 (dbk-od mat sz)) (* -0.6 (dbk-od mat sz)))) q)
+                                  (min _DBKPLANTEXT (* 0.2 od)) "WRAP" 0.0
+                                  (list (dbk-xd (list "ROLE=TEXT" (strcat "BANK=" bank) "NOTE=WRAP"))))))
           (dbk-add (dbk-mk-text "MED_DBTEXT" (dbk-p3 sa q) (min _DBKPLANTEXT (* 0.3 od)) (dbk-get p "POS") 0.0
                                 (list (dbk-xd (list "ROLE=TEXT" (strcat "BANK=" bank))))))))))
   ;; spacer stations: DBSPACER inserts across the trunk envelope carrying one MED_FITTING record per piece
@@ -848,6 +910,8 @@
                                 (if part (strcat ", " (car part) " @ " (rtos (/ _DBKSPINT 12.0) 2 1) "' O.C.") ""))
                         (+ (angle '(0.0 0.0) (cadr pp)) (if (> (cos (angle '(0.0 0.0) (cadr pp))) -0.01) 0.0 pi))
                         (list (dbk-xd (list "ROLE=TEXT" (strcat "BANK=" bank))))))
+  ;; 3D model (envelope + spacer stations) on <_MED3DMODELPREFIX>Ductbank, before the envelope record
+  (setq m3d (if (= (dbk-get *DBK* "MODEL3D") 1) (dbk-model-3d vtx bnd bank)))
   ;; envelope outline last: carries the bank record and every member handle (1005)
   (setq env (dbk-mk-lw "MED_DBENVELOPE" vtx bnd (dbk-get *DBKS* "TOP") '(0.0 0.0 1.0) T
               (list (dbk-xd (append
@@ -865,10 +929,13 @@
                       (strcat "WT=" (dbk-r4 (dbk-get *DBKS* "WT"))) (strcat "WS=" (dbk-r4 (dbk-get *DBKS* "WS")))
                       (strcat "HT=" (dbk-r4 (dbk-get *DBKS* "H"))) (strcat "TOPZ=" (dbk-r4 (dbk-get *DBKS* "TOP")))
                       (strcat "BOTZ=" (dbk-r4 (dbk-get *DBKS* "BOT"))) (strcat "STATIONS=" (itoa nsta))
+                      (strcat "STUBMAT=" (itoa mat)) (strcat "WRAP=" (if wrap "1" "0"))
+                      (strcat "PARTOVR=" (cond ((dbk-get *DBK* "PARTOVR")) ("Auto")))
+                      (strcat "MODEL3D=" (if m3d (itoa (+ (car m3d) (cadr m3d))) "0"))
                       (strcat "REFH=" (cdr (assoc 5 (entget ent)))))
                 (mapcar '(lambda (h) (cons 1005 h)) (reverse *DBK-HANDLES*)))))
               nil))
-  (list env (length *DBK-HANDLES*) nconds nelb nfit nsta))
+  (list env (length *DBK-HANDLES*) nconds nelb nfit nsta m3d))
 
 ;;; section drawing at q (bottom-left of the envelope); returns (entities width)
 (defun dbk-spx (xv) (+ (car *DBK-SQ*) (* (- xv *DBK-SVL*) *DBK-SSC*)))
@@ -885,16 +952,8 @@
   (setq ents (list (dbk-mk-rect "MED_DBENVELOPE" (dbk-spx vl) (dbk-spy bot) (dbk-spx vr) (dbk-spy top) 0.0 xds)))
   ;; spacer pieces (trunk): piece k covers columns 2k+1 and 2k+2; view x = (col - refcol) * pitch
   (if (and part (= kind "TRUNK"))
-    (progn
-      (setq ph (nth 5 part) tier 1 refcol (dbk-get (dbk-findpos pl (dbk-get *DBK* "REFPOS")) "COL"))
-      (repeat (dbk-get *DBK* "ROWS")
-        (setq cnt (length (vl-remove-if-not '(lambda (p) (= (dbk-get p "TIER") tier)) pl)) k 0)
-        (setq zs (dbk-get (car (vl-remove-if-not '(lambda (p) (= (dbk-get p "TIER") tier)) pl)) "ZS"))
-        (repeat (dbk-ceil (/ cnt 2.0))
-          (setq xa (- (* (- (+ (* 2 k) 1) refcol) ph) (/ ph 2.0)) xb (+ xa (nth 8 part)))
-          (setq y0 (if (= tier 1) bot (- zs (nth 3 part))) y1 (+ zs (/ (nth 2 part) 2.0)))
-          (setq ents (cons (dbk-mk-rect "MED_DBSPACER" (dbk-spx xa) (dbk-spy y0) (dbk-spx xb) (dbk-spy y1) 0.0 xds) ents) k (1+ k)))
-        (setq tier (1+ tier)))))
+    (foreach pc (dbk-trunk-pieces)
+      (setq ents (cons (dbk-mk-rect "MED_DBSPACER" (dbk-spx (nth 0 pc)) (dbk-spy (nth 2 pc)) (dbk-spx (nth 1 pc)) (dbk-spy (nth 3 pc)) 0.0 xds) ents))))
   ;; conduits at actual OD, position IDs
   (foreach p pl
     (setq x (* sgn (dbk-get p lat)))
@@ -919,6 +978,231 @@
                                    xds) ents)
           i (1+ i)))
   (list ents (* sc (- vr vl))))
+
+;;; ------------------------------------------------------------------ 3D model
+;;; Spacer pieces in section-view coordinates: list of (xa xb y0 y1); view x = sgn * lateral.
+;;; Piece k of a tier covers columns 2k+1, 2k+2 (view x = (col - refcol) * pitch).
+(defun dbk-trunk-pieces ( / pl part ph tier cnt k refcol zs xa xb y0 y1 out bot)
+  (setq pl (dbk-get *DBK* "PL") part (dbk-get *DBKS* "PART") bot (dbk-get *DBKS* "BOT"))
+  (if part
+    (progn
+      (setq ph (nth 5 part) tier 1 refcol (dbk-get (dbk-findpos pl (dbk-get *DBK* "REFPOS")) "COL"))
+      (repeat (dbk-get *DBK* "ROWS")
+        (setq cnt (length (vl-remove-if-not '(lambda (p) (= (dbk-get p "TIER") tier)) pl)) k 0)
+        (setq zs (dbk-get (car (vl-remove-if-not '(lambda (p) (= (dbk-get p "TIER") tier)) pl)) "ZS"))
+        (repeat (dbk-ceil (/ cnt 2.0))
+          (setq xa (- (* (- (+ (* 2 k) 1) refcol) ph) (/ ph 2.0)) xb (+ xa (nth 8 part)))
+          (setq y0 (if (= tier 1) bot (- zs (nth 3 part))) y1 (+ zs (/ (nth 2 part) 2.0)))
+          (setq out (cons (list xa xb y0 y1) out) k (1+ k)))
+        (setq tier (1+ tier)))))
+  (reverse out))
+;; entities created after mark (entlast before the command), main entities only
+(defun dbk-ents-after (mark / e out)
+  (setq e (if mark (entnext mark) (entnext)))
+  (while e
+    (if (not (member (cdr (assoc 0 (entget e))) '("VERTEX" "SEQEND" "ATTRIB"))) (setq out (cons e out)))
+    (setq e (entnext e)))
+  (reverse out))
+(defun dbk-ss (ents / ss) (setq ss (ssadd)) (foreach e ents (if (entget e) (ssadd e ss))) ss)
+(defun dbk-tag3d (e layer xd / ed)
+  (if (and e (setq ed (entget e)))
+    (progn
+      (setq ed (subst (cons 8 layer) (assoc 8 ed) ed))
+      (entmod (append ed (list (list -3 xd))))))
+  e)
+;; profile in the plane through WCS point o with normal n (3D), from section points (lat z):
+;; lateral axis m (2D), so WCS = o + m*lat + Z*z; returns OCS points + elevation
+(defun dbk-ocs-pts (o m n pts / w)
+  (mapcar '(lambda (q) (setq w (list (+ (car o) (* (car m) (car q))) (+ (cadr o) (* (cadr m) (car q))) (+ (caddr o) (cadr q))))
+             (trans w 0 n)) pts))
+(defun dbk-extrude (ent h / mark)
+  (setq mark (entlast))
+  (command "_.EXTRUDE" "_MO" "_SO" ent "" h)
+  (car (dbk-ents-after mark)))
+;; returns (nEnvelopeSolids nSpacerSolids); every solid tagged DBANK_DATA and added to the bank
+(defun dbk-model-3d (vtx bnd bank / lay oldce oldos olddel oldcmd e env n st pp dir m nrm o th sgn pls pts ocs
+                                   pieces cyls sol ss mark ok p lat z r)
+  (setq lay (dbk-model-layer) n 0 th _DBKSPTHICK sgn (dbk-get *DBKS* "SGN"))
+  (if (not (tblsearch "LAYER" lay))
+    (entmake (list '(0 . "LAYER") '(100 . "AcDbSymbolTableRecord") '(100 . "AcDbLayerTableRecord")
+                   (cons 2 lay) '(70 . 0) '(62 . 8) '(6 . "Continuous") '(290 . 0))))
+  (setq oldce (getvar "CMDECHO") oldos (getvar "OSMODE") olddel (getvar "DELOBJ"))
+  (setvar "CMDECHO" 0) (setvar "OSMODE" 0) (setvar "DELOBJ" 3)
+  ;; concrete envelope: the plan outline (stub zones, tapers and bends included) at the bottom
+  ;; of the concrete, extruded up the full height
+  (setq e (dbk-mk-lw lay vtx bnd (dbk-get *DBKS* "BOT") '(0.0 0.0 1.0) T nil nil))
+  (if e (setq env (dbk-extrude e (dbk-get *DBKS* "H"))))
+  (if (and env (entget env) (= (cdr (assoc 0 (entget env))) "3DSOLID"))
+    (dbk-add (dbk-tag3d env lay (dbk-xd (list "ROLE=ENV3D" (strcat "BANK=" bank) "GEN=1"
+                                              (strcat "HT=" (dbk-r4 (dbk-get *DBKS* "H")))))))
+    (progn (setq env nil) (if (and e (entget e)) (entdel e))
+           (dbk-say "  3D envelope could not be extruded (outline left in 2D only).")))
+  ;; spacer stations: pieces (rectangles in the section plane) extruded by the spacer thickness,
+  ;; unioned, minus a cylinder per conduit seat
+  (if (dbk-get *DBKS* "PART")
+    (foreach st (dbk-get *DBKS* "STATIONS")
+      (setq pp (dbk-pathpt st) dir (list (car (cadr pp)) (cadr (cadr pp)) 0.0) m (caddr pp)
+            o (list (- (car (car pp)) (* (car dir) (/ th 2.0))) (- (cadr (car pp)) (* (cadr dir) (/ th 2.0))) 0.0)
+            pieces nil cyls nil)
+      (foreach pc (dbk-trunk-pieces)
+        (setq pts (dbk-ocs-pts o m dir (list (list (* sgn (nth 0 pc)) (nth 2 pc)) (list (* sgn (nth 1 pc)) (nth 2 pc))
+                                             (list (* sgn (nth 1 pc)) (nth 3 pc)) (list (* sgn (nth 0 pc)) (nth 3 pc)))))
+        (if (setq e (dbk-mk-lw lay pts '(0.0 0.0 0.0 0.0) (caddr (car pts)) dir T nil nil))
+          (if (and (setq sol (dbk-extrude e th)) (= (cdr (assoc 0 (entget sol))) "3DSOLID"))
+            (setq pieces (cons sol pieces)))))
+      (foreach p (dbk-get *DBK* "PL")
+        ;; seat cylinder a little longer than the spacer so the subtraction has no coplanar faces
+        (setq ocs (car (dbk-ocs-pts (mapcar '(lambda (a b) (- a (* 0.1 b))) o dir) m dir
+                                    (list (list (dbk-get p "RELT") (dbk-get p "ZC"))))))
+        (if (and (entmake (list '(0 . "CIRCLE") (cons 8 lay) (cons 10 ocs) (cons 40 (/ (dbk-get p "OD") 2.0)) (cons 210 dir)))
+                 (setq sol (dbk-extrude (entlast) (+ th 0.2))) (= (cdr (assoc 0 (entget sol))) "3DSOLID"))
+          (setq cyls (cons sol cyls))))
+      (if pieces
+        (progn
+          (if (cdr pieces) (progn (setq mark (entlast)) (command "_.UNION" (dbk-ss pieces) "")
+                                  (setq pieces (vl-remove-if-not 'entget pieces))))
+          (if cyls (command "_.SUBTRACT" (dbk-ss pieces) "" (dbk-ss cyls) ""))
+          (foreach c cyls (if (entget c) (entdel c)))
+          (foreach sol (vl-remove-if-not 'entget pieces)
+            (dbk-add (dbk-tag3d sol lay (dbk-xd (list "ROLE=SPACER3D" (strcat "BANK=" bank) "GEN=1"
+                                                      (strcat "STA=" (dbk-r2 st)) (strcat "PART=" (car (dbk-get *DBKS* "PART")))))))
+            (setq n (1+ n)))))))
+  (setvar "DELOBJ" olddel) (setvar "OSMODE" oldos) (setvar "CMDECHO" oldce)
+  (list (if env 1 0) n))
+
+;;; ------------------------------------------------------------------ dialog bridge
+;;; DUCTBANK <-> MED-DuctbankDialog (MED-DotNet, MedDuctbankForm): one text block of KEY=VALUE
+;;; lines each way. Lists use | between fields. The form never touches the drawing; LISP
+;;; solves, the form shows inputs, lookups and the last solve, and returns the edited inputs
+;;; with ACTION=OK / CHECK / CANCEL.
+(defun dbk-kv (k v) (strcat k "=" (cond ((= (type v) 'STR) v) ((= (type v) 'INT) (itoa v)) ((numberp v) (dbk-r4 v)) ((null v) "") (T (vl-princ-to-string v)))))
+(defun dbk-bar (l) (dbk-joinstr (mapcar '(lambda (x) (cond ((= (type x) 'STR) x) ((= (type x) 'INT) (itoa x)) ((numberp x) (dbk-r4 x)) (T ""))) l) "|"))
+(defun dbk-split (s d / out i)
+  (while (setq i (vl-string-search d s)) (setq out (cons (substr s 1 i) out) s (substr s (+ i 1 (strlen d)))))
+  (reverse (cons s out)))
+(defun dbk-dlg-codes ( / res out)
+  (if (dbk-sql-ok)
+    (progn
+      (setq res (vl-catch-all-apply 'MEDProcessSQLStatement (list "SELECT ITEMCODE, ITEMDESC FROM MEDType WHERE ITEMTYPE='CONDUIT' ORDER BY ITEMCODE")))
+      (if (and (listp res) (not (vl-catch-all-error-p res)))
+        (foreach r (cdr res)
+          (if (and (listp r) (car r))
+            (setq out (cons (list (if (= (type (car r)) 'STR) (atoi (car r)) (fix (car r))) (vl-princ-to-string (cadr r))) out)))))))
+  (if (not out)
+    (setq out (reverse '((1 "Rigid Steel Conduit") (2 "Plastic Coated Rigid Steel Conduit") (3 "Rigid Non-Metalic Conduit")
+                         (4 "Electrical Metalic Tubing") (6 "Intermediate Metal Conduit")))))
+  (reverse out))
+(defun dbk-dlg-sizes ( / l)
+  (setq l (if _CONSIZE_LIST _CONSIZE_LIST '(0.5 0.75 1.0 1.25 1.5 2.0 2.5 3.0 3.5 4.0 5.0 6.0)))
+  (vl-sort (vl-remove-if '(lambda (s) (< s (- _DBKMINSIZE 1e-6))) (mapcar 'float l)) '<))
+(defun dbk-summary-lines ( / part out rvs)
+  (setq part (dbk-get *DBKS* "PART") rvs (mapcar '(lambda (p) (dbk-get p "RV")) (dbk-get *DBK* "PL")))
+  (setq out (list (strcat "Trunk W x H: " (dbk-r2 (dbk-get *DBKS* "WT")) " x " (dbk-r2 (dbk-get *DBKS* "H")) " in")
+                  (strcat "Top of concrete EL " (dbk-r2 (dbk-get *DBKS* "TOP")) ", bottom EL " (dbk-r2 (dbk-get *DBKS* "BOT")))))
+  (if (or (= (dbk-get *DBK* "ENDA") "Stubup") (= (dbk-get *DBK* "ENDB") "Stubup"))
+    (setq out (append out (list (strcat "Stub zone W: " (dbk-r2 (dbk-get *DBKS* "WS")) " in, transition " (dbk-r2 _DBKTRANSL)
+                                        " in (taper " (rtos (dbk-get *DBKS* "TAPER") 2 1) " deg)")
+                                (strcat "Stub elbows R" (rtos (dbk-min rvs) 2 0) (if (> (dbk-max rvs) (dbk-min rvs)) (strcat "-R" (rtos (dbk-max rvs) 2 0)) "")
+                                        ", " (if (= (dbk-get *DBK* "STUBCODE") 1)
+                                               (strcat "plain RGS" (if (= (dbk-get *DBK* "WRAP") 1) " (wrapped)" "")) "PVC-coated RGS"))))))
+  (setq out (append out (list (if part (strcat "Spacer " (car part) ": " (itoa (length (dbk-get *DBKS* "STATIONS"))) " stations x "
+                                               (itoa (dbk-get *DBKS* "PIECES")) " pieces, pitch " (dbk-r2 (nth 5 part)) " x " (dbk-r2 (nth 4 part)))
+                                "Spacer: none (no Snap-N-Stac part for this size)")
+                              (strcat "Bank length along the route: " (rtos (/ (dbk-get *DBKS* "LEN") 12.0) 2 1) " ft"))))
+  out)
+(defun dbk-spec-out ( / out pl sgn bot sizes codes part ref)
+  (setq pl (dbk-get *DBK* "PL") sgn (dbk-get *DBKS* "SGN") bot (dbk-get *DBKS* "BOT") part (dbk-get *DBKS* "PART")
+        sizes (dbk-dlg-sizes) codes (dbk-dlg-codes) ref (dbk-get *DBK* "REFENT"))
+  (setq out (list (dbk-kv "VER" *DBK-VERSION*)
+                  (strcat "REF=" (dbk-bar (list (dbk-get *DBK* "REFTAG") (dbk-get *DBK* "REFSIZE") (dbk-get *DBK* "REFCODE")
+                                                (cdr (assoc 5 (entget ref))) (dbk-get *DBK* "REFLAYER") (length *DBK-SEGS*) (length *DBK-CORNERS*)
+                                                (dbk-get *DBK* "ZREF"))))
+                  (dbk-kv "BANK" (dbk-get *DBK* "BANK")) (dbk-kv "ROWS" (dbk-get *DBK* "ROWS"))
+                  (dbk-kv "COUNTS" (dbk-joinstr (mapcar 'itoa (dbk-get *DBK* "COUNTS")) ","))
+                  (dbk-kv "REFPOS" (dbk-get *DBK* "REFPOS"))
+                  (dbk-kv "ENDA" (dbk-get *DBK* "ENDA")) (dbk-kv "ENDB" (dbk-get *DBK* "ENDB"))
+                  (dbk-kv "TOPA" (dbk-get *DBK* "TOPA")) (dbk-kv "TOPB" (dbk-get *DBK* "TOPB"))
+                  (dbk-kv "SX" (dbk-get *DBK* "SX")) (dbk-kv "SY" (dbk-get *DBK* "SY")) (dbk-kv "SECTEND" (dbk-get *DBK* "SECTEND"))
+                  (dbk-kv "FAMILY" "Carlon Snap-N-Stac") (dbk-kv "SEP" _DBKSEP) (dbk-kv "PART" (cond ((dbk-get *DBK* "PARTOVR")) ("Auto")))
+                  (dbk-kv "COVT" _DBKCOVERTOP) (dbk-kv "COVB" _DBKCOVERBOT) (dbk-kv "COVL" _DBKCOVERLEFT) (dbk-kv "COVR" _DBKCOVERRIGHT)
+                  (dbk-kv "COVE" _DBKCOVEREND) (dbk-kv "MINGAP" _DBKMINGAP) (dbk-kv "SPINT" _DBKSPINT) (dbk-kv "SPEND" _DBKSPEND)
+                  (dbk-kv "TRANSL" _DBKTRANSL) (dbk-kv "STUBSTR" _DBKSTUBSTRAIGHT) (dbk-kv "SECTSCALE" _DBKSECTSCALE)
+                  (dbk-kv "STUBCODE" (dbk-get *DBK* "STUBCODE")) (dbk-kv "WRAP" (dbk-get *DBK* "WRAP"))
+                  (dbk-kv "MODEL3D" (dbk-get *DBK* "MODEL3D")) (dbk-kv "SECTPICK" (dbk-get *DBK* "SECTPICK"))
+                  (dbk-kv "MODELLAYER" (dbk-model-layer)) (dbk-kv "TAGPAT" _DBKTAGPAT)
+                  (dbk-kv "MINSIZE" _DBKMINSIZE) (dbk-kv "CONCODE" _DBKCONCODE)
+                  (dbk-kv "SIZES" (dbk-joinstr (mapcar 'dbk-r4 sizes) ","))))
+  (foreach c codes (setq out (append out (list (strcat "CODE=" (dbk-bar (list (car c) (dbk-typeabbr (car c)) (cadr c))))))))
+  (foreach r *DBK-SNAPNSTAC* (setq out (append out (list (strcat "CAT=" (dbk-bar r))))))
+  ;; OD table for the preview (codes in use + 1/2/3)
+  (foreach c (dbk-uniq (append '(3 2 1) (mapcar '(lambda (p) (dbk-get p "CODE")) pl)))
+    (foreach s sizes (setq out (append out (list (strcat "OD=" (dbk-bar (list c s (dbk-od c s)))))))))
+  (foreach p pl
+    (setq out (append out (list (strcat "POS=" (dbk-bar (list (dbk-get p "POS") (dbk-tag p) (dbk-get p "SIZE") (dbk-get p "CODE")
+                                                         (if (dbk-get p "TAG") "C" "D"))))))))
+  ;; last solve
+  (setq out (append out (list (dbk-kv "SOLVEDPART" (if part (car part) "NONE")) (dbk-kv "PITCHH" (dbk-get *DBKS* "PITCHH"))
+                              (dbk-kv "PITCHV" (dbk-get *DBKS* "PITCHV")) (dbk-kv "SEATBOT" (dbk-get *DBKS* "SEATBOT"))
+                              (strcat "ENVT=" (dbk-bar (list (min (* sgn (dbk-get *DBKS* "LEXT")) (* sgn (dbk-get *DBKS* "REXT")))
+                                                             (max (* sgn (dbk-get *DBKS* "LEXT")) (* sgn (dbk-get *DBKS* "REXT")))
+                                                             0.0 (dbk-get *DBKS* "H"))))
+                              (strcat "ENVS=" (dbk-bar (list (min (* sgn (dbk-get *DBKS* "LSA")) (* sgn (dbk-get *DBKS* "RSA")))
+                                                             (max (* sgn (dbk-get *DBKS* "LSA")) (* sgn (dbk-get *DBKS* "RSA")))))))))
+  (foreach p pl
+    (setq out (append out (list (strcat "PZ=" (dbk-bar (list (dbk-get p "POS") (* sgn (dbk-get p "RELT")) (* sgn (dbk-get p "RELS"))
+                                                        (- (dbk-get p "ZC") bot) (dbk-get p "OD") (dbk-get p "RV"))))))))
+  (foreach pc (dbk-trunk-pieces)
+    (setq out (append out (list (strcat "PIECE=" (dbk-bar (list (nth 0 pc) (nth 1 pc) (- (nth 2 pc) bot) (- (nth 3 pc) bot))))))))
+  (foreach s (dbk-summary-lines) (setq out (append out (list (strcat "SUM=" s)))))
+  (foreach s (dbk-get *DBKS* "ERRS") (setq out (append out (list (strcat "ERR=" s)))))
+  (foreach s (dbk-get *DBKS* "FLAGS") (setq out (append out (list (strcat "FLAG=" s)))))
+  (dbk-joinstr out "\n"))
+
+;; apply the dialog result; returns "OK", "CHECK" or "CANCEL"
+(defun dbk-spec-in (txt / kv act k v rows counts poss f p)
+  (foreach ln (dbk-split txt "\n")
+    (setq ln (vl-string-trim "\r " ln))
+    (if (setq k (vl-string-search "=" ln))
+      (progn (setq v (substr ln (+ k 2)) k (strcase (substr ln 1 k)))
+             (if (= k "POS") (setq poss (cons v poss)) (setq kv (cons (cons k v) kv))))))
+  (setq act (strcase (cond ((cdr (assoc "ACTION" kv))) ("CANCEL"))))
+  (if (/= act "CANCEL")
+    (progn
+      (defun dbk-kvn (k d / v) (if (and (setq v (cdr (assoc k kv))) (/= v "")) (atof v) d))
+      (defun dbk-kvs (k d / v) (if (and (setq v (cdr (assoc k kv))) (/= v "")) v d))
+      (setq *DBK* (dbk-put *DBK* "BANK" (strcase (dbk-kvs "BANK" (dbk-get *DBK* "BANK")))))
+      (setq rows (fix (dbk-kvn "ROWS" (dbk-get *DBK* "ROWS")))
+            counts (mapcar 'atoi (dbk-split (dbk-kvs "COUNTS" (dbk-joinstr (mapcar 'itoa (dbk-get *DBK* "COUNTS")) ",")) ",")))
+      (setq rows (max 1 (min 9 rows)) counts (mapcar '(lambda (c) (max 1 (min 12 c))) counts))
+      (while (< (length counts) rows) (setq counts (append counts (list (last counts)))))
+      (while (> (length counts) rows) (setq counts (reverse (cdr (reverse counts)))))
+      (if (or (/= rows (dbk-get *DBK* "ROWS")) (not (equal counts (dbk-get *DBK* "COUNTS")))) (dbk-reshape rows counts))
+      (foreach s (reverse poss)
+        (setq f (dbk-split s "|"))
+        (if (setq p (dbk-findpos (dbk-get *DBK* "PL") (car f)))
+          (progn
+            (if (and (nth 2 f) (> (atof (nth 2 f)) 0.0)) (dbk-setpos (car f) "SIZE" (atof (nth 2 f))))
+            (if (and (nth 3 f) (> (atoi (nth 3 f)) 0)) (dbk-setpos (car f) "CODE" (atoi (nth 3 f))))
+            (dbk-setpos (car f) "TAG" (if (and (= (nth 4 f) "C") (/= (nth 1 f) "")) (nth 1 f) nil)))))
+      (setq v (strcase (dbk-kvs "REFPOS" (dbk-get *DBK* "REFPOS"))))
+      (if (dbk-findpos (dbk-get *DBK* "PL") v) (setq *DBK* (dbk-put *DBK* "REFPOS" v)))
+      (foreach k '("ENDA" "ENDB") (setq *DBK* (dbk-put *DBK* k (if (= (strcase (dbk-kvs k (dbk-get *DBK* k))) "STUBUP") "Stubup" "Open"))))
+      (foreach k '("TOPA" "TOPB" "SX" "SY") (setq *DBK* (dbk-put *DBK* k (dbk-kvn k (dbk-get *DBK* k)))))
+      (setq *DBK* (dbk-put *DBK* "SECTEND" (if (= (strcase (dbk-kvs "SECTEND" "A")) "B") "B" "A")))
+      (if (and (= (dbk-get *DBK* "SECTEND") "A") (/= (dbk-get *DBK* "ENDA") "Stubup") (= (dbk-get *DBK* "ENDB") "Stubup"))
+        (setq *DBK* (dbk-put *DBK* "SECTEND" "B")))
+      (if (and (= (dbk-get *DBK* "SECTEND") "B") (/= (dbk-get *DBK* "ENDB") "Stubup") (= (dbk-get *DBK* "ENDA") "Stubup"))
+        (setq *DBK* (dbk-put *DBK* "SECTEND" "A")))
+      (setq *DBK* (dbk-put *DBK* "PARTOVR" (dbk-kvs "PART" "Auto")))
+      (foreach k '("STUBCODE" "WRAP" "MODEL3D" "SECTPICK") (setq *DBK* (dbk-put *DBK* k (fix (dbk-kvn k (dbk-get *DBK* k))))))
+      (if (/= (dbk-get *DBK* "STUBCODE") 1) (setq *DBK* (dbk-put *DBK* "STUBCODE" 2)))
+      (setq _DBKSEP (dbk-kvn "SEP" _DBKSEP) _DBKCOVERTOP (dbk-kvn "COVT" _DBKCOVERTOP) _DBKCOVERBOT (dbk-kvn "COVB" _DBKCOVERBOT)
+            _DBKCOVERLEFT (dbk-kvn "COVL" _DBKCOVERLEFT) _DBKCOVERRIGHT (dbk-kvn "COVR" _DBKCOVERRIGHT) _DBKCOVEREND (dbk-kvn "COVE" _DBKCOVEREND)
+            _DBKMINGAP (dbk-kvn "MINGAP" _DBKMINGAP) _DBKSPINT (dbk-kvn "SPINT" _DBKSPINT) _DBKSPEND (dbk-kvn "SPEND" _DBKSPEND)
+            _DBKTRANSL (dbk-kvn "TRANSL" _DBKTRANSL) _DBKSTUBSTRAIGHT (dbk-kvn "STUBSTR" _DBKSTUBSTRAIGHT)
+            _DBKSECTSCALE (dbk-kvn "SECTSCALE" _DBKSECTSCALE) _DBKTAGPAT (dbk-kvs "TAGPAT" _DBKTAGPAT))
+      (setq *DBK-LASTSX* (dbk-get *DBK* "SX") *DBK-LASTSY* (dbk-get *DBK* "SY"))))
+  act)
 
 ;;; ------------------------------------------------------------------ commands
 (defun dbk-all-banks ( / ss i b out)
@@ -970,8 +1254,8 @@
   done)
 
 (defun dbk-options ( / k)
-  (initget "Cover Gap Interval Transition Stubstraight Separation Scale Done")
-  (setq k (getkword "\nOptions [Cover/Gap/Interval/Transition/Stubstraight/Separation/Scale/Done] <Done>: "))
+  (initget "Cover Gap Interval Transition STRaight SEparation Part STUbmaterial Model3d SCale Done")
+  (setq k (getkword "\nOptions [Cover/Gap/Interval/Transition/STRaight/SEparation/Part/STUbmaterial/Model3d/SCale/Done] <Done>: "))
   (cond
     ((= k "Cover")
       (setq _DBKCOVERTOP (dbk-ask-real "Cover top" _DBKCOVERTOP) _DBKCOVERBOT (dbk-ask-real "Cover bottom (minimum)" _DBKCOVERBOT)
@@ -979,30 +1263,35 @@
     ((= k "Gap") (setq _DBKMINGAP (dbk-ask-real "Minimum clear gap OD to OD" _DBKMINGAP)))
     ((= k "Interval") (setq _DBKSPINT (dbk-ask-real "Spacer interval" _DBKSPINT) _DBKSPEND (dbk-ask-real "First station from a trunk end" _DBKSPEND)))
     ((= k "Transition") (setq _DBKTRANSL (dbk-ask-real "Transition length" _DBKTRANSL)))
-    ((= k "Stubstraight") (setq _DBKSTUBSTRAIGHT (dbk-ask-real "Straight between the stub elbows and the transition" _DBKSTUBSTRAIGHT)))
-    ((= k "Separation") (setq _DBKSEP (atof (dbk-ask-kw "Snap-N-Stac separation" "1.5 2 3" (rtos _DBKSEP 2 1)))))
-    ((= k "Scale") (setq _DBKSECTSCALE (dbk-ask-real "Section scale factor" _DBKSECTSCALE))))
+    ((= k "STRaight") (setq _DBKSTUBSTRAIGHT (dbk-ask-real "Straight between the stub elbows and the transition" _DBKSTUBSTRAIGHT)))
+    ((= k "SEparation") (setq _DBKSEP (atof (dbk-ask-kw "Snap-N-Stac separation" "1.5 2 3" (rtos _DBKSEP 2 1)))))
+    ((= k "Part")
+      (setq k (strcase (dbk-ask-str (strcat "Spacer part (Auto or " (dbk-joinstr (mapcar 'car *DBK-SNAPNSTAC*) " ") ")")
+                                    (cond ((dbk-get *DBK* "PARTOVR")) ("Auto")))))
+      (setq *DBK* (dbk-put *DBK* "PARTOVR" (if (= k "AUTO") "Auto" k))))
+    ((= k "STUbmaterial")
+      (setq k (dbk-ask-kw "Stub-up risers + elbows" "Coated Rgs" (if (= (dbk-get *DBK* "STUBCODE") 1) "Rgs" "Coated")))
+      (setq *DBK* (dbk-put *DBK* "STUBCODE" (if (= k "Rgs") 1 2)))
+      (if (= k "Rgs")
+        (setq *DBK* (dbk-put *DBK* "WRAP" (if (= "Yes" (dbk-ask-kw "Tape wrap the plain RGS stub-ups" "Yes No"
+                                                                  (if (= (dbk-get *DBK* "WRAP") 1) "Yes" "No"))) 1 0)))))
+    ((= k "Model3d")
+      (setq *DBK* (dbk-put *DBK* "MODEL3D" (if (= "Yes" (dbk-ask-kw (strcat "3D envelope + spacer solids on " (dbk-model-layer)) "Yes No"
+                                                                  (if (= (dbk-get *DBK* "MODEL3D") 1) "Yes" "No"))) 1 0))))
+    ((= k "SCale") (setq _DBKSECTSCALE (dbk-ask-real "Section scale factor" _DBKSECTSCALE))))
   (princ))
 
-(defun c:DUCTBANK ( / *error* ent md geo z topa topb pl counts rows cnt refpos k v miss secpt res info done)
-  (dbk-undo T)
-  (defun *error* (msg)
-    (if (and msg (not (wcmatch (strcase msg T) "*break*,*cancel*,*exit*"))) (dbk-say (strcat "DUCTBANK error: " msg)))
-    (dbk-undo nil) (princ))
-  (dbk-say (strcat "DUCTBANK " *DBK-VERSION* ": underground ductbank from a routed reference conduit (2D plan + sections, no 3D)."))
-  (dbk-say "  Defaults: encased PVC, 1\" min, Carlon Snap-N-Stac 2\" sep, spacers every 8 ft, cover 3\" top/bottom 2\" sides.")
-  (setq miss (dbk-missing-codes))
-  (if (and miss (listp miss))
-    (dbk-say (strcat "  Note: " (itoa (length miss)) " ductbank fitting/spacer codes are not in MEDType yet (BOM rows show no"
-                     " description). Run DBSEED once to add them.")))
-  (setq ent (dbk-pick "Select reference MED conduit"))
+;;; ------------------------------------------------------------------ DUCTBANK / -DUCTBANK
+;;; Shared setup: validate the reference and fill *DBK* with defaults (no prompts), so the user
+;;; mostly sets tags and sizes. Returns T when the reference is usable.
+(defun dbk-setup-ref (ent / md geo z topa topb info rows cnt counts v)
   (cond
-    ((null ent) (dbk-say "Cancelled."))
-    ((not (setq md (xdataget ent "MED_CONDUIT"))) (dbk-say "That entity has no MED_CONDUIT data."))
-    ((dbk-xdval ent "ROLE") (dbk-say (strcat "That entity already belongs to bank " (cond ((dbk-xdval ent "BANK")) ("?")) ". Use DBDELETE first.")))
-    ((= (type (setq geo (dbk-ref-geom ent))) 'STR) (dbk-say (strcat "Cannot use this reference: " geo ".")))
+    ((null ent) (dbk-say "Cancelled.") nil)
+    ((not (setq md (xdataget ent "MED_CONDUIT"))) (dbk-say "That entity has no MED_CONDUIT data.") nil)
+    ((dbk-xdval ent "ROLE") (dbk-say (strcat "That entity already belongs to bank " (cond ((dbk-xdval ent "BANK")) ("?")) ". Use DBDELETE first.")) nil)
+    ((= (type (setq geo (dbk-ref-geom ent))) 'STR) (dbk-say (strcat "Cannot use this reference: " geo ".")) nil)
     ((vl-some '(lambda (c) (> (dbk-deg (nth 5 c)) 135.0)) (dbk-corners (dbk-segs (car geo))))
-      (dbk-say "Cannot use this reference: a plan bend is sharper than 135 deg."))
+      (dbk-say "Cannot use this reference: a plan bend is sharper than 135 deg.") nil)
     (T
       (setq *DBK-SEGS* (dbk-segs (car geo)) *DBK-CORNERS* (dbk-corners *DBK-SEGS*)
             z (cadr geo) topa (caddr geo) topb (cadddr geo) info (nth 4 geo))
@@ -1015,64 +1304,166 @@
                        (if topa (strcat ": vertical stub up to elevation " (dbk-r2 topa)) ": no vertical leg")
                        ".  End B " (dbk-r2 (car (last (car geo)))) "," (dbk-r2 (cadr (last (car geo))))
                        (if topb (strcat ": vertical stub up to elevation " (dbk-r2 topb)) ": no vertical leg") "."))
+      (setq rows (if *DBK-LASTROWS* *DBK-LASTROWS* 2) cnt (if *DBK-LASTCNT* *DBK-LASTCNT* 4) counts nil)
+      (repeat rows (setq counts (cons cnt counts)))
+      (setq v (dbk-spacer-part (max _DBKMINSIZE (nth 2 md)) _DBKSEP))
       (setq *DBK* (list (cons "REFENT" ent) (cons "REFTAG" (nth 1 md)) (cons "REFSIZE" (nth 2 md)) (cons "REFCODE" (nth 3 md))
                         (cons "REFDIST" (nth 4 md)) (cons "REFMESR" (nth 5 md)) (cons "ZREF" z)
-                        (cons "REFLAYER" (cdr (assoc 8 (entget ent))))))
-      (setq *DBK* (dbk-put *DBK* "BANK" (strcase (dbk-ask-str "Bank ID" (dbk-next-bank)))))
-      (setq rows (dbk-ask-int "Number of rows (deep)" (if *DBK-LASTROWS* *DBK-LASTROWS* 2) 1 9))
-      (setq k 1 cnt (if *DBK-LASTCNT* *DBK-LASTCNT* 4) counts nil)
-      (repeat rows
-        (setq cnt (dbk-ask-int (strcat "Conduits in row " (chr (+ 64 k)) (cond ((= rows 1) "") ((= k 1) " (top)") ((= k rows) " (bottom)") (T "")))
-                               cnt 1 12))
-        (setq counts (append counts (list cnt)) k (1+ k)))
-      (setq *DBK-LASTROWS* rows *DBK-LASTCNT* (car counts))
-      (setq *DBK* (dbk-put (dbk-put *DBK* "ROWS" rows) "COUNTS" counts))
-      (setq pl (dbk-make-poslist counts (max _DBKMINSIZE (nth 2 md))))
-      (setq refpos nil)
-      (while (not refpos)
-        (setq v (strcase (dbk-ask-str "Reference conduit position (row letter + column, e.g. B1)" (dbk-posid rows 1))))
-        (if (dbk-findpos pl v) (setq refpos v) (dbk-say "  No such position in this bank.")))
-      (setq *DBK* (dbk-put (dbk-put *DBK* "PL" pl) "REFPOS" refpos))
-      (setq *DBK* (dbk-put *DBK* "ENDA" (dbk-ask-kw "End A (reference start)" "Stubup Open" (if topa "Stubup" "Open"))))
-      (if (and (= (dbk-get *DBK* "ENDA") "Stubup") (not topa)) (setq topa (dbk-ask-real "End A stub-up top elevation" (+ z 48.0))))
-      (setq *DBK* (dbk-put *DBK* "ENDB" (dbk-ask-kw "End B (reference end)" "Stubup Open" (if topb "Stubup" "Open"))))
-      (if (and (= (dbk-get *DBK* "ENDB") "Stubup") (not topb)) (setq topb (dbk-ask-real "End B stub-up top elevation" (+ z 48.0))))
-      (setq *DBK* (dbk-put (dbk-put *DBK* "TOPA" topa) "TOPB" topb))
-      (if (or (= (dbk-get *DBK* "ENDA") "Stubup") (= (dbk-get *DBK* "ENDB") "Stubup"))
-        (progn
-          (setq v (dbk-spacer-part (max _DBKMINSIZE (nth 2 md)) _DBKSEP))
-          (setq *DBK* (dbk-put *DBK* "SX" (dbk-ask-real "Stub-up pitch across (center to center)" (if *DBK-LASTSX* *DBK-LASTSX* (if v (nth 5 v) 6.0)))))
-          (setq *DBK* (dbk-put *DBK* "SY" (dbk-ask-real "Stub-up pitch along the run (row to row)" (if *DBK-LASTSY* *DBK-LASTSY* (dbk-get *DBK* "SX")))))
-          (setq *DBK-LASTSX* (dbk-get *DBK* "SX") *DBK-LASTSY* (dbk-get *DBK* "SY")))
-        (setq *DBK* (dbk-put (dbk-put *DBK* "SX" 6.0) "SY" 6.0)))
-      (setq *DBK* (dbk-put *DBK* "SECTEND"
-                    (cond ((and (= (dbk-get *DBK* "ENDA") "Stubup") (= (dbk-get *DBK* "ENDB") "Stubup"))
-                            (dbk-ask-kw "Section at stub-up end (columns are numbered looking from that end)" "A B" "A"))
-                          ((= (dbk-get *DBK* "ENDB") "Stubup") "B")
-                          (T "A"))))
-      (setq done (dbk-edit-loop))
-      (if (= done "GO")
-        (progn
-          (setq secpt (getpoint "\nSection drawing location <auto, right of the bank>: "))
-          (if secpt (setq secpt (trans secpt 1 0)))
-          (setq res (dbk-generate secpt))
-          (dbk-say (strcat "Bank " (dbk-get *DBK* "BANK") " built: " (itoa (length (dbk-get *DBK* "PL"))) " conduit positions ("
-                           (itoa (nth 2 res)) " MED_CONDUIT segments, " (itoa (nth 3 res)) " elbow segments = " (itoa (nth 4 res))
-                           " fitting records), " (itoa (nth 5 res)) " spacer stations, envelope and sections; "
-                           (itoa (nth 1 res)) " member entities."))
-          (dbk-say (strcat "  Reference " (dbk-get *DBK* "REFTAG") " moved to layer MED_DBREF as the route guide (not in BOM); DBDELETE restores it."))
-          (foreach s (dbk-get *DBKS* "FLAGS") (dbk-say (strcat "  FLAG: " s)))
-          (dbk-say "  REMINDER: cables come later. MED does not calculate cable fill, ampacity derating (mutual heating),")
-          (dbk-say "  voltage drop, pulling tension / sidewall pressure or burial depth. Check them for every circuit in the bank."))
-        (dbk-say "Cancelled; nothing drawn."))))
+                        (cons "REFLAYER" (cdr (assoc 8 (entget ent))))
+                        (cons "BANK" (dbk-next-bank)) (cons "ROWS" rows) (cons "COUNTS" counts)
+                        (cons "PL" (dbk-make-poslist counts (max _DBKMINSIZE (nth 2 md))))
+                        (cons "REFPOS" (dbk-posid rows 1))
+                        (cons "ENDA" (if topa "Stubup" "Open")) (cons "ENDB" (if topb "Stubup" "Open"))
+                        (cons "TOPA" (if topa topa (+ z 48.0))) (cons "TOPB" (if topb topb (+ z 48.0)))
+                        (cons "HASTOPA" (if topa T)) (cons "HASTOPB" (if topb T))
+                        (cons "SX" (if *DBK-LASTSX* *DBK-LASTSX* (if v (nth 5 v) 6.0)))
+                        (cons "SY" (if *DBK-LASTSY* *DBK-LASTSY* (if v (nth 5 v) 6.0)))
+                        (cons "SECTEND" (if (and topb (not topa)) "B" "A"))
+                        (cons "PARTOVR" "Auto") (cons "STUBCODE" (if (= _DBKRISERCODE 1) 1 2))
+                        (cons "WRAP" (if (= _DBKSTUBWRAP 1) 1 0)) (cons "MODEL3D" (if (= _DBKMODEL3D 1) 1 0))
+                        (cons "SECTPICK" (if (= _DBKSECTPICK 1) 1 0))))
+      T)))
+
+;; rebuild the position list for new rows/counts, keeping what was set on surviving positions
+(defun dbk-reshape (rows counts / old pl size)
+  (setq old (dbk-get *DBK* "PL") size (max _DBKMINSIZE (dbk-get *DBK* "REFSIZE")))
+  (setq pl (mapcar '(lambda (p / o) (if (setq o (dbk-findpos old (dbk-get p "POS"))) o p)) (dbk-make-poslist counts size)))
+  (setq *DBK* (dbk-put (dbk-put (dbk-put *DBK* "ROWS" rows) "COUNTS" counts) "PL" pl))
+  (if (not (dbk-findpos pl (dbk-get *DBK* "REFPOS"))) (setq *DBK* (dbk-put *DBK* "REFPOS" (dbk-posid rows 1))))
+  (setq *DBK-LASTROWS* rows *DBK-LASTCNT* (car counts)))
+
+;; command-line inputs (-DUCTBANK): every prompt defaults to the setup value
+(defun dbk-text-inputs ( / rows k cnt counts v refpos topa topb)
+  (setq *DBK* (dbk-put *DBK* "BANK" (strcase (dbk-ask-str "Bank ID" (dbk-get *DBK* "BANK")))))
+  (setq rows (dbk-ask-int "Number of rows (deep)" (dbk-get *DBK* "ROWS") 1 9))
+  (setq k 1 cnt (car (dbk-get *DBK* "COUNTS")) counts nil)
+  (repeat rows
+    (setq cnt (dbk-ask-int (strcat "Conduits in row " (chr (+ 64 k)) (cond ((= rows 1) "") ((= k 1) " (top)") ((= k rows) " (bottom)") (T "")))
+                           cnt 1 12))
+    (setq counts (append counts (list cnt)) k (1+ k)))
+  (dbk-reshape rows counts)
+  (setq refpos nil)
+  (while (not refpos)
+    (setq v (strcase (dbk-ask-str "Reference conduit position (row letter + column, e.g. B1)" (dbk-get *DBK* "REFPOS"))))
+    (if (dbk-findpos (dbk-get *DBK* "PL") v) (setq refpos v) (dbk-say "  No such position in this bank.")))
+  (setq *DBK* (dbk-put *DBK* "REFPOS" refpos))
+  (setq *DBK* (dbk-put *DBK* "ENDA" (dbk-ask-kw "End A (reference start)" "Stubup Open" (dbk-get *DBK* "ENDA"))))
+  (if (and (= (dbk-get *DBK* "ENDA") "Stubup") (not (dbk-get *DBK* "HASTOPA")))
+    (setq *DBK* (dbk-put *DBK* "TOPA" (dbk-ask-real "End A stub-up top elevation" (dbk-get *DBK* "TOPA")))))
+  (setq *DBK* (dbk-put *DBK* "ENDB" (dbk-ask-kw "End B (reference end)" "Stubup Open" (dbk-get *DBK* "ENDB"))))
+  (if (and (= (dbk-get *DBK* "ENDB") "Stubup") (not (dbk-get *DBK* "HASTOPB")))
+    (setq *DBK* (dbk-put *DBK* "TOPB" (dbk-ask-real "End B stub-up top elevation" (dbk-get *DBK* "TOPB")))))
+  (if (or (= (dbk-get *DBK* "ENDA") "Stubup") (= (dbk-get *DBK* "ENDB") "Stubup"))
+    (progn
+      (setq *DBK* (dbk-put *DBK* "SX" (dbk-ask-real "Stub-up pitch across (center to center)" (dbk-get *DBK* "SX"))))
+      (setq *DBK* (dbk-put *DBK* "SY" (dbk-ask-real "Stub-up pitch along the run (row to row)" (dbk-get *DBK* "SY"))))
+      (setq *DBK-LASTSX* (dbk-get *DBK* "SX") *DBK-LASTSY* (dbk-get *DBK* "SY"))))
+  (setq *DBK* (dbk-put *DBK* "SECTEND"
+                (cond ((and (= (dbk-get *DBK* "ENDA") "Stubup") (= (dbk-get *DBK* "ENDB") "Stubup"))
+                        (dbk-ask-kw "Section at stub-up end (columns are numbered looking from that end)" "A B" (dbk-get *DBK* "SECTEND")))
+                      ((= (dbk-get *DBK* "ENDB") "Stubup") "B")
+                      (T "A")))))
+
+;; build + report (both flows)
+(defun dbk-build (secpt / res m3d)
+  (setq res (dbk-generate secpt) m3d (nth 6 res))
+  (dbk-say (strcat "Bank " (dbk-get *DBK* "BANK") " built: " (itoa (length (dbk-get *DBK* "PL"))) " conduit positions ("
+                   (itoa (nth 2 res)) " MED_CONDUIT segments, " (itoa (nth 3 res)) " elbow segments = " (itoa (nth 4 res))
+                   " fitting records), " (itoa (nth 5 res)) " spacer stations, envelope and sections; "
+                   (itoa (nth 1 res)) " member entities."))
+  (dbk-say (strcat "  Stub-ups: " (if (= (dbk-get *DBK* "STUBCODE") 1)
+                                     (strcat "plain RGS risers and stub elbows" (if (= (dbk-get *DBK* "WRAP") 1) ", tape wrap noted (WRAP text, BOM code 174)." ", no wrap."))
+                                     "PVC-coated RGS risers and stub elbows.")))
+  (if m3d
+    (progn
+      (dbk-say (strcat "  3D model on layer " (dbk-model-layer) ": " (itoa (car m3d)) " envelope solid, " (itoa (cadr m3d))
+                       " spacer station solid(s); MEDMAKE3D includes every " (if (= (type _MED3DMODELPREFIX) 'STR) _MED3DMODELPREFIX "3DMEDModel-")
+                       "* layer."))
+      (dbk-disclaimer)))
+  (dbk-say (strcat "  Reference " (dbk-get *DBK* "REFTAG") " moved to layer MED_DBREF as the route guide (not in BOM); DBDELETE restores it."))
+  (foreach s (dbk-get *DBKS* "FLAGS") (dbk-say (strcat "  FLAG: " s)))
+  (dbk-say "  REMINDER: cables come later. MED does not calculate cable fill, ampacity derating (mutual heating),")
+  (dbk-say "  voltage drop, pulling tension / sidewall pressure or burial depth. Check them for every circuit in the bank.")
+  res)
+
+(defun dbk-start-msg (cmd / miss)
+  (dbk-say (strcat cmd " " *DBK-VERSION* ": underground ductbank from a routed reference conduit (2D plan + sections"
+                   (if (= _DBKMODEL3D 1) ", 3D envelope + spacers" "") ")."))
+  (dbk-say "  Defaults: encased PVC, 1\" min, Carlon Snap-N-Stac 2\" sep, spacers every 8 ft, cover 3\" top/bottom 2\" sides, PVC-coated RGS stub-ups.")
+  (setq miss (dbk-missing-codes))
+  (if (and miss (listp miss))
+    (dbk-say (strcat "  Note: " (itoa (length miss)) " ductbank fitting/spacer codes are not in MEDType yet (BOM rows show no"
+                     " description). Run DBSEED once to add them."))))
+
+(defun dbk-run-text ( / done secpt)
+  (dbk-text-inputs)
+  (setq done (dbk-edit-loop))
+  (if (= done "GO")
+    (progn
+      (setq secpt (getpoint "\nSection drawing location <auto, right of the bank>: "))
+      (if secpt (setq secpt (trans secpt 1 0)))
+      (dbk-build secpt))
+    (dbk-say "Cancelled; nothing drawn.")))
+
+;;; -DUCTBANK: command-line version (standard AutoCAD dash convention), also DUCTBANK's fallback
+(defun c:-DUCTBANK ( / *error*)
+  (dbk-undo T)
+  (defun *error* (msg)
+    (if (and msg (not (wcmatch (strcase msg T) "*break*,*cancel*,*exit*"))) (dbk-say (strcat "DUCTBANK error: " msg)))
+    (dbk-undo nil) (princ))
+  (dbk-start-msg "-DUCTBANK")
+  (if (dbk-setup-ref (dbk-pick "Select reference MED conduit")) (dbk-run-text))
   (dbk-undo nil)
   (princ))
 
-(defun c:DBLIST ( / e bank ents env p pos role lens sta recs len)
+(defun dbk-dialog-available ( / r)
+  (and (/= _DBKUSEDIALOG 0) MED-DuctbankDialogAvailable
+       (setq r (vl-catch-all-apply 'MED-DuctbankDialogAvailable nil))
+       (not (vl-catch-all-error-p r)) (if (listp r) (car r) r) T))
+
+;;; DUCTBANK: pick the reference, then the grid dialog (MED-DotNet); text flow if the DLL is not loaded
+(defun c:DUCTBANK ( / *error* res act secpt)
+  (dbk-undo T)
+  (defun *error* (msg)
+    (if (and msg (not (wcmatch (strcase msg T) "*break*,*cancel*,*exit*"))) (dbk-say (strcat "DUCTBANK error: " msg)))
+    (dbk-undo nil) (princ))
+  (dbk-start-msg "DUCTBANK")
+  (if (dbk-setup-ref (dbk-pick "Select reference MED conduit"))
+    (if (not (dbk-dialog-available))
+      (progn (dbk-say "  (Ductbank dialog not available: MED-DotNet not loaded. Command-line flow, same as -DUCTBANK.)")
+             (dbk-run-text))
+      (progn
+        (while (not act)
+          (dbk-solve)
+          (setq res (vl-catch-all-apply 'MED-DuctbankDialog (list (dbk-spec-out))))
+          ;; a one-item ResultBuffer comes back as a list ("ACTION=...") in full AutoCAD
+          (if (and (= (type res) 'LIST) (= (type (car res)) 'STR)) (setq res (car res)))
+          (cond
+            ((or (vl-catch-all-error-p res) (/= (type res) 'STR))
+              (dbk-say (strcat "  Ductbank dialog failed" (if (vl-catch-all-error-p res) (strcat ": " (vl-catch-all-error-message res)) "")
+                               "; command-line flow."))
+              (setq act "TEXT"))
+            (T
+              (setq act (dbk-spec-in res))
+              (cond ((= act "CHECK") (setq act nil))
+                    ((= act "OK") (dbk-solve) (if (dbk-get *DBKS* "ERRS") (setq act nil)))))))
+        (cond
+          ((= act "TEXT") (dbk-run-text))
+          ((= act "OK")
+            (dbk-print-grid)
+            (if (= (dbk-get *DBK* "SECTPICK") 1)
+              (progn (setq secpt (getpoint "\nSection drawing location <auto, right of the bank>: "))
+                     (if secpt (setq secpt (trans secpt 1 0)))))
+            (dbk-build secpt))
+          (T (dbk-say "Cancelled; nothing drawn."))))))
+  (dbk-undo nil)
+  (princ))
+
+(defun c:DBLIST ( / e bank ents env p pos role lens sta recs len n3d)
   (setq e (dbk-pick "Select any part of a ductbank"))
   (if (and e (setq bank (dbk-xdval e "BANK")))
     (progn
-      (setq ents (dbk-bank-ents bank))
+      (setq ents (dbk-bank-ents bank) n3d 0)
       (foreach x ents
         (setq role (dbk-xdval x "ROLE") pos (dbk-xdval x "POS"))
         (cond
@@ -1084,20 +1475,24 @@
           ((= role "ELBOW")
             (setq p (assoc pos lens) lens (if p (subst (list pos (cadr p) (caddr p) (1+ (nth 3 p))) p lens)
                                               (cons (list pos 0.0 nil 1) lens))))
-          ((= role "SPACER") (setq sta (cons x sta)))))
+          ((= role "SPACER") (setq sta (cons x sta)))
+          ((member role '("ENV3D" "SPACER3D")) (setq n3d (1+ n3d)))))
       (dbk-say (strcat "Ductbank " bank ": " (itoa (length ents)) " entities"))
       (if env
         (dbk-say (strcat "  rows " (dbk-xdval env "ROWS") " (" (dbk-xdval env "COUNTS") "), reference " (dbk-xdval env "REFPOS")
                          ", spacer " (dbk-xdval env "SPACER") " every " (dbk-xdval env "SPINT") "\", trunk W x H "
                          (rtos (atof (dbk-xdval env "WT")) 2 2) " x " (rtos (atof (dbk-xdval env "HT")) 2 2)
-                         ", stub zone W " (rtos (atof (dbk-xdval env "WS")) 2 2))))
+                         ", stub zone W " (rtos (atof (dbk-xdval env "WS")) 2 2)
+                         (if (= (dbk-xdval env "STUBMAT") "1") (strcat ", plain RGS stub-ups" (if (= (dbk-xdval env "WRAP") "1") " (wrapped)" ""))
+                           ", PVC-coated RGS stub-ups"))))
       (foreach x (vl-sort lens '(lambda (a b) (< (car a) (car b))))
         (dbk-say (strcat "  " (car x) "  " (if (caddr x) (nth 1 (caddr x)) "?") "  " (if (caddr x) (dbk-sz (nth 2 (caddr x))) "")
                          " code " (if (caddr x) (itoa (nth 3 (caddr x))) "?") "  conduit " (rtos (cadr x) 2 2) "\" ("
                          (rtos (/ (cadr x) 12.0) 2 2) "')  elbows " (itoa (nth 3 x)))))
       (setq recs 0)
       (foreach x sta (setq recs (+ recs (/ (length (cdr (xdataget x "MED_FITTING"))) 6))))
-      (dbk-say (strcat "  Spacer stations: " (itoa (length sta)) " (" (itoa recs) " spacer / strap / reducer records)")))
+      (dbk-say (strcat "  Spacer stations: " (itoa (length sta)) " (" (itoa recs) " spacer / strap / reducer records)"))
+      (dbk-say (strcat "  3D model solids (" (dbk-model-layer) "): " (itoa n3d))))
     (if e (dbk-say "That entity is not part of a ductbank.")))
   (princ))
 
@@ -1185,5 +1580,5 @@
                                  (if (listp r) (itoa (length r)) "?"))))))))))
   (princ))
 
-(princ "\rMEDDuctbank loaded: DUCTBANK DBLIST DBDELETE DBSEED (2D plan + sections, no 3D).")
+(princ "\rMEDDuctbank loaded: DUCTBANK (dialog) -DUCTBANK (command line) DBLIST DBDELETE DBSEED.")
 (princ)

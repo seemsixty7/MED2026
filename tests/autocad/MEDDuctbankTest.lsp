@@ -39,14 +39,46 @@
   (dbkt-w (strcat "Elbow segments: " (itoa (length elbows)) "  spacer stations: " (itoa (length spacers))))
   (dbkt-check "MED_CONDUIT segments = expected" (= nmed *DBKT-SEGS*) (strcat (itoa nmed) " vs " (itoa *DBKT-SEGS*)))
   (dbkt-check "elbow segments = expected" (= (length elbows) *DBKT-ELBOWS*) (strcat (itoa (length elbows)) " vs " (itoa *DBKT-ELBOWS*)))
-  ;; elbow records: 3 per elbow (elbow + adapter + adapter)
-  (setq ok T)
+;; elbow records. Plan bends: coated RGS elbow + 2 PVC adapters. Stub elbows: elbow (coated
+  ;; 160-162 or plain RGS 89/90/91/166) + PVC adapter + coupling (173 coated / 8 RGS) [+ 174 wrap]
+  (if (not *DBKT-STUBCODE*) (setq *DBKT-STUBCODE* 2))
+  (setq ok T fits nil)
   (foreach e elbows
-    (setq recs (cdr (xdataget e "MED_FITTING")))
-    (if (or (/= (length recs) 18) (/= (nth 8 recs) _DBKADAPTER) (/= (nth 14 recs) _DBKADAPTER)
-            (not (member (nth 2 recs) '(160 161 162 163 164 165))))
-      (setq ok nil)))
-  (dbkt-check "each elbow carries 3 MED_FITTING records (coated RGS elbow + 2 adapters)" ok "")
+    (setq recs (cdr (xdataget e "MED_FITTING")) codes nil n 0)
+    (repeat (/ (length recs) 6) (setq codes (append codes (list (nth (+ 2 (* 6 n)) recs))) n (1+ n)))
+    (setq fits (cons codes fits))
+    (if (wcmatch (dbk-xdval e "PART") "BEND*")
+      (if (not (and (= (length codes) 3) (member (car codes) '(160 161 162 163 164 165)) (= (cadr codes) _DBKADAPTER) (= (caddr codes) _DBKADAPTER)))
+        (setq ok nil))
+      (if (not (and (member (car codes) (if (= *DBKT-STUBCODE* 1) '(89 90 91 166) '(160 161 162)))
+                    (= (cadr codes) _DBKADAPTER) (= (caddr codes) (if (= *DBKT-STUBCODE* 1) 8 173))
+                    (= (length codes) (if *DBKT-WRAP* 4 3))
+                    (or (not *DBKT-WRAP*) (= (cadddr codes) 174))))
+        (setq ok nil)))
+    (if (not (and (dbk-xdval e "OD") (> (atof (dbk-xdval e "OD")) 0.0))) (setq ok nil)))
+  (dbkt-w (strcat "Elbow fitting code sets: " (vl-princ-to-string (dbk-uniq fits))))
+  (dbkt-check (strcat "elbow records (plan: coated elbow + 2 adapters; stub: "
+                      (if (= *DBKT-STUBCODE* 1) "RGS elbow + adapter + RGS coupling" "coated elbow + adapter + coated coupling")
+                      (if *DBKT-WRAP* " + wrap" "") ") and OD= on every elbow") ok "")
+  (setq ok (and risers (vl-every '(lambda (e) (= (nth 3 (xdataget e "MED_CONDUIT")) *DBKT-STUBCODE*)) risers)))
+  (dbkt-check (strcat "risers are code " (itoa *DBKT-STUBCODE*)) ok (itoa (length risers)))
+  (setq n (length (vl-remove-if-not '(lambda (e) (= (dbk-xdval e "NOTE") "WRAP")) (dbkt-ents "TEXT"))))
+  (dbkt-check "WRAP notes" (= n (if *DBKT-WRAP* (length risers) 0)) (itoa n))
+  ;; 3D model on <prefix>Ductbank
+  (setq lst (dbkt-ents "ENV3D") e1 (dbkt-ents "SPACER3D"))
+  (dbkt-w (strcat "3D model: " (itoa (length lst)) " envelope solid(s), " (itoa (length e1)) " spacer solid(s) on "
+                  (vl-princ-to-string (dbk-uniq (mapcar '(lambda (e) (cdr (assoc 8 (entget e)))) (append lst e1))))))
+  (dbkt-check "3D envelope: one 3DSOLID on 3DMEDModel-Ductbank"
+              (and (= (length lst) 1) (= (cdr (assoc 0 (entget (car lst)))) "3DSOLID") (= (cdr (assoc 8 (entget (car lst)))) (dbk-model-layer))) "")
+  (dbkt-check "3D spacer stations: one 3DSOLID per station"
+              (and (= (length e1) *DBKT-STATIONS*) (vl-every '(lambda (e) (= (cdr (assoc 0 (entget e))) "3DSOLID")) e1)) (itoa (length e1)))
+  (setq ss (ssget "_X" (list (cons 8 (dbk-model-layer)))))
+  (dbkt-check "nothing else on the 3D model layer" (= (if ss (sslength ss) 0) (+ (length lst) (length e1))) (itoa (if ss (sslength ss) 0)))
+  ;; dialog spec round trip
+  (setq s (dbk-spec-out))
+  (setq n (length (vl-remove-if-not '(lambda (l) (wcmatch l "POS=*")) (dbk-split s "\n"))))
+  (dbkt-check "dialog spec has every position" (= n (* *DBKT-ROWS* *DBKT-COLS*)) (itoa n))
+  (if *DBKT-SPEC* (progn (setq f2 (open *DBKT-SPEC* "w")) (write-line s f2) (close f2)))
   ;; per position geometry
   (setq pl (dbk-get *DBK* "PL"))
   (foreach p (vl-sort pl '(lambda (a b) (< (dbk-get a "POS") (dbk-get b "POS"))))
@@ -147,5 +179,14 @@
 ;; DBLIST / DBDELETE without picking (the test passes the envelope)
 (defun c:DBKTLIST ( / old) (setq old dbk-pick) (defun dbk-pick (m) (car (dbkt-ents "ENVELOPE"))) (c:DBLIST) (setq dbk-pick old) (princ))
 (defun c:DBKTDEL ( / old) (setq old dbk-pick) (defun dbk-pick (m) (car (dbkt-ents "ENVELOPE"))) (c:DBDELETE) (setq dbk-pick old) (princ))
-(princ "\nMEDDuctbankTest loaded: DBKTEST DBKTLIST DBKTDEL")
+;; dialog spec for the reference (setup + solve, nothing drawn): docs / dialog screenshot
+(defun c:DBKTSPEC ( / f)
+  (if (dbk-setup-ref (handent *DBKT-REFH*))
+    (progn
+      (if *DBKT-SIZE* (dbk-setpos "*" "SIZE" *DBKT-SIZE*))
+      (dbk-solve)
+      (setq f (open *DBKT-SPEC* "w")) (write-line (dbk-spec-out) f) (close f)
+      (princ (strcat "\n[T] spec written: " *DBKT-SPEC*))))
+  (princ))
+(princ "\nMEDDuctbankTest loaded: DBKTEST DBKTLIST DBKTDEL DBKTSPEC")
 (princ)

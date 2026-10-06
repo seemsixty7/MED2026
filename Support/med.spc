@@ -173,13 +173,23 @@
 (setq _DBKSTUBSTRAIGHT 12.0)  ; straight between the stub-up elbows and the transition
 (setq _DBKMINSIZE      1.0)   ; minimum underground trade size
 (setq _DBKCONCODE      3)     ; bank conduit type code (3 = PVC, encased)
-(setq _DBKRISERCODE    3)     ; riser (stub-up) conduit type code
+(setq _DBKRISERCODE    2)     ; stub-up risers + stub elbows: 2 = PVC-coated RGS (default), 1 = plain RGS
+(setq _DBKSTUBWRAP     1)     ; plain RGS stub-ups: 1 = tape wrap noted (BOM code 174, WRAP text), 0 = none
 (setq _DBKADAPTER    170)     ; adapter fitting code at each end of a coated RGS elbow
 (setq _DBKREDUCERMODE "CENTER") ; reducer inserts center the small conduit in the seat
 (setq _DBKTAGPAT "{BANK}-{POS}") ; default tag pattern
 (setq _DBKSECTSCALE    1.0)   ; section drawing scale factor
 (setq _DBKPLANTEXT     1.0)   ; plan text height
 (setq _DBKSECTTEXT     0.5)   ; section text height
+(setq _DBKMODEL3D      1)     ; 1 = DUCTBANK models the envelope + spacer stations as 3D solids
+(setq _DBKSPTHICK      2.0)   ; spacer thickness along the run (3D model only)
+(setq _DBKUSEDIALOG    1)     ; DUCTBANK: 1 = grid dialog (MED-DotNet), 0 = command line (-DUCTBANK)
+;;
+;;  3D model layers: entities on layers whose names start with this prefix stay in the 2D
+;;  drawing (frozen, off or just on their own layer) and MEDMAKE3D / MAKE3DCONDUIT copy them
+;;  into the 3D export. DUCTBANK uses <prefix>Ductbank. Any suffix is allowed.
+;;
+(setq _MED3DMODELPREFIX "3DMEDModel-")
 ;;  Here is where the default text styles are loaded
 ;;
 

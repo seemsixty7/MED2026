@@ -11,6 +11,10 @@
 ;;;                  body blocks, then every cable run -> one prompt
 ;;;                  [Dwg/Layer]: one combined DWG + one .medprops.json sidecar,
 ;;;                  or all solids left on their layers; prints a summary
+;;;                  then the ductbank elbows (DBANK_DATA broken-segment elbows, OD from
+;;;                  DBANK_DATA, stamped as FITTING), then every entity on a layer whose
+;;;                  name starts with _MED3DMODELPREFIX ("3DMEDModel-" by default: hand-made
+;;;                  or DUCTBANK envelope / spacer solids kept in the 2D drawing) is copied in
 ;;;   MED3DPLAN      print the corner table of one run (no solids)
 ;;;   MED3DVER       print this file's version and who owns the commands
 ;;; The 2012 code stays in MED3DCON.lsp as M3DOLD / MAKE3DCONDUITOLD.
@@ -56,7 +60,25 @@
 
 (princ "\rLoading MED3DPath...")
 (vl-load-com)
-(setq *MED3D-VERSION* "2026-09-30 r12 (feature/3dpath)")
+(setq *MED3D-VERSION* "2026-10-06 r13 (ductbank elbows, 3DMEDModel- layers)")
+;; 3D model layer convention: entities on layers named <prefix>* stay in the 2D drawing and
+;; are pulled into MEDMAKE3D / MAKE3DCONDUIT output. med.spc may set it; code default here.
+(if (/= (type _MED3DMODELPREFIX) 'STR) (setq _MED3DMODELPREFIX "3DMEDModel-"))
+;; standing rule: every 3D generate / extract / insert prints this
+(defun med3d-disclaimer ()
+  (princ "\nNOTE: 3D models are approximations for layout and coordination only and are not reproductions of manufacturer specifications. Verify all dimensions against manufacturer data.")
+  (princ))
+;; DBANK_DATA "KEY=value" string of an entity (ductbank members), or nil
+(defun med3d-dbank-val (ent key / xd v)
+  (setq xd (cdr (car (cdr (assoc -3 (entget ent '("DBANK_DATA"))))))
+        key (strcat (strcase key) "="))
+  (foreach g xd
+    (if (and (not v) (= (car g) 1000) (= (strcase (substr (cdr g) 1 (strlen key))) key))
+      (setq v (substr (cdr g) (1+ (strlen key))))))
+  v)
+(defun med3d-dbank-elbow-p (ent)
+  (and (= (cdr (assoc 0 (entget ent))) "LWPOLYLINE") (= (med3d-dbank-val ent "ROLE") "ELBOW")
+       (not (xdataget ent _CONDUIT))))
 
 ;;; ------------------------------------------------------------------ settings
 (if (not *MED3D-BEND-FACTOR*) (setq *MED3D-BEND-FACTOR* 5.0))  ; conduit R = factor x OD
@@ -614,7 +636,9 @@
           (setq old *MED-SQL-QUIET* *MED-SQL-QUIET* T
                 res (vl-catch-all-apply 'med_conduit_od (list code size))
                 *MED-SQL-QUIET* old)
-          (if (not (vl-catch-all-error-p res)) res))))
+          (if (not (vl-catch-all-error-p res)) res))
+        ;; ductbank elbow (MED_FITTING only): OD written by DUCTBANK into DBANK_DATA
+        (if (and (setq res (med3d-dbank-val ent "OD")) (> (atof res) 0.0)) (atof res))))
     ((= kind "CABLE")
       (if (setq xd (xdataget ent _CABLE))
         (med3d-cable-od (med3d-num (nth 3 xd)))))))
@@ -1049,7 +1073,7 @@
         (princ (strcat "\nMED3D: run " (med3d-get "HANDLE" plan) " - "
                        (itoa (caddr res)) " piece(s) failed or would not union.")))
       (foreach s (if sol (cons sol extras) extras)
-        (MEDStamp3DFromBom s ent kind nil)
+        (MEDStamp3DFromBom s ent (if *MED3D-STAMPKIND* *MED3D-STAMPKIND* kind) nil)
         (setq *MED3D-BUILT* (cons s *MED3D-BUILT*)))
       (foreach c (med3d-get "CORNERS" plan)
         (if (= (med3d-get "STATUS" c) "FLAGGED") (setq *MED3D-FLAGGED* (1+ *MED3D-FLAGGED*))))
@@ -1076,7 +1100,8 @@
         _MEDCONDUITOD_CACHE nil
         *MED3D-CABLEOD-CACHE* nil
         *MED3D-OD-PRELOADED* nil
-        *MED3D-CABLEOD-PRELOADED* nil)
+        *MED3D-CABLEOD-PRELOADED* nil
+        *MED3D-STAMPKIND* nil)
   (defun *error* (msg)
     (med3d-end)
     (if (and msg (/= msg "") (not (wcmatch (strcase msg T) "*break*,*cancel*,*exit*")))
@@ -1117,6 +1142,10 @@
       (repeat (sslength ss)
         (setq e (ssname ss i) k (med3d-kind-of e kind))
         (cond
+          ((and (not k) (= kind "CONDUIT") (med3d-dbank-elbow-p e))
+            (setq n (1+ n) *MED3D-STAMPKIND* "FITTING")
+            (if (med3d-run e "CONDUIT") (setq ok (1+ ok)))
+            (setq *MED3D-STAMPKIND* nil))
           ((not k)
             (princ (strcat "\n" tag ": " (cdr (assoc 5 (entget e))) " ("
                            (cdr (assoc 0 (entget e))) ") has no MED_CONDUIT / MED_CABLE xdata - skipped.")))
@@ -1130,7 +1159,7 @@
       (princ (strcat "\n" tag ": " (itoa ok) " of " (itoa n) " MED run(s) converted"
                      (if (< n (sslength ss)) (strcat ", " (itoa (- (sslength ss) n)) " polyline(s) without MED data") "")
                      "."))
-      (if (> ok 0) (MEDRebuildMedPropsJsonBeside nil))))
+      (if (> ok 0) (progn (MEDRebuildMedPropsJsonBeside nil) (med3d-disclaimer)))))
   (med3d-end))
 
 (defun med3d-cmd-m3d () (med3d-pick "CONDUIT" "M3D"))
@@ -1157,7 +1186,78 @@
         (cons "SOLIDS" (med3d-live (reverse *MED3D-BUILT*))) (cons "FLAGGED" *MED3D-FLAGGED*)
         (cons "SKIPPED" (reverse *MED3D-SKIPS*))))
 
-(defun med3d-export (kind tag / lay res ok sols fmt fname)
+;; Ductbank elbows: DUCTBANK draws each plan bend / stub-up elbow as a broken-segment
+;; LWPOLYLINE arc carrying MED_FITTING records (elbow + adapters) and DBANK_DATA OD=,
+;; no MED_CONDUIT, so med3d-path-build-all does not see them. Same result layout.
+(defun med3d-dbank-build ( / ss i e ok n)
+  (setq *MED3D-BUILT* nil *MED3D-SKIPS* nil *MED3D-FLAGGED* 0 ok 0 n 0 i 0
+        ss (ssget "_X" '((0 . "LWPOLYLINE") (-3 ("DBANK_DATA")))))
+  (if ss
+    (repeat (sslength ss)
+      (setq e (ssname ss i) i (1+ i))
+      (if (med3d-dbank-elbow-p e)
+        (progn
+          (setq n (1+ n) *MED3D-STAMPKIND* "FITTING")
+          (if (med3d-run e "CONDUIT") (setq ok (1+ ok)))
+          (setq *MED3D-STAMPKIND* nil)))))
+  (list (cons "KIND" "DUCTBANK") (cons "RUNS" n) (cons "OK" ok)
+        (cons "SOLIDS" (med3d-live (reverse *MED3D-BUILT*))) (cons "FLAGGED" *MED3D-FLAGGED*)
+        (cons "SKIPPED" (reverse *MED3D-SKIPS*))))
+
+;; 3D model layers (_MED3DMODELPREFIX*): thaw / turn on / unlock them for the export
+;; (restored by med3d-model-restore), and for Dwg output COPY their model-space entities
+;; in place, because -WBLOCK removes what it writes. Returns
+;;   (("ENTS" copies-or-originals ...) ("COUNT" . n) ("LAYERS" (name 70 62) ...) ("COPIED" . T/nil))
+(defun med3d-model-collect (copy / pre l nm st ss mark e out flt n)
+  (setq pre (strcase (if (= (type _MED3DMODELPREFIX) 'STR) _MED3DMODELPREFIX "3DMEDModel-")) n 0)
+  (setq l (tblnext "LAYER" T))
+  (while l
+    (setq nm (cdr (assoc 2 l)))
+    (if (and (> (strlen pre) 0) (>= (strlen nm) (strlen pre)) (= (strcase (substr nm 1 (strlen pre))) pre)
+             (not (wcmatch nm "*|*")))
+      (setq st (cons (list nm (cdr (assoc 70 l)) (cdr (assoc 62 l))) st)))
+    (setq l (tblnext "LAYER")))
+  (foreach x st
+    (setq e (tblobjname "LAYER" (car x)) l (entget e))
+    (if (or (/= 0 (logand (cadr x) 5)) (minusp (caddr x)))
+      (entmod (subst (cons 62 (abs (caddr x))) (assoc 62 l) (subst (cons 70 (logand (cadr x) (~ 5))) (assoc 70 l) l)))))
+  (if st
+    (progn
+      (setq flt (append '((410 . "Model") (-4 . "<OR")) (mapcar '(lambda (x) (cons 8 (car x))) st) '((-4 . "OR>"))))
+      (if (setq ss (ssget "_X" flt))
+        (progn
+          (setq n (sslength ss))
+          (if copy
+            (if (and vlax-ename->vla-object (vlax-get-acad-object))
+              ;; ActiveX copy in place (full AutoCAD)
+              (progn (setq e 0)
+                     (repeat n
+                       (setq mark (vl-catch-all-apply 'vla-copy (list (vlax-ename->vla-object (ssname ss e)))) e (1+ e))
+                       (if (not (vl-catch-all-error-p mark)) (setq out (cons (vlax-vla-object->ename mark) out))))
+                     (setq out (reverse out)))
+              ;; no ActiveX (accoreconsole): COPY command, single copy mode
+              (progn
+                (setq mark (entlast) e (getvar "COPYMODE"))
+                (setvar "COPYMODE" 1)
+                (command "_.COPY" ss "" "0,0,0" "0,0,0")
+                (setvar "COPYMODE" e)
+                (setq e (entnext mark))
+                (while e
+                  (if (not (member (cdr (assoc 0 (entget e))) '("VERTEX" "SEQEND" "ATTRIB"))) (setq out (cons e out)))
+                  (setq e (entnext e)))
+                (setq out (reverse out))))
+            (progn (setq e 0) (repeat n (setq out (cons (ssname ss e) out) e (1+ e))) (setq out (reverse out))))))))
+  (list (cons "ENTS" out) (cons "COUNT" n) (cons "LAYERS" st) (cons "COPIED" copy)))
+(defun med3d-model-restore (mdl / e l)
+  (foreach x (med3d-get "LAYERS" mdl)
+    (if (setq e (tblobjname "LAYER" (car x)))
+      (progn (setq l (entget e))
+             (entmod (subst (cons 62 (caddr x)) (assoc 62 l) (subst (cons 70 (cadr x)) (assoc 70 l) l)))))))
+;; copies not written (Layer mode never copies; Dwg with no file chosen): erase them
+(defun med3d-model-drop-copies (mdl)
+  (if (med3d-get "COPIED" mdl) (foreach e (med3d-get "ENTS" mdl) (if (and e (entget e)) (entdel e)))))
+
+(defun med3d-export (kind tag / lay res ok sols fmt fname dbk mdl)
   (med3d-begin tag)
   (setq *MED3D-LAST-PLANS* nil
         lay (med3d-ensure-layer (med3d-layer-info kind)))
@@ -1169,7 +1269,16 @@
   (setq res (med3d-path-build-all kind)
         ok  (med3d-get "OK" res))
   (princ (strcat "\n" tag ": " (itoa ok) " of " (itoa (med3d-get "RUNS" res)) " run(s) converted."))
+  (if (= kind "CONDUIT")
+    (progn
+      (setq dbk (med3d-dbank-build))
+      (if (> (med3d-get "RUNS" dbk) 0)
+        (princ (strcat "\n" tag ": " (itoa (med3d-get "OK" dbk)) " of " (itoa (med3d-get "RUNS" dbk)) " ductbank elbow(s) converted.")))
+      (setq mdl (med3d-model-collect (= fmt "Dwg")))
+      (if (> (med3d-get "COUNT" mdl) 0)
+        (princ (strcat "\n" tag ": " (itoa (med3d-get "COUNT" mdl)) " entit(ies) on " _MED3DMODELPREFIX "* layer(s) included.")))))
   (setq sols (ssget "_X" (list '(0 . "3DSOLID") (cons 8 lay))))
+  (if (and sols mdl) (foreach e (med3d-get "ENTS" mdl) (if (and (= fmt "Dwg") (entget e)) (ssadd e sols))))
   (cond
     ((not sols) (princ "\nNo solids to export."))
     ((= fmt "Dwg")
@@ -1181,10 +1290,13 @@
             (command "_.-WBLOCK" fname ""))
           (command "0,0,0" sols "")
           (command "_.PLAN" "")
-          (if (findfile fname) (MEDRebuildMedPropsJsonBeside fname)))))
+          (if (findfile fname) (MEDRebuildMedPropsJsonBeside fname)))
+        (if mdl (med3d-model-drop-copies mdl))))
     (T
       (prompt "\nUse the PLAN command to return to plan view.")
       (MEDRebuildMedPropsJsonBeside nil)))
+  (if mdl (progn (if (not sols) (med3d-model-drop-copies mdl)) (med3d-model-restore mdl)))
+  (if sols (med3d-disclaimer))
   (med3d-end))
 
 (defun med3d-cmd-make3dconduit () (med3d-export "CONDUIT" "MAKE3DCONDUIT"))
@@ -1220,7 +1332,7 @@
 ;; conduit (cut back at the bodies), then the body blocks, then cable via
 ;; med3d-path-build-all; one [Dwg/Layer] prompt; one combined DWG +
 ;; one .medprops.json sidecar (Dwg) or solids left in place (Layer).
-(defun med3d-make3d-all ( / fmt tray traysols fitsols bodies con cb cab skips flagged all ss fname n)
+(defun med3d-make3d-all ( / fmt tray traysols fitsols bodies con cb cab skips flagged all ss fname n dbk mdl)
   (med3d-begin "MEDMAKE3D")
   (setq *MED3D-LAST-PLANS* nil *MED3D-STAGE-ERRORS* nil)
   (med3d-clear-flags)
@@ -1257,12 +1369,18 @@
   (if (car bodies) (setq cb (med3d-stage "BODIES" 'medcb-place-all (list (car bodies)))))
   ;; 5. cable
   (setq cab (med3d-stage "CABLE" 'med3d-path-build-all (list "CABLE")))
+  ;; 6. ductbank elbows (DBANK_DATA broken-segment elbows, stamped as FITTING)
+  (setq dbk (med3d-stage "DUCTBANK" 'med3d-dbank-build nil))
+  (setq *MED3D-STAMPKIND* nil)
+  ;; 7. entities on the 3D model layers (_MED3DMODELPREFIX*), copied for Dwg output
+  (setq mdl (med3d-stage "MODEL" 'med3d-model-collect (list (= fmt "Dwg"))))
   (setq skips   (append (nth 2 tray) (med3d-get "SKIPPED" con) (med3d-get "SKIPPED" cb)
-                        (med3d-get "SKIPPED" cab) (reverse *MED3D-STAGE-ERRORS*))
+                        (med3d-get "SKIPPED" cab) (med3d-get "SKIPPED" dbk) (reverse *MED3D-STAGE-ERRORS*))
         flagged (+ (if con (med3d-get "FLAGGED" con) 0) (if cb (med3d-get "FLAGGED" cb) 0)
-                   (if cab (med3d-get "FLAGGED" cab) 0))
+                   (if cab (med3d-get "FLAGGED" cab) 0) (if dbk (med3d-get "FLAGGED" dbk) 0))
         all     (med3d-live (append traysols fitsols (med3d-get "SOLIDS" con) (med3d-get "REFS" cb)
-                                    (med3d-get "SOLIDS" cab)))
+                                    (med3d-get "SOLIDS" cab) (med3d-get "SOLIDS" dbk)
+                                    (if (= fmt "Dwg") (med3d-get "ENTS" mdl))))
         ss      (med3d-sscat all))
   ;; output
   (cond
@@ -1278,10 +1396,13 @@
           (command "_.PLAN" "")
           ;; one sidecar beside the combined DWG (handles are in that file)
           (if (findfile fname) (MEDRebuildMedPropsJsonBeside fname)))
-        (princ "\nMEDMAKE3D: no file chosen - solids left in the drawing.")))
+        (progn (if mdl (med3d-model-drop-copies mdl))
+               (princ "\nMEDMAKE3D: no file chosen - solids left in the drawing."))))
     (T
       (prompt "\nUse the PLAN command to return to plan view.")
       (MEDRebuildMedPropsJsonBeside nil)))
+  (if (and mdl (not ss)) (med3d-model-drop-copies mdl))
+  (if mdl (med3d-model-restore mdl))
   ;; summary
   (princ "\nMEDMAKE3D summary:")
   (med3d-summary-line "Tray          : " (length traysols) "solid(s)")
@@ -1299,6 +1420,11 @@
   (med3d-summary-line "Cable         : " (length (med3d-get "SOLIDS" cab))
     (strcat "solid(s) from " (itoa (if cab (med3d-get "OK" cab) 0)) " of "
             (itoa (if cab (med3d-get "RUNS" cab) 0)) " run(s)"))
+  (med3d-summary-line "Ductbank elbow: " (length (med3d-get "SOLIDS" dbk))
+    (strcat "solid(s) from " (itoa (if dbk (med3d-get "OK" dbk) 0)) " of "
+            (itoa (if dbk (med3d-get "RUNS" dbk) 0)) " elbow(s)"))
+  (med3d-summary-line "3D model layer: " (if mdl (med3d-get "COUNT" mdl) 0)
+    (strcat "entit(ies) on " (itoa (length (med3d-get "LAYERS" mdl))) " " _MED3DMODELPREFIX "* layer(s)"))
   (med3d-summary-line "Flagged       : " flagged
     (if (> flagged 0) (strcat "(markers on " (car (med3d-flag-layer)) ")") ""))
   (med3d-summary-line "Skipped       : " (length skips) "")
@@ -1314,7 +1440,10 @@
       (list (strcat "MEDMAKE3D " fmt ": tray " (itoa (length traysols)) ", fittings " (itoa (length fitsols))
                     ", conduit " (itoa (length (med3d-get "SOLIDS" con)))
                     ", bodies " (itoa (if cb (med3d-get "PLACED" cb) 0)) ", cable " (itoa (length (med3d-get "SOLIDS" cab)))
+                    ", ductbank elbows " (itoa (length (med3d-get "SOLIDS" dbk)))
+                    ", model " (itoa (if mdl (med3d-get "COUNT" mdl) 0))
                     ", flagged " (itoa flagged) ", skipped " (itoa (length skips))))))
+  (if ss (med3d-disclaimer))
   (med3d-end))
 
 (defun med3d-make3d-all-cmd () (med3d-make3d-all))

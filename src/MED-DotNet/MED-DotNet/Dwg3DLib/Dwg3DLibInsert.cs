@@ -130,7 +130,7 @@ namespace MEDDotNet
             if (ar.Status == PromptStatus.OK) rot = ar.Value;
 
             AddReference(db, btrId, pos, rot, ucs);
-            ed.WriteMessage("\nMED3DLIB: inserted " + name + ".");
+            ed.WriteMessage("\nMED3DLIB: inserted " + name + "."); ed.WriteMessage("\n" + Med3DNotice.Text);
             return true;
         }
 

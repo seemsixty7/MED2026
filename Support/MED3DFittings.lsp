@@ -982,6 +982,7 @@
     (if (setq res (medcb-insert form shape sz (trans pt 1 0) (+ ang (angle '(0.0 0.0 0.0) (getvar "UCSXDIR")))))
       (medcb-say res)
       (princ "\n  Could not create / insert the block.")))
+  (if med3d-disclaimer (med3d-disclaimer))
   (medcb-end)
   (princ))
 
@@ -1483,7 +1484,8 @@
     (progn
       (setq i 0)
       (repeat (sslength ss)
-        (setq b (medcb-body-of (ssname ss i) runs))
+        ;; ductbank spacer stations (DBANK_DATA) are BOM carriers, not conduit bodies
+        (setq b (if (not (assoc -3 (entget (ssname ss i) '("DBANK_DATA")))) (medcb-body-of (ssname ss i) runs)))
         (cond ((= (type b) 'STR) (setq nm (1+ nm)))
               (b (setq bodies (cons b bodies))
                  (if med3d-dbg

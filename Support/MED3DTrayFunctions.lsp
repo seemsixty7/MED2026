@@ -524,6 +524,7 @@
 
 	(setvar "OSMODE" m3dOldOsmode)
 	(setq *error* m3dOldError)
+	(if med3d-disclaimer (med3d-disclaimer))
 	(princ)
 
 )

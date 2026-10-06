@@ -1,6 +1,6 @@
 # MED Ductbank Routing: Design (draft for Clint's markup)
 
-**Status:** Draft 2, 2026-10-06. Design only. No code or Support files have changed. Draft 2 adds the Carlon Snap-N-Stac / Snap-Loc spacer catalog as the default family and seed data, Carlon's suggested cover (3" top and bottom, 2" sides), an 8-10 ft spacer interval and a worked example on SP4W20-2.
+**Status:** Draft 2, 2026-10-06. **Implemented on master (MVP2, 2026-10-06):** see `ductbank-mvp-notes.md` for what was built and how it deviates. The dialog (§4) is built as `MedDuctbankForm` (screenshot `ductbank-dialog.png`). §9 Phase 1 is done except DBEDIT and VERT_DATA risers. From Phase 2, the MEDMAKE3D ductbank stage (elbows, risers, envelope and spacer solids via the `3DMEDModel-` layer convention) is done. Draft 2 added the Carlon Snap-N-Stac / Snap-Loc spacer catalog as the default family and seed data, Carlon's suggested cover (3" top and bottom, 2" sides), an 8-10 ft spacer interval and a worked example on SP4W20-2.
 **Branch studied:** `feature/3dpath` (master at `fa3ed13`).
 **Mockup:** `ductbank-dialog-mockup.png`: dialog with grid, cheat image, spacer family/part selection, stub-up vs trunk spacing, per-edge cover and the envelope W x H readout. It shows the §6.8 worked example.
 
@@ -117,7 +117,15 @@ See **`ductbank-dialog-mockup.png`**. It's a modal WinForms form in MED-DotNet (
 | Checks | Live list: clear gaps (trunk, stub), seat bottom vs bottom cover, minimum size, inner/outer bend radii, piece end past envelope (odd columns), catalog CL vs seat rule, reducer mode, unverified catalog data |
 | Buttons | Preview <, Trunk section at... <, Stub section, OK, Cancel, Help |
 
-Interface between the two halves: LISP builds an alist (bank parameters + cell list) and calls a new LispFunction `MED-DuctbankDialog`. The form edits the alist and returns it, or nil on Cancel. The form reads the spec, spacer and OD tables directly through `ProcessSQL`. All geometry stays in LISP (§7) so it can be unit-tested with the existing mini interpreter.
+**As built (2026-10-06):** `ductbank-dialog.png` shows the real form. There are three columns:
+
+- left: bank, spacers, cover, stub-up zone + stub material/wrap, output
+- middle: position cards + selected-position editor + calc reminder + envelope readout
+- right: cheat image (trunk/stub toggle) + checks
+
+Not built yet: spec profiles, bank types, envelope type, the plan strip and the Ctrl+D fill. The interface is a `KEY=VALUE` text spec rather than an alist (see `ductbank-mvp-notes.md`). `DUCTBANK` opens the form, and `-DUCTBANK` is the command-line flow.
+
+Original plan: LISP builds an alist (bank parameters + cell list) and calls a new LispFunction `MED-DuctbankDialog`. The form edits the alist and returns it, or nil on Cancel. The form reads the spec, spacer and OD tables directly through `ProcessSQL`. All geometry stays in LISP (§7) so it can be unit-tested with the existing mini interpreter.
 
 ---
 

@@ -68,6 +68,7 @@ See [conduit.md](conduit.md).
 | `F0` | Fillet with radius 0 |
 | `UNJ` | UNJ / UNJC fitting aligned to a reference entity |
 | `OFF2CON` | Offset an entity and make the copy a conduit run |
+| `DUCTBANK` `-DUCTBANK` | Encased ductbank from one reference conduit: dialog / command line. Also `DBLIST`, `DBDELETE`, `DBSEED`. See [ductbank.md](ductbank.md) |
 
 ## Cable tray
 
@@ -132,7 +133,7 @@ See [3d.md](3d.md).
 
 | Command | What it does |
 | --- | --- |
-| `MEDMAKE3D` | Tray, tray fittings, conduit, conduit bodies and cable in one go (`MED3DPath.lsp`, loaded). Start with [3d-guide.md](3d-guide.md) |
+| `MEDMAKE3D` | Tray, tray fittings, conduit, conduit bodies, cable, ductbank elbows and `3DMEDModel-` layer entities in one go (`MED3DPath.lsp`, loaded). Start with [3d-guide.md](3d-guide.md) |
 | `MAKE3DTRAY` | Solids from tray and tray fittings (`MED3DTrayFunctions.lsp`, loaded) |
 | `M3D` `C3D` | Selected conduit / cable runs (`MED3DPath.lsp`, loaded) |
 | `MAKE3DCONDUIT` `MAKE3DCABLE` | Every conduit / cable run, Dwg or Layer (`MED3DPath.lsp`, loaded) |

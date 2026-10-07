@@ -340,8 +340,9 @@
           (progn
             (dbkt-check (strcat "end " end " risers project >= " (rtos proj 2 2) "\" above the level cut (riser ends' low edge EL " (rtos rlow 2 2) ")")
                         (>= (- rlow z) (- proj 0.005)) (rtos (- rlow z) 2 3))
-            (if (= (dbk-encval (dbk-get *DBK* "ENCH")) "Top")
-              (dbkt-check (strcat "end " end " encasement Top: cut the projection below the riser ends")
+            ;; Top (both angles) and Auto at a 45 deg end (MVP4d, Clint) run up to the limit
+            (if (or (= (dbk-encval (dbk-get *DBK* "ENCH")) "Top") (and (= ang 45) (= (dbk-encval (dbk-get *DBK* "ENCH")) "Auto")))
+              (dbkt-check (strcat "end " end " encasement " (dbk-encstr (dbk-encval (dbk-get *DBK* "ENCH"))) (if (= ang 45) " (45 deg)" "") ": cut the projection below the riser ends")
                           (dbkt-near (- rlow z) proj 0.01) (rtos (- rlow z) 2 3)))))
         ;; 45 deg: the cut's corners sit on the outer / inner cover lines of the risers (no cap past the conduit ends)
         (if (= ang 45)

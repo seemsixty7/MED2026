@@ -6,7 +6,8 @@
 #   powershell -ExecutionPolicy Bypass -File tests\autocad\MEDDuctbankTest.ps1            (3" as drawn)
 #   powershell -ExecutionPolicy Bypass -File tests\autocad\MEDDuctbankTest.ps1 -Size 4     (4" variant + DBDELETE)
 #   powershell -ExecutionPolicy Bypass -File tests\autocad\MEDDuctbankTest.ps1 -Rgs        (plain RGS stub-ups, wrapped)
-#   ... -Enc -30          stub-up encasement (turn-up) to EL -30 (default Auto = top of the elbow sweep; Top = stub top
+#   ... -Enc -30          stub-up encasement (turn-up) to EL -30 (default Auto = top of the elbow sweep at 90 deg ends,
+#                       the Top limit at 45 deg ends; Top = stub top
 #                       less the riser projection; anything higher is cut level _DBKRISERPROJ below the riser ends)
 #   ... -Proj 6           MVP4c: minimum riser projection above the level turn-up top (Options > ENcasement; default 4)
 #   ... -Lay old|user     MVP4c: 3DMEDModel-Ductbank made before the build: "old" = no transparency (an earlier build;
@@ -23,6 +24,8 @@
 #   ... -Route OldBub     builds the S45 bank with e91df9d's MEDDuctbank.lsp (Mogul BUB inserts), loads this checkout's,
 #                       -DBEDIT: the rebuild must drop the BUBs and purge the DBK_BUB stand-in block
 #   ... -Route OldBubDel  as OldBub, then DBDELETE instead of DBEDIT: BUBs removed with the bank
+#   ... -Route Old4c      MVP4d: builds the S45 bank (Auto) with f1d7184's MEDDuctbank.lsp (45 deg Auto = elbow sweep top,
+#                       EL -40.97), loads this checkout's, -DBEDIT: end B rebuilt up to the riser ends less 4" (EL -5.24)
 #   -Route runs DBKTPROF (profile / 45 deg / cover checks); with -Edit a -DBEDIT round trip (retag A1) + DBKTPROF again
 # Uses -DUCTBANK (command line); accoreconsole has no WinForms UI, so DUCTBANK would fall back to it anyway.
 param([double]$Size = 0, [string]$Name = "dbktest", [string]$Sample = "", [switch]$Rgs, [string]$Enc = "", [switch]$Plain, [switch]$Edit, [switch]$Sweep, [string]$Route = "", [string]$Proj = "", [string]$Lay = "",
@@ -59,11 +62,11 @@ if ($Route) {
               $answers += "O`nFL`n4`n120`n"; $stations = 29; $pc.NFLEX = 2; $pc.BOM = "'(160 170)" }
     "^Step$"  { $pre = "(setq *DBKT-REFH* `"264`" *DBKT-ROUTE* '((3000 0 0) (3000 0 -48) (3000 360 -48) (3000 432.4264 -78) (3000 912.4264 -78) (3000 936.4264 -54) (3000 1296.4264 -54) (3000 1296.4264 0)))`nDBKTROUTE`n"
               $segs = 56; $elb = 48; $stations = 17; $pc.NVB = 4; $pc.VBSTOCK = "'(22.5 22.5 45.0 45.0)"; $pc.BOM = "'(178 163)" }
-    "^(S45|OldBub|OldBubDel)$" { $pre = ""; $bank = "1`n4`nA1`nStubup`nStubup`n6`n6`nA`n"; $rows = 1; $nrows = 1; $segs = 16; $elb = 12; $stations = 4; $ht = 10.13
+    "^(S45|OldBub|OldBubDel|Old4c)$" { $pre = ""; $bank = "1`n4`nA1`nStubup`nStubup`n6`n6`nA`n"; $rows = 1; $nrows = 1; $segs = 16; $elb = 12; $stations = 4; $ht = 10.13
               $answers += "O`nAN`n90`n45`n"; $pc.N45 = 4; $pc.ANGB = 45; $pc.FLAGS = "'(`"End B: 45 deg stub-ups: the risers end open*`")"; $pc.BOM = "'(163)" }
     "^S45x2$" { $pre = ""; $answers += "O`nAN`n90`n45`n"; $pc.N45 = 8; $pc.ANGB = 45; $stations = 4
               $pc.FLAGS = "'(`"End B 45 deg risers: clear gap*`" `"End B: 45 deg stub-ups: the risers end open*`")"; $pc.BOM = "'(163)" }
-    default { throw "Unknown -Route $Route (Slope, Step, S45, S45x2, OldBub, OldBubDel)" }
+    default { throw "Unknown -Route $Route (Slope, Step, S45, S45x2, OldBub, OldBubDel, Old4c)" }
   }
   if ($Route -in @("Slope", "Step")) { $pick = ""; $refans = "3`n3`n"; $reftag = ""; $mat = $mat -replace '\*DBKT-PLAIN\* nil', '*DBKT-PLAIN* T' }
   $mat = $mat -replace '\*DBKT-ENCZ\* \S+', '*DBKT-ENCZ* nil'
@@ -72,7 +75,7 @@ if ($Route) {
 $editblk = ""
 # DBEDIT must take the riser projection from the bank record, not the session: reset the session value first
 $projreset = "(setq _DBKRISERPROJ 4.0)`n"
-if ($Route -like "OldBub*") { $Edit = ($Route -eq "OldBub") }
+if ($Route -like "Old*") { $Edit = ($Route -ne "OldBubDel") }
 if ($Edit -and $Route) {
   $editblk = $projreset + "(setq *DBKT-EMOVE* nil)`nDBKTEDITPRE`nDBKTEDIT`n" + $(if ($pick -eq "") { "`n`n" } else { "" }) + ("`n" * (1 + $nrows)) + "`n`n`n`n`n`nT`nA1`nMV-101`nG`n" +
              "(setq *DBKT-ETAG* `"MV-101`" *DBKT-ESIZE* nil)`nDBKTEDITCHK`n" + $prof
@@ -81,12 +84,15 @@ if ($Edit -and $Route) {
              "(setq *DBKT-ETAG* `"MV-101`" *DBKT-ESIZE* 4.0)`nDBKTEDITCHK`n"
 }
 $setq = "(setq *DBKT-OUT* `"$dd/$Name-report.txt`" *DBKT-ROWS* $rows *DBKT-COLS* $cols *DBKT-REFTAG* `"$reftag`" *DBKT-SX* 6.0 *DBKT-WT* $wt *DBKT-HT* $ht *DBKT-STATIONS* $stations *DBKT-SEGS* $segs *DBKT-ELBOWS* $elb $mat *DBKT-SPEC* `"$dd/$Name-spec.txt`")"
-if ($Route -like "OldBub*") {
-  # a bank built by e91df9d (45 deg stub-ups with Mogul BUB inserts), then this checkout's LISP: DBEDIT / DBDELETE
-  $oldf = "$d\MEDDuctbank-e91df9d.lsp"
-  cmd /c "git -C `"$repo`" show e91df9d:Support/MEDDuctbank.lsp > `"$oldf`""
-  if (-not (Test-Path $oldf) -or (Get-Item $oldf).Length -lt 100000) { throw "could not extract e91df9d:Support/MEDDuctbank.lsp" }
-  $after = if ($Route -eq "OldBub") { $editblk + "DBKTOLDBUB`n" } else { "DBKTDELPRE`nDBKTDEL`nYes`nDBKTDELCHK`nDBKTOLDBUB`n" }
+if ($Route -like "Old*") {
+  # a bank built by an earlier commit (e91df9d: 45 deg stub-ups with Mogul BUB inserts; f1d7184: 45 deg Auto turn-up at
+  # the elbow sweep top), then this checkout's LISP: DBEDIT / DBDELETE
+  $oc = if ($Route -eq "Old4c") { "f1d7184" } else { "e91df9d" }
+  $oldf = "$d\MEDDuctbank-$oc.lsp"
+  cmd /c "git -C `"$repo`" show ${oc}:Support/MEDDuctbank.lsp > `"$oldf`""
+  if (-not (Test-Path $oldf) -or (Get-Item $oldf).Length -lt 100000) { throw "could not extract ${oc}:Support/MEDDuctbank.lsp" }
+  $after = if ($Route -eq "OldBub") { $editblk + "DBKTOLDBUB`n" } elseif ($Route -eq "Old4c") { $editblk } else { "DBKTDELPRE`nDBKTDEL`nYes`nDBKTDELCHK`nDBKTOLDBUB`n" }
+  $oldset = if ($Route -eq "Old4c") { "*DBKT-OLDBUBEXP* 0 *DBKT-EDROP* 0" } else { "*DBKT-OLDBUBEXP* 4 *DBKT-EDROP* 4" }
   $scr = @"
 (load "$($oldf.Replace('\', '/'))")
 (load "$fw/Support/med.spc")
@@ -96,8 +102,9 @@ ${pick}${refans}
 ${bank}${answers}G
 
 DBKTBUBCOUNT
+(princ (strcat "\n[T] old build: ENCZA " (vl-princ-to-string (dbk-xdval (car (dbkt-ents "ENVELOPE")) "ENCZA")) " ENCZB " (vl-princ-to-string (dbk-xdval (car (dbkt-ents "ENVELOPE")) "ENCZB"))))
 (load "$fw/Support/MEDDuctbank.lsp")
-(setq *DBKT-PASS* 0 *DBKT-FAIL* nil *DBKT-OLDBUBEXP* 4 *DBKT-EDROP* 4)
+(setq *DBKT-PASS* 0 *DBKT-FAIL* nil $oldset)
 $setq
 ${after}(command "_.SAVEAS" "" "$dd/$Name-result.dwg")
 (command "_.DXFOUT" "$dd/$Name-result.dxf" "16")

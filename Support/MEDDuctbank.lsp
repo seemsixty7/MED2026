@@ -20,7 +20,7 @@
 (princ "\nLoading MEDDuctbank...")
 (vl-load-com)
 (regapp "DBANK_DATA")
-(setq *DBK-VERSION* "2026-10-07 MVP4c")
+(setq *DBK-VERSION* "2026-10-07 MVP4d")
 
 ;;; ------------------------------------------------------------------ defaults
 ;;; med.spc may set any of these; the patch never overwrites med.spc, so every
@@ -47,7 +47,8 @@
 (dbk-def '_DBKSPTHICK 2.0)         ; spacer thickness along the run (3D model only)
 (dbk-def '_DBKUSEDIALOG 1)         ; DUCTBANK: 1 = grid dialog when MED-DotNet is loaded, 0 = always command line
 (dbk-def '_DBKSECTPICK 0)          ; dialog: 1 = pick the section location after OK
-(dbk-def '_DBKENCASE "Auto")       ; stub-up encasement turn-up top: "Auto" = top of the stub elbow sweep,
+(dbk-def '_DBKENCASE "Auto")       ; stub-up encasement turn-up top: "Auto" = top of the stub elbow sweep at 90 deg
+                                   ; ends, the Top limit (just below the riser ends) at 45 deg ends (MVP4d, Clint),
                                    ; "Top" = the stub-up top EL (grade) less the riser projection, or an elevation
                                    ; (drawing units). The turn-up top is always cut level (parallel to grade) and
                                    ; kept _DBKRISERPROJ below the lowest point of the riser ends (MVP4c)
@@ -191,7 +192,7 @@
     (if (= v "Top") "Top" "Auto")))
 (defun dbk-enclabel (v)
   (setq v (dbk-encval v))
-  (cond ((numberp v) (strcat "EL " (dbk-encstr v))) ((= v "Top") "Top = stub-up top EL less the riser projection") (T "Auto = top of the elbow sweep")))
+  (cond ((numberp v) (strcat "EL " (dbk-encstr v))) ((= v "Top") "Top = stub-up top EL less the riser projection") (T "Auto = elbow sweep top at 90 deg ends, just below the riser ends at 45 deg ends")))
 (defun dbk-chamfer-p () (not (wcmatch (strcase (vl-princ-to-string _DBKBENDCONC)) "S*")))
 (defun dbk-bendstr () (if (dbk-chamfer-p) "Chamfer" "Sweep"))
 (defun dbk-joinstr (l sep / s) (if l (progn (setq s (car l)) (foreach x (cdr l) (setq s (strcat s sep x))) s) ""))
@@ -934,8 +935,9 @@
           (setq sp (/ (- d (* 2.0 _DBKSPEND)) (1- nst)))
           (repeat nst (setq stations (cons (+ a _DBKSPEND (* i sp)) stations) i (1+ i)))))))
   (setq stations (reverse stations))
-  ;; stub-up encasement turn-up: top of concrete at the stub-ups (default = top of the highest
-  ;; stub elbow sweep; "Top" = stub-up top EL less the riser projection; or an elevation). The top is
+  ;; stub-up encasement turn-up: top of concrete at the stub-ups (Auto = top of the highest stub elbow
+  ;; sweep at a 90 deg end, the Top limit at a 45 deg end (MVP4d, Clint: the concrete runs up the 45 deg
+  ;; risers to just below their ends); "Top" = stub-up top EL less the riser projection; or an elevation). The top is
   ;; a level cut (parallel to grade) that stays at least _DBKRISERPROJ below the lowest point of the
   ;; riser ends (45 deg end: the slanted riser end's low edge, top EL - OD/2 x sin 45; primary OD).
   (setq ench (dbk-encval (dbk-get *DBK* "ENCH"))
@@ -945,7 +947,7 @@
   (defun dbk-enc-end (lbl topx sweep top ang / e emax rlow)
     (setq rlow (- topx (if (= ang 45) (* 0.5 (dbk-max (mapcar '(lambda (p) (dbk-get p "OD")) pl)) (sqrt 0.5)) 0.0))
           emax (- rlow (max 0.0 _DBKRISERPROJ)))
-    (setq e (cond ((= ench "Top") emax) ((numberp ench) ench) (T sweep)))
+    (setq e (cond ((= ench "Top") emax) ((numberp ench) ench) ((= ang 45) emax) (T sweep)))
     (if (> e (+ emax 1e-6))
       (setq flags (cons (strcat "End " lbl ": stub-up encasement EL " (dbk-r2 e) " would leave the risers less than "
                                 (dbk-r2 _DBKRISERPROJ) "\" above the concrete (riser ends at EL " (dbk-r2 rlow)
@@ -2152,8 +2154,8 @@
     ((= k "ENcasement")
       (dbk-solve)
       (initget "Auto Top")
-      (setq k (getreal (strcat "\nStub-up encasement top: elevation, or [Auto/Top] (Auto = top of the elbow sweep EL "
-                               (dbk-r2 (dbk-get *DBKS* "SWEEPTOP")) ", Top = stub-up top EL less the riser projection) <"
+      (setq k (getreal (strcat "\nStub-up encasement top: elevation, or [Auto/Top] (Auto = 90 deg ends: top of the elbow sweep EL "
+                               (dbk-r2 (dbk-get *DBKS* "SWEEPTOP")) "; 45 deg ends: up the risers to just below their ends; Top = stub-up top EL less the riser projection) <"
                                (dbk-encstr (dbk-encval (dbk-get *DBK* "ENCH"))) ">: ")))
       (if k (setq *DBK* (dbk-put *DBK* "ENCH" (dbk-encval k))))
       (setq _DBKRISERPROJ (max 0.0 (dbk-ask-real "Minimum riser projection above the level top of the concrete (in)" _DBKRISERPROJ))))

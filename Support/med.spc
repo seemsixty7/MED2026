@@ -184,7 +184,7 @@
 (setq _DBKMODEL3D      1)     ; 1 = DUCTBANK models the envelope + spacer stations as 3D solids
 (setq _DBKSPTHICK      2.0)   ; spacer thickness along the run (3D model only)
 (setq _DBKUSEDIALOG    1)     ; DUCTBANK: 1 = grid dialog (MED-DotNet), 0 = command line (-DUCTBANK)
-(setq _DBKENCASE  "Auto")   ; stub-up encasement (turn-up) top: "Auto" = top of the elbow sweep, "Top" = stub-up top EL, or an elevation
+(setq _DBKENCASE  "Auto")   ; stub-up encasement (turn-up) top: "Auto" = top of the elbow sweep (90 deg ends) / just below the riser ends (45 deg ends), "Top" = stub-up top EL less _DBKRISERPROJ, or an elevation; always cut level
 (setq _DBKREFSIZE     4.0)   ; plain 3D polyline reference: default reference conduit size (last used wins)
 (setq _DBKBENDCONC    "Chamfer") ; concrete at bends: "Chamfer" (straight chamfer, cover kept) or "Sweep" (follows the elbow arcs)
 (setq _DBKSTUBANGLE   90)    ; stub-up angle for new banks: 90 = vertical stub-up elbows, 45 = 45 deg stub elbows + 45 deg risers, open riser top, no fitting (per end in DUCTBANK)

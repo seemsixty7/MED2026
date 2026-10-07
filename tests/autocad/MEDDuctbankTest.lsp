@@ -4,8 +4,9 @@
 ;;; not executed (the test never writes to the MED database); SELECTs pass through.
 ;;; MVP3: stub-up encasement turn-up checks (*DBKT-TURNUPS*, *DBKT-ENCZ*), plain 3D polyline
 ;;; reference (DBKTPLAIN), DBEDIT round trip (DBKTEDITPRE / DBKTEDIT / DBKTEDITCHK).
-;;; MVP4: route profile (slopes taken up by flex, vertical bends) and 45 deg BUB stub-ups:
-;;; DBKTROUTE (plain 3DPOLY test route from *DBKT-ROUTE*), DBKTPROF (profile / BUB / cover checks).
+;;; MVP4: route profile (slopes taken up by flex, vertical bends) and 45 deg stub-ups (open riser top,
+;;; no fitting): DBKTROUTE (plain 3DPOLY test route from *DBKT-ROUTE*), DBKTPROF (profile / 45 / cover
+;;; checks), DBKTBUBCOUNT / DBKTOLDBUB / DBKTDELCHK (banks built by e91df9d with BUBs: DBEDIT / DBDELETE).
 (defun dbkt-w (s) (write-line s *DBKT-F*) (princ (strcat "\n[T] " s)))
 (defun dbkt-check (name ok msg)
   (if ok (setq *DBKT-PASS* (1+ *DBKT-PASS*)) (setq *DBKT-FAIL* (cons (strcat name ": " msg) *DBKT-FAIL*)))
@@ -252,18 +253,19 @@
           (if (or (null dnom) (< (- d (/ (dbk-get p "OD") 2.0)) dnom))
             (setq dnom (- d (/ (dbk-get p "OD") 2.0)) wmin (strcat (dbk-xdval e "POS") " " (dbk-xdval e "PART") " at " (rtos (car q) 2 2) "," (rtos (cadr q) 2 2))))
           (if (or (null dact) (< (- d (/ od 2.0)) dact)) (setq dact (- d (/ od 2.0))))
-          ;; the elbow's own OD (coated RGS) where the nearest envelope face is an outside chamfer
+          ;; primary conduit OD where the nearest envelope face is an outside chamfer (cover is sized
+          ;; off the primary conduit OD only, no coating allowance: Clint, Oct 7)
           (if (member (fix (vlax-curve-getParamAtPoint env sp)) chs)
-            (if (or (null dch) (< (- d (/ od 2.0)) dch)) (setq dch (- d (/ od 2.0)) nch (1+ nch))  (setq nch (1+ nch))))))))
+            (if (or (null dch) (< (- d (/ (dbk-get p "OD") 2.0)) dch)) (setq dch (- d (/ (dbk-get p "OD") 2.0)) nch (1+ nch))  (setq nch (1+ nch))))))))
   (if (> nb 0)
     (progn
       (dbkt-check (strcat "plan bend cover: elbow (position OD) to envelope face >= side cover " (rtos covreq 2 2) " (" (itoa nb) " elbows x 49 samples)")
                   (>= dnom (- covreq 0.005)) (strcat "min " (rtos dnom 2 3) " (" wmin ")"))
       (if (dbk-chamfer-p)
-        (dbkt-check (strcat "outside chamfer cover: coated elbow OD to chamfer face >= " (rtos covreq 2 2) " (" (itoa (length chs)) " chamfer faces, " (itoa nch) " samples)")
+        (dbkt-check (strcat "outside chamfer cover: elbow (primary OD) to chamfer face >= " (rtos covreq 2 2) " (" (itoa (length chs)) " chamfer faces, " (itoa nch) " samples)")
                     (and dch (>= dch (- covreq 0.005))) (if dch (strcat "min " (rtos dch 2 3)) "no samples")))
-      (dbkt-w (strcat "  info: coated elbow OD to nearest envelope face anywhere, min " (rtos dact 2 3)
-                      " (at the elbow ends the trunk sides are sized on the position OD, as in 6b0a15e)"))))
+      (dbkt-w (strcat "  info only: the coated elbow's own OD to the nearest envelope face, min " (rtos dact 2 3)
+                      " (cover is sized off the primary conduit OD, no coating allowance)"))))
   ;; stub elbows vs the turn-up profile
   (setq dstub nil n 0 covstub (min _DBKCOVEREND (atof (dbk-xdval env "COVT"))))
   (foreach end '("A" "B")
@@ -289,10 +291,8 @@
         (foreach e (append elbows (if (= (dbk-get *DBKS* (strcat "ANG" end)) 45) (dbkt-ents "RISER")))
           (if (member (dbk-xdval e "PART") (list (strcat "STUB" end) (strcat "RISER" end)))
             (progn
-              ;; 45 deg ends: cover on the primary conduit OD (standing rule); 90: the stub elbow OD as before
-              (setq od (if (= (dbk-get *DBKS* (strcat "ANG" end)) 45)
-                         (dbk-get (dbk-findpos (dbk-get *DBK* "PL") (dbk-xdval e "POS")) "OD")
-                         (atof (dbk-xdval e "OD")))
+              ;; cover on the primary conduit OD (standing rule, 90 and 45 deg ends)
+              (setq od (dbk-get (dbk-findpos (dbk-get *DBK* "PL") (dbk-xdval e "POS")) "OD")
                     n (1+ n))
               (foreach q (dbkt-samples e 48)
                 (setq s (+ (* (- (car q) (car (car fr))) (car (cadr fr))) (* (- (cadr q) (cadr (car fr))) (cadr (cadr fr)))))
@@ -302,7 +302,7 @@
                     (if (or (> s (dbk-tu-back (caddr q))) (< s face)) (setq d (- d)))
                     (if (or (null dstub) (< d dstub)) (setq dstub d)))))))))))
   (if dstub
-    (dbkt-check (strcat "turn-up cover: stub elbow OD to turn-up face >= " (rtos covstub 2 2) " (" (itoa n) " stub elbows / 45 deg risers, " (dbk-bendstr) ")")
+    (dbkt-check (strcat "turn-up cover: stub elbow / riser (primary OD) to turn-up face >= " (rtos covstub 2 2) " (" (itoa n) " stub elbows / 45 deg risers, " (dbk-bendstr) ")")
                 (>= dstub (- covstub 0.005)) (strcat "min " (rtos dstub 2 3))))
   (princ))
 
@@ -378,8 +378,10 @@
   (dbkt-w "---- DBEDIT round trip")
   (setq env (car (dbkt-ents "ENVELOPE")) mem (dbkt-bank-all *DBKT-EBANK*))
   (dbkt-check "one bank record after the rebuild, same bank ID" (and env (= (length (dbkt-ents "ENVELOPE")) 1) (= (dbk-xdval env "BANK") *DBKT-EBANK*)) "")
-  (dbkt-check "member count unchanged" (= (length mem) (length *DBKT-EOLD*)) (strcat (itoa (length mem)) " vs " (itoa (length *DBKT-EOLD*))))
-  (dbkt-check "drawing entity count unchanged (no orphans, no duplicates)" (= (dbkt-all-count) *DBKT-EALL*) (strcat (itoa (dbkt-all-count)) " vs " (itoa *DBKT-EALL*)))
+  (setq x (cond (*DBKT-EDROP*) (0)))   ; members an older build had that the rebuild drops (e91df9d BUBs)
+  (dbkt-check (if (> x 0) (strcat "member count = old - " (itoa x) " dropped BUBs") "member count unchanged") (= (length mem) (- (length *DBKT-EOLD*) x)) (strcat (itoa (length mem)) " vs " (itoa (length *DBKT-EOLD*))))
+  (dbkt-check (if (> x 0) (strcat "drawing entity count = old - " (itoa x) " (no orphans, no duplicates)") "drawing entity count unchanged (no orphans, no duplicates)")
+              (= (dbkt-all-count) (- *DBKT-EALL* x)) (strcat (itoa (dbkt-all-count)) " vs " (itoa *DBKT-EALL*)))
   (setq n (length (dbkt-ents "ENV3D")))
   (dbkt-check "one 3D envelope solid (no duplicate)" (= n 1) (itoa n))
   (setq n (length (dbkt-ents "SPACER3D")))
@@ -541,30 +543,26 @@
         (foreach z (dbk-get *DBKS* "VBZ") (if (and (> s (car z)) (< s (cadr z))) (setq ok nil)))
         (if (not (dbkt-near (caddr (cdr (assoc 10 (entget e)))) (+ (dbk-get *DBKS* "BOT") (dbk-dz s)) 0.01)) (setq ok nil)))
       (dbkt-check "spacer stations outside the vertical bends, inserts at the profile bottom of concrete" ok (itoa (length (dbkt-ents "SPACER"))))))
-  ;; 45 deg stub-ups + Mogul BUB
-  (setq bubs (vl-remove-if-not '(lambda (e) (= (dbk-xdval e "ROLE") "BUB")) (dbkt-ents nil)))
-  (dbkt-check (strcat "Mogul BUB fittings: " (itoa *DBKT-NBUB*)) (= (length bubs) *DBKT-NBUB*) (itoa (length bubs)))
-  (dbkt-check "bank record BUBS / ANGA / ANGB" (and (= (dbk-xdval env "BUBS") (itoa *DBKT-NBUB*)) (= (dbk-xdval env "ANGA") (itoa *DBKT-ANGA*)) (= (dbk-xdval env "ANGB") (itoa *DBKT-ANGB*)))
+  ;; 45 deg stub-ups: no fitting at the stub-up (Clint, Oct 7): 45 deg stub elbow + 45 deg riser, open riser top
+  (setq bubs (dbkt-bubcount))
+  (dbkt-check "no BUB fittings at the stub-ups (no ROLE=BUB, no 1bub / DBK_BUB inserts, no DBK_BUB block)" (= bubs 0) (itoa bubs))
+  (dbkt-check "bank record ANGA / ANGB, no BUBS key" (and (null (dbk-xdval env "BUBS")) (= (dbk-xdval env "ANGA") (itoa *DBKT-ANGA*)) (= (dbk-xdval env "ANGB") (itoa *DBKT-ANGB*)))
               (strcat (vl-princ-to-string (dbk-xdval env "BUBS")) " " (vl-princ-to-string (dbk-xdval env "ANGA")) " " (vl-princ-to-string (dbk-xdval env "ANGB"))))
-  (if bubs
+  (if (> *DBKT-N45* 0)
     (progn
-      (setq ok T)
-      (foreach e bubs
-        (setq end (dbk-xdval e "END") recs (cdr (xdataget e "MED_FITTING")) p (dbk-findpos pos (dbk-xdval e "POS"))
-              c (car (vl-remove-if-not '(lambda (x) (and (= (dbk-xdval x "POS") (dbk-xdval e "POS")) (= (dbk-xdval x "END") end))) (dbkt-ents "STUB")))
-              r (car (vl-remove-if-not '(lambda (x) (and (= (dbk-xdval x "POS") (dbk-xdval e "POS")) (= (dbk-xdval x "PART") (strcat "RISER" end)))) (dbkt-ents "RISER")))
-              q (cdr (assoc 10 (entget e))) z (dbk-get *DBK* (strcat "TOP" end)))
-        (setq fr (dbk-tu-frame end))
-        (if (not (and (= (nth 2 recs) 94) (equal (nth 1 recs) (dbk-get p "SIZE") 1e-6)
-                      (dbkt-near (caddr q) z 1e-6)
-                      c (dbkt-near (distance (dbk-xy q) (dbk-xy (cdr (assoc 10 (entget c))))) (atof (dbk-xdval e "XF")) 0.001)
-                      ;; origin outward of the riser top, along the end leg
-                      (> (dbk-dot (dbk-v- (dbk-xy q) (dbk-xy (cdr (assoc 10 (entget c))))) (dbk-v* (cadr fr) -1.0)) 0.0)
-                      r (progn (setq pts (dbkt-3dverts r))
-                               (and (dbkt-near (distance (car pts) (cdr (assoc 10 (entget c)))) 0.0 0.001)
-                                    (dbkt-near (abs (- (caddr (car pts)) (caddr (cadr pts)))) (distance (dbk-xy (car pts)) (dbk-xy (cadr pts))) 0.01)))))
-          (progn (setq ok nil) (dbkt-w (strcat "    bad BUB " (dbk-xdval e "POS") " end " end " " (vl-princ-to-string q))))))
-      (dbkt-check "BUB: code 94 at the conduit size, face up at the stub-up top EL, entering hub on the 45 deg riser top (origin XF outward)" ok "")
+      (setq ok T n 0)
+      (foreach c (dbkt-ents "STUB")
+        (setq end (dbk-xdval c "END"))
+        (if (= (dbk-get *DBKS* (strcat "ANG" end)) 45)
+          (progn
+            (setq n (1+ n) q (cdr (assoc 10 (entget c))) z (+ (dbk-get *DBK* (strcat "TOP" end)) 0.0)
+                  r (car (vl-remove-if-not '(lambda (x) (and (= (dbk-xdval x "POS") (dbk-xdval c "POS")) (= (dbk-xdval x "PART") (strcat "RISER" end)))) (dbkt-ents "RISER"))))
+            (if (not (and (dbkt-near (caddr q) z 1e-6)
+                          r (progn (setq pts (dbkt-3dverts r))
+                                   (and (dbkt-near (distance (car pts) q) 0.0 0.001)
+                                        (dbkt-near (abs (- (caddr (car pts)) (caddr (cadr pts)))) (distance (dbk-xy (car pts)) (dbk-xy (cadr pts))) 0.01)))))
+              (progn (setq ok nil) (dbkt-w (strcat "    bad 45 deg stub-up " (dbk-xdval c "POS") " end " end " " (vl-princ-to-string q))))))))
+      (dbkt-check (strcat "45 deg risers: " (itoa n) " end open at the stub-up point, top EL (45 deg)") (and ok (= n *DBKT-N45*)) "")
       (setq ok T n 0)
       (foreach e (dbkt-ents "ELBOW")
         (if (and (wcmatch (dbk-xdval e "PART") "STUB*") (= (dbk-get *DBKS* (strcat "ANG" (substr (dbk-xdval e "PART") 5))) 45))
@@ -572,7 +570,7 @@
                  (if (not (and (= (dbk-xdval e "ANG") "45.00") (member (nth 2 recs) (if (= *DBKT-STUBCODE* 1) '(167 168 169) '(163 164 165)))
                                (dbkt-near (* 4.0 (atan (abs b)) (/ 180.0 pi)) 45.0 0.01)))
                    (setq ok nil)))))
-      (dbkt-check (strcat "45 deg stub elbows: " (itoa n) " (45 deg arcs, " (if (= *DBKT-STUBCODE* 1) "RGS 167-169" "coated 163-165") ")") (and ok (= n *DBKT-NBUB*)) "")))
+      (dbkt-check (strcat "45 deg stub elbows: " (itoa n) " (45 deg arcs, " (if (= *DBKT-STUBCODE* 1) "RGS 167-169" "coated 163-165") ")") (and ok (= n *DBKT-N45*)) "")))
   ;; flags
   (foreach pat *DBKT-FLAGPATS*
     (dbkt-check (strcat "flag: " pat) (vl-some '(lambda (f) (wcmatch f pat)) (dbk-get *DBKS* "FLAGS")) ""))
@@ -592,10 +590,48 @@
       (if *DBKT-POLYLEN* (setq polylen *DBKT-POLYLEN* *DBKT-POLYLEN* nil))
       (setq types (vl-sort (dbk-uniq types) '<))
       (dbkt-w (strcat "  BOM fitting codes: " (vl-princ-to-string types)))
-      (dbkt-check (strcat "BOM has fitting codes " (vl-princ-to-string *DBKT-BOMCODES*)) (vl-every '(lambda (c) (member c types)) *DBKT-BOMCODES*) "")))
+      (dbkt-check (strcat "BOM has fitting codes " (vl-princ-to-string *DBKT-BOMCODES*)) (vl-every '(lambda (c) (member c types)) *DBKT-BOMCODES*) "")
+      (dbkt-check "BOM has no BUB code 94" (not (member 94 types)) "")))
   (dbkt-w (strcat (itoa *DBKT-PASS*) " passed, " (itoa (length *DBKT-FAIL*)) " failed (cumulative)"))
   (foreach x (reverse *DBKT-FAIL*) (dbkt-w (strcat "  FAILED: " x)))
   (close *DBKT-F*)
   (princ))
-(princ "\nMEDDuctbankTest loaded: DBKTEST DBKTLIST DBKTDEL DBKTSPEC DBKTPLAIN DBKTEDITPRE DBKTEDIT DBKTEDITCHK DBKTROUTE DBKTPROF")
+;; ---- banks built by e91df9d (45 deg stub-ups had Mogul BUB inserts): BUB members left in the drawing
+(defun dbkt-bubcount ( / ss i n)
+  (setq n 0 ss (ssget "_X" '((-3 ("DBANK_DATA")))) i 0)
+  (if ss (repeat (sslength ss) (if (= (dbk-xdval (ssname ss i) "ROLE") "BUB") (setq n (1+ n))) (setq i (1+ i))))
+  (if (setq ss (ssget "_X" '((0 . "INSERT") (2 . "DBK_BUB,1BUB")))) (setq n (+ n (sslength ss))))
+  (if (tblsearch "BLOCK" "DBK_BUB") (setq n (1+ n)))
+  n)
+(defun c:DBKTBUBCOUNT () (setq *DBKT-OLDBUBS* (dbkt-bubcount)) (princ (strcat "\n[T] BUB members / inserts / DBK_BUB block: " (itoa *DBKT-OLDBUBS*))) (princ))
+;; after loading the current MEDDuctbank.lsp and DBEDIT on the old bank
+(defun c:DBKTOLDBUB ( / n)
+  (setq *DBKT-F* (open *DBKT-OUT* "a"))
+  (dbkt-w "---- old bank (built by e91df9d with BUB fittings)")
+  (dbkt-check (strcat "the e91df9d build made BUBs (" (itoa *DBKT-OLDBUBEXP*) " ROLE=BUB DBK_BUB inserts + the DBK_BUB block)") (= *DBKT-OLDBUBS* (1+ (* 2 *DBKT-OLDBUBEXP*))) (itoa *DBKT-OLDBUBS*))
+  (setq n (dbkt-bubcount))
+  (dbkt-check "afterwards (DBEDIT rebuild or DBDELETE): no BUB inserts, no ROLE=BUB members, DBK_BUB block purged" (= n 0) (itoa n))
+  (dbkt-w (strcat (itoa *DBKT-PASS*) " passed, " (itoa (length *DBKT-FAIL*)) " failed (cumulative)"))
+  (foreach x (reverse *DBKT-FAIL*) (dbkt-w (strcat "  FAILED: " x)))
+  (close *DBKT-F*)
+  (princ))
+;; after DBDELETE: nothing of the bank left (BUBs included), reference route restored
+(defun c:DBKTDELCHK ( / n ref)
+  (setq *DBKT-F* (open *DBKT-OUT* "a"))
+  (dbkt-w "---- DBDELETE")
+  (setq n (length (dbk-bank-ents *DBKT-EBANK*)))
+  (dbkt-check (strcat "no entities of bank " *DBKT-EBANK* " left") (= n 0) (itoa n))
+  (setq n (dbkt-bubcount))
+  (dbkt-check "no BUB inserts / members left, DBK_BUB block purged" (= n 0) (itoa n))
+  (setq ref (handent *DBKT-DELREF*))
+  (dbkt-check "reference route restored (still in the drawing, no DBANK_DATA)" (and ref (entget ref) (null (dbk-xdval ref "ROLE"))) "")
+  (dbkt-w (strcat (itoa *DBKT-PASS*) " passed, " (itoa (length *DBKT-FAIL*)) " failed (cumulative)"))
+  (foreach x (reverse *DBKT-FAIL*) (dbkt-w (strcat "  FAILED: " x)))
+  (close *DBKT-F*)
+  (princ))
+(defun c:DBKTDELPRE ( / env)
+  (setq env (car (dbkt-ents "ENVELOPE")) *DBKT-EBANK* (dbk-xdval env "BANK")
+        *DBKT-DELREF* (cdr (assoc 5 (entget (car (dbkt-ents "REF"))))))
+  (princ))
+(princ "\nMEDDuctbankTest loaded: DBKTEST DBKTLIST DBKTDEL DBKTSPEC DBKTPLAIN DBKTEDITPRE DBKTEDIT DBKTEDITCHK DBKTROUTE DBKTPROF DBKTBUBCOUNT DBKTOLDBUB DBKTDELPRE DBKTDELCHK")
 (princ)

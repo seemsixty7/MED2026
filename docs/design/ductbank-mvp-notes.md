@@ -158,7 +158,7 @@ The round trip (form `BuildSpec` -> `dbk-spec-in` -> generate) was checked with 
   - outline arcs (none for Chamfer)
   - BENDCONC stored
   - plan elbows (49 samples each): distance to the outline minus the position OD/2 is at least the side cover
-  - outside chamfer faces: the same with the coated elbow OD
+  - outside chamfer faces: the same with the coated elbow OD (MVP4b: primary OD, see below)
   - stub elbows in the turn-up (s, z) frame: distance to the back edge above the trunk top plus the trunk-top ray, minus the elbow OD/2, is at least min(end, top) cover
 
   It runs again after the `-Edit` rebuild (mixed R24 / R36). New switch `-Sweep`.
@@ -185,6 +185,8 @@ The round trip (form `BuildSpec` -> `dbk-spec-in` -> generate) was checked with 
 
 ## MVP4 (2026-10-07): 45 deg BUB stub-ups, route rises
 
+> The BUB fittings below were removed in MVP4b (Clint, 2026-10-07): 45 deg stub-ups now end open at the riser top. See the MVP4b section.
+
 Clint: "I am unable to do a stub up at 45 degrees. Often times a duct bank (single level) could pop up into BUB fittings and then continue on. We should be able to adapt to a rise on the duct bank. Sometimes there may be elevation changes that can be compensated over distance in just the flex of the conduit and not a hard bend."
 
 - **Stub-up angle (per end).** `ANGA` / `ANGB` (90 | 45) in `*DBK*`, the bank record and the spec; `_DBKSTUBANGLE` (code default 90) for new banks. `-DUCTBANK` Options > ANgle; dialog combos next to End A / End B. `dbk-stub-se` gives each position's stub elbow start/end for the angle, `dbk-stub-elbow-code` the 45 codes (coated 163-165, RGS 167-169), `dbk-stub-sweep` the 45 sweep top ZC + RV (1 - cos 45).
@@ -203,3 +205,24 @@ Clint: "I am unable to do a stub up at 45 degrees. Often times a duct bank (sing
 - **Tests (accoreconsole, sample copies).** Existing: default / `-Enc -30` / `-Enc Top` / `-Rgs` 31/31, `-Plain` 32/32, `-Edit` 50/50, `-Plain -Edit` 51/51, `-Size 4` 29/29, `-Plain -Size 4` 30/30, `-Sweep` 30/30, `-Sweep -Edit` 48/48. New (`-Route`, `DBKTPROF`): Bub 42/42, Bub2 43/43, Slope 42/42, Step 39/39; with `-Edit` (DBEDIT round trip) Bub 72/72, Bub2 74/74, Slope 71/71, Step 65/65. Profile cover min 3.000 (Slope, Step); turn-up cover at 45 ends min 2.068.
 - **MEDMAKE3D (scripted AutoCAD 2024).** Bub: 33 solids (RUN 8, 45 deg risers 4, end A risers 4, ELBOW 12, SPACER 4, ENVELOPE 1) + 4 Mogul BUB conduit-body blocks (`Conduit bodies: 4 block(s)`). Step: 122 solids (RISER 16, RUN 24, sloped 16, ELBOW 48 = 16 stub + 32 vertical, SPACER 17, ENVELOPE 1). Slope: 86 solids (RISER 16, RUN 8, sloped 8, ELBOW 24, SPACER 29, ENVELOPE 1). The 3D notice printed each time.
 - **Open points for Clint:** BUB MVP (ends at the BUB, no continuation run); MED3D models the BUB hubs horizontal (the 45 deg riser meets a horizontal hub); level landings at plan bends; non-stock residual angles are drawn as routed with the stock code; codes 175-183 are new; the 45 deg coated codes are 163-165 (161 is the coated 90 R36); the existing coated-OD chamfer / turn-up sizing (18af174) is kept, the new code uses the primary OD.
+
+## MVP4b (2026-10-07): no BUB at stub-ups, primary-OD cover
+
+Clint's answers on e91df9d:
+
+1/2. No BUB fittings at stub-ups. A 45 deg stub-up ends open at the riser top; fittings at stub-ups will be a later option or a separate command.
+3. Level landings through plan bends: approved, kept.
+4. Non-stock vertical angles drawn as routed, billed as the nearest stock elbow with a flag: approved, kept.
+Also: cover is sized off the primary conduit OD only, the chamfers and turn-ups included.
+
+Changes:
+
+- **BUB removed.** p1 BUB constants (code 94, `1bub`, size table), p11 `dbk-bub-insert` / `DBK_BUB` stand-in, p3 `dbk-bub-dims` and the BUB-length / BUB-width / > 4" checks, p5 `nbub` and the `BUBS` record key. Kept: the 45 deg stub elbows (163-165 / 167-169), the 45 deg risers, the concrete following the 45 and the 45 deg riser clear-gap check (rows > 1). New info flag: "End X: 45 deg stub-ups: the risers end open at the stub-up top EL (no fitting)."
+- **Wording.** Dialog angle combos `90` / `45` (tooltip and help: open riser top). `-DUCTBANK` Options > ANgle prompt "90 or 45 (45 = 45 deg stub elbow + 45 deg riser, open end)". Summary "45 deg (open riser top)". `_DBKSTUBANGLE` comment in med.spc. `*DBK-VERSION*` 2026-10-07 MVP4b.
+- **Old banks with BUBs.** BUB inserts are bank members (DBANK_DATA `ROLE=BUB`), so `DBEDIT` (`dbk-commit`) and `DBDELETE` already erase them with the bank. `dbk-commit` now counts them and prints "DBEDIT: n BUB fitting(s) from an earlier build removed; 45 deg stub-ups now end open at the riser top (no fitting)."; both commands purge the `DBK_BUB` stand-in block definition once nothing references it (`dbk-purge-bub`; MED's own `1bub` block is left alone). `DBLIST` notes a stored `BUBS` count until the bank is rebuilt.
+- **MED3DFittings.lsp** reverted to 18af174: `medcb-collect` again skips every INSERT with DBANK_DATA (the bank's only member inserts are the spacer stations).
+- **Primary OD.** `dbk-elbow-od` (plan-bend chamfers) and `dbk-tu-od` (turn-up) return the position OD; the coating is no longer added. The tests measure the outside chamfer and the turn-up against the primary OD; the coated OD is shown as info only (min 1.96").
+
+Tests (accoreconsole, sample copies; all 0 failed): default / `-Enc -30` / `-Enc Top` / `-Rgs` 31, `-Plain` 32, `-Edit` 50, `-Plain -Edit` 51, `-Size 4` 29, `-Plain -Size 4` 30, `-Sweep` 30, `-Sweep -Edit` 48, `-Route S45` 43 (`-Edit` 74), `-Route S45x2` 44 (`-Edit` 76), `-Route Slope` 43 (`-Edit` 73), `-Route Step` 40 (`-Edit` 67), `-Route OldBub` 33 (bank built with the e91df9d code, `-DBEDIT` with the new code: 4 BUBs removed, block purged, members 104 -> 100), `-Route OldBubDel` 5. Cover minimums: chamfer faces 2.000 (primary OD), turn-up 2.069 (3") / 2.142 (4").
+
+**MEDMAKE3D (scripted AutoCAD 2024).** S45 (1x4, end B 45 deg): 33 solids (RUN 8, 45 deg risers 4, end A risers 4, ELBOW 12 incl. 4 x 45 deg 163, SPACER 4, ENVELOPE 1), `Conduit bodies: 0 block(s)`, no BUB. Slope: 86 solids. Step: 122 solids. All 12 / 24 / 48 elbows modelled; the 3D disclaimer printed on each run. Image: `docs/images/ductbank-3d-45-stubup.png` (replaces `ductbank-3d-bub-stubup.png`).

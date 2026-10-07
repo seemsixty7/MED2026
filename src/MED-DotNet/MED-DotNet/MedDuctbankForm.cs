@@ -227,12 +227,12 @@ namespace MEDDotNet
             y += 108;
             g = Group(this, "Stub-up zone", x, y, w, 298);
             Lbl(g, "End A", 10, 20); _endA = Cmb(g, 52, 20, 76, new[] { "Stubup", "Open" });
-            _angA = Cmb(g, 132, 20, 70, new[] { "90", "45 BUB" });
+            _angA = Cmb(g, 132, 20, 70, new[] { "90", "45" });
             Lbl(g, "top EL", 206, 20); _topA = Txt(g, 248, 20, 44, "");
             Lbl(g, "End B", 10, 46); _endB = Cmb(g, 52, 46, 76, new[] { "Stubup", "Open" });
-            _angB = Cmb(g, 132, 46, 70, new[] { "90", "45 BUB" });
+            _angB = Cmb(g, 132, 46, 70, new[] { "90", "45" });
             Lbl(g, "top EL", 206, 46); _topB = Txt(g, 248, 46, 44, "");
-            const string at = "Stub-up angle at this end:\n90 = vertical stub-up elbows and risers (default).\n45 BUB = each conduit rises at 45 deg out of the bank into a Mogul BUB fitting (code 94, up to 4\"),\ninserted face up at the stub-up point; the run ends at the BUB and its far hub is left open to continue the run.";
+            const string at = "Stub-up angle at this end:\n90 = vertical stub-up elbows and risers (default).\n45 = 45 deg stub elbows and 45 deg risers; each riser ends open at the stub-up point (top EL), no fitting.\nThe concrete turn-up follows the 45.";
             foreach (Control c in new Control[] { _angA, _angB }) _tips.SetToolTip(c, at);
             _endA.SelectedIndexChanged += (s, e) => _angA.Enabled = (_endA.SelectedItem as string) == "Stubup";
             _endB.SelectedIndexChanged += (s, e) => _angB.Enabled = (_endB.SelectedItem as string) == "Stubup";
@@ -355,7 +355,7 @@ namespace MEDDotNet
             _covT.Text = N(D(Get("COVT", "3"))); _covB.Text = N(D(Get("COVB", "3"))); _covL.Text = N(D(Get("COVL", "2")));
             _covR.Text = N(D(Get("COVR", "2"))); _covE.Text = N(D(Get("COVE", "2"))); _gap.Text = N(D(Get("MINGAP", "2")));
             Pick(_endA, Get("ENDA", "Stubup")); Pick(_endB, Get("ENDB", "Open"));
-            Pick(_angA, Math.Abs(D(Get("ANGA", "90")) - 45) < 0.01 ? "45 BUB" : "90"); Pick(_angB, Math.Abs(D(Get("ANGB", "90")) - 45) < 0.01 ? "45 BUB" : "90");
+            Pick(_angA, Math.Abs(D(Get("ANGA", "90")) - 45) < 0.01 ? "45" : "90"); Pick(_angB, Math.Abs(D(Get("ANGB", "90")) - 45) < 0.01 ? "45" : "90");
             _angA.Enabled = (_endA.SelectedItem as string) == "Stubup"; _angB.Enabled = (_endB.SelectedItem as string) == "Stubup";
             _flexMax.Text = N(D(Get("FLEXMAX", "5"))); _flexLen.Text = N(D(Get("FLEXLEN", "120")));
             _topA.Text = N(D(Get("TOPA", "0"))); _topB.Text = N(D(Get("TOPB", "0")));
@@ -473,7 +473,7 @@ namespace MEDDotNet
             double topRel = D((endA ? _topA : _topB).Text) - botz;
             double sweep = SweepRel(g);
             string t = (_enc.Text ?? "").Trim();
-            if (Is45(endA)) why = "45 deg BUB end: the turn-up follows the 45 deg risers";
+            if (Is45(endA)) why = "45 deg end: the turn-up follows the 45 deg risers";
             double v;
             if (t.StartsWith("T", StringComparison.OrdinalIgnoreCase)) v = topRel;
             else if (double.TryParse(t, NumberStyles.Float, IC, out v)) v -= botz;
@@ -776,7 +776,7 @@ namespace MEDDotNet
                 "7. Bends (Cover box): Chamfer (default) = straight concrete chamfer on the outside of each plan bend and of the stub-up turn-up, sized so every elbow keeps at least the side/top/end cover; Sweep = concrete follows the elbow arcs.\n" +
                 "8. A plain 3D polyline / polyline / line can be the reference route: set its size and type in the Bank box.\n" +
                 "   Elevation changes in the route are followed: gentle grades (up to the flex angle over the flex length, Envelope box) are sloped runs with no fitting; steeper changes get stock vertical bends (11.25 / 22.5 / 30 / 45 / 90). The route profile is listed in the Envelope box.\n" +
-                "   Stub-up angle per end (next to End A / End B): 90 or 45 BUB (45 deg risers into Mogul BUB fittings, far hub left open).\n" +
+                "   Stub-up angle per end (next to End A / End B): 90 or 45 (45 deg stub elbows and risers ending open at the stub-up point; no fitting).\n" +
                 "9. Check re-solves and refreshes the checks and envelope; OK solves and generates (blocked while there are errors).\n\n" +
                 "DBEDIT reopens this dialog for an existing bank and rebuilds it in place (same ID) from the reference route on MED_DBREF.\n" +
                 "The envelope and spacer stations are also modelled as 3D solids on the 3DMEDModel- layer, which MEDMAKE3D pulls into the 3D export.\n" +

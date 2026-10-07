@@ -20,7 +20,7 @@
 (princ "\nLoading MEDDuctbank...")
 (vl-load-com)
 (regapp "DBANK_DATA")
-(setq *DBK-VERSION* "2026-10-07 MVP4")
+(setq *DBK-VERSION* "2026-10-07 MVP4b")
 
 ;;; ------------------------------------------------------------------ defaults
 ;;; med.spc may set any of these; the patch never overwrites med.spc, so every
@@ -53,8 +53,8 @@
 (dbk-def '_DBKBENDCONC "Chamfer")  ; concrete at bends: "Chamfer" = straight chamfers (plan bends, outside tangent
                                    ; to the cover arc, inside on its chord; turn-up on the chord of the stub
                                    ; elbow sweep), "Sweep" = concentric arcs that follow the elbows
-(dbk-def '_DBKSTUBANGLE 90)        ; new banks: stub-up angle at each stub-up end, 90 or 45 (45 = rise at 45 deg into a
-                                   ; Mogul BUB pulling fitting, face up; the run ends at the BUB's other hub)
+(dbk-def '_DBKSTUBANGLE 90)        ; new banks: stub-up angle at each stub-up end, 90 or 45 (45 = 45 deg stub elbow and
+                                   ; 45 deg riser, open end at the stub-up top EL; no fitting at the stub-up)
 (dbk-def '_DBKFLEXMAX 5.0)         ; route grade changes up to this deflection (deg) are taken up by conduit flex (no
                                    ; fitting); larger ones get vertical bends at the nearest stock elbow angle
 (dbk-def '_DBKFLEXLEN 120.0)       ; straight conduit wanted over a flex point (one 10 ft stick: half each side)
@@ -98,11 +98,6 @@
                          (45 (24.0 . 167) (36.0 . 168) (48.0 . 169))))
 ;; riser-side coupling of a stub elbow: PVC-coated RGS 173 (seeded), plain RGS 8 (existing)
 (setq *DBK-COUPLING* '((2 . 173) (1 . 8)))
-;; Mogul BUB (45 deg stub-ups): MEDType FITTING 94, block 1bub (face up at the insert point). Fallback
-;; size table when MED3DFittings is not loaded (Crouse-Hinds 1F 2006 p.15: size a b c)
-(setq *DBK-BUBCODE* 94 *DBK-BUBBLOCK* "1bub")
-(setq *DBK-BUB* '((1.0 9.1875 2.6875 2.1875) (1.25 9.3125 3.1875 2.1875) (1.5 13.5 3.5 3.0) (2.0 13.5 4.125 3.0)
-                  (2.5 17.75 4.8125 4.25) (3.0 17.875 5.625 4.25) (3.5 23.375 6.375 5.25) (4.0 23.25 6.8125 5.25)))
 (setq *DBK-WRAPCODE* 174)               ; tape wrap, plain RGS stub-up (one record per stub-up)
 ;; PVC Sch 40 OD fallback when MEDConduitOD has no row
 (setq *DBK-PVCOD* '((0.5 . 0.840) (0.75 . 1.050) (1.0 . 1.315) (1.25 . 1.660) (1.5 . 1.900)
@@ -646,65 +641,6 @@
   (if flat
     (dbk-mk-lw layer (mapcar 'dbk-xy pts) (mapcar '(lambda (x) 0.0) pts) z '(0.0 0.0 1.0) nil xds lt)
     (dbk-mk-3dp layer pts xds lt)))
-;; ---- Mogul BUB at a 45 deg stub-up
-;; hub face offset from the BUB origin (MED3DFittings Mogul BUB geometry when loaded, else the same rule
-;; from the catalog table: xf = a/2 - hub radius x sqrt(0.5), hub = min(0.9 c, 1.15 OD))
-(defun dbk-bub-xf (sz / h r d)
-  (setq h (if medcb-hubs (vl-catch-all-apply 'medcb-hubs (list "MOG" "BUB" sz))))
-  (if (and h (not (vl-catch-all-error-p h)) (listp h) (setq r (assoc "RUN2" h)) (listp (cadr r)))
-    (abs (car (cadr r)))
-    (progn
-      (setq d (dbk-bub-dims sz))
-      (- (/ (car d) 2.0) (* (sqrt 0.5) (/ (min (* 0.9 (caddr d)) (* 1.15 (dbk-od 1 sz))) 2.0))))))
-;; the 2D BUB block: MED's 1bub symbol (MED dwgs folder / support path), else a simple stand-in
-(defun dbk-bub-file ( / f d)
-  (cond
-    ((and (= (type _MEDDWG) 'STR) (setq f (findfile (strcat _MEDDWG *DBK-BUBBLOCK* ".dwg")))) f)
-    ((and getmeddir (setq d (vl-catch-all-apply 'getmeddir (list 4))) (= (type d) 'STR)
-          (setq f (findfile (strcat d "/" *DBK-BUBBLOCK* ".dwg")))) f)
-    ((findfile (strcat *DBK-BUBBLOCK* ".dwg")))))
-;; copy the symbol drawing's model space into a block definition with ObjectDBX (full AutoCAD only:
-;; no command, so it is safe inside scripts); base point = the centre of the symbol (1BUB.DWG INSBASE)
-(defun dbk-bub-dbx (name f / acad doc dbx blk objs mn mx a b r)
-  (setq r (vl-catch-all-apply
-    '(lambda ()
-       (setq acad (vlax-get-acad-object) doc (vla-get-activedocument acad)
-             dbx (vla-getinterfaceobject acad (strcat "ObjectDBX.AxDbDocument." (substr (getvar "ACADVER") 1 2))))
-       (vla-open dbx f)
-       (vlax-for o (vla-get-modelspace dbx)
-         (setq objs (cons o objs))
-         (vla-getboundingbox o 'a 'b) (setq a (vlax-safearray->list a) b (vlax-safearray->list b))
-         (setq mn (if mn (mapcar 'min mn a) a) mx (if mx (mapcar 'max mx b) b)))
-       (if objs
-         (progn
-           (setq blk (vla-add (vla-get-blocks doc) (vlax-3d-point (mapcar '(lambda (p q) (/ (+ p q) 2.0)) mn mx)) name))
-           (vla-copyobjects dbx (vlax-make-variant (vlax-safearray-fill (vlax-make-safearray vlax-vbObject (cons 0 (1- (length objs)))) (reverse objs))) blk)))
-       (vlax-release-object dbx)
-       T)))
-  (and (not (vl-catch-all-error-p r)) r (tblsearch "BLOCK" name)))
-(defun dbk-bub-block ( / f)
-  (cond
-    ((tblsearch "BLOCK" *DBK-BUBBLOCK*) *DBK-BUBBLOCK*)
-    ((and (dbk-doc) (setq f (dbk-bub-file)) (dbk-bub-dbx *DBK-BUBBLOCK* f)) *DBK-BUBBLOCK*)
-    ((tblsearch "BLOCK" "DBK_BUB") "DBK_BUB")
-    (T
-      ;; stand-in (no ActiveX, e.g. accoreconsole, or no 1bub.dwg): body outline + run line, origin between the hub faces
-      (entmake '((0 . "BLOCK") (2 . "DBK_BUB") (70 . 0) (10 0.0 0.0 0.0)))
-      (entmake '((0 . "LWPOLYLINE") (100 . "AcDbEntity") (8 . "0") (62 . 0) (100 . "AcDbPolyline") (90 . 4) (70 . 1)
-                 (10 -2.0 -1.0) (10 2.0 -1.0) (10 2.0 1.0) (10 -2.0 1.0)))
-      (entmake '((0 . "LINE") (100 . "AcDbEntity") (8 . "0") (62 . 0) (10 -3.0 0.0 0.0) (11 3.0 0.0 0.0)))
-      (entmake '((0 . "ENDBLK")))
-      "DBK_BUB")))
-;; insert the BUB: origin = riser top (hub face centre) + xf outward, at the stub-up top EL, rotation = outward
-(defun dbk-bub-insert (face z uo sz tag bank p end / blk xf pt sc)
-  (setq blk (dbk-bub-block) xf (dbk-bub-xf sz) pt (dbk-v+ face (dbk-v* (dbk-unit uo) xf))
-        sc (if (and (numberp _SC) (> _SC 0.0) (= blk *DBK-BUBBLOCK*)) (float _SC) 1.0))
-  (if (entmake (list '(0 . "INSERT") '(100 . "AcDbEntity") '(8 . "MED_DBSTUB") '(100 . "AcDbBlockReference")
-                     (cons 2 blk) (cons 10 (dbk-p3 pt z)) (cons 41 sc) (cons 42 sc) (cons 43 sc)
-                     (cons 50 (angle '(0.0 0.0) uo))
-                     (list -3 (bld_fitting (list *DBK-BUBCODE*) (list sz) (list tag) '(0.0) '(0.0) '(0.0))
-                           (dbk-xdpos "BUB" bank p (list (strcat "END=" end) (strcat "XF=" (dbk-r4 xf)) "HUB=RUN2")))))
-    (entlast)))
 ;; plan end face of the envelope at a stub-up end (station from that end)
 (defun dbk-end-face (end)
   (setq *DBK-TUEND* end *DBK-TUDZ* (if (= end "B") (cond ((dbk-get *DBKS* "DZB")) (0.0)) 0.0)
@@ -898,7 +834,7 @@
   (if griser
     (setq flags (cons (strcat "Stub-up clear gap along the run " (dbk-r2 (apply 'min (mapcar 'cadr griser))) "\" < " (dbk-r2 _DBKMINGAP)
                               "\" at row pitch " (dbk-r2 sy) " (" (dbk-joinstr (reverse (mapcar 'car griser)) " ") ").") flags)))
-  ;; 45 deg BUB stub-ups: riser clearance, BUB bodies along the run and across, sizes
+  ;; 45 deg stub-ups: clearance between the 45 deg risers of adjacent rows
   (foreach e (list (list "A" stuba anga) (list "B" stubb angb))
     (if (and (cadr e) (= (caddr e) 45))
       (progn
@@ -912,19 +848,7 @@
         (if griser
           (setq flags (cons (strcat "End " (car e) " 45 deg risers: clear gap " (dbk-r2 (apply 'min (mapcar 'cadr griser))) "\" < " (dbk-r2 _DBKMINGAP)
                                     "\" between rows (" (dbk-joinstr (reverse (mapcar 'car griser)) " ") "): the rows collide, increase the row pitch.") flags)))
-        (setq a (dbk-bub-dims maxsize))
-        (cond
-          ((> maxsize 4.001)
-            (setq flags (cons (strcat "End " (car e) ": no Mogul BUB above 4\" (largest conduit " (dbk-sz maxsize) "): 45 deg stubs drawn without BUB fittings.") flags)))
-          (T
-            (if (and (> rows 1) (> (car a) (- sy 1e-6)))
-              (setq flags (cons (strcat "End " (car e) ": " (dbk-sz maxsize) " BUB bodies are " (dbk-r2 (car a)) "\" long, more than the row pitch "
-                                        (dbk-r2 sy) "\": the BUBs of adjacent rows collide.") flags)))
-            (if (and (> (dbk-max counts) 1) (< sx (- (caddr a) 1e-6)))
-              (setq flags (cons (strcat "End " (car e) ": " (dbk-sz maxsize) " BUB bodies are " (dbk-r2 (caddr a)) "\" wide, more than the stub pitch "
-                                        (dbk-r2 sx) "\": the BUBs collide across.") flags)))))
-        (setq flags (cons (strcat "End " (car e) ": 45 deg stub-ups end at Mogul BUB fittings (code " (itoa *DBK-BUBCODE*)
-                                  "); the far hub is left open to continue the run.") flags)))))
+        (setq flags (cons (strcat "End " (car e) ": 45 deg stub-ups: the risers end open at the stub-up top EL (no fitting).") flags)))))
   ;; stub spacing vs trunk spacing, taper
   (setq ang (dbk-max (mapcar '(lambda (p) (dbk-deg (atan (abs (- (dbk-get p "RELS") (dbk-get p "RELT"))) lt))) pl)))
   (if (and (or stuba stubb) (> (abs (- sx pitchh)) 0.005))
@@ -1042,7 +966,7 @@
                      (cons "SWEEPA" sweepa) (cons "SWEEPB" sweepb)
                      (cons "ERRS" (reverse (dbk-uniq errs))) (cons "FLAGS" (reverse (dbk-uniq flags)))))
   *DBKS*)
-;; stub angle value (90 / 45, "45 BUB", nil = the _DBKSTUBANGLE default)
+;; stub angle value (90 / 45 or "90" / "45", nil = the _DBKSTUBANGLE default)
 (defun dbk-stubang (v)
   (if (= (type v) 'STR) (setq v (atof v)))
   (if (not (numberp v)) (setq v _DBKSTUBANGLE))
@@ -1056,12 +980,6 @@
 ;; elevation where the stub elbow ends (top of the elbow sweep)
 (defun dbk-stub-sweep (p ang dz)
   (+ (dbk-get p "ZC") dz (* (dbk-get p "RV") (if (= ang 45) (- 1.0 (cos (/ pi 4.0))) 1.0))))
-;; Mogul BUB (a b c) for a size: RUN length a, height b, width c (MED3DFittings data, fallback table)
-(defun dbk-bub-dims (sz / r)
-  (setq r (assoc sz *DBK-BUB*))
-  (if (null r) (foreach q *DBK-BUB* (if (and (null r) (>= (car q) (- sz 1e-6))) (setq r q))))
-  (if (null r) (setq r (last *DBK-BUB*)))
-  (cdr r))
 
 ;;; ------------------------------------------------------------------ text grid ("cheat image")
 (defun dbk-pad (s w) (while (< (strlen s) w) (setq s (strcat s " "))) s)
@@ -1092,8 +1010,8 @@
                      " sep, 2-way), trunk pitch " (dbk-r2 (nth 5 part)) " H x " (dbk-r2 (nth 4 part))
                      " V, seat bottom " (dbk-r2 (nth 6 part)) " (catalog CL " (dbk-r2 (nth 7 part)) ")"))
     (dbk-say "  Spacer: none (computed spacing)"))
-  (dbk-say (strcat "  Ends: A " (dbk-get *DBK* "ENDA") (if (and (= (dbk-get *DBK* "ENDA") "Stubup") (= (dbk-get *DBKS* "ANGA") 45)) " 45/BUB" "")
-                   ", B " (dbk-get *DBK* "ENDB") (if (and (= (dbk-get *DBK* "ENDB") "Stubup") (= (dbk-get *DBKS* "ANGB") 45)) " 45/BUB" "")
+  (dbk-say (strcat "  Ends: A " (dbk-get *DBK* "ENDA") (if (and (= (dbk-get *DBK* "ENDA") "Stubup") (= (dbk-get *DBKS* "ANGA") 45)) " 45" "")
+                   ", B " (dbk-get *DBK* "ENDB") (if (and (= (dbk-get *DBK* "ENDB") "Stubup") (= (dbk-get *DBKS* "ANGB") 45)) " 45" "")
                    "   stub-up pitch " (dbk-r2 (dbk-get *DBK* "SX")) " across x " (dbk-r2 (dbk-get *DBK* "SY"))
                    " along   transition " (dbk-r2 _DBKTRANSL) "\" (max taper " (dbk-r2 (dbk-get *DBKS* "TAPER")) " deg)"))
   (dbk-say (strcat "  Envelope: trunk W x H = " (dbk-r2 (dbk-get *DBKS* "WT")) " x " (dbk-r2 (dbk-get *DBKS* "H"))
@@ -1242,7 +1160,7 @@
       (setq a (* sg (nth 6 cr) (/ (float k) n)) v (dbk-rot v0 a)
             out (cons (dbk-v+ (dbk-v+ o v) (dbk-v* (dbk-unit v) (* side (+ (/ od 2.0) cov)))) out) k (1+ k))))
   out)
-(defun dbk-elbow-od (p) (max (dbk-get p "OD") (dbk-od 2 (dbk-get p "SIZE"))))
+(defun dbk-elbow-od (p) (dbk-get p "OD"))   ; cover is sized off the primary conduit OD only (Clint, Oct 7)
 ;; chamfer for one side of corner ci: face square to the bisector (m points from the bank toward
 ;; that side's void) at the max of m over every position's cover points; returns (P1 P2), or the
 ;; sharp corner when it is enough
@@ -1285,8 +1203,8 @@
     ;; the governing conduit's own elbow offset by its OD/2 + cover is the cover arc (radius rr).
     ;; Sweep: the concrete follows that arc. Chamfer (default): one straight face per side,
     ;; square to the bend bisector, pushed out just far enough that EVERY position's elbow keeps
-    ;; its cover (dbk-bend-cut: max over all elbows, both tiers, own radius, the elbow's own OD =
-    ;; PVC-coated RGS). Outside of the bend that face is tangent to the outermost cover arc at
+    ;; its cover (dbk-bend-cut: max over all elbows, both tiers, own radius, sized off the primary
+    ;; conduit OD only - no allowance for the elbow coating, Clint Oct 7). Outside of the bend that face is tangent to the outermost cover arc at
     ;; mid-bend; inside it is the chord through the cover arc ends (a square inside corner would cut
     ;; into the inner elbows: R24 3" bank ~3" short). Mixed radii (e.g. one 4" R36 among 3" R24)
     ;; are covered too. Sweep falls back to the chamfer on a side where another position's elbow
@@ -1311,7 +1229,7 @@
 (defun dbk-generate (secpt / pl bank conlay lt sgn stuba stubb sza szb segs topa topb p tag sz code od zc rels relt
                        along rv crn cur v e xdc sa ha hv ctr k ent part stations st pp center wdt codes sizes tags a
                        nsta env lsd rsd gl gr q cut x0 y0 sc ins ws vtx bnd clines nconds nelb nfit mat wrap ecode m3d
-                       plain encz tupl ntu len ci kv nvb nbub hd hv ang ze uo xd)
+                       plain encz tupl ntu len ci kv nvb hd hv ang ze uo xd)
   (setq pl (dbk-get *DBK* "PL") bank (dbk-get *DBK* "BANK") part (dbk-get *DBKS* "PART")
         sgn (dbk-get *DBKS* "SGN") stuba (= (dbk-get *DBK* "ENDA") "Stubup") stubb (= (dbk-get *DBK* "ENDB") "Stubup")
         sza (dbk-get *DBKS* "SZA") szb (dbk-get *DBKS* "SZB") segs *DBK-SEGS*
@@ -1319,7 +1237,7 @@
         conlay (dbk-get *DBK* "REFLAYER") lt (if U_CON (dbk-ltype U_CON)) nconds 0 nelb 0 nfit 0
         *DBK-HANDLES* nil mat (if (= (dbk-get *DBK* "STUBCODE") 1) 1 2)
         wrap (and (= mat 1) (= (dbk-get *DBK* "WRAP") 1)) plain (dbk-get *DBK* "REFPLAIN") ntu 0
-        len (dbk-get *DBKS* "LEN") nvb 0 nbub 0)
+        len (dbk-get *DBKS* "LEN") nvb 0)
   (foreach ly '(("MED_DBENVELOPE" 8) ("MED_DBSPACER" 4) ("MED_DBSECTION" 7) ("MED_DBSTUB" 6) ("MED_DBTEXT" 2) ("MED_DBREF" 8))
     (dbk-layer (car ly) (cadr ly)))
   (dbk-spacer-block)
@@ -1427,9 +1345,6 @@
                                          (dbk-xdpos "RISER" bank p (list (strcat "PART=RISER" end) (strcat "MAT=" (itoa mat))
                                                                          (strcat "WRAP=" (if wrap "1" "0"))))) lt))
               (setq nconds (1+ nconds))))
-          ;; 45 deg: Mogul BUB on the riser top, face up, entering hub (RUN2) on the riser, far hub open
-          (if (and (= ang 45) (<= sz 4.001))
-            (if (dbk-add (dbk-bub-insert sa q uo sz tag bank p end)) (setq nbub (1+ nbub) nfit (1+ nfit))))
           (dbk-add (dbk-mk-circle "MED_DBSTUB" (dbk-p3 sa q) (/ (dbk-od mat sz) 2.0) (list (dbk-xdpos "STUB" bank p (list (strcat "END=" end))))))
           (if wrap
             (dbk-add (dbk-mk-text "MED_DBTEXT" (dbk-p3 (dbk-v+ sa (list (* 0.6 (dbk-od mat sz)) (* -0.6 (dbk-od mat sz)))) q)
@@ -1562,14 +1477,13 @@
                       (strcat "FLEXMAX=" (dbk-r4 _DBKFLEXMAX)) (strcat "FLEXLEN=" (dbk-r4 _DBKFLEXLEN))
                       (strcat "PROFILE=" (if (dbk-level-p) "LEVEL" "GRADE")) (strcat "DZB=" (dbk-r4 (dbk-get *DBKS* "DZB")))
                       (strcat "VBENDS=" (itoa (length (vl-remove-if-not '(lambda (v) (= (nth 6 v) "BEND")) (dbk-get *DBKS* "VX")))))
-                      (strcat "FLEXPTS=" (itoa (length (vl-remove-if-not '(lambda (v) (= (nth 6 v) "FLEX")) (dbk-get *DBKS* "VX")))))
-                      (strcat "BUBS=" (itoa nbub)))
+                      (strcat "FLEXPTS=" (itoa (length (vl-remove-if-not '(lambda (v) (= (nth 6 v) "FLEX")) (dbk-get *DBKS* "VX"))))))
                 (mapcar '(lambda (p) (strcat "P=" (dbk-bar (list (dbk-get p "POS") (vl-string-translate "|" "/" (dbk-tag p))
                                                                  (dbk-get p "SIZE") (dbk-get p "CODE") (if (dbk-get p "TAG") "C" "D")))))
                         pl)
                 (mapcar '(lambda (h) (cons 1005 h)) (reverse *DBK-HANDLES*)))))
               nil))
-  (list env (length *DBK-HANDLES*) nconds nelb nfit nsta m3d ntu nbub nvb))
+  (list env (length *DBK-HANDLES*) nconds nelb nfit nsta m3d ntu nvb))
 
 ;;; section drawing at q (bottom-left of the envelope); returns (entities width)
 (defun dbk-spx (xv) (+ (car *DBK-SQ*) (* (- xv *DBK-SVL*) *DBK-SSC*)))
@@ -1836,8 +1750,7 @@
 ;;; stub elbows (offset by OD/2 + end cover toward the elbow center; with _DBKBENDCONC Chamfer
 ;;; the chord of that arc instead of the arc) and the riser backs above the sweep. Width = the stub zone envelope (lateral LSA..RSA, side covers included).
 ;; stub-up riser / stub elbow OD (the stub material: PVC-coated or plain RGS), never under the position OD
-(defun dbk-tu-od (p)
-  (max (dbk-get p "OD") (dbk-od (if (= (dbk-get *DBK* "STUBCODE") 1) 1 2) (dbk-get p "SIZE"))))
+(defun dbk-tu-od (p) (dbk-get p "OD"))
 ;;; MVP4: the turn-up functions work on the end in *DBK-TUEND* ("A" / "B", trunk offset *DBK-TUDZ* at
 ;;; that end); a 45 deg stub-up end leans the turn-up with the risers: vertical front face at the outer
 ;;; cover of the risers at the top of the concrete, back edge = the inner cover of the 45 deg elbows
@@ -1971,8 +1884,8 @@
   (if (or (= (dbk-get *DBK* "ENDA") "Stubup") (= (dbk-get *DBK* "ENDB") "Stubup"))
     (setq out (append out (list (strcat "Stub zone W: " (dbk-r2 (dbk-get *DBKS* "WS")) " in, transition " (dbk-r2 _DBKTRANSL)
                                         " in (taper " (rtos (dbk-get *DBKS* "TAPER") 2 1) " deg)")
-                                (strcat "Stub-ups: end A " (if (= (dbk-get *DBK* "ENDA") "Stubup") (if (= (dbk-get *DBKS* "ANGA") 45) "45 deg into BUB" "90 deg") "open")
-                                        ", end B " (if (= (dbk-get *DBK* "ENDB") "Stubup") (if (= (dbk-get *DBKS* "ANGB") 45) "45 deg into BUB" "90 deg") "open"))
+                                (strcat "Stub-ups: end A " (if (= (dbk-get *DBK* "ENDA") "Stubup") (if (= (dbk-get *DBKS* "ANGA") 45) "45 deg (open riser top)" "90 deg") "open")
+                                        ", end B " (if (= (dbk-get *DBK* "ENDB") "Stubup") (if (= (dbk-get *DBKS* "ANGB") 45) "45 deg (open riser top)" "90 deg") "open"))
                                 (strcat "Stub elbows R" (rtos (dbk-min rvs) 2 0) (if (> (dbk-max rvs) (dbk-min rvs)) (strcat "-R" (rtos (dbk-max rvs) 2 0)) "")
                                         ", " (if (= (dbk-get *DBK* "STUBCODE") 1)
                                                (strcat "plain RGS" (if (= (dbk-get *DBK* "WRAP") 1) " (wrapped)" "")) "PVC-coated RGS"))
@@ -2187,7 +2100,7 @@
       (foreach e '("A" "B")
         (if (= (dbk-get *DBK* (strcat "END" e)) "Stubup")
           (setq *DBK* (dbk-put *DBK* (strcat "ANG" e)
-                        (dbk-stubang (dbk-ask-int (strcat "End " e " stub-up angle, 90 or 45 (45 = rise at 45 deg into a Mogul BUB)")
+                        (dbk-stubang (dbk-ask-int (strcat "End " e " stub-up angle, 90 or 45 (45 = 45 deg stub elbow + 45 deg riser, open end)")
                                                   (dbk-stubang (dbk-get *DBK* (strcat "ANG" e))) 45 90)))))))
     ((= k "FLex")
       (setq _DBKFLEXMAX (max 0.0 (min 10.0 (dbk-ask-real "Route grade change taken up by conduit flex, max deflection (deg)" _DBKFLEXMAX)))
@@ -2344,8 +2257,7 @@
                    (itoa (nth 2 res)) " MED_CONDUIT segments, " (itoa (nth 3 res)) " elbow segments = " (itoa (nth 4 res))
                    " fitting records), " (itoa (nth 5 res)) " spacer stations, envelope and sections; "
                    (itoa (nth 1 res)) " member entities."))
-  (if (> (nth 9 res) 0) (dbk-say (strcat "  " (itoa (nth 9 res)) " vertical bend elbow(s) at route grade changes.")))
-  (if (> (nth 8 res) 0) (dbk-say (strcat "  " (itoa (nth 8 res)) " Mogul BUB fitting(s) at the 45 deg stub-ups (far hub open: continue the run from there).")))
+  (if (> (nth 8 res) 0) (dbk-say (strcat "  " (itoa (nth 8 res)) " vertical bend elbow(s) at route grade changes.")))
   (if (not (dbk-level-p)) (foreach s (dbk-prof-summary) (dbk-say (strcat "  " s))))
   (dbk-say (strcat "  Stub-ups: " (if (= (dbk-get *DBK* "STUBCODE") 1)
                                      (strcat "plain RGS risers and stub elbows" (if (= (dbk-get *DBK* "WRAP") 1) ", tape wrap noted (WRAP text, BOM code 174)." ", no wrap."))
@@ -2385,13 +2297,22 @@
     (dbk-say "Cancelled; nothing changed.")))
 
 ;; DBEDIT: erase the old members (not the reference route) just before the rebuild
-(defun dbk-commit (secpt / n)
+;; the DBK_BUB stand-in block an earlier build (e91df9d) defined: purge it once nothing references it
+(defun dbk-purge-bub ( / b)
+  (if (and (setq b (tblsearch "BLOCK" "DBK_BUB")) (not (ssget "_X" '((0 . "INSERT") (2 . "DBK_BUB")))))
+    (command "_.-PURGE" "_B" "DBK_BUB" "_N"))
+  (princ))
+(defun dbk-commit (secpt / n nb)
   (if *DBK-EDITING*
     (progn
       (setq n 0)
+      (setq nb 0)
       (foreach x (dbk-bank-ents *DBK-EDITING*)
-        (if (and (entget x) (/= (dbk-xdval x "ROLE") "REF")) (progn (entdel x) (setq n (1+ n)))))
-      (dbk-say (strcat "DBEDIT: erased the " (itoa n) " old member entities of bank " *DBK-EDITING* "; rebuilding in place."))))
+        (if (and (entget x) (/= (dbk-xdval x "ROLE") "REF"))
+          (progn (if (= (dbk-xdval x "ROLE") "BUB") (setq nb (1+ nb))) (entdel x) (setq n (1+ n)))))
+      (dbk-say (strcat "DBEDIT: erased the " (itoa n) " old member entities of bank " *DBK-EDITING* "; rebuilding in place."))
+      (if (> nb 0) (dbk-say (strcat "DBEDIT: " (itoa nb) " BUB fitting(s) from an earlier build removed; 45 deg stub-ups now end open at the riser top (no fitting).")))
+      (dbk-purge-bub)))
   (dbk-build secpt))
 
 ;;; -DUCTBANK: command-line version (standard AutoCAD dash convention), also DUCTBANK's fallback
@@ -2593,7 +2514,7 @@
                            (if (dbk-xdval env "ENCH") "none" "not stored (bank built before MVP3; DBEDIT adds it)"))
                          ", concrete at bends: " (cond ((= (dbk-xdval env "BENDCONC") "Sweep") "swept") ((dbk-xdval env "BENDCONC") "chamfered") (T "swept (built before the chamfer option)"))))
         (dbk-say (strcat "  stub-up angle: end A " (cond ((dbk-xdval env "ANGA")) ("90")) ", end B " (cond ((dbk-xdval env "ANGB")) ("90"))
-                         (if (/= (cond ((dbk-xdval env "BUBS")) ("0")) "0") (strcat " (" (dbk-xdval env "BUBS") " Mogul BUB fittings)") "")
+                         (if (/= (cond ((dbk-xdval env "BUBS")) ("0")) "0") (strcat " (" (dbk-xdval env "BUBS") " BUB fittings from an earlier build: DBEDIT rebuild removes them)") "")
                          "; route profile: " (cond ((= (dbk-xdval env "PROFILE") "GRADE")
                                                      (strcat (cond ((dbk-xdval env "VBENDS")) ("0")) " vertical bend(s), " (cond ((dbk-xdval env "FLEXPTS")) ("0"))
                                                              " flex point(s), end B " (rtos (atof (cond ((dbk-xdval env "DZB")) ("0"))) 2 2) "\" from end A"))
@@ -2635,6 +2556,7 @@
                                           (bld_app _CONDUIT (list (atoi (dbk-xdval ref "REFCODE"))) (list (atof (dbk-xdval ref "REFSIZE")))
                                                    (list (dbk-xdval ref "REFTAG")) nil (list (atof (dbk-xdval ref "REFDIST"))) nil nil
                                                    (list (dbk-xdval ref "REFMESR")) nil))))))))
+          (dbk-purge-bub)
           (dbk-undo nil)
           (dbk-say (strcat "Erased " (itoa n) " entities" (if ref (if plain "; reference route restored (plain, no MED data)." "; reference conduit restored.") "."))))))
     (if e (dbk-say "That entity is not part of a ductbank.")))

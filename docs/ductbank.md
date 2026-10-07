@@ -35,7 +35,7 @@ The defaults handle everything else:
 | Stub-up pitch | 5.5" |
 | Transition | 60" |
 | Stub-up material | PVC-coated RGS |
-| Stub-up angle | 90 at both ends (45 = 45 deg risers into BUB fittings) |
+| Stub-up angle | 90 at both ends (45 = 45 deg stub elbows and risers, open riser top) |
 | Stub-up encasement | Auto (top of the elbow sweep) |
 | Concrete at bends | Chamfer (straight faces, cover kept) |
 | Route rises | Flex (no fitting) up to 5 deg over at least 120", stock vertical bends above that |
@@ -47,7 +47,7 @@ The defaults handle everything else:
   - **Bank:** ID, rows, conduits per row (for example `4,4`), **Ref size / type** (enabled for a plain route only) and the reference info.
   - **Main trunk spacers:** family, separation, part (Auto or a catalog part), interval and first-station offset, plus the solved pitch and seat.
   - **Cover from conduit OD:** top, bottom, end, left, right, **Min gap** (minimum clear gap OD to OD, checks only) and **Bends** (Chamfer or Sweep, see [Concrete at bends](#concrete-at-bends-chamfer)).
-  - **Stub-up zone:** End A / End B (Stubup / Open), the stub-up angle at each end (**90** or **45 BUB**) and their top elevations, **Stub pitch center to center** (across = column to column, along = row to row; the tooltips say the same), transition and stub straight, section end, **Risers + stub elbows** material (PVC-coated RGS or plain RGS), the **Tape wrap** box for plain RGS and **Encasement top EL** (Auto, Top or an elevation; the hint shows the elbow sweep top EL). `-DUCTBANK` asks *Stub-up pitch center to center across (column to column)* and *Stub-up pitch center to center along (row to row)*.
+  - **Stub-up zone:** End A / End B (Stubup / Open), the stub-up angle at each end (**90** or **45**) and their top elevations, **Stub pitch center to center** (across = column to column, along = row to row; the tooltips say the same), transition and stub straight, section end, **Risers + stub elbows** material (PVC-coated RGS or plain RGS), the **Tape wrap** box for plain RGS and **Encasement top EL** (Auto, Top or an elevation; the hint shows the elbow sweep top EL). `-DUCTBANK` asks *Stub-up pitch center to center across (column to column)* and *Stub-up pitch center to center along (row to row)*.
   - **Output:** 3D envelope and spacer solids, section scale, and **Pick section location** (otherwise the sections are placed automatically to the right of the bank).
 - **Middle column:**
   - **Position grid:** one card per position, top row A first, columns left to right looking from the stub-up end. REF marks the reference position; the selected card is highlighted.
@@ -79,7 +79,7 @@ At each stub-up end, the concrete turns up around the stub elbows and risers. It
 
 Concrete is formed with straight faces, so by default (`_DBKBENDCONC` = `"Chamfer"`) the envelope is **chamfered** at every bend instead of swept:
 
-- **Plan bends, outside:** one straight chamfer per bend, square to the bend bisector. It is tangent to the cover over the outermost elbow at mid-bend, measured to the elbow's own OD (PVC-coated RGS, slightly over the PVC OD). Everywhere else along the elbow the cover is larger.
+- **Plan bends, outside:** one straight chamfer per bend, square to the bend bisector. It is tangent to the cover over the outermost elbow at mid-bend, measured to the primary conduit OD (the position OD; the PVC coating is not added). Everywhere else along the elbow the cover is larger.
 - **Plan bends, inside:** a square (sharp) inside corner would cut into the inner elbows (about 3" short for the R24 3" bank), so the inside gets a chamfer too, on the chord of the cover arc. The chord is closer to the bend center than the arc, so it adds concrete and keeps the cover.
 - **Mixed radii** (for example one 4" R36 among 3" R24): each chamfer is pushed out just far enough for every position's elbow (both tiers, its own radius and OD), so a larger-radius elbow that cuts inside its neighbours is still covered.
 - **Stub-up turn-up:** the back face along the vertical elbow sweep is a 45 deg chamfer on the chord of the cover arc (see above). The outside of the vertical bend (end face down to the bottom) was already square.
@@ -90,11 +90,11 @@ Concrete is formed with straight faces, so by default (`_DBKBENDCONC` = `"Chamfe
 
 The tests measure the cover at the bends (see [Testing](#testing)). With the default 2" side and end covers:
 
-- at the chamfer faces, to the coated elbow OD: 2.00" minimum
+- at the chamfer faces, to the primary OD: 2.00" minimum
 - over every plan elbow, to the position OD: 2.00" minimum
-- stub elbows to the turn-up faces: 2.07" (3") / 2.14" (4")
+- stub elbows and risers to the turn-up faces, to the primary OD: 2.07" (3") / 2.14" (4")
 
-The trunk sides and the stub zone are still sized on the position (PVC) OD, so the coated elbows and risers sit 0.04" (the coating) closer to the straight faces at their ends. That is unchanged from the previous version.
+All the concrete, the chamfers and turn-ups included, is sized off the primary conduit OD only (Clint's rule): the PVC coating (about 0.04") and small OD variances are not added, so coated elbows and risers sit that much closer to the faces than the nominal cover. The checks test against the primary OD.
 
 ![Plan corner: chamfer (default) vs sweep](images/ductbank-plan-corner-chamfer.png)
 
@@ -102,20 +102,19 @@ The trunk sides and the stub zone are still sized on the position (PVC) OD, so t
 
 ![3D: chamfered stub-up turn-up](images/ductbank-3d-chamfer-turnup.png)
 
-## 45 deg stub-ups into BUB fittings
+## 45 deg stub-ups
 
-A bank (usually a single row) can pop up into Mogul BUB fittings at grade instead of turning straight up:
+A bank (usually a single row) can come up at 45 deg instead of turning straight up:
 
-- **Setting:** per end, dialog **Stub-up zone** (the combo next to End A / End B: 90 or 45 BUB), `-DUCTBANK` Options > ANgle (asks end A, then end B: 90 or 45), or `_DBKSTUBANGLE` (default for new banks, 90). Stored as `ANGA` / `ANGB` on the bank record; `DBEDIT` rebuilds with them.
-- **Geometry:** each conduit leaves the trunk through a 45 deg stub elbow (same radius rule as the 90s) and rises on a 45 deg riser to the stub-up point at the top EL. The BUB is inserted there face up (Clint's rule: same insert point), rotated so its run points away from the bank.
-- **MVP: the run ends at the BUB.** The far hub is left open, so you continue the run from it (a note in the checks says so). No continuation conduit is drawn.
-- **BOM:** 45 deg stub elbows are PVC-coated RGS 163 / 164 / 165 (R24 / R36 / R48) or plain RGS 167 / 168 / 169. Each BUB is a MED_FITTING with code 94 (Mogul BUB), size = the conduit size. There is no Mogul BUB above 4": larger conduits get the 45 deg stub without a BUB, with a flag.
-- **Block:** in full AutoCAD the `1bub` symbol (`1BUB.DWG` from the MED drawing folder) is used. In accoreconsole (no ObjectDBX) a stand-in block `DBK_BUB` is drawn instead. Both carry the same MED_FITTING and DBANK_DATA (`ROLE=BUB`).
-- **Multi-row:** allowed. Checks flag 45 deg risers whose clear gap is under the minimum gap, and BUB bodies longer than the row pitch or wider than the stub pitch (they would collide).
-- **Concrete:** the turn-up follows the 45: the end face is set so the 45 deg risers keep the end cover, the top is the top of the 45 deg elbow sweep (Auto), and the back face is chamfered on the 45 like the 90 deg turn-up. Cover is sized off the primary conduit OD (standing rule).
-- **MEDMAKE3D:** the BUBs are modelled as Mogul BUB conduit bodies (MEDCBINS builder, `Conduit bodies: n block(s)`); the 45 deg risers and elbows as conduit and FITTING solids.
+- **Setting:** per end, dialog **Stub-up zone** (the combo next to End A / End B: 90 or 45), `-DUCTBANK` Options > ANgle (asks end A, then end B: 90 or 45), or `_DBKSTUBANGLE` (default for new banks, 90). Stored as `ANGA` / `ANGB` on the bank record; `DBEDIT` rebuilds with them.
+- **Geometry:** each conduit leaves the trunk through a 45 deg stub elbow (same radius rule as the 90s) and rises on a 45 deg riser to the stub-up point at the top EL.
+- **Open end, no fitting:** the riser ends open at the stub-up top EL (a note in the checks says so). Fittings at stub-ups (BUBs etc.) will be a later option or a separate command.
+- **BOM:** 45 deg stub elbows are PVC-coated RGS 163 / 164 / 165 (R24 / R36 / R48) or plain RGS 167 / 168 / 169, plus the riser conduit.
+- **Multi-row:** allowed. Checks flag 45 deg risers whose clear gap is under the minimum gap (they would collide).
+- **Concrete:** the turn-up follows the 45: the end face is set so the 45 deg risers keep the end cover, the top is the top of the 45 deg elbow sweep (Auto), and the back face is chamfered on the 45 like the 90 deg turn-up. Cover is sized off the primary conduit OD.
+- **Banks built with BUBs (MVP4, e91df9d):** `DBEDIT` rebuilds them without the BUBs (the command line says how many were removed) and purges the `DBK_BUB` stand-in block. `DBDELETE` removes them with the rest of the bank. `DBLIST` notes the old BUBs until the bank is rebuilt.
 
-![3D: 45 deg stub-ups into BUB fittings](images/ductbank-3d-bub-stubup.png)
+![3D: 45 deg stub-ups, open riser tops](images/ductbank-3d-45-stubup.png)
 
 ## Route rises and elevation changes
 
@@ -171,14 +170,14 @@ Notes:
 Risers and stub-up elbows default to **PVC-coated RGS**:
 
 - conduit code 2
-- elbows 160-162 (90 deg) and 163-165 (45 deg, also the 45 deg BUB stub-ups)
+- elbows 160-162 (90 deg) and 163-165 (45 deg, also the 45 deg stub-ups)
 - adapter 170 to the encased PVC
 - PVC-coated RGS coupling 173
 
 For **plain RGS**, use the dialog or `-DUCTBANK` Options > STUbmaterial > Rgs. You get:
 
 - conduit code 1
-- RGS elbows 89/90/91/166 (90 deg) or 167-169 (45 deg, also the 45 deg BUB stub-ups)
+- RGS elbows 89/90/91/166 (90 deg) or 167-169 (45 deg, also the 45 deg stub-ups)
 - adapter 170
 - coupling 8
 
@@ -206,7 +205,7 @@ Every variable has a default in code. `med.spc` only overrides it.
 | `_DBKUSEDIALOG` | 1 | 0 makes `DUCTBANK` always use the command line |
 | `_DBKENCASE` | `"Auto"` | Stub-up encasement top: `"Auto"` (top of the elbow sweep), `"Top"` (stub-up top EL) or an elevation |
 | `_DBKREFSIZE` | 4.0 | Plain route reference: default reference conduit size (the last value used wins) |
-| `_DBKSTUBANGLE` | 90 | Stub-up angle for new banks: 90, or 45 (45 deg risers into Mogul BUB fittings); per end in the dialog |
+| `_DBKSTUBANGLE` | 90 | Stub-up angle for new banks: 90, or 45 (45 deg stub elbows and risers, open riser top, no fitting); per end in the dialog |
 | `_DBKFLEXMAX` | 5.0 | Route rises: grade changes up to this angle (deg) are taken in the flex of the PVC (sloped run, no fitting) |
 | `_DBKFLEXLEN` | 120.0 | ... spread over at least this run length (in); steeper or shorter changes get stock vertical bends |
 | `_DBKFLEXRMIN` | 160.0 | Minimum field-flex radius in conduit ODs (PW Eagle / Hultec TB-D4); tighter flex is flagged |
@@ -223,7 +222,7 @@ Every variable has a default in code. `med.spc` only overrides it.
 
 - **Plan runs and risers:** conduit solids (risers at the stub-up material OD).
 - **Elbows:** each broken-segment elbow (plan, vertical and stub-up, 90 or 45 deg) becomes a swept solid at its radius, stamped as a FITTING with its elbow description.
-- **BUB fittings (45 deg stub-ups):** Mogul BUB conduit bodies, counted under `Conduit bodies:`. The spacer stations are still skipped there (they are BOM carriers, modelled on the 3D model layer).
+- **Spacer stations:** skipped there (they are BOM carriers, modelled on the 3D model layer). The 45 deg stub-ups have no fitting.
 - **Envelope (with the stub-up turn-ups) and spacer solids:** copied from the `3DMEDModel-` layers.
 
 The summary shows `Ductbank elbow:` and `3D model layer:` lines.
@@ -241,8 +240,10 @@ The summary shows `Ductbank elbow:` and `3D model layer:` lines.
 | `-Plain` | reference = plain 3DPOLY made from the sample reference's vertices (size 3, type 3) |
 | `-Edit` | after the checks: moves the `MED_DBREF` route 12" east, `-DBEDIT` retags A1 to MV-101 and sets B2 to 4", then checks counts, handles, orphans, duplicate solids, the edited route and the cover at the bends again (mixed R24 / R36) |
 | `-Sweep` | Options > Bends > Sweep (the old swept concrete) |
-| `-Route Bub` | 1x4 bank on the sample, end B 45 deg BUB stub-ups: BUB count, size, code 94 and place; 45 deg stub elbows (163); risers end at the BUB; flags; BOM |
-| `-Route Bub2` | the 2x4 sample with end B 45 deg BUB: the riser-gap and BUB-collision flags |
+| `-Route S45` | 1x4 bank on the sample, end B 45 deg stub-ups: no BUB anywhere, no BUBS key; every riser starts at its stub point / top EL and runs at 45 deg; 45 deg stub elbows (163); flags; BOM (no code 94) |
+| `-Route S45x2` | the 2x4 sample with end B 45 deg: the riser clear-gap flag and the open-end note |
+| `-Route OldBub` | builds a 1x4 45 deg bank with the e91df9d (MVP4, BUB) code, loads the current code and runs `-DBEDIT`: the BUBs and the `DBK_BUB` block are gone, member counts drop by the BUB count |
+| `-Route OldBubDel` | the same old bank, then `DBDELETE`: nothing of the bank (BUBs included) is left |
 | `-Route Slope` | plain 3DPOLY with a 1.5 deg grade over 120 ft (flex 4 deg / 120"): 2 flex points, no vertical fittings, 29 stations, slab cover |
 | `-Route Step` | plain 3DPOLY with a 30" drop over 6 ft and a 24" rise over 2 ft: 4 vertical bends (22.5, 22.5, 45, 45, R24), codes 178 / 163, path continuity, spacers outside the bends, slab cover |
 | `-Route ... -Edit` | the route tests followed by `-DBEDIT` (retag A1 to MV-101): the profile, angles and flex setting survive the rebuild |
@@ -252,6 +253,6 @@ Every run also checks the concrete at the bends:
 - the plan outline has no arcs (Chamfer) or has the swept arcs (Sweep)
 - `BENDCONC` is stored on the bank record
 - plan elbows: the minimum distance from the elbow OD to the envelope face is at least the side cover (49 samples per elbow)
-- the outside chamfer: the same, to the coated elbow OD
+- the outside chamfer: the same, to the primary OD
 - stub elbows: the minimum distance to the turn-up faces is at least the end cover (45 deg ends: elbows and risers, primary OD)
 - route tests: conduit and vertical elbow OD to the top and bottom of the concrete along the whole profile is at least the top / bottom cover

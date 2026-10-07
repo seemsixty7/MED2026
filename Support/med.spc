@@ -187,7 +187,7 @@
 (setq _DBKENCASE  "Auto")   ; stub-up encasement (turn-up) top: "Auto" = top of the elbow sweep, "Top" = stub-up top EL, or an elevation
 (setq _DBKREFSIZE     4.0)   ; plain 3D polyline reference: default reference conduit size (last used wins)
 (setq _DBKBENDCONC    "Chamfer") ; concrete at bends: "Chamfer" (straight chamfer, cover kept) or "Sweep" (follows the elbow arcs)
-(setq _DBKSTUBANGLE   90)    ; stub-up angle for new banks: 90 = vertical stub-up elbows, 45 = 45 deg risers into Mogul BUB fittings (per end in DUCTBANK)
+(setq _DBKSTUBANGLE   90)    ; stub-up angle for new banks: 90 = vertical stub-up elbows, 45 = 45 deg stub elbows + 45 deg risers, open riser top, no fitting (per end in DUCTBANK)
 (setq _DBKFLEXMAX     5.0)   ; route rises: grade changes up to this many degrees are taken in the flex of the PVC (sloped run, no fitting)
 (setq _DBKFLEXLEN     120.0) ; ... spread over at least this run length (inches); steeper / shorter changes get stock vertical bends
 (setq _DBKFLEXRMIN    160.0) ; minimum field-flex radius, x conduit OD (PW Eagle / Hultec TB-D4 electrical conduit); tighter flex is flagged

@@ -13,9 +13,13 @@
 #   ... -Sweep            Options > Bends > Sweep (concrete follows the elbow arcs; default Chamfer)
 #   ... -Route Slope      MVP4: plain 3DPOLY route with a 1.5 deg slope over 120 ft (flex, no fittings), Options > FLex 4 deg
 #   ... -Route Step       MVP4: straight route stepping down 30" at 22.5 deg and up 24" at 45 deg (vertical bends)
-#   ... -Route Bub        MVP4: sample reference, 1 row x 4, end B 45 deg stub-ups into Mogul BUBs (Options > ANgle)
-#   ... -Route Bub2       MVP4: as Bub with 2 rows x 4 (rows collide at 45 deg: flagged)
-#   -Route runs DBKTPROF (profile / BUB / cover checks); with -Edit a -DBEDIT round trip (retag A1) + DBKTPROF again
+#   ... -Route S45        MVP4: sample reference, 1 row x 4, end B 45 deg stub-ups (Options > ANgle): 45 deg stub elbows +
+#                       45 deg risers ending open at the stub-up top EL, no fitting (alias: Bub)
+#   ... -Route S45x2      MVP4: as S45 with 2 rows x 4 (45 deg risers of the two rows collide: flagged) (alias: Bub2)
+#   ... -Route OldBub     builds the S45 bank with e91df9d's MEDDuctbank.lsp (Mogul BUB inserts), loads this checkout's,
+#                       -DBEDIT: the rebuild must drop the BUBs and purge the DBK_BUB stand-in block
+#   ... -Route OldBubDel  as OldBub, then DBDELETE instead of DBEDIT: BUBs removed with the bank
+#   -Route runs DBKTPROF (profile / 45 deg / cover checks); with -Edit a -DBEDIT round trip (retag A1) + DBKTPROF again
 # Uses -DUCTBANK (command line); accoreconsole has no WinForms UI, so DUCTBANK would fall back to it anyway.
 param([double]$Size = 0, [string]$Name = "dbktest", [string]$Sample = "", [switch]$Rgs, [string]$Enc = "", [switch]$Plain, [switch]$Edit, [switch]$Sweep, [string]$Route = "",
       [string]$Accore = "C:\Program Files\Autodesk\AutoCAD 2024\accoreconsole.exe")
@@ -39,23 +43,26 @@ if ($Plain) { $pre = "(setq *DBKT-REFH* `"264`")`nDBKTPLAIN`n"; $pick = ""; $ref
 else { $pre = ""; $pick = "H`n264`n"; $refans = ""; $reftag = "C-101"; $mat += " *DBKT-PLAIN* nil" }
 $bank = "2`n4`n4`nB1`nStubup`nStubup`n6`n6`nA`n"; $rows = 2; $cols = 4; $segs = 32; $elb = 24; $stations = 4; $prof = ""; $nrows = 2
 if ($Route) {
-  $pc = @{ NFLEX = 0; NVB = 0; VBSTOCK = "nil"; FREE = 2; NBUB = 0; ANGA = 90; ANGB = 90; FLAGS = "nil"; BOM = "nil" }
-  switch ($Route) {
-    "Slope" { $pre = "(setq *DBKT-REFH* `"264`" *DBKT-ROUTE* '((2000 0 0) (2000 0 -48) (2000 480 -48) (2000 1920 -85.7077) (2000 2400 -85.7077) (2360 2400 -85.7077) (2360 2400 0)))`nDBKTROUTE`n"
+  $pc = @{ NFLEX = 0; NVB = 0; VBSTOCK = "nil"; FREE = 2; N45 = 0; ANGA = 90; ANGB = 90; FLAGS = "nil"; BOM = "nil" }
+  if ($Route -eq "Bub") { $Route = "S45" }; if ($Route -eq "Bub2") { $Route = "S45x2" }
+  $old = ($Route -like "OldBub*")
+  switch -regex ($Route) {
+    "^Slope$" { $pre = "(setq *DBKT-REFH* `"264`" *DBKT-ROUTE* '((2000 0 0) (2000 0 -48) (2000 480 -48) (2000 1920 -85.7077) (2000 2400 -85.7077) (2360 2400 -85.7077) (2360 2400 0)))`nDBKTROUTE`n"
               $answers += "O`nFL`n4`n120`n"; $stations = 29; $pc.NFLEX = 2; $pc.BOM = "'(160 170)" }
-    "Step"  { $pre = "(setq *DBKT-REFH* `"264`" *DBKT-ROUTE* '((3000 0 0) (3000 0 -48) (3000 360 -48) (3000 432.4264 -78) (3000 912.4264 -78) (3000 936.4264 -54) (3000 1296.4264 -54) (3000 1296.4264 0)))`nDBKTROUTE`n"
+    "^Step$"  { $pre = "(setq *DBKT-REFH* `"264`" *DBKT-ROUTE* '((3000 0 0) (3000 0 -48) (3000 360 -48) (3000 432.4264 -78) (3000 912.4264 -78) (3000 936.4264 -54) (3000 1296.4264 -54) (3000 1296.4264 0)))`nDBKTROUTE`n"
               $segs = 56; $elb = 48; $stations = 17; $pc.NVB = 4; $pc.VBSTOCK = "'(22.5 22.5 45.0 45.0)"; $pc.BOM = "'(178 163)" }
-    "Bub"   { $pre = ""; $bank = "1`n4`nA1`nStubup`nStubup`n6`n6`nA`n"; $rows = 1; $nrows = 1; $segs = 16; $elb = 12; $stations = 4; $ht = 10.13
-              $answers += "O`nAN`n90`n45`n"; $pc.NBUB = 4; $pc.ANGB = 45; $pc.FLAGS = "'(`"End B: 45 deg stub-ups end at Mogul BUB*`")"; $pc.BOM = "'(94 163)" }
-    "Bub2"  { $pre = ""; $answers += "O`nAN`n90`n45`n"; $pc.NBUB = 8; $pc.ANGB = 45; $stations = 4
-              $pc.FLAGS = "'(`"End B 45 deg risers: clear gap*`" `"End B: 3* BUB bodies are*row pitch*`")"; $pc.BOM = "'(94 163)" }
-    default { throw "Unknown -Route $Route (Slope, Step, Bub, Bub2)" }
+    "^(S45|OldBub|OldBubDel)$" { $pre = ""; $bank = "1`n4`nA1`nStubup`nStubup`n6`n6`nA`n"; $rows = 1; $nrows = 1; $segs = 16; $elb = 12; $stations = 4; $ht = 10.13
+              $answers += "O`nAN`n90`n45`n"; $pc.N45 = 4; $pc.ANGB = 45; $pc.FLAGS = "'(`"End B: 45 deg stub-ups: the risers end open*`")"; $pc.BOM = "'(163)" }
+    "^S45x2$" { $pre = ""; $answers += "O`nAN`n90`n45`n"; $pc.N45 = 8; $pc.ANGB = 45; $stations = 4
+              $pc.FLAGS = "'(`"End B 45 deg risers: clear gap*`" `"End B: 45 deg stub-ups: the risers end open*`")"; $pc.BOM = "'(163)" }
+    default { throw "Unknown -Route $Route (Slope, Step, S45, S45x2, OldBub, OldBubDel)" }
   }
   if ($Route -in @("Slope", "Step")) { $pick = ""; $refans = "3`n3`n"; $reftag = ""; $mat = $mat -replace '\*DBKT-PLAIN\* nil', '*DBKT-PLAIN* T' }
   $mat = $mat -replace '\*DBKT-ENCZ\* \S+', '*DBKT-ENCZ* nil'
-  $prof = "(setq *DBKT-NFLEX* $($pc.NFLEX) *DBKT-NVB* $($pc.NVB) *DBKT-VBSTOCK* $($pc.VBSTOCK) *DBKT-FREEENDS* $($pc.FREE) *DBKT-NBUB* $($pc.NBUB) *DBKT-ANGA* $($pc.ANGA) *DBKT-ANGB* $($pc.ANGB) *DBKT-FLAGPATS* $($pc.FLAGS) *DBKT-BOMCODES* $($pc.BOM))`nDBKTPROF`n"
+  $prof = "(setq *DBKT-NFLEX* $($pc.NFLEX) *DBKT-NVB* $($pc.NVB) *DBKT-VBSTOCK* $($pc.VBSTOCK) *DBKT-FREEENDS* $($pc.FREE) *DBKT-N45* $($pc.N45) *DBKT-ANGA* $($pc.ANGA) *DBKT-ANGB* $($pc.ANGB) *DBKT-FLAGPATS* $($pc.FLAGS) *DBKT-BOMCODES* $($pc.BOM))`nDBKTPROF`n"
 }
 $editblk = ""
+if ($Route -like "OldBub*") { $Edit = ($Route -eq "OldBub") }
 if ($Edit -and $Route) {
   $editblk = "(setq *DBKT-EMOVE* nil)`nDBKTEDITPRE`nDBKTEDIT`n" + $(if ($pick -eq "") { "`n`n" } else { "" }) + ("`n" * (1 + $nrows)) + "`n`n`n`n`n`nT`nA1`nMV-101`nG`n" +
              "(setq *DBKT-ETAG* `"MV-101`" *DBKT-ESIZE* nil)`nDBKTEDITCHK`n" + $prof
@@ -63,6 +70,31 @@ if ($Edit -and $Route) {
   $editblk = "(setq *DBKT-EMOVE* 12.0)`nDBKTEDITPRE`nDBKTEDIT`n" + $(if ($Plain) { "`n`n" } else { "" }) + "2`n4`n4`nB1`nStubup`nStubup`n6`n6`nA`nT`nA1`nMV-101`nS`nB2`n4`nG`n" +
              "(setq *DBKT-ETAG* `"MV-101`" *DBKT-ESIZE* 4.0)`nDBKTEDITCHK`n"
 }
+$setq = "(setq *DBKT-OUT* `"$dd/$Name-report.txt`" *DBKT-ROWS* $rows *DBKT-COLS* $cols *DBKT-REFTAG* `"$reftag`" *DBKT-SX* 6.0 *DBKT-WT* $wt *DBKT-HT* $ht *DBKT-STATIONS* $stations *DBKT-SEGS* $segs *DBKT-ELBOWS* $elb $mat *DBKT-SPEC* `"$dd/$Name-spec.txt`")"
+if ($Route -like "OldBub*") {
+  # a bank built by e91df9d (45 deg stub-ups with Mogul BUB inserts), then this checkout's LISP: DBEDIT / DBDELETE
+  $oldf = "$d\MEDDuctbank-e91df9d.lsp"
+  cmd /c "git -C `"$repo`" show e91df9d:Support/MEDDuctbank.lsp > `"$oldf`""
+  if (-not (Test-Path $oldf) -or (Get-Item $oldf).Length -lt 100000) { throw "could not extract e91df9d:Support/MEDDuctbank.lsp" }
+  $after = if ($Route -eq "OldBub") { $editblk + "DBKTOLDBUB`n" } else { "DBKTDELPRE`nDBKTDEL`nYes`nDBKTDELCHK`nDBKTOLDBUB`n" }
+  $scr = @"
+(load "$($oldf.Replace('\', '/'))")
+(load "$fw/Support/med.spc")
+(load "$fw/tests/autocad/MEDDuctbankTest.lsp")
+-DUCTBANK
+${pick}${refans}
+${bank}${answers}G
+
+DBKTBUBCOUNT
+(load "$fw/Support/MEDDuctbank.lsp")
+(setq *DBKT-PASS* 0 *DBKT-FAIL* nil *DBKT-OLDBUBEXP* 4 *DBKT-EDROP* 4)
+$setq
+${after}(command "_.SAVEAS" "" "$dd/$Name-result.dwg")
+(command "_.DXFOUT" "$dd/$Name-result.dxf" "16")
+_.QUIT
+_Y
+"@
+} else {
 $scr = @"
 (load "$fw/Support/MEDDuctbank.lsp")
 (load "$fw/Support/med.spc")
@@ -71,7 +103,7 @@ ${pre}-DUCTBANK
 ${pick}${refans}
 ${bank}${answers}G
 
-(setq *DBKT-OUT* "$dd/$Name-report.txt" *DBKT-ROWS* $rows *DBKT-COLS* $cols *DBKT-REFTAG* "$reftag" *DBKT-SX* 6.0 *DBKT-WT* $wt *DBKT-HT* $ht *DBKT-STATIONS* $stations *DBKT-SEGS* $segs *DBKT-ELBOWS* $elb $mat *DBKT-SPEC* "$dd/$Name-spec.txt")
+$setq
 DBKTEST
 DBKTLIST
 ${prof}${editblk}${del}(command "_.SAVEAS" "" "$dd/$Name-result.dwg")
@@ -79,6 +111,7 @@ ${prof}${editblk}${del}(command "_.SAVEAS" "" "$dd/$Name-result.dwg")
 _.QUIT
 _Y
 "@
+}
 Set-Content "$d\$Name.scr" $scr -Encoding ASCII
 $p = Start-Process $Accore -ArgumentList "/i `"$d\$Name-start.dwg`" /s `"$d\$Name.scr`" /l en-US" `
      -RedirectStandardOutput "$d\$Name-out.raw" -PassThru -NoNewWindow

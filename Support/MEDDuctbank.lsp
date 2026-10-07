@@ -20,7 +20,7 @@
 (princ "\nLoading MEDDuctbank...")
 (vl-load-com)
 (regapp "DBANK_DATA")
-(setq *DBK-VERSION* "2026-10-07 MVP4b")
+(setq *DBK-VERSION* "2026-10-07 MVP4c")
 
 ;;; ------------------------------------------------------------------ defaults
 ;;; med.spc may set any of these; the patch never overwrites med.spc, so every
@@ -48,7 +48,16 @@
 (dbk-def '_DBKUSEDIALOG 1)         ; DUCTBANK: 1 = grid dialog when MED-DotNet is loaded, 0 = always command line
 (dbk-def '_DBKSECTPICK 0)          ; dialog: 1 = pick the section location after OK
 (dbk-def '_DBKENCASE "Auto")       ; stub-up encasement turn-up top: "Auto" = top of the stub elbow sweep,
-                                   ; "Top" = the stub-up top EL (grade), or an elevation (drawing units)
+                                   ; "Top" = the stub-up top EL (grade) less the riser projection, or an elevation
+                                   ; (drawing units). The turn-up top is always cut level (parallel to grade) and
+                                   ; kept _DBKRISERPROJ below the lowest point of the riser ends (MVP4c)
+(dbk-def '_DBKRISERPROJ 4.0)       ; minimum stub-up riser projection above the level top of the concrete turn-up:
+                                   ; clears a threaded RGS coupling (about 2-3.4" long, 2"-4") so the next fitting can
+                                   ; be made up without chipping concrete; at a 45 deg end measured from the low edge
+                                   ; of the slanted riser end (top EL - OD/2 x sin 45)
+(dbk-def '_DBKLAYERTRANS 75)       ; transparency (%, 0-90) of the 3D model layer (3DMEDModel-Ductbank): set when the
+                                   ; layer is created, or on a layer an earlier build left without transparency;
+                                   ; a value already set on the layer is kept. 0 = leave the layer alone
 (dbk-def '_DBKREFSIZE 4.0)         ; plain route reference (no MED data): default trade size
 (dbk-def '_DBKBENDCONC "Chamfer")  ; concrete at bends: "Chamfer" = straight chamfers (plan bends, outside tangent
                                    ; to the cover arc, inside on its chord; turn-up on the chord of the stub
@@ -182,7 +191,7 @@
     (if (= v "Top") "Top" "Auto")))
 (defun dbk-enclabel (v)
   (setq v (dbk-encval v))
-  (cond ((numberp v) (strcat "EL " (dbk-encstr v))) ((= v "Top") "Top = stub-up top EL") (T "Auto = top of the elbow sweep")))
+  (cond ((numberp v) (strcat "EL " (dbk-encstr v))) ((= v "Top") "Top = stub-up top EL less the riser projection") (T "Auto = top of the elbow sweep")))
 (defun dbk-chamfer-p () (not (wcmatch (strcase (vl-princ-to-string _DBKBENDCONC)) "S*")))
 (defun dbk-bendstr () (if (dbk-chamfer-p) "Chamfer" "Sweep"))
 (defun dbk-joinstr (l sep / s) (if l (progn (setq s (car l)) (foreach x (cdr l) (setq s (strcat s sep x))) s) ""))
@@ -926,17 +935,22 @@
           (repeat nst (setq stations (cons (+ a _DBKSPEND (* i sp)) stations) i (1+ i)))))))
   (setq stations (reverse stations))
   ;; stub-up encasement turn-up: top of concrete at the stub-ups (default = top of the highest
-  ;; stub elbow sweep; "Top" = stub-up top EL; or an elevation), never above the stub-up top
+  ;; stub elbow sweep; "Top" = stub-up top EL less the riser projection; or an elevation). The top is
+  ;; a level cut (parallel to grade) that stays at least _DBKRISERPROJ below the lowest point of the
+  ;; riser ends (45 deg end: the slanted riser end's low edge, top EL - OD/2 x sin 45; primary OD).
   (setq ench (dbk-encval (dbk-get *DBK* "ENCH"))
         sweepa (dbk-max (mapcar '(lambda (p) (dbk-stub-sweep p anga 0.0)) pl))
         sweepb (dbk-max (mapcar '(lambda (p) (dbk-stub-sweep p angb dzb)) pl))
         sweep (if (or stuba (not stubb)) sweepa sweepb))
-  (defun dbk-enc-end (lbl topx sweep top / e)
-    (setq e (cond ((= ench "Top") topx) ((numberp ench) ench) (T sweep)))
-    (if (> e (+ topx 1e-6))
-      (setq flags (cons (strcat "Stub-up encasement EL " (dbk-r2 e) " is above the end " lbl " stub-up top EL " (dbk-r2 topx)
-                                ": limited to the stub-up top.") flags)
-            e topx))
+  (defun dbk-enc-end (lbl topx sweep top ang / e emax rlow)
+    (setq rlow (- topx (if (= ang 45) (* 0.5 (dbk-max (mapcar '(lambda (p) (dbk-get p "OD")) pl)) (sqrt 0.5)) 0.0))
+          emax (- rlow (max 0.0 _DBKRISERPROJ)))
+    (setq e (cond ((= ench "Top") emax) ((numberp ench) ench) (T sweep)))
+    (if (> e (+ emax 1e-6))
+      (setq flags (cons (strcat "End " lbl ": stub-up encasement EL " (dbk-r2 e) " would leave the risers less than "
+                                (dbk-r2 _DBKRISERPROJ) "\" above the concrete (riser ends at EL " (dbk-r2 rlow)
+                                (if (= ang 45) ", low edge of the 45 deg cut" "") "): concrete cut level at EL " (dbk-r2 emax) ".") flags)
+            e emax))
     (cond
       ((<= e (+ top 0.01))
         (setq flags (cons (strcat "End " lbl ": stub-up encasement EL " (dbk-r2 e) " is not above the trunk top of concrete EL "
@@ -947,7 +961,7 @@
           (setq flags (cons (strcat "End " lbl ": stub-up encasement EL " (dbk-r2 e) " is below the top of the stub elbow sweep EL "
                                     (dbk-r2 sweep) ": the elbow tops are not encased.") flags)))
         e)))
-  (setq enca (if stuba (dbk-enc-end "A" topa sweepa top)) encb (if stubb (dbk-enc-end "B" topb sweepb (+ top dzb))))
+  (setq enca (if stuba (dbk-enc-end "A" topa sweepa top anga)) encb (if stubb (dbk-enc-end "B" topb sweepb (+ top dzb) angb)))
   ;; a new bank must not reuse an existing bank ID (DBEDIT keeps its own)
   (if (and (dbk-get *DBK* "BANK") (/= (strcase (dbk-get *DBK* "BANK")) (strcase (cond (*DBK-EDITING*) (""))))
            (member (strcase (dbk-get *DBK* "BANK")) (dbk-all-banks)))
@@ -1026,7 +1040,8 @@
     (dbk-say (strcat "  Stub-up encasement (" (dbk-enclabel (dbk-get *DBK* "ENCH")) "): concrete turn-up to EL"
                      (if (dbk-get *DBKS* "ENCZA") (strcat " " (dbk-r2 (dbk-get *DBKS* "ENCZA")) " at end A") "")
                      (if (dbk-get *DBKS* "ENCZB") (strcat " " (dbk-r2 (dbk-get *DBKS* "ENCZB")) " at end B") "")
-                     ", elbow sweep top EL " (dbk-r2 (dbk-get *DBKS* "SWEEPTOP")))))
+                     ", elbow sweep top EL " (dbk-r2 (dbk-get *DBKS* "SWEEPTOP"))
+                     "; level top, risers project at least " (dbk-r2 _DBKRISERPROJ) "\"")))
   (if part (dbk-say (strcat "  Spacer stations: " (itoa (length (dbk-get *DBKS* "STATIONS"))) " (max " (dbk-r2 _DBKSPINT)
                             "\" apart), per station " (itoa (dbk-get *DBKS* "PIECES")) " x " (car part) " + " (itoa (dbk-get *DBKS* "STRAPS"))
                             " x S28612 strap" (if (> (dbk-get *DBKS* "REDS") 0) (strcat " + " (itoa (dbk-get *DBKS* "REDS")) " reducer(s)") ""))))
@@ -1361,7 +1376,7 @@
                             (list (dbk-xd (list "ROLE=TURNUP" (strcat "BANK=" bank) (strcat "END=" end) (strcat "ENCZ=" (dbk-r4 encz)) "GEN=1")))
                             nil))
         (dbk-add (dbk-mk-text "MED_DBTEXT" (dbk-p3 (dbk-v* (dbk-v+ (nth 1 tupl) (nth 2 tupl)) 0.5) encz) _DBKPLANTEXT
-                              (strcat "CONCRETE TURN-UP TO EL " (dbk-r2 encz))
+                              (strcat "CONCRETE TURN-UP, LEVEL TOP EL " (dbk-r2 encz))
                               (angle (nth 2 tupl) (nth 1 tupl))
                               (list (dbk-xd (list "ROLE=TEXT" (strcat "BANK=" bank) "NOTE=TURNUP"))))))))
   ;; spacer stations: DBSPACER inserts across the trunk envelope carrying one MED_FITTING record per piece
@@ -1475,6 +1490,7 @@
                       (strcat "REFPLAIN=" (if plain "1" "0")) (strcat "BENDCONC=" (dbk-bendstr))
                       (strcat "ANGA=" (itoa (dbk-get *DBKS* "ANGA"))) (strcat "ANGB=" (itoa (dbk-get *DBKS* "ANGB")))
                       (strcat "FLEXMAX=" (dbk-r4 _DBKFLEXMAX)) (strcat "FLEXLEN=" (dbk-r4 _DBKFLEXLEN))
+                      (strcat "RISERPROJ=" (dbk-r4 _DBKRISERPROJ))
                       (strcat "PROFILE=" (if (dbk-level-p) "LEVEL" "GRADE")) (strcat "DZB=" (dbk-r4 (dbk-get *DBKS* "DZB")))
                       (strcat "VBENDS=" (itoa (length (vl-remove-if-not '(lambda (v) (= (nth 6 v) "BEND")) (dbk-get *DBKS* "VX")))))
                       (strcat "FLEXPTS=" (itoa (length (vl-remove-if-not '(lambda (v) (= (nth 6 v) "FLEX")) (dbk-get *DBKS* "VX"))))))
@@ -1507,7 +1523,7 @@
                                                          (list (dbk-spx vr) (dbk-spy encz)) (list (dbk-spx vr) (dbk-spy top)))
                                   '(0.0 0.0 0.0 0.0) 0.0 '(0.0 0.0 1.0) nil xds (dbk-ltype "HIDDEN")) ents))
       (setq ents (cons (dbk-mk-ltext "MED_DBTEXT" (list (+ (dbk-spx vl) (* sc 0.5 _DBKSECTTEXT)) (- (dbk-spy encz) (* sc 1.4 _DBKSECTTEXT)) 0.0)
-                                     (* sc 0.8 _DBKSECTTEXT) (strcat "CONCRETE TURN-UP BEYOND, TOP EL " (dbk-r2 encz)) xds) ents))))
+                                     (* sc 0.8 _DBKSECTTEXT) (strcat "CONCRETE TURN-UP BEYOND, LEVEL TOP EL " (dbk-r2 encz) " (RISERS PROJECT " (dbk-r2 _DBKRISERPROJ) "\" MIN)") xds) ents))))
   ;; spacer pieces (trunk): piece k covers columns 2k+1 and 2k+2; view x = (col - refcol) * pitch
   (if (and part (= kind "TRUNK"))
     (foreach pc (dbk-trunk-pieces)
@@ -1669,6 +1685,25 @@
       (command "_.INTERSECT" (dbk-ss (cons prism slabs)) "")
       (setq res (vl-remove-if-not '(lambda (x) (and (entget x) (= (cdr (assoc 0 (entget x))) "3DSOLID"))) (cons prism slabs)))
       (car res))))
+;; layer transparency (MVP4c, Clint: the ductbank 3D layer 75 % transparent by default). Stored as layer xdata
+;; AcCmTransparency 1071 = 0x02000000 + alpha, alpha = 255 x (100 - %) / 100 (truncated, as AutoCAD does).
+;; Set on a new layer or one without a transparency value (earlier builds made it at 0); a value already
+;; on the layer (the user's) is left alone. _DBKLAYERTRANS 0 = never touch it.
+(defun dbk-trans-pct (lay / e xd v)
+  (if (and (setq e (tblobjname "LAYER" lay))
+           (setq xd (cdr (assoc -3 (entget e '("AcCmTransparency")))))
+           (setq v (cdr (assoc 1071 (cdar xd)))))
+    (if (= (logand v 33554432) 33554432) (fix (+ 0.5 (- 100.0 (/ (* 100.0 (logand v 255)) 255.0)))) 0)
+    0))
+(defun dbk-layer-trans (lay / pct e ed)
+  (setq pct (if (numberp _DBKLAYERTRANS) (max 0 (min 90 (fix _DBKLAYERTRANS))) 0))
+  (if (and (> pct 0) (setq e (tblobjname "LAYER" lay)))
+    (progn
+      (regapp "AcCmTransparency")
+      (setq ed (entget e '("AcCmTransparency")))
+      (if (not (assoc -3 ed))
+        (entmod (append ed (list (list -3 (list "AcCmTransparency" (cons 1071 (+ 33554432 (fix (/ (* 255.0 (- 100 pct)) 100.0))))))))))))
+  lay)
 ;; returns (nEnvelopeSolids nSpacerSolids nTurnups); every solid tagged DBANK_DATA and added to the bank.
 ;; The stub-up encasement turn-ups are unioned into the envelope solid (one ENV3D solid).
 (defun dbk-model-3d (vtx bnd bank / lay oldce oldos olddel oldcmd e env n st pp dir m nrm o th sgn pls pts ocs
@@ -1677,6 +1712,7 @@
   (if (not (tblsearch "LAYER" lay))
     (entmake (list '(0 . "LAYER") '(100 . "AcDbSymbolTableRecord") '(100 . "AcDbLayerTableRecord")
                    (cons 2 lay) '(70 . 0) '(62 . 8) '(6 . "Continuous") '(290 . 0))))
+  (dbk-layer-trans lay)
   (setq oldce (getvar "CMDECHO") oldos (getvar "OSMODE") olddel (getvar "DELOBJ"))
   (setvar "CMDECHO" 0) (setvar "OSMODE" 0) (setvar "DELOBJ" 3)
   ;; concrete envelope: the plan outline (stub zones, tapers and bends included) at the bottom
@@ -1752,18 +1788,22 @@
 ;; stub-up riser / stub elbow OD (the stub material: PVC-coated or plain RGS), never under the position OD
 (defun dbk-tu-od (p) (dbk-get p "OD"))
 ;;; MVP4: the turn-up functions work on the end in *DBK-TUEND* ("A" / "B", trunk offset *DBK-TUDZ* at
-;;; that end); a 45 deg stub-up end leans the turn-up with the risers: vertical front face at the outer
-;;; cover of the risers at the top of the concrete, back edge = the inner cover of the 45 deg elbows
-;;; (chord with Chamfer) and the riser backs. 45 deg ends use the primary conduit OD for the cover.
+;;; that end). MVP4c (Clint, Oct 7): a 45 deg stub-up end is a band that follows the 45 deg elbows and
+;;; risers with the end cover on both sides (front = the outer cover of the elbows / risers, back = the
+;;; inner cover, chord with Chamfer), cut by a level plane (parallel to grade) at the encasement top,
+;;; which dbk-solve keeps _DBKRISERPROJ below the riser ends: no vertical / angled cap past the conduit
+;;; ends. Below the trunk top the front is the vertical trunk end face (dbk-tu-face). Primary OD.
 (setq *DBK-TUEND* "A" *DBK-TUDZ* 0.0 *DBK-TUZ* nil)
 (defun dbk-tu-ang () (cond ((dbk-get *DBKS* (strcat "ANG" *DBK-TUEND*))) (90)))
 (defun dbk-tu-se (p) (cond ((dbk-get p (strcat "SE" *DBK-TUEND*))) (T (+ (dbk-get p "ALONG") (dbk-get p "RV")))))
 (defun dbk-tu-zc (p) (+ (dbk-get p "ZC") *DBK-TUDZ*))
+;; trunk end face (station from the end): 90 deg = beyond the outermost riser by the end cover; 45 deg =
+;; the outer cover of the 45 deg elbows / risers at the trunk top of concrete (the band above leans out)
 (defun dbk-tu-face ( / out x)
   (if (= (dbk-tu-ang) 45)
     (progn
       (foreach p (dbk-get *DBK* "PL")
-        (setq x (dbk-tu-outer45 p (cond (*DBK-TUZ*) (T (+ (dbk-get *DBKS* "TOP") *DBK-TUDZ*)))))
+        (setq x (dbk-tu-outer45 p (+ (dbk-get *DBKS* "TOP") *DBK-TUDZ*)))
         (if (or (null out) (< x out)) (setq out x)))
       out)
     (- (dbk-min (mapcar '(lambda (p) (dbk-get p "ALONG")) (dbk-get *DBK* "PL")))
@@ -1804,20 +1844,37 @@
                       (T cx)))))
     (if (or (null out) (> s out)) (setq out s)))
   out)
-;; closed profile ((s z) ...) from just below the trunk top of concrete up to encz
-(defun dbk-tu-profile (encz / face zb zs z k pts n w r zc)
+;; front (end side) station at elevation z: the trunk end face up to the trunk top; at a 45 deg end the
+;; outer cover of the elbows / risers above it (never past the trunk end face)
+(defun dbk-tu-front (z / out x)
+  (setq out (dbk-tu-face))
+  (if (= (dbk-tu-ang) 45)
+    (foreach p (dbk-get *DBK* "PL")
+      (setq x (dbk-tu-outer45 p z))
+      (if (< x out) (setq out x))))
+  out)
+;; closed profile ((s z) ...) from just below the trunk top of concrete up to the level cut at encz
+(defun dbk-tu-profile (encz / face zb zt zs z k pts n w r zc a out)
   (setq *DBK-TUZ* encz)
-  (setq face (dbk-tu-face) zb (- (+ (dbk-get *DBKS* "TOP") *DBK-TUDZ*) (min 1.0 (* 0.5 (dbk-get *DBKS* "H")))) n 24)
+  (setq face (dbk-tu-face) zt (+ (dbk-get *DBKS* "TOP") *DBK-TUDZ*) zb (- zt (min 1.0 (* 0.5 (dbk-get *DBKS* "H")))) n 24)
   (setq zs (list encz zb) k 1)
   (repeat (1- n) (setq zs (cons (+ zb (* (- encz zb) (/ (float k) n))) zs) k (1+ k)))
   (foreach p (dbk-get *DBK* "PL")
     (setq r (dbk-get p "RV") zc (dbk-tu-zc p) w (+ (/ (dbk-get p "OD") 2.0) _DBKCOVEREND))
     (foreach z (if (= (dbk-tu-ang) 45)
-                 (list (+ zc w) (- (+ zc r) (* (- r w) (sqrt 0.5))) (+ zc (* r (- 1.0 (sqrt 0.5)))))
+                 (append (list zt (+ zc w) (- (+ zc r) (* (- r w) (sqrt 0.5))) (+ zc (* r (- 1.0 (sqrt 0.5))))
+                               (- (+ zc (* r (- 1.0 (sqrt 0.5)))) (* w (sqrt 0.5))))
+                         ;; the outer cover arc every degree (a chord of it would cut into the cover)
+                         (progn (setq a 0 out nil)
+                                (repeat 46 (setq out (cons (- (+ zc r) (* (+ r w) (cos (* a (/ pi 180.0))))) out) a (1+ a)))
+                                out))
                  (list (+ zc r) (+ zc (/ (dbk-tu-od p) 2.0) _DBKCOVEREND)))
       (if (and (< z encz) (> z zb)) (setq zs (cons z zs)))))
   (setq zs (vl-sort (dbk-uniq (mapcar '(lambda (z) (atof (rtos z 2 6))) zs)) '>))
-  (setq pts (list (list face zb) (list face encz)))
+  ;; front edge bottom -> level cut (90 deg: the vertical end face), then the back edge down
+  (setq pts (if (= (dbk-tu-ang) 45)
+              (mapcar '(lambda (z) (list (dbk-tu-front z) z)) (reverse zs))
+              (list (list face zb) (list face encz))))
   (foreach z zs (setq pts (append pts (list (list (dbk-tu-back z) z)))))
   ;; drop repeated points
   (setq k nil)
@@ -1834,7 +1891,7 @@
 ;; plan footprint of the turn-up top: 4 points (2D) at the given end
 (defun dbk-tu-plan (end encz / fr face back lsa rsa)
   (dbk-tu-set end encz)
-  (setq fr (dbk-tu-frame end) face (dbk-tu-face) back (dbk-tu-back encz)
+  (setq fr (dbk-tu-frame end) face (dbk-tu-front encz) back (dbk-tu-back encz)
         lsa (dbk-get *DBKS* "LSA") rsa (dbk-get *DBKS* "RSA"))
   (mapcar '(lambda (sl) (dbk-v+ (dbk-v+ (car fr) (dbk-v* (cadr fr) (car sl))) (dbk-v* (caddr fr) (cadr sl))))
           (list (list face lsa) (list back lsa) (list back rsa) (list face rsa))))
@@ -1893,7 +1950,8 @@
                                         (if (or (dbk-get *DBKS* "ENCZA") (dbk-get *DBKS* "ENCZB"))
                                           (strcat "EL " (dbk-joinstr (vl-remove 'nil (list (if (dbk-get *DBKS* "ENCZA") (strcat (dbk-r2 (dbk-get *DBKS* "ENCZA")) " A"))
                                                                                               (if (dbk-get *DBKS* "ENCZB") (strcat (dbk-r2 (dbk-get *DBKS* "ENCZB")) " B")))) ", ")
-                                                  ", sweep top EL " (dbk-r2 (dbk-get *DBKS* "SWEEPTOP")))
+                                                  ", sweep top EL " (dbk-r2 (dbk-get *DBKS* "SWEEPTOP"))
+                                                  ", level top, risers project >= " (dbk-r2 _DBKRISERPROJ) "\"")
                                           "none"))))))
   (if (or *DBK-CORNERS* (dbk-get *DBKS* "ENCZA") (dbk-get *DBKS* "ENCZB"))
     (setq out (append out (list (strcat "Concrete at bends: " (if (dbk-chamfer-p) "chamfered" "swept")
@@ -1935,6 +1993,7 @@
                   (dbk-kv "ENCZA" (dbk-get *DBKS* "ENCZA")) (dbk-kv "ENCZB" (dbk-get *DBKS* "ENCZB"))
                   (dbk-kv "ANGA" (dbk-stubang (dbk-get *DBK* "ANGA"))) (dbk-kv "ANGB" (dbk-stubang (dbk-get *DBK* "ANGB")))
                   (dbk-kv "FLEXMAX" _DBKFLEXMAX) (dbk-kv "FLEXLEN" _DBKFLEXLEN) (dbk-kv "FLEXRMIN" _DBKFLEXRMIN)
+                  (dbk-kv "RISERPROJ" _DBKRISERPROJ)
                   (dbk-kv "DZB" (dbk-get *DBKS* "DZB"))))
   (foreach c codes (setq out (append out (list (strcat "CODE=" (dbk-bar (list (car c) (dbk-typeabbr (car c)) (cadr c))))))))
   (foreach r *DBK-SNAPNSTAC* (setq out (append out (list (strcat "CAT=" (dbk-bar r))))))
@@ -2002,6 +2061,7 @@
       (foreach k '("TOPA" "TOPB" "SX" "SY") (setq *DBK* (dbk-put *DBK* k (dbk-kvn k (dbk-get *DBK* k)))))
       (foreach k '("ANGA" "ANGB") (setq *DBK* (dbk-put *DBK* k (dbk-stubang (dbk-kvs k (itoa (dbk-stubang (dbk-get *DBK* k))))))))
       (setq _DBKFLEXMAX (max 0.0 (min 10.0 (dbk-kvn "FLEXMAX" _DBKFLEXMAX))) _DBKFLEXLEN (max 1.0 (dbk-kvn "FLEXLEN" _DBKFLEXLEN)))
+      (setq _DBKRISERPROJ (max 0.0 (dbk-kvn "RISERPROJ" _DBKRISERPROJ)))
       (setq *DBK* (dbk-put *DBK* "SECTEND" (if (= (strcase (dbk-kvs "SECTEND" "A")) "B") "B" "A")))
       (if (and (= (dbk-get *DBK* "SECTEND") "A") (/= (dbk-get *DBK* "ENDA") "Stubup") (= (dbk-get *DBK* "ENDB") "Stubup"))
         (setq *DBK* (dbk-put *DBK* "SECTEND" "B")))
@@ -2093,9 +2153,10 @@
       (dbk-solve)
       (initget "Auto Top")
       (setq k (getreal (strcat "\nStub-up encasement top: elevation, or [Auto/Top] (Auto = top of the elbow sweep EL "
-                               (dbk-r2 (dbk-get *DBKS* "SWEEPTOP")) ", Top = stub-up top EL) <"
+                               (dbk-r2 (dbk-get *DBKS* "SWEEPTOP")) ", Top = stub-up top EL less the riser projection) <"
                                (dbk-encstr (dbk-encval (dbk-get *DBK* "ENCH"))) ">: ")))
-      (if k (setq *DBK* (dbk-put *DBK* "ENCH" (dbk-encval k)))))
+      (if k (setq *DBK* (dbk-put *DBK* "ENCH" (dbk-encval k))))
+      (setq _DBKRISERPROJ (max 0.0 (dbk-ask-real "Minimum riser projection above the level top of the concrete (in)" _DBKRISERPROJ))))
     ((= k "ANgle")
       (foreach e '("A" "B")
         (if (= (dbk-get *DBK* (strcat "END" e)) "Stubup")
@@ -2250,7 +2311,8 @@
                            (strcat "concrete turns up to EL "
                                    (dbk-joinstr (vl-remove 'nil (list (if (dbk-get *DBKS* "ENCZA") (strcat (dbk-r2 (dbk-get *DBKS* "ENCZA")) " (end A)"))
                                                                       (if (dbk-get *DBKS* "ENCZB") (strcat (dbk-r2 (dbk-get *DBKS* "ENCZB")) " (end B)")))) ", ")
-                                   " around the stub elbows and risers (" (dbk-enclabel (dbk-get *DBK* "ENCH")) ")."))
+                                   " around the stub elbows and risers (" (dbk-enclabel (dbk-get *DBK* "ENCH"))
+                                   "), level top at least " (dbk-r2 _DBKRISERPROJ) "\" below the riser ends."))
                          ((or (= (dbk-get *DBK* "ENDA") "Stubup") (= (dbk-get *DBK* "ENDB") "Stubup")) "none (see the flags).")
                          (T "no stub-up ends."))))
   (dbk-say (strcat "Bank " (dbk-get *DBK* "BANK") " built: " (itoa (length (dbk-get *DBK* "PL"))) " conduit positions ("
@@ -2386,7 +2448,7 @@
 ;;; settings (_DBK* covers, interval, ...) are restored afterwards.
 (setq *DBK-EDIT-GLOBALS* '(_DBKCOVERTOP _DBKCOVERBOT _DBKCOVERLEFT _DBKCOVERRIGHT _DBKCOVEREND _DBKMINGAP _DBKSPINT
                           _DBKSPEND _DBKTRANSL _DBKSTUBSTRAIGHT _DBKSEP _DBKSECTSCALE _DBKTAGPAT _DBKBENDCONC
-                          _DBKFLEXMAX _DBKFLEXLEN))
+                          _DBKFLEXMAX _DBKFLEXLEN _DBKRISERPROJ))
 (defun dbk-globals-save () (mapcar '(lambda (s) (cons s (eval s))) *DBK-EDIT-GLOBALS*))
 (defun dbk-globals-restore (l) (foreach x l (set (car x) (cdr x))))
 (defun dbk-edit-load (e / bank ents env ref info v n pl f p tgs conds)
@@ -2414,7 +2476,8 @@
                 _DBKSTUBSTRAIGHT (dbk-ev "STUBSTR" _DBKSTUBSTRAIGHT) _DBKSEP (dbk-ev "SEP" _DBKSEP)
                 _DBKSECTSCALE (dbk-ev "SECTSCALE" _DBKSECTSCALE) _DBKTAGPAT (dbk-es "TAGPAT" _DBKTAGPAT)
                 _DBKBENDCONC (dbk-es "BENDCONC" _DBKBENDCONC)
-                _DBKFLEXMAX (dbk-ev "FLEXMAX" _DBKFLEXMAX) _DBKFLEXLEN (dbk-ev "FLEXLEN" _DBKFLEXLEN))
+                _DBKFLEXMAX (dbk-ev "FLEXMAX" _DBKFLEXMAX) _DBKFLEXLEN (dbk-ev "FLEXLEN" _DBKFLEXLEN)
+                _DBKRISERPROJ (dbk-ev "RISERPROJ" _DBKRISERPROJ))
           (setq info (list (cond ((dbk-xdval ref "REFTAG")) ("")) (dbk-ev-ref ref "REFSIZE" _DBKREFSIZE)
                            (fix (dbk-ev-ref ref "REFCODE" _DBKCONCODE)) (dbk-ev-ref ref "REFDIST" 0.0)
                            (cond ((dbk-xdval ref "REFMESR")) ("T")) (= (dbk-xdval ref "REFPLAIN") "1")))
@@ -2510,7 +2573,9 @@
                          (if (or (/= (cond ((dbk-xdval env "ENCZA")) ("")) "") (/= (cond ((dbk-xdval env "ENCZB")) ("")) ""))
                            (strcat "turn-up to EL" (if (/= (cond ((dbk-xdval env "ENCZA")) ("")) "") (strcat " " (rtos (atof (dbk-xdval env "ENCZA")) 2 2) " (end A)") "")
                                    (if (/= (cond ((dbk-xdval env "ENCZB")) ("")) "") (strcat " " (rtos (atof (dbk-xdval env "ENCZB")) 2 2) " (end B)") "")
-                                   ", setting " (dbk-enclabel (cond ((dbk-xdval env "ENCH")) ("Auto"))))
+                                   ", setting " (dbk-enclabel (cond ((dbk-xdval env "ENCH")) ("Auto")))
+                                   (if (dbk-xdval env "RISERPROJ") (strcat ", level top, risers project >= " (rtos (atof (dbk-xdval env "RISERPROJ")) 2 2) "\"")
+                                     " (built before the level cut: DBEDIT cuts it level below the riser ends)"))
                            (if (dbk-xdval env "ENCH") "none" "not stored (bank built before MVP3; DBEDIT adds it)"))
                          ", concrete at bends: " (cond ((= (dbk-xdval env "BENDCONC") "Sweep") "swept") ((dbk-xdval env "BENDCONC") "chamfered") (T "swept (built before the chamfer option)"))))
         (dbk-say (strcat "  stub-up angle: end A " (cond ((dbk-xdval env "ANGA")) ("90")) ", end B " (cond ((dbk-xdval env "ANGB")) ("90"))

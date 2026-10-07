@@ -6,7 +6,11 @@
 #   powershell -ExecutionPolicy Bypass -File tests\autocad\MEDDuctbankTest.ps1            (3" as drawn)
 #   powershell -ExecutionPolicy Bypass -File tests\autocad\MEDDuctbankTest.ps1 -Size 4     (4" variant + DBDELETE)
 #   powershell -ExecutionPolicy Bypass -File tests\autocad\MEDDuctbankTest.ps1 -Rgs        (plain RGS stub-ups, wrapped)
-#   ... -Enc -30          stub-up encasement (turn-up) to EL -30 (default Auto = top of the elbow sweep; Top = stub top)
+#   ... -Enc -30          stub-up encasement (turn-up) to EL -30 (default Auto = top of the elbow sweep; Top = stub top
+#                       less the riser projection; anything higher is cut level _DBKRISERPROJ below the riser ends)
+#   ... -Proj 6           MVP4c: minimum riser projection above the level turn-up top (Options > ENcasement; default 4)
+#   ... -Lay old|user     MVP4c: 3DMEDModel-Ductbank made before the build: "old" = no transparency (an earlier build;
+#                       must become 75 %), "user" = 40 % set by the user (must stay 40 %)
 #   ... -Plain            reference = plain 3DPOLY made from the sample reference's vertices (no MED data; size 3, type 3)
 #   ... -Edit             after the checks: move the MED_DBREF route 12" east, -DBEDIT: retag A1 -> MV-101, B2 -> 4",
 #                       rebuild in place, DBKTEDITCHK (no orphans / duplicates, edited route used)
@@ -21,7 +25,7 @@
 #   ... -Route OldBubDel  as OldBub, then DBDELETE instead of DBEDIT: BUBs removed with the bank
 #   -Route runs DBKTPROF (profile / 45 deg / cover checks); with -Edit a -DBEDIT round trip (retag A1) + DBKTPROF again
 # Uses -DUCTBANK (command line); accoreconsole has no WinForms UI, so DUCTBANK would fall back to it anyway.
-param([double]$Size = 0, [string]$Name = "dbktest", [string]$Sample = "", [switch]$Rgs, [string]$Enc = "", [switch]$Plain, [switch]$Edit, [switch]$Sweep, [string]$Route = "",
+param([double]$Size = 0, [string]$Name = "dbktest", [string]$Sample = "", [switch]$Rgs, [string]$Enc = "", [switch]$Plain, [switch]$Edit, [switch]$Sweep, [string]$Route = "", [string]$Proj = "", [string]$Lay = "",
       [string]$Accore = "C:\Program Files\Autodesk\AutoCAD 2024\accoreconsole.exe")
 $repo = (Resolve-Path "$PSScriptRoot\..\..").Path
 $fw = $repo.Replace('\', '/')
@@ -35,10 +39,14 @@ if ($Size -eq 4) { $answers = "S`n*`n4`n"; $wt = 28.0; $ht = 17.88; $del = "DBKT
 else { $answers = ""; $wt = 24.0; $ht = 15.63; $del = "" }
 if ($Rgs) { $answers += "O`nSTU`nRgs`nYes`n"; $mat = "*DBKT-STUBCODE* 1 *DBKT-WRAP* T" } else { $mat = "*DBKT-STUBCODE* 2 *DBKT-WRAP* nil" }
 # stub-up encasement: both sample ends stub up -> 2 turn-ups. Auto (3") = sweep top EL -18.5 (tier 2 CL -42.5 + R24)
-if ($Enc) { $answers += "O`nENcasement`n$Enc`n" }
+if ($Enc -or $Proj) { $answers += "O`nENcasement`n$Enc`n$Proj`n" }
+$projv = if ($Proj) { [double]$Proj } else { 4.0 }
+$laytrans = if ($Lay -eq "user") { 40 } else { 75 }
+$laypre = if ($Lay) { "(setq *DBKT-LAYPRE* `"$Lay`")`nDBKTLAYPRE`n" } else { "" }
 if ($Sweep) { $answers += "O`nBends`nSweep`n" }
-$encz = if ($Enc -match '^[Tt]') { "0.0" } elseif ($Enc) { $Enc } elseif ($Size -eq 4) { "nil" } else { "-18.5" }
-$mat += " *DBKT-TURNUPS* 2 *DBKT-ENCZ* $encz"
+# both sample ends stub up to EL 0 (90 deg): the level cut stays $projv below the riser tops
+$encz = if ($Enc -match '^[Tt]') { "$(-$projv)" } elseif ($Enc) { "$([Math]::Min([double]$Enc, -$projv))" } elseif ($Size -eq 4) { "nil" } else { "-18.5" }
+$mat += " *DBKT-TURNUPS* 2 *DBKT-ENCZ* $encz *DBKT-PROJ* $projv *DBKT-LAYTRANS* $laytrans"
 if ($Plain) { $pre = "(setq *DBKT-REFH* `"264`")`nDBKTPLAIN`n"; $pick = ""; $refans = "3`n3`n"; $reftag = ""; $mat += " *DBKT-PLAIN* T" }
 else { $pre = ""; $pick = "H`n264`n"; $refans = ""; $reftag = "C-101"; $mat += " *DBKT-PLAIN* nil" }
 $bank = "2`n4`n4`nB1`nStubup`nStubup`n6`n6`nA`n"; $rows = 2; $cols = 4; $segs = 32; $elb = 24; $stations = 4; $prof = ""; $nrows = 2
@@ -62,12 +70,14 @@ if ($Route) {
   $prof = "(setq *DBKT-NFLEX* $($pc.NFLEX) *DBKT-NVB* $($pc.NVB) *DBKT-VBSTOCK* $($pc.VBSTOCK) *DBKT-FREEENDS* $($pc.FREE) *DBKT-N45* $($pc.N45) *DBKT-ANGA* $($pc.ANGA) *DBKT-ANGB* $($pc.ANGB) *DBKT-FLAGPATS* $($pc.FLAGS) *DBKT-BOMCODES* $($pc.BOM))`nDBKTPROF`n"
 }
 $editblk = ""
+# DBEDIT must take the riser projection from the bank record, not the session: reset the session value first
+$projreset = "(setq _DBKRISERPROJ 4.0)`n"
 if ($Route -like "OldBub*") { $Edit = ($Route -eq "OldBub") }
 if ($Edit -and $Route) {
-  $editblk = "(setq *DBKT-EMOVE* nil)`nDBKTEDITPRE`nDBKTEDIT`n" + $(if ($pick -eq "") { "`n`n" } else { "" }) + ("`n" * (1 + $nrows)) + "`n`n`n`n`n`nT`nA1`nMV-101`nG`n" +
+  $editblk = $projreset + "(setq *DBKT-EMOVE* nil)`nDBKTEDITPRE`nDBKTEDIT`n" + $(if ($pick -eq "") { "`n`n" } else { "" }) + ("`n" * (1 + $nrows)) + "`n`n`n`n`n`nT`nA1`nMV-101`nG`n" +
              "(setq *DBKT-ETAG* `"MV-101`" *DBKT-ESIZE* nil)`nDBKTEDITCHK`n" + $prof
 } elseif ($Edit) {
-  $editblk = "(setq *DBKT-EMOVE* 12.0)`nDBKTEDITPRE`nDBKTEDIT`n" + $(if ($Plain) { "`n`n" } else { "" }) + "2`n4`n4`nB1`nStubup`nStubup`n6`n6`nA`nT`nA1`nMV-101`nS`nB2`n4`nG`n" +
+  $editblk = $projreset + "(setq *DBKT-EMOVE* 12.0)`nDBKTEDITPRE`nDBKTEDIT`n" + $(if ($Plain) { "`n`n" } else { "" }) + "2`n4`n4`nB1`nStubup`nStubup`n6`n6`nA`nT`nA1`nMV-101`nS`nB2`n4`nG`n" +
              "(setq *DBKT-ETAG* `"MV-101`" *DBKT-ESIZE* 4.0)`nDBKTEDITCHK`n"
 }
 $setq = "(setq *DBKT-OUT* `"$dd/$Name-report.txt`" *DBKT-ROWS* $rows *DBKT-COLS* $cols *DBKT-REFTAG* `"$reftag`" *DBKT-SX* 6.0 *DBKT-WT* $wt *DBKT-HT* $ht *DBKT-STATIONS* $stations *DBKT-SEGS* $segs *DBKT-ELBOWS* $elb $mat *DBKT-SPEC* `"$dd/$Name-spec.txt`")"
@@ -99,7 +109,7 @@ $scr = @"
 (load "$fw/Support/MEDDuctbank.lsp")
 (load "$fw/Support/med.spc")
 (load "$fw/tests/autocad/MEDDuctbankTest.lsp")
-${pre}-DUCTBANK
+${laypre}${pre}-DUCTBANK
 ${pick}${refans}
 ${bank}${answers}G
 

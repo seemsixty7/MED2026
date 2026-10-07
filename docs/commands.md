@@ -68,7 +68,7 @@ See [conduit.md](conduit.md).
 | `F0` | Fillet with radius 0 |
 | `UNJ` | UNJ / UNJC fitting aligned to a reference entity |
 | `OFF2CON` | Offset an entity and make the copy a conduit run |
-| `DUCTBANK` `-DUCTBANK` | Encased ductbank from one reference conduit or plain 3D polyline route: dialog / command line. Stub-up encasement (turn-up) included; concrete chamfered at bends by default (`_DBKBENDCONC`). 90 or 45 deg stub-ups per end (45 = 45 deg risers, open riser top, no fitting); the trunk follows route rises (flex up to `_DBKFLEXMAX`, else stock vertical bends). See [ductbank.md](ductbank.md) |
+| `DUCTBANK` `-DUCTBANK` | Encased ductbank from one reference conduit or plain 3D polyline route: dialog / command line. Stub-up encasement (turn-up) included, cut level below the riser ends (`_DBKRISERPROJ`); concrete chamfered at bends by default (`_DBKBENDCONC`). 90 or 45 deg stub-ups per end (45 = 45 deg risers, open riser top, no fitting); the trunk follows route rises (flex up to `_DBKFLEXMAX`, else stock vertical bends). See [ductbank.md](ductbank.md) |
 | `DBEDIT` `-DBEDIT` | Reopen a ductbank with its stored settings and rebuild it in place (same bank ID, edited route used). Also `DBLIST`, `DBDELETE`, `DBSEED`. See [ductbank.md](ductbank.md#dbedit-rebuild-in-place) |
 
 ## Cable tray

@@ -36,7 +36,8 @@ The defaults handle everything else:
 | Transition | 60" |
 | Stub-up material | PVC-coated RGS |
 | Stub-up angle | 90 at both ends (45 = 45 deg stub elbows and risers, open riser top) |
-| Stub-up encasement | Auto (top of the elbow sweep) |
+| Stub-up encasement | Auto (top of the elbow sweep), top cut level at least 4" below the riser ends |
+| 3D model layer | `3DMEDModel-Ductbank`, 75 % transparent |
 | Concrete at bends | Chamfer (straight faces, cover kept) |
 | Route rises | Flex (no fitting) up to 5 deg over at least 120", stock vertical bends above that |
 | 3D solids | On |
@@ -64,12 +65,17 @@ At each stub-up end, the concrete turns up around the stub elbows and risers. It
 
 - **Encasement top EL** (dialog, Stub-up zone) or `-DUCTBANK` Options > ENcasement:
   - **Auto** (default): the top of the highest stub elbow sweep (the end of the R24 / R36 bend). For the 3" sample that is EL -18.5.
-  - **Top**: the stub-up top EL (grade).
-  - **an elevation**: any value up to the stub-up top EL. Higher values are clamped to the top EL. A value below the sweep top is accepted with a flag (the elbow tops are not encased). A value at or below the trunk top means no turn-up (flag).
-- **3D:** the turn-up is modelled as a profile in the vertical plane of the end leg and extruded across the stub zone width. The profile runs from the end face (stub OD + end cover) back along the elbow sweep and up to the encasement top. Along the sweep the back face is a 45 deg **chamfer** on the chord of the cover arc (inner elbow radius minus riser OD/2 and end cover), or follows that arc with `_DBKBENDCONC` Sweep. It is unioned into the `3DMEDModel-Ductbank` envelope solid, so the bank still has one envelope solid. `MEDMAKE3D` exports it with the envelope.
-- **Plan:** a closed outline on `MED_DBENVELOPE` at the turn-up top elevation, with the note `CONCRETE TURN-UP TO EL x`.
-- **Section 1-1 (stub-up section):** a hidden-line outline of the turn-up beyond, the note `CONCRETE TURN-UP BEYOND, TOP EL x`, and the turn-up EL in the subtitle.
-- **Stored:** `ENCH` (the setting) and `ENCZA` / `ENCZB` (the solved elevations) in the bank record. `DBEDIT` reuses them.
+  - **Top**: the stub-up top EL (grade) less the riser projection (`_DBKRISERPROJ`, default 4"). At a 45 deg end the riser end is cut square to the 45, so its low edge is OD/2 x sin 45 below the top EL (1.24" for 3") and the cut goes that much lower again.
+  - **an elevation**: any value up to that limit. Higher values are cut at the limit, with a flag (`End B: stub-up encasement EL 0.00 would leave the risers less than 4.00" above the concrete ...: concrete cut level at EL -4.00`). A value below the sweep top is accepted with a flag (the elbow tops are not encased). A value at or below the trunk top means no turn-up (flag).
+- **Level top, below the conduit ends (Clint, Oct 7):** the top of the turn-up is always a level cut, parallel to grade, and always at least `_DBKRISERPROJ` below the lowest point of the riser ends, whatever the setting. 4" clears a threaded RGS coupling (about 2" to 3.4" long for 2" to 4" conduit), so the next coupling or fitting can be made up without chipping concrete. Set `_DBKRISERPROJ` in med.spc, or with `-DUCTBANK` Options > ENcasement (second prompt); the bank stores it (`RISERPROJ`) and `DBEDIT` keeps it. Banks built before this rule are cut level when `DBEDIT` rebuilds them.
+- **3D:** the turn-up is modelled as a profile in the vertical plane of the end leg and extruded across the stub zone width. The profile runs from the end face (stub OD + end cover) back along the elbow sweep and up to the level cut at the encasement top. At a 45 deg end it is a band along the 45 deg elbows and risers, the end cover on both sides, cut level: there is no vertical or angled cap past the conduit ends. Along the sweep the back face is a 45 deg **chamfer** on the chord of the cover arc (inner elbow radius minus riser OD/2 and end cover), or follows that arc with `_DBKBENDCONC` Sweep. It is unioned into the `3DMEDModel-Ductbank` envelope solid, so the bank still has one envelope solid. `MEDMAKE3D` exports it with the envelope.
+- **Plan:** a closed outline on `MED_DBENVELOPE` at the turn-up top elevation, with the note `CONCRETE TURN-UP, LEVEL TOP EL x`. At a 45 deg end the outline is the band at the cut (outer to inner riser cover).
+- **Section 1-1 (stub-up section):** a hidden-line outline of the turn-up beyond, the note `CONCRETE TURN-UP BEYOND, LEVEL TOP EL x (RISERS PROJECT 4.00" MIN)`, and the turn-up EL in the subtitle.
+- **Stored:** `ENCH` (the setting), `ENCZA` / `ENCZB` (the solved elevations) and `RISERPROJ` in the bank record. `DBEDIT` reuses them.
+
+![Side elevation: 45 deg stub-up, turn-up cut level below the riser ends](images/ductbank-45-levelcut-side.png)
+
+![3D: 45 deg stub-up, turn-up cut level below the riser ends](images/ductbank-3d-45-levelcut.png)
 
 ![Stub-up section with the turn-up](images/ductbank-dialog-turnup.png)
 
@@ -111,7 +117,7 @@ A bank (usually a single row) can come up at 45 deg instead of turning straight 
 - **Open end, no fitting:** the riser ends open at the stub-up top EL (a note in the checks says so). Fittings at stub-ups (BUBs etc.) will be a later option or a separate command.
 - **BOM:** 45 deg stub elbows are PVC-coated RGS 163 / 164 / 165 (R24 / R36 / R48) or plain RGS 167 / 168 / 169, plus the riser conduit.
 - **Multi-row:** allowed. Checks flag 45 deg risers whose clear gap is under the minimum gap (they would collide).
-- **Concrete:** the turn-up follows the 45: the end face is set so the 45 deg risers keep the end cover, the top is the top of the 45 deg elbow sweep (Auto), and the back face is chamfered on the 45 like the 90 deg turn-up. Cover is sized off the primary conduit OD.
+- **Concrete:** the turn-up follows the 45 as a band with the end cover on both sides of the elbows and risers, cut level (parallel to grade) at the encasement top: the top of the 45 deg elbow sweep (Auto), or up to `_DBKRISERPROJ` below the low edge of the riser ends (Top). The trunk end face below is at the outer cover of the elbows at the trunk top; the back face is chamfered on the 45 like the 90 deg turn-up. Cover is sized off the primary conduit OD.
 - **Banks built with BUBs (MVP4, e91df9d):** `DBEDIT` rebuilds them without the BUBs (the command line says how many were removed) and purges the `DBK_BUB` stand-in block. `DBDELETE` removes them with the rest of the bank. `DBLIST` notes the old BUBs until the bank is rebuilt.
 
 ![3D: 45 deg stub-ups, open riser tops](images/ductbank-3d-45-stubup.png)
@@ -192,7 +198,7 @@ When **3D envelope + spacer solids** is on (`_DBKMODEL3D 1`), DUCTBANK models:
 - the concrete envelope as one solid, with the stub-up turn-ups unioned in
 - each spacer station as one solid (pieces unioned, conduit seats subtracted)
 
-They go on `3DMEDModel-Ductbank`. The layer is non-plotting, color 8. `MEDMAKE3D` picks them up automatically (see [3d.md](3d.md#3d-model-layers-3dmedmodel-)). `DBDELETE` erases them with the bank.
+They go on `3DMEDModel-Ductbank`. The layer is non-plotting, color 8, and 75 % transparent (`_DBKLAYERTRANS`): set when DUCTBANK creates the layer, or on a layer an earlier build left at 0. A transparency you set on the layer yourself is kept; `_DBKLAYERTRANS 0` leaves the layer alone. The 2D plan and section layers (`MED_DB*`) stay opaque so the plan prints as before. `MEDMAKE3D` picks them up automatically (see [3d.md](3d.md#3d-model-layers-3dmedmodel-)). `DBDELETE` erases them with the bank.
 
 > 3D models are approximations for layout and coordination only and are not reproductions of manufacturer specifications. Verify all dimensions against manufacturer data.
 
@@ -203,7 +209,9 @@ Every variable has a default in code. `med.spc` only overrides it.
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `_DBKUSEDIALOG` | 1 | 0 makes `DUCTBANK` always use the command line |
-| `_DBKENCASE` | `"Auto"` | Stub-up encasement top: `"Auto"` (top of the elbow sweep), `"Top"` (stub-up top EL) or an elevation |
+| `_DBKENCASE` | `"Auto"` | Stub-up encasement top: `"Auto"` (top of the elbow sweep), `"Top"` (stub-up top EL less the riser projection) or an elevation; always cut level below the riser ends |
+| `_DBKRISERPROJ` | 4.0 | Minimum riser projection above the level top of the turn-up (45 deg ends: from the low edge of the slanted riser end) |
+| `_DBKLAYERTRANS` | 75 | Transparency (%) of `3DMEDModel-Ductbank` when created (or still 0 from an earlier build); 0 = leave the layer alone |
 | `_DBKREFSIZE` | 4.0 | Plain route reference: default reference conduit size (the last value used wins) |
 | `_DBKSTUBANGLE` | 90 | Stub-up angle for new banks: 90, or 45 (45 deg stub elbows and risers, open riser top, no fitting); per end in the dialog |
 | `_DBKFLEXMAX` | 5.0 | Route rises: grade changes up to this angle (deg) are taken in the flex of the PVC (sloped run, no fitting) |
@@ -236,12 +244,15 @@ The summary shows `Ductbank elbow:` and `3D model layer:` lines.
 | (none) | 3" bank as drawn, default encasement (turn-up to EL -18.5 at both ends), concrete at bends Chamfer |
 | `-Size 4` | 4" variant, then `DBDELETE` |
 | `-Rgs` | plain RGS stub-ups, wrapped |
-| `-Enc -30` / `-Enc Top` | custom encasement top |
+| `-Enc -30` / `-Enc Top` / `-Enc 0` | custom encasement top (Top = EL -4; 0 is cut to EL -4 with a flag) |
+| `-Proj 6` | riser projection 6" (with `-Edit`: `DBEDIT` keeps it from the bank record) |
+| `-Lay old` / `-Lay user` | `3DMEDModel-Ductbank` made before the build: no transparency (becomes 75 %) / 40 % set by the user (stays 40 %) |
 | `-Plain` | reference = plain 3DPOLY made from the sample reference's vertices (size 3, type 3) |
 | `-Edit` | after the checks: moves the `MED_DBREF` route 12" east, `-DBEDIT` retags A1 to MV-101 and sets B2 to 4", then checks counts, handles, orphans, duplicate solids, the edited route and the cover at the bends again (mixed R24 / R36) |
 | `-Sweep` | Options > Bends > Sweep (the old swept concrete) |
 | `-Route S45` | 1x4 bank on the sample, end B 45 deg stub-ups: no BUB anywhere, no BUBS key; every riser starts at its stub point / top EL and runs at 45 deg; 45 deg stub elbows (163); flags; BOM (no code 94) |
 | `-Route S45x2` | the 2x4 sample with end B 45 deg: the riser clear-gap flag and the open-end note |
+| `-Route S45 -Enc Top` | Clint's case: end B 45 deg turn-up cut level 4" below the riser ends' low edge (EL -5.24), corners on the riser cover lines |
 | `-Route OldBub` | builds a 1x4 45 deg bank with the e91df9d (MVP4, BUB) code, loads the current code and runs `-DBEDIT`: the BUBs and the `DBK_BUB` block are gone, member counts drop by the BUB count |
 | `-Route OldBubDel` | the same old bank, then `DBDELETE`: nothing of the bank (BUBs included) is left |
 | `-Route Slope` | plain 3DPOLY with a 1.5 deg grade over 120 ft (flex 4 deg / 120"): 2 flex points, no vertical fittings, 29 stations, slab cover |
@@ -256,3 +267,5 @@ Every run also checks the concrete at the bends:
 - the outside chamfer: the same, to the primary OD
 - stub elbows: the minimum distance to the turn-up faces is at least the end cover (45 deg ends: elbows and risers, primary OD)
 - route tests: conduit and vertical elbow OD to the top and bottom of the concrete along the whole profile is at least the top / bottom cover
+- each turn-up top is one level cut with nothing above it, the risers project at least `RISERPROJ` above it (exactly that with Top), and at a 45 deg end the cut's corners sit on the risers' outer / inner cover lines (no cap past the conduit ends)
+- `3DMEDModel-Ductbank` transparency (75 %, or the user's value) and `RISERPROJ` on the bank record

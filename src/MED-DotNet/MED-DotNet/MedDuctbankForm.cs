@@ -473,12 +473,16 @@ namespace MEDDotNet
             double topRel = D((endA ? _topA : _topB).Text) - botz;
             double sweep = SweepRel(g);
             string t = (_enc.Text ?? "").Trim();
-            if (Is45(endA)) why = "45 deg end: the turn-up follows the 45 deg risers";
+            if (Is45(endA)) why = "45 deg end: the turn-up follows the 45 deg risers, cut level";
+            // level cut at least the riser projection below the riser ends (45 deg: the slanted end's low edge, primary OD)
+            double proj = Math.Max(0.0, D(Get("RISERPROJ", "4")));
+            double maxod = _pos.Count > 0 ? _pos.Max(p => Od(p.Code, p.Size)) : 0.0;
+            double lim = topRel - proj - (Is45(endA) ? maxod / 2.0 * Math.Sqrt(0.5) : 0.0);
             double v;
-            if (t.StartsWith("T", StringComparison.OrdinalIgnoreCase)) v = topRel;
+            if (t.StartsWith("T", StringComparison.OrdinalIgnoreCase)) v = lim;
             else if (double.TryParse(t, NumberStyles.Float, IC, out v)) v -= botz;
             else v = sweep;
-            if (v > topRel) { v = topRel; why = "clamped to the top EL"; }
+            if (v > lim + 1e-6) { v = lim; why = "cut level " + N(proj) + "\" below the riser ends"; }
             if (v <= g.Top + 0.01) { why = "at or below the trunk top: no turn-up"; return double.NaN; }
             return v;
         }
@@ -587,7 +591,7 @@ namespace MEDDotNet
                 string bz = Get("BOTZ", ""), why;
                 double er = EncRel(g, out why);
                 _encHint.Text = "Auto = top of the elbow sweep" + (bz != "" && g.P.Count > 0 ? " (EL " + N(Math.Round(D(bz) + SectDz() + SweepRel(g), 2)) + ")" : "")
-                                + ", Top = stub-up top EL, or an elevation." + (!double.IsNaN(er) ? " Turn-up to EL " + N(Math.Round(D(bz) + SectDz() + er, 2)) : "") + (why != "" ? " (" + why + ")" : "");
+                                + ", Top = stub-up top EL less the " + N(Math.Max(0.0, D(Get("RISERPROJ", "4")))) + "\" riser projection, or an elevation. Level top." + (!double.IsNaN(er) ? " Turn-up to EL " + N(Math.Round(D(bz) + SectDz() + er, 2)) : "") + (why != "" ? " (" + why + ")" : "");
             }
             int nerr = Multi("ERR").Count + g.Notes.Count(n => n.StartsWith("ERR:"));
             _status.ForeColor = nerr > 0 ? Color.Firebrick : Color.FromArgb(0, 90, 0);
@@ -772,7 +776,7 @@ namespace MEDDotNet
                 "3. Spacers default to Carlon Snap-N-Stac (Auto part from the largest conduit and the separation).\n" +
                 "4. Stub-up risers and elbows default to PVC-coated RGS; plain RGS can be tape wrapped (WRAP note, BOM 174).\n" +
                 "5. Stub pitch center to center: across = column to column, along = row to row (at the stub-ups; the trunk uses the spacer pitch).\n" +
-                "6. Encasement top EL: the concrete turns up around the stub elbows and risers. Auto = top of the elbow sweep, Top = the stub-up top EL, or type an elevation.\n" +
+                "6. Encasement top EL: the concrete turns up around the stub elbows and risers (at 45 deg ends it follows the risers) and is cut level, parallel to grade, at least the riser projection (_DBKRISERPROJ, default 4\") below the riser ends. Auto = top of the elbow sweep, Top = the stub-up top EL less the projection, or type an elevation (higher values are cut at that limit).\n" +
                 "7. Bends (Cover box): Chamfer (default) = straight concrete chamfer on the outside of each plan bend and of the stub-up turn-up, sized so every elbow keeps at least the side/top/end cover; Sweep = concrete follows the elbow arcs.\n" +
                 "8. A plain 3D polyline / polyline / line can be the reference route: set its size and type in the Bank box.\n" +
                 "   Elevation changes in the route are followed: gentle grades (up to the flex angle over the flex length, Envelope box) are sloped runs with no fitting; steeper changes get stock vertical bends (11.25 / 22.5 / 30 / 45 / 90). The route profile is listed in the Envelope box.\n" +

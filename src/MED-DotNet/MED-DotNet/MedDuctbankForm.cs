@@ -38,12 +38,13 @@ namespace MEDDotNet
         public string ResultSpec { get; private set; }
 
         // controls
-        TextBox _bank, _counts, _interval, _first, _covT, _covB, _covL, _covR, _covE, _gap, _topA, _topB, _sx, _sy, _transl, _straight, _scale, _tag, _tagPat;
+        TextBox _bank, _counts, _interval, _first, _covT, _covB, _covL, _covR, _covE, _gap, _topA, _topB, _sx, _sy, _transl, _straight, _scale, _tag, _tagPat, _flexMax, _flexLen;
         NumericUpDown _rows;
-        ComboBox _family, _sep, _part, _endA, _endB, _sectEnd, _mat, _size, _type, _refSizeCb, _refTypeCb, _enc, _bends;
+        ComboBox _family, _sep, _part, _endA, _endB, _sectEnd, _mat, _size, _type, _refSizeCb, _refTypeCb, _enc, _bends, _angA, _angB;
         readonly ToolTip _tips = new ToolTip { AutoPopDelay = 15000, InitialDelay = 400 };
         CheckBox _wrap, _model3d, _sectPick;
-        Label _refInfo, _pitch, _selLabel, _envelope, _status, _layerInfo, _encHint;
+        Label _refInfo, _pitch, _selLabel, _status, _layerInfo, _encHint;
+        TextBox _envelope;
         Button _okBtn;
         Panel _grid, _cheat;
         RadioButton _viewTrunk, _viewStub;
@@ -83,7 +84,7 @@ namespace MEDDotNet
                 string k = raw.Substring(0, i).Trim(), v = raw.Substring(i + 1);
                 switch (k.ToUpperInvariant())
                 {
-                    case "POS": case "CODE": case "CAT": case "OD": case "PZ": case "PIECE": case "SUM": case "ERR": case "FLAG":
+                    case "POS": case "CODE": case "CAT": case "OD": case "PZ": case "PIECE": case "SUM": case "PROF": case "ERR": case "FLAG":
                         List<string> l;
                         if (!_multi.TryGetValue(k, out l)) { l = new List<string>(); _multi[k] = l; }
                         l.Add(v); break;
@@ -225,10 +226,16 @@ namespace MEDDotNet
             _tips.SetToolTip(bl, bt); _tips.SetToolTip(_bends, bt);
             y += 108;
             g = Group(this, "Stub-up zone", x, y, w, 298);
-            Lbl(g, "End A", 10, 20); _endA = Cmb(g, 60, 20, 80, new[] { "Stubup", "Open" });
-            Lbl(g, "top EL", 150, 20); _topA = Txt(g, 200, 20, 60, "");
-            Lbl(g, "End B", 10, 46); _endB = Cmb(g, 60, 46, 80, new[] { "Stubup", "Open" });
-            Lbl(g, "top EL", 150, 46); _topB = Txt(g, 200, 46, 60, "");
+            Lbl(g, "End A", 10, 20); _endA = Cmb(g, 52, 20, 76, new[] { "Stubup", "Open" });
+            _angA = Cmb(g, 132, 20, 70, new[] { "90", "45 BUB" });
+            Lbl(g, "top EL", 206, 20); _topA = Txt(g, 248, 20, 44, "");
+            Lbl(g, "End B", 10, 46); _endB = Cmb(g, 52, 46, 76, new[] { "Stubup", "Open" });
+            _angB = Cmb(g, 132, 46, 70, new[] { "90", "45 BUB" });
+            Lbl(g, "top EL", 206, 46); _topB = Txt(g, 248, 46, 44, "");
+            const string at = "Stub-up angle at this end:\n90 = vertical stub-up elbows and risers (default).\n45 BUB = each conduit rises at 45 deg out of the bank into a Mogul BUB fitting (code 94, up to 4\"),\ninserted face up at the stub-up point; the run ends at the BUB and its far hub is left open to continue the run.";
+            foreach (Control c in new Control[] { _angA, _angB }) _tips.SetToolTip(c, at);
+            _endA.SelectedIndexChanged += (s, e) => _angA.Enabled = (_endA.SelectedItem as string) == "Stubup";
+            _endB.SelectedIndexChanged += (s, e) => _angB.Enabled = (_endB.SelectedItem as string) == "Stubup";
             Lbl(g, "Stub pitch center to center (in)", 10, 72);
             var la = Lbl(g, "across", 24, 98); _sx = Txt(g, 72, 98, 50, "");
             var lb = Lbl(g, "along", 150, 98); _sy = Txt(g, 196, 98, 50, "");
@@ -287,7 +294,12 @@ namespace MEDDotNet
                 Text = "REMINDER: MED does not calculate cable fill, ampacity derating (mutual heating), voltage drop, pulling tension or burial depth." };
             g.Controls.Add(rem);
             g = Group(this, "Envelope (last check)", x, 544, w, 292);
-            _envelope = new Label { Left = 10, Top = 22, Width = w - 20, Height = 262, Font = new Font("Consolas", 9f) };
+            var fl = Lbl(g, "Route rises: flex up to (deg)", 10, 20); _flexMax = Txt(g, 190, 18, 44, "");
+            var fo = Lbl(g, "over at least (in)", 244, 20); _flexLen = Txt(g, 352, 18, 50, "");
+            const string ft = "Elevation changes along the route (from the reference route Z):\na grade change up to this many degrees, spread over at least this run length, is taken in the flex of the PVC\n(continuous sloped run, no fitting). Steeper or shorter changes get stock vertical bends (11.25 / 22.5 / 30 / 45 / 90).\nDefault 5 deg over 120 in (radius about 1375 in, well above the 160 x OD minimum for PVC electrical conduit).";
+            foreach (Control c in new Control[] { fl, _flexMax, fo, _flexLen }) _tips.SetToolTip(c, ft);
+            _envelope = new TextBox { Left = 10, Top = 46, Width = w - 20, Height = 238, Font = new Font("Consolas", 8.25f), Multiline = true, ReadOnly = true,
+                                      ScrollBars = ScrollBars.Vertical, BorderStyle = BorderStyle.None, BackColor = SystemColors.Control, TabStop = false, WordWrap = true };
             g.Controls.Add(_envelope);
         }
         Button Btn(Control p, string t, int x, int y, int w, EventHandler h)
@@ -343,6 +355,9 @@ namespace MEDDotNet
             _covT.Text = N(D(Get("COVT", "3"))); _covB.Text = N(D(Get("COVB", "3"))); _covL.Text = N(D(Get("COVL", "2")));
             _covR.Text = N(D(Get("COVR", "2"))); _covE.Text = N(D(Get("COVE", "2"))); _gap.Text = N(D(Get("MINGAP", "2")));
             Pick(_endA, Get("ENDA", "Stubup")); Pick(_endB, Get("ENDB", "Open"));
+            Pick(_angA, Math.Abs(D(Get("ANGA", "90")) - 45) < 0.01 ? "45 BUB" : "90"); Pick(_angB, Math.Abs(D(Get("ANGB", "90")) - 45) < 0.01 ? "45 BUB" : "90");
+            _angA.Enabled = (_endA.SelectedItem as string) == "Stubup"; _angB.Enabled = (_endB.SelectedItem as string) == "Stubup";
+            _flexMax.Text = N(D(Get("FLEXMAX", "5"))); _flexLen.Text = N(D(Get("FLEXLEN", "120")));
             _topA.Text = N(D(Get("TOPA", "0"))); _topB.Text = N(D(Get("TOPB", "0")));
             _sx.Text = N(D(Get("SX", "6"))); _sy.Text = N(D(Get("SY", "6")));
             _transl.Text = N(D(Get("TRANSL", "60"))); _straight.Text = N(D(Get("STUBSTR", "12")));
@@ -454,10 +469,11 @@ namespace MEDDotNet
             string end = endA ? (_endA.SelectedItem as string) : (_endB.SelectedItem as string);
             double botz; string bz = Get("BOTZ", "");
             if (end != "Stubup" || bz == "" || g.P.Count == 0) { why = end != "Stubup" ? "no stub-up at this end" : ""; return double.NaN; }
-            botz = D(bz);
+            botz = D(bz) + SectDz();
             double topRel = D((endA ? _topA : _topB).Text) - botz;
             double sweep = SweepRel(g);
             string t = (_enc.Text ?? "").Trim();
+            if (Is45(endA)) why = "45 deg BUB end: the turn-up follows the 45 deg risers";
             double v;
             if (t.StartsWith("T", StringComparison.OrdinalIgnoreCase)) v = topRel;
             else if (double.TryParse(t, NumberStyles.Float, IC, out v)) v -= botz;
@@ -466,15 +482,20 @@ namespace MEDDotNet
             if (v <= g.Top + 0.01) { why = "at or below the trunk top: no turn-up"; return double.NaN; }
             return v;
         }
+        // end B of a sloped / stepped route sits DZB above end A (spec DZB from the last solve)
+        double SectDz() { return (_sectEnd.SelectedItem as string ?? "A") == "B" ? D(Get("DZB", "0")) : 0.0; }
+        bool Is45(bool endA) { var c = endA ? _angA : _angB; return c != null && (c.SelectedItem as string ?? "").StartsWith("45"); }
+        // top of the stub elbow sweep at the section end, relative to the preview bottom (45 deg elbow: R (1 - cos 45))
         double SweepRel(Geo g)
         {
+            double fk = Is45((_sectEnd.SelectedItem as string ?? "A") != "B") ? 1.0 - Math.Sqrt(0.5) : 1.0;
             var rv = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
             foreach (string z in Multi("PZ")) { var f = z.Split('|'); if (f.Length >= 6) rv[f[0]] = D(f[5]); }
             double m = double.MinValue;
             foreach (var p in _pos)
             {
                 double r; if (!rv.TryGetValue(p.Id, out r) || r <= 0) r = p.Size < 3.999 ? 24.0 : 36.0;
-                m = Math.Max(m, g.P[p.Id][2] + r);
+                m = Math.Max(m, g.P[p.Id][2] + fk * r);
             }
             return m;
         }
@@ -556,6 +577,8 @@ namespace MEDDotNet
             _checks.EndUpdate();
             var sb = new StringBuilder();
             foreach (string s in Multi("SUM")) sb.AppendLine(s);
+            var sums = Multi("SUM");
+            foreach (string s in Multi("PROF")) if (!sums.Contains(s)) sb.AppendLine(s);
             sb.AppendLine();
             sb.AppendLine("Preview: W x H " + N(Math.Round(g.VR - g.VL, 2)) + " x " + N(Math.Round(g.Top - g.Bot, 2)) + " in, " + _pos.Count + " conduits");
             _envelope.Text = sb.ToString();
@@ -563,8 +586,8 @@ namespace MEDDotNet
             {
                 string bz = Get("BOTZ", ""), why;
                 double er = EncRel(g, out why);
-                _encHint.Text = "Auto = top of the elbow sweep" + (bz != "" && g.P.Count > 0 ? " (EL " + N(Math.Round(D(bz) + SweepRel(g), 2)) + ")" : "")
-                                + ", Top = stub-up top EL, or an elevation." + (!double.IsNaN(er) ? " Turn-up to EL " + N(Math.Round(D(bz) + er, 2)) : "") + (why != "" ? " (" + why + ")" : "");
+                _encHint.Text = "Auto = top of the elbow sweep" + (bz != "" && g.P.Count > 0 ? " (EL " + N(Math.Round(D(bz) + SectDz() + SweepRel(g), 2)) + ")" : "")
+                                + ", Top = stub-up top EL, or an elevation." + (!double.IsNaN(er) ? " Turn-up to EL " + N(Math.Round(D(bz) + SectDz() + er, 2)) : "") + (why != "" ? " (" + why + ")" : "");
             }
             int nerr = Multi("ERR").Count + g.Notes.Count(n => n.StartsWith("ERR:"));
             _status.ForeColor = nerr > 0 ? Color.Firebrick : Color.FromArgb(0, 90, 0);
@@ -697,10 +720,13 @@ namespace MEDDotNet
             if (action == "OK")
             {
                 var bad = new List<string>();
-                foreach (var t in new[] { _interval, _first, _covT, _covB, _covL, _covR, _covE, _gap, _topA, _topB, _sx, _sy, _transl, _straight, _scale })
+                foreach (var t in new[] { _interval, _first, _covT, _covB, _covL, _covR, _covE, _gap, _topA, _topB, _sx, _sy, _transl, _straight, _scale, _flexMax, _flexLen })
                 { double v; if (!double.TryParse(t.Text.Trim(), NumberStyles.Float, IC, out v)) bad.Add(t.Text); }
                 if (bad.Count > 0) { MessageBox.Show(this, "Not a number: " + string.Join(", ", bad), "MED Ductbank", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
                 if (_bank.Text.Trim() == "") { MessageBox.Show(this, "Enter a bank ID.", "MED Ductbank"); return; }
+                double fm = D(_flexMax.Text), fln = D(_flexLen.Text);
+                if (fm < 0 || fm > 10 || fln < 1)
+                { MessageBox.Show(this, "Route rises: flex 0 to 10 deg, over at least 1 in.", "MED Ductbank", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
                 string et = (_enc.Text ?? "").Trim(); double ev;
                 if (!(et == "" || et.StartsWith("A", StringComparison.OrdinalIgnoreCase) || et.StartsWith("T", StringComparison.OrdinalIgnoreCase)
                       || double.TryParse(et, NumberStyles.Float, IC, out ev)))
@@ -719,6 +745,8 @@ namespace MEDDotNet
             kv("BANK", _bank.Text.Trim().ToUpperInvariant()); kv("ROWS", ((int)_rows.Value).ToString());
             kv("COUNTS", string.Join(",", Counts().Select(i => i.ToString()))); kv("REFPOS", _refPos);
             kv("ENDA", _endA.SelectedItem as string); kv("ENDB", _endB.SelectedItem as string);
+            kv("ANGA", Is45(true) ? "45" : "90"); kv("ANGB", Is45(false) ? "45" : "90");
+            kv("FLEXMAX", _flexMax.Text.Trim()); kv("FLEXLEN", _flexLen.Text.Trim());
             kv("TOPA", _topA.Text.Trim()); kv("TOPB", _topB.Text.Trim()); kv("SX", _sx.Text.Trim()); kv("SY", _sy.Text.Trim());
             kv("SECTEND", _sectEnd.SelectedItem as string); kv("SEP", _sep.SelectedItem as string); kv("PART", _part.SelectedItem as string ?? "Auto");
             kv("COVT", _covT.Text.Trim()); kv("COVB", _covB.Text.Trim()); kv("COVL", _covL.Text.Trim()); kv("COVR", _covR.Text.Trim());
@@ -747,6 +775,8 @@ namespace MEDDotNet
                 "6. Encasement top EL: the concrete turns up around the stub elbows and risers. Auto = top of the elbow sweep, Top = the stub-up top EL, or type an elevation.\n" +
                 "7. Bends (Cover box): Chamfer (default) = straight concrete chamfer on the outside of each plan bend and of the stub-up turn-up, sized so every elbow keeps at least the side/top/end cover; Sweep = concrete follows the elbow arcs.\n" +
                 "8. A plain 3D polyline / polyline / line can be the reference route: set its size and type in the Bank box.\n" +
+                "   Elevation changes in the route are followed: gentle grades (up to the flex angle over the flex length, Envelope box) are sloped runs with no fitting; steeper changes get stock vertical bends (11.25 / 22.5 / 30 / 45 / 90). The route profile is listed in the Envelope box.\n" +
+                "   Stub-up angle per end (next to End A / End B): 90 or 45 BUB (45 deg risers into Mogul BUB fittings, far hub left open).\n" +
                 "9. Check re-solves and refreshes the checks and envelope; OK solves and generates (blocked while there are errors).\n\n" +
                 "DBEDIT reopens this dialog for an existing bank and rebuilds it in place (same ID) from the reference route on MED_DBREF.\n" +
                 "The envelope and spacer stations are also modelled as 3D solids on the 3DMEDModel- layer, which MEDMAKE3D pulls into the 3D export.\n" +

@@ -1477,6 +1477,11 @@
             (cons "REASON" reason) (cons "NOTE" note)
             (cons "TOL" tol) (cons "SIZE2" sz2)))))
 
+;; DUCTBANK inserts: skip the spacer stations (BOM carriers); keep the BUB stub-up fittings
+(defun medcb-dbk-skip-p (e / x)
+  (setq x (cdr (assoc -3 (entget e '("DBANK_DATA")))))
+  (and x (not (member '(1000 . "ROLE=BUB") (cdar x)))))
+
 ;; every MED_FITTING INSERT in the drawing -> (bodies not-modelled-count)
 (defun medcb-collect ( / ss i b bodies nm runs)
   (setq *MEDCB-FITCAT* nil *MEDCB-KEYCSV* nil nm 0 runs (medcb-conduit-runs))
@@ -1484,8 +1489,9 @@
     (progn
       (setq i 0)
       (repeat (sslength ss)
-        ;; ductbank spacer stations (DBANK_DATA) are BOM carriers, not conduit bodies
-        (setq b (if (not (assoc -3 (entget (ssname ss i) '("DBANK_DATA")))) (medcb-body-of (ssname ss i) runs)))
+        ;; ductbank spacer stations (DBANK_DATA) are BOM carriers, not conduit bodies;
+        ;; ductbank 45 deg stub-up BUBs (DBANK_DATA ROLE=BUB) are real fittings and are modelled
+        (setq b (if (not (medcb-dbk-skip-p (ssname ss i))) (medcb-body-of (ssname ss i) runs)))
         (cond ((= (type b) 'STR) (setq nm (1+ nm)))
               (b (setq bodies (cons b bodies))
                  (if med3d-dbg

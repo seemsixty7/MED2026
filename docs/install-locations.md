@@ -26,7 +26,11 @@ MED2026 ships two ways. Pick one per PC; do not install both on the same machine
 
 **Setup (full install, or re-running it)** is a new install. If any of these already exist, Setup **renames** them first to `<name>.bak-YYYYMMDD-HHMMSS` and then installs fresh copies: `Data\MED.db`, `Support\med.spc`, `ACAD.PGP`, `QKEY.lsp`, `MOTOR.DAT`, `medblck.dat` and `setup.add`. Nothing is overwritten silently. The renamed files are listed in a message at the end of Setup and in `C:\MED2026\install-backups.log` (and the Setup log). Copy a `.bak-` file back over the new one to keep your old catalog or settings. Setup keeps `Project.dat` and `MEDDataBaseSettings.dat` (it only creates them if missing) and keeps an existing `Dwg3D\Dwg3DCatalog.db`. Program files under `Support`, `Dwg`, `Dwg3D` and `Data\seed` are replaced.
 
-**Patch** replaces the program LISP, menus, DLLs and seed CSVs. It never ships or overwrites `MED.db`, and never touches `med.spc`, `ACAD.PGP`, `Project.dat`, `MEDDataBaseSettings.dat` or the AutoCAD profile.
+**Patch** updates whichever installs it finds: the classic Setup install (`C:\MED2026` or the folder you choose) and/or the App Store bundle (`C:\ProgramData\Autodesk\ApplicationPlugins\MED2026.bundle`). It asks for administrator rights because the bundle is in ProgramData. If it finds neither, it says so and exits.
+
+- Program files (LISP, menus, DLLs, seed CSVs; for the bundle, `Contents\Support`, `Win64`, `Dwg`, `Dwg3D`, `Data\seed`) are replaced.
+- Your editable files (`med.spc`, `ACAD.PGP`, `QKEY.lsp`, `MOTOR.DAT`, `medblck.dat`, `setup.add`) are installed **only if missing**, in `C:\MED2026\Support` and, for the bundle, in `%APPDATA%\MooreDesign\MED2026\Support`. If your copy differs from the new one, yours is kept and the new one is saved beside it as `<name>.new`. The Patch's finish page and `patch-updates.log` (in `C:\MED2026` and/or `%APPDATA%\MooreDesign\MED2026`) list the files that were not applied, so you can merge them by hand.
+- It never ships or touches any `MED.db` (classic, per-user, or the bundle's starter copy), `Project.dat`, `MEDDataBaseSettings.dat` or the AutoCAD profile. Database changes come from the update path below.
 
 ## Database updates (Setup/Patch installs)
 
@@ -38,7 +42,7 @@ Database changes never come from copying a new `MED.db` over yours. They come fr
 
 `MEDDBUPDATE` runs the same steps on demand, always makes a fresh backup, and reports what it did. `DBSEED` still works as before.
 
-**App Store update** replaces the whole `MED2026.bundle` folder; uninstalling removes it. `%APPDATA%\MooreDesign\MED2026` is never replaced or deleted, so the database, `med.spc`, `Project.dat` and the flags carry over. Missing per-user files are recreated and never overwritten. On every start MED-DotNet adds any missing ductbank `MEDType` rows (the `DBSEED` data) to the per-user `MED.db` and fills a blank description, without prompting.
+**App Store update** replaces the whole `MED2026.bundle` folder; uninstalling removes it. `%APPDATA%\MooreDesign\MED2026` is never replaced or deleted, so the database, `med.spc`, `Project.dat` and the flags carry over. Missing per-user files are recreated and never overwritten. The per-user `MED.db` gets the same database update path as Setup/Patch installs (backup first, schema check, idempotent seeds) on every start; `MEDDBUPDATE` runs it on demand.
 
 ## First run and MEDFIRSTRUN (App Store bundle)
 
@@ -65,3 +69,5 @@ If a folder is already on the path it is moved to the top. Your other entries st
 ## MEDREGISTER (App Store bundle)
 
 After first run MED shows an optional registration dialog once: Name, Email, Company, and an **Email me when MED updates are released** box (off by default). **Register** sends the details to Moore Design (mooredesign.net); **Skip** or closing the dialog won't ask again. Without a network connection it fails quietly and notes it in `MED-startup.log`. MED works the same whether or not you register. Type `MEDREGISTER` to open it later. Privacy policy: `MEDPRIVACY` or https://mooredesign.net/privacy/.
+
+Setup, Patch and the App Store bundle all register through the same endpoint (`https://mooredesign.net/.netlify/functions/med-register`), sending name, email, version and an install type (`setup` or `appstore`); the bundle also sends company and the update opt-in. Setup and Patch ask on an optional wizard page.

@@ -4,6 +4,9 @@
 ; Navisworks MEDProperties plugin under per-user AppData.
 ; Does NOT rewrite AutoCAD profiles, MEDDataBaseSettings.dat, Project.dat, med.spc, ACAD.PGP, or MED.db.
 ; OD data reaches existing MED.db via MED-DotNet (MedODSeed) reading Data\seed at load (fills blanks only).
+; RULE: Patch never ships or overwrites Data\MED.db. DB changes come only from MED-DotNet's update path
+; (MedDbUpdate: backup MED.db.bak-<stamp> on first load of a new version, schema check, ductbank seed;
+; MEDDBUPDATE on demand) and the idempotent seeds (MedODSeed, DBSEED).
 ; PrivilegesRequired=lowest ? may fail to write C:\MED2026 if that folder is admin-owned.
 ; Opt-in registration: reuse Support\MED.registration.json when present (skip wizard page).
 ; Guards: Support update requires an existing MED install ({app}\Support\MED-DotNet.dll or

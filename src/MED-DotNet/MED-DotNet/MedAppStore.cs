@@ -12,7 +12,7 @@ namespace MEDDotNet
     /// Autodesk App Store bundle support. When MED-DotNet.dll is loaded from
     /// ...\MED2026.bundle\Contents\..., first-run setup seeds a writable per-user
     /// folder at %APPDATA%\MooreDesign\MED2026 (Program Files is read-only).
-    /// No registry, profile, support-path or TRUSTEDPATHS edits are made; the
+    /// No registry/profile edits here; support path + TRUSTEDPATHS are set by MEDFIRSTRUN (MED2026-Bundle.lsp); the
     /// Autoloader puts the bundle's own Support folder on the path and trusts it.
     /// </summary>
     public static class MedAppStore

@@ -1,8 +1,8 @@
 ;; MED2026 App Store bundle loader (replaces ACAD.LSP; loaded per document by the Autoloader).
 ;;
 ;; First launch (no %APPDATA%\MooreDesign\MED2026\FirstRun.done): MEDFIRSTRUN seeds the per-user
-;; files, appends the MED folders to TRUSTEDPATHS and the support path of the current profile
-;; (nothing removed, no duplicates), writes FirstRun.done and asks for an AutoCAD restart.
+;; files, appends the MED folders to TRUSTEDPATHS and puts them at the TOP of the support path
+;; (other entries kept in order, no duplicates), writes FirstRun.done and asks for an AutoCAD restart.
 ;; Until that restart, MED commands only show the restart notice (MEDCore globals and APPIDs
 ;; are not reliable in the session that created the files).
 (vl-load-com)
@@ -58,6 +58,20 @@
   s
 )
 
+;; "a;b;c" + ordered list -> those entries first (in that order), every other entry kept in its order;
+;; any existing copy of a MED entry (case-insensitive, trailing \ ignored) is removed first, so re-running is a no-op
+(defun MED-PathPrepend (cur new / parts p s key)
+  (defun key (x) (strcase (vl-string-right-trim "\\" x)))
+  (setq parts nil s (if cur cur ""))
+  (while (setq p (vl-string-search ";" s))
+    (setq parts (append parts (list (substr s 1 p))) s (substr s (+ p 2))))
+  (if (/= s "") (setq parts (append parts (list s))))
+  (setq parts (vl-remove-if '(lambda (x) (or (= x "") (vl-some '(lambda (n) (= (key x) (key n))) new))) parts))
+  (setq s "")
+  (foreach p (append new parts) (setq s (if (= s "") p (strcat s ";" p))))
+  s
+)
+
 ;; 2) TRUSTEDPATHS + support path of the current profile
 (defun MED-BundleProfile ( / files r)
   (setvar "TRUSTEDPATHS"
@@ -67,7 +81,9 @@
             '(lambda ()
                (setq files (vla-get-Files (vla-get-Preferences (vlax-get-acad-object))))
                (vla-put-SupportPath files
-                 (MED-PathAppend (vla-get-SupportPath files) (list (MED-Dir "usersup") (MED-Dir "support")))))))
+                 (MED-PathPrepend (vla-get-SupportPath files)
+                   ;; MED first, so its files win over AutoCAD's: per-user copies, bundle Support, bundle Win64
+                   (list (MED-Dir "usersup") (MED-Dir "support") (strcat (MED-Dir "contents") "\\Win64")))))))
   (if (vl-catch-all-error-p r)
     (princ (strcat "\nMED2026: could not update the support path: " (vl-catch-all-error-message r))))
   T
@@ -94,7 +110,7 @@
             (progn (write-line (strcat "MED2026 first run completed " (rtos (getvar "CDATE") 2 6)) h) (close h)))
           (setq msg (strcat "MED2026 first-run setup is complete.\n\n"
                             "User files: " (MED-Dir "root") "\n"
-                            "The MED folders were added to Trusted Locations and the support path.\n\n"
+                            "The MED folders were added to Trusted Locations and moved to the top of the support path.\n\n"
                             "Please close and restart AutoCAD before using MED.")))
         (setq msg (strcat "MED2026 first-run setup could not create all user files in\n" (MED-Dir "root")
                           "\n\nRun MEDFIRSTRUN again, or contact Moore Design.")))

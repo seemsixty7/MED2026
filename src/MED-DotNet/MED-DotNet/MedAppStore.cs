@@ -1,0 +1,171 @@
+using Autodesk.AutoCAD.ApplicationServices;
+using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.Runtime;
+using System;
+using System.Data.SQLite;
+using System.IO;
+using System.Reflection;
+
+namespace MEDDotNet
+{
+    /// <summary>
+    /// Autodesk App Store bundle support. When MED-DotNet.dll is loaded from
+    /// ...\MED2026.bundle\Contents\..., first-run setup seeds a writable per-user
+    /// folder at %APPDATA%\MooreDesign\MED2026 (Program Files is read-only).
+    /// No registry, profile, support-path or TRUSTEDPATHS edits are made; the
+    /// Autoloader puts the bundle's own Support folder on the path and trusts it.
+    /// </summary>
+    public static class MedAppStore
+    {
+        public const string PrivacyUrl = "https://mooredesign.net/privacy/";
+        public const string WebsiteUrl = "https://mooredesign.net/";
+
+        public static string UserRoot
+        {
+            get
+            {
+                return Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "MooreDesign", "MED2026");
+            }
+        }
+        public static string UserSupport { get { return Path.Combine(UserRoot, "Support"); } }
+        public static string UserData { get { return Path.Combine(UserRoot, "Data"); } }
+
+        /// <summary>Contents folder of the bundle, or null when not running from a .bundle.</summary>
+        public static string BundleContents
+        {
+            get
+            {
+                string dir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "";
+                // DLL lives in Contents\Win64 (or Contents\Support)
+                DirectoryInfo d = new DirectoryInfo(dir);
+                while (d != null)
+                {
+                    if (string.Equals(d.Name, "Contents", StringComparison.OrdinalIgnoreCase)
+                        && d.Parent != null
+                        && d.Parent.Name.EndsWith(".bundle", StringComparison.OrdinalIgnoreCase))
+                        return d.FullName;
+                    d = d.Parent;
+                }
+                return null;
+            }
+        }
+
+        public static bool IsBundle { get { return BundleContents != null; } }
+
+        // Per-user files that MED reads/writes. Copied only if missing so user edits survive updates.
+        static readonly string[] SeedSupportFiles =
+        {
+            "med.spc", "MOTOR.DAT", "medblck.dat", "setup.add", "QKEY.lsp"
+        };
+
+        /// <summary>Run on Initialize. Safe to call repeatedly; never overwrites user files.</summary>
+        public static void EnsureFirstRun()
+        {
+            string contents = BundleContents;
+            if (contents == null)
+                return; // classic Setup.exe install: leave everything as-is
+
+            bool firstRun = !Directory.Exists(UserRoot);
+            Directory.CreateDirectory(UserSupport);
+            Directory.CreateDirectory(UserData);
+
+            string bundleSupport = Path.Combine(contents, "Support");
+            string bundleData = Path.Combine(contents, "Data");
+            string bundleDwg = Path.Combine(contents, "Dwg");
+
+            foreach (string f in SeedSupportFiles)
+                CopyIfMissing(Path.Combine(bundleSupport, f), Path.Combine(UserSupport, f));
+
+            string db = Path.Combine(UserData, "MED.db");
+            CopyIfMissing(Path.Combine(bundleData, "MED.db"), db);
+
+            // Project.dat: line0 db name, lines1-3 MED dirs (writable), line4 block library (read-only ok).
+            string projectDat = Path.Combine(UserSupport, "Project.dat");
+            if (!File.Exists(projectDat))
+            {
+                string dwgDir = Directory.Exists(bundleDwg) ? bundleDwg : Path.Combine(UserRoot, "Dwg");
+                Directory.CreateDirectory(dwgDir);
+                File.WriteAllLines(projectDat, new[] { "MED.db", UserSupport, UserSupport, UserSupport, dwgDir });
+            }
+
+            string settings = Path.Combine(UserSupport, "MEDDataBaseSettings.dat");
+            if (!File.Exists(settings))
+                File.WriteAllLines(settings, new[] { "Provider=SQLite", "ConnectString=Data Source=" + db });
+
+            if (firstRun)
+            {
+                try
+                {
+                    using (var conn = new SQLiteConnection("Data Source=" + db))
+                    {
+                        conn.Open();
+                        using (var cmd = conn.CreateCommand())
+                        {
+                            cmd.CommandText = "INSERT OR IGNORE INTO MEDUsers (UserName, UserType, DefaultSpec) VALUES (@u, @t, @s)";
+                            cmd.Parameters.AddWithValue("@u", Environment.UserName);
+                            cmd.Parameters.AddWithValue("@t", "User");
+                            cmd.Parameters.AddWithValue("@s", "");
+                            cmd.ExecuteNonQuery();
+                        }
+                    }
+                }
+                catch (System.Exception) { }
+
+                Document doc = Application.DocumentManager.MdiActiveDocument;
+                if (doc != null)
+                    doc.Editor.WriteMessage("\nMED2026 first-run setup: user files created in " + UserRoot);
+            }
+        }
+
+        static void CopyIfMissing(string src, string dst)
+        {
+            try
+            {
+                if (File.Exists(src) && !File.Exists(dst))
+                    File.Copy(src, dst);
+            }
+            catch (System.Exception) { }
+        }
+
+        /// <summary>(MED-UserRoot) returns the per-user folder with trailing backslash, or nil when not a bundle install.</summary>
+        [LispFunction("MED-UserRoot")]
+        public static object LispUserRoot(ResultBuffer args)
+        {
+            if (!IsBundle) return null;
+            return UserSupport + "\\";
+        }
+
+        [CommandMethod("MEDPRIVACY")]
+        public static void Privacy()
+        {
+            OpenUrl(PrivacyUrl);
+        }
+
+        [CommandMethod("MEDABOUT")]
+        public static void About()
+        {
+            string ver = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            string where = IsBundle ? ("App Store bundle\nUser files: " + UserRoot) : "Classic install";
+            var r = System.Windows.Forms.MessageBox.Show(
+                "MED2026 (Moore Design)\nVersion " + ver + "\n" + where +
+                "\n\n" + WebsiteUrl + "\nPrivacy policy: " + PrivacyUrl +
+                "\n\nOpen the privacy policy now?",
+                "About MED2026", System.Windows.Forms.MessageBoxButtons.YesNo,
+                System.Windows.Forms.MessageBoxIcon.Information);
+            if (r == System.Windows.Forms.DialogResult.Yes)
+                OpenUrl(PrivacyUrl);
+        }
+
+        static void OpenUrl(string url)
+        {
+            try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true }); }
+            catch (System.Exception ex)
+            {
+                Document doc = Application.DocumentManager.MdiActiveDocument;
+                if (doc != null) doc.Editor.WriteMessage("\nOpen " + url + " (" + ex.Message + ")");
+            }
+        }
+    }
+}

@@ -765,7 +765,7 @@
 )
 
 (defun motor(msize vert)
-  (setq mtrfname (findfile "motor.dat")
+  (setq mtrfname (cond ((MED-UserFile "motor.dat")) ((findfile "motor.dat")))
         mtrfn    (open mtrfname "r")
   )
   (repeat 10 (read-line mtrfn))

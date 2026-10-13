@@ -87,6 +87,7 @@
     <Compile Include="MedDebug.cs" />
     <Compile Include="PluginApp.cs" />
     <Compile Include="MedRibbonMode.cs" />
+    <Compile Include="MedAppStore.cs" />
     <Compile Include="MedXdata.cs" />
     <Compile Include="MedPropertiesXData.cs" />
     <Compile Include="MedPropertiesSidecar.cs" />

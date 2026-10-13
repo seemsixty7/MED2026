@@ -4,8 +4,16 @@
 (setvar "MENUCTL" 0)
 
 
+;; App Store bundle: per-user writable copies live in %APPDATA%\MooreDesign\MED2026\Support.
+;; MEDBundle.flag only ships inside MED2026.bundle, so classic installs are unaffected.
+(defun MED-UserFile (fname / p)
+  (if (and (findfile "MEDBundle.flag") (getenv "APPDATA"))
+    (findfile (strcat (getenv "APPDATA") "\\MooreDesign\\MED2026\\Support\\" fname))
+  )
+)
+
 (defun getmeddir (medprojectlineno) ;Argument passed is the line number of the setting desired
-    (setq projectfile (findfile "project.dat"))
+    (setq projectfile (cond ((MED-UserFile "project.dat")) ((findfile "project.dat"))))
     (if (not projectfile)
       (princ "\nCould not find PROJECT.DAT file. Possibly due to MED environment not set up correctly!")
       (progn
@@ -82,7 +90,7 @@
 (if (findfile "MEDDuctbank.lsp")
   (if (vl-catch-all-error-p (vl-catch-all-apply (quote load) (list "MEDDuctbank.lsp")))
     (princ "\nMEDDuctbank.lsp failed to load; APPLOAD it to see the error.")))
-(load "med.spc")         ;Checked 02/05/2022
+(load (cond ((MED-UserFile "med.spc")) ("med.spc")))         ;Checked 02/05/2022
 
 (if (/= (getvar "USERR2") 0.0)
    (setq _PLOTSCALE (getvar "USERR2"))

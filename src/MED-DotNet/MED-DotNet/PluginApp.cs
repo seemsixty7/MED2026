@@ -10,6 +10,10 @@ namespace MEDDotNet
     {
         public void Initialize()
         {
+            // App Store bundle: seed %APPDATA%\MooreDesign\MED2026 before anything reads settings.
+            try { MedAppStore.EnsureFirstRun(); }
+            catch (System.Exception) { }
+
             Document doc = Application.DocumentManager.MdiActiveDocument;
             if (doc != null)
                 doc.Editor.WriteMessage("\nMED-DotNet loaded. CABLE / CABLEPALETTE for cables, MEDCHG / MEDPROPERTIES for entity xdata, MEDSETTINGS for defaults, MED3DLIB for the 3D block library, MEDCHG-CLASSIC for the old DCL, ProcessSQLStatementNET for SQL, MEDDEBUG for debug mode"

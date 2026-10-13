@@ -59,6 +59,8 @@ namespace MEDDotNet
             string dllDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "";
             return new[]
             {
+                // App Store bundle: per-user settings win (bundle folder is read-only).
+                MedAppStore.IsBundle ? Path.Combine(MedAppStore.UserSupport, SettingsFileName) : "",
                 Path.Combine(dllDir, SettingsFileName),
                 Path.Combine(dllDir, "Support", SettingsFileName),
                 Path.Combine(dllDir, "..", SettingsFileName)

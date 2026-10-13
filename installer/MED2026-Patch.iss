@@ -1,4 +1,4 @@
-; MED2026 non-admin patch installer
+; MED2026 patch installer (classic C:\MED2026 install and/or App Store bundle)
 ; Updates all of Support (DLLs, LISP, menus/CUIX, ribbon, icons, .dat) except site files, Data\seed\*.csv,
 ; restores missing menu blocks into Dwg (only if absent), and optional
 ; Navisworks MEDProperties plugin under per-user AppData.
@@ -7,11 +7,11 @@
 ; RULE: Patch never ships or overwrites Data\MED.db. DB changes come only from MED-DotNet's update path
 ; (MedDbUpdate: backup MED.db.bak-<stamp> on first load of a new version, schema check, ductbank seed;
 ; MEDDBUPDATE on demand) and the idempotent seeds (MedODSeed, DBSEED).
-; ; Admin: the App Store bundle lives in ProgramData (and C:\MED2026 is usually not user-writable).
-PrivilegesRequired=admin ? may fail to write C:\MED2026 if that folder is admin-owned.
+; PrivilegesRequired=admin: the App Store bundle lives in ProgramData (and C:\MED2026 may be admin-owned).
 ; Opt-in registration: reuse Support\MED.registration.json when present (skip wizard page).
-; Guards: Support update requires an existing MED install ({app}\Support\MED-DotNet.dll or
-;   MED.version.txt); warns (default No) before downgrading a newer installed version.
+; Guards: needs an existing MED install: {app}\Support\MED-DotNet.dll or MED.version.txt (classic) or
+;   ProgramData\Autodesk\ApplicationPlugins\MED2026.bundle\PackageContents.xml (App Store); otherwise exits.
+;   Classic only: warns (default No) before downgrading a newer installed version.
 
 #define MyAppName "MED2026"
 #define MyAppVersion "2026.0.1013a"
@@ -44,7 +44,8 @@ OutputBaseFilename={#MyOutputBase}
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
-PrivilegesRequired=lowest
+; Admin: the App Store bundle lives in ProgramData (and C:\MED2026 may be admin-owned).
+PrivilegesRequired=admin
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 SourceDir=..

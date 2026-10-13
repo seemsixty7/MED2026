@@ -113,12 +113,91 @@ namespace MEDDotNet
                 }
                 catch (System.Exception ex) { LogStartup("MEDUsers seed", ex); }
             }
+            // Ductbank FITTING codes (DBSEED logic, no prompt): fixes APPDATA DBs seeded before 1013a r4.
+            try
+            {
+                int added, filled;
+                SeedMedType(db, Path.Combine(bundleData, "seed", "ductbank_medtype.csv"), out added, out filled);
+            }
+            catch (System.Exception ex) { LogStartup("MEDType ductbank seed", ex); }
+
             if (firstRun)
             {
                 Document doc = Application.DocumentManager.MdiActiveDocument;
                 if (doc != null)
                     doc.Editor.WriteMessage("\nMED2026 first-run setup: user files created in " + UserRoot);
             }
+        }
+
+        /// <summary>Idempotent DBSEED: inserts missing MEDType rows from the csv and fills blank ITEMDESC. Never prompts.</summary>
+        public static void SeedMedType(string db, string csvPath, out int added, out int filled)
+        {
+            added = 0; filled = 0;
+            if (!File.Exists(db) || !File.Exists(csvPath)) return;
+            string[] lines = File.ReadAllLines(csvPath);
+            using (var conn = new SQLiteConnection("Data Source=" + db))
+            {
+                conn.Open();
+                using (var tx = conn.BeginTransaction())
+                {
+                    for (int i = 1; i < lines.Length; i++)
+                    {
+                        var f = SplitCsv(lines[i]);
+                        int code;
+                        if (f.Count < 3 || !int.TryParse(f[1].Trim(), out code)) continue;
+                        string type = f[0].Trim(), desc = f[2].Trim();
+                        using (var cmd = conn.CreateCommand())
+                        {
+                            cmd.Transaction = tx;
+                            cmd.Parameters.AddWithValue("@t", type);
+                            cmd.Parameters.AddWithValue("@c", code);
+                            cmd.Parameters.AddWithValue("@d", desc);
+                            cmd.CommandText = "INSERT INTO MEDType (ITEMTYPE, ITEMCODE, ITEMDESC) SELECT @t, @c, @d WHERE NOT EXISTS (SELECT 1 FROM MEDType WHERE ITEMTYPE=@t AND ITEMCODE=@c)";
+                            added += cmd.ExecuteNonQuery();
+                            cmd.CommandText = "UPDATE MEDType SET ITEMDESC=@d WHERE ITEMTYPE=@t AND ITEMCODE=@c AND TRIM(COALESCE(ITEMDESC,''))=''";
+                            filled += cmd.ExecuteNonQuery();
+                        }
+                    }
+                    tx.Commit();
+                }
+            }
+        }
+
+        static System.Collections.Generic.List<string> SplitCsv(string line)
+        {
+            var r = new System.Collections.Generic.List<string>();
+            var sb = new System.Text.StringBuilder();
+            bool q = false;
+            for (int i = 0; i < line.Length; i++)
+            {
+                char ch = line[i];
+                if (q)
+                {
+                    if (ch == '"' && i + 1 < line.Length && line[i + 1] == '"') { sb.Append('"'); i++; }
+                    else if (ch == '"') q = false;
+                    else sb.Append(ch);
+                }
+                else if (ch == '"') q = true;
+                else if (ch == ',') { r.Add(sb.ToString()); sb.Clear(); }
+                else sb.Append(ch);
+            }
+            r.Add(sb.ToString());
+            return r;
+        }
+
+        /// <summary>(MED-SeedMedType) runs the ductbank MEDType seed on the APPDATA MED.db; returns (added filled) or nil.</summary>
+        [LispFunction("MED-SeedMedType")]
+        public static object LispSeedMedType(ResultBuffer args)
+        {
+            string contents = BundleContents;
+            if (contents == null) return null;
+            try
+            {
+                int a, f;
+                SeedMedType(Path.Combine(UserData, "MED.db"), Path.Combine(contents, "Data", "seed", "ductbank_medtype.csv"), out a, out f);
+                return new ResultBuffer(new TypedValue((int)LispDataType.Int32, a), new TypedValue((int)LispDataType.Int32, f));
+            }
+            catch (System.Exception ex) { LogStartup("MED-SeedMedType", ex); return null; }
         }
 
         /// <summary>Logs a startup/event exception to %APPDATA%\MooreDesign\MED2026\MED-startup.log and the command line. Never throws.</summary>

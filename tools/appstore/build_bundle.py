@@ -113,6 +113,8 @@ def main():
     if ribbon:
         shutil.copy2(os.path.join(SUP, "MEDRibbon.cuix"), os.path.join(c, "Support"))
     shutil.copy2(os.path.join(REPO, "Data", "MED.db"), os.path.join(c, "Data", "MED.db"))
+    os.makedirs(os.path.join(c, "Data", "seed"), exist_ok=True)  # first-run MEDType seed (DBSEED data)
+    shutil.copy2(os.path.join(REPO, "Data", "seed", "ductbank_medtype.csv"), os.path.join(c, "Data", "seed"))
     def opt(k):
         return sys.argv[sys.argv.index(k) + 1] if k in sys.argv else None
     if opt("--dwg"):

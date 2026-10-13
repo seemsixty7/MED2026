@@ -85,6 +85,9 @@
     (progn
       (setq ok (MED-BundleSeed))
       (MED-BundleProfile)
+      ;; ductbank FITTING descriptions (DBSEED data, no prompt) via MED-DotNet; the DLL also runs it each start
+      (if (member (type MED-SeedMedType) '(EXRXSUBR SUBR USUBR EXSUBR))
+        (vl-catch-all-apply 'MED-SeedMedType nil))
       (if ok
         (progn
           (if (setq h (open (MED-Dir "flag") "w"))

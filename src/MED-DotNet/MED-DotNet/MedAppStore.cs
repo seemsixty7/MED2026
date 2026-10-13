@@ -94,7 +94,7 @@ namespace MEDDotNet
             if (!File.Exists(settings))
                 File.WriteAllLines(settings, new[] { "Provider=SQLite", "ConnectString=Data Source=" + db });
 
-            if (firstRun)
+            // MEDUsers row: idempotent, run every start (the bundle LISP may have seeded the folder first).
             {
                 try
                 {
@@ -103,7 +103,7 @@ namespace MEDDotNet
                         conn.Open();
                         using (var cmd = conn.CreateCommand())
                         {
-                            cmd.CommandText = "INSERT OR IGNORE INTO MEDUsers (UserName, UserType, DefaultSpec) VALUES (@u, @t, @s)";
+                            cmd.CommandText = "INSERT INTO MEDUsers (UserName, UserType, DefaultSpec) SELECT @u, @t, @s WHERE NOT EXISTS (SELECT 1 FROM MEDUsers WHERE UserName = @u)";
                             cmd.Parameters.AddWithValue("@u", Environment.UserName);
                             cmd.Parameters.AddWithValue("@t", "User");
                             cmd.Parameters.AddWithValue("@s", "");
@@ -111,8 +111,10 @@ namespace MEDDotNet
                         }
                     }
                 }
-                catch (System.Exception) { }
-
+                catch (System.Exception ex) { LogStartup("MEDUsers seed", ex); }
+            }
+            if (firstRun)
+            {
                 Document doc = Application.DocumentManager.MdiActiveDocument;
                 if (doc != null)
                     doc.Editor.WriteMessage("\nMED2026 first-run setup: user files created in " + UserRoot);

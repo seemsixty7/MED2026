@@ -2,6 +2,38 @@
 
 ## Unreleased
 
+## 2026.0.1013a - 2026-10-13 (WORK IN PROGRESS pre-release)
+
+MED 3D models are approximations, not copies of manufacturer specifications; users must verify all dimensions.
+
+### Added
+- **Duct Bank System** (`Support\MEDDuctbank.lsp`, dialog in `MED-DotNet.dll`). New commands `DUCTBANK` / `-DUCTBANK`, `DBEDIT` / `-DBEDIT`, `DBLIST`, `DBDELETE`, `DBSEED`. Turns one MED conduit or a plain 3D polyline route into an encased ductbank: plan conduits per position, plan and stub-up elbows, risers, Carlon Snap-N-Stac spacer stations, concrete envelope (cover sized off the primary conduit OD), sections 1-1 / 2-2 and BOM records.
+  - Stub-ups at 90 or 45 deg per end; PVC-coated RGS by default (plain RGS / wrapped optional); 45 deg risers end open (no fitting).
+  - Stub-up encasement turn-up cut level below the riser ends (`_DBKRISERPROJ`, 4"); Encasement Auto = top of the elbow sweep at 90 deg ends, the Top limit at 45 deg ends.
+  - Concrete chamfered at plan bends (`_DBKBENDCONC`); route rises by flex up to `_DBKFLEXMAX` (5 deg over 120") else stock vertical bends (non-stock angles billed as the nearest stock elbow and flagged); level through plan bends.
+  - Optional 3D envelope and spacer solids on `3DMEDModel-Ductbank` (75% transparent); `MEDMAKE3D` pulls in the bank elbows and all `3DMEDModel-` layers.
+  - `DBEDIT` reopens a bank with its stored settings and rebuilds it in place (same bank ID). `DBSEED` adds the ductbank catalog codes to MEDType.
+  - Settings `_DBK*` in `med.spc`. Guide: `docs/ductbank.md`.
+- Docs: Duct Bank basics in the User Guide, ductbank commands in Appendix A, `docs/command-reference.md` and `docs/commands.md`.
+
+### Fixed
+- MED3DLib standalone project builds again (`Med3DNotice` moved to `Dwg3DLib\Med3DNotice.cs`).
+## 2026.0.1013a - 2026-10-13 (WORK IN PROGRESS pre-release)
+
+MED 3D models are approximations, not copies of manufacturer specifications; users must verify all dimensions.
+
+### Added
+- **Duct Bank System** (`Support\MEDDuctbank.lsp`, dialog in `MED-DotNet.dll`). New commands `DUCTBANK` / `-DUCTBANK`, `DBEDIT` / `-DBEDIT`, `DBLIST`, `DBDELETE`, `DBSEED`. Turns one MED conduit or a plain 3D polyline route into an encased ductbank: plan conduits per position, plan and stub-up elbows, risers, Carlon Snap-N-Stac spacer stations, concrete envelope (cover sized off the primary conduit OD), sections 1-1 / 2-2 and BOM records.
+  - Stub-ups at 90 or 45 deg per end; PVC-coated RGS by default (plain RGS / wrapped optional); 45 deg risers end open (no fitting).
+  - Stub-up encasement turn-up cut level below the riser ends (`_DBKRISERPROJ`, 4"); Encasement Auto = top of the elbow sweep at 90 deg ends, the Top limit at 45 deg ends.
+  - Concrete chamfered at plan bends (`_DBKBENDCONC`); route rises by flex up to `_DBKFLEXMAX` (5 deg over 120") else stock vertical bends (non-stock angles billed as the nearest stock elbow and flagged); level through plan bends.
+  - Optional 3D envelope and spacer solids on `3DMEDModel-Ductbank` (75% transparent); `MEDMAKE3D` pulls in the bank elbows and all `3DMEDModel-` layers.
+  - `DBEDIT` reopens a bank with its stored settings and rebuilds it in place (same bank ID). `DBSEED` adds the ductbank catalog codes to MEDType.
+  - Settings `_DBK*` in `med.spc`. Guide: `docs/ductbank.md`.
+- Docs: Duct Bank basics in the User Guide, ductbank commands in Appendix A, `docs/command-reference.md` and `docs/commands.md`.
+
+### Fixed
+- MED3DLib standalone project builds again (`Med3DNotice` moved to `Dwg3DLib\Med3DNotice.cs`).
 ## 2026.0.1005a - 2026-10-05 (WORK IN PROGRESS pre-release)
 
 MED 3D models are approximations, not copies of manufacturer specifications; users must verify all dimensions.

@@ -22,6 +22,8 @@ How to read an entry:
 
 - **Cable and wire**: [`2LINE`](#2line) [`3LINE`](#3line) [`CABLE`](#cable) [`MEDLINE`](#medline) [`RUN3DCABLE`](#run3dcable) [`TSTRIP`](#tstrip) [`WIRES`](#wires)
 
+- **Ductbank**: [`DBDELETE`](#dbdelete) [`DBEDIT`](#dbedit) [`-DBEDIT`](#-dbedit) [`DBLIST`](#dblist) [`DBSEED`](#dbseed) [`DUCTBANK`](#ductbank) [`-DUCTBANK`](#-ductbank)
+
 - **Details and equipment**: [`COM`](#com) [`DETAIL`](#detail) [`GND`](#gnd) [`INS`](#ins) [`JBX`](#jbx) [`LTG`](#ltg) [`MEDBLOCKINSERT`](#medblockinsert) [`MSC`](#msc) [`MOTOR`](#motor) [`PLANMOTOR`](#planmotor) [`PWR`](#pwr) [`TRY`](#try)
 
 - **Tagging**: [`ABL`](#abl) [`AL`](#al) [`ALEAD`](#alead) [`BC`](#bc) [`BOXCLOUD`](#boxcloud) [`BRACKET`](#bracket) [`CLOUD`](#cloud) [`CTAG`](#ctag) [`CUT`](#cut) [`DETAG`](#detag) [`DETAG2`](#detag2) [`DETAGUPD`](#detagupd) [`GL`](#gl) [`GLEAD`](#glead) [`GR`](#gr) [`GRAB`](#grab) [`HDTAG`](#hdtag) [`HDTAGOLD`](#hdtagold) [`IT`](#it) [`ITAGA`](#itaga) [`ITAGE`](#itage) [`ITAGT`](#itagt) [`LOOPIT`](#loopit) [`MB`](#mb) [`MB1`](#mb1) [`MBL`](#mbl) [`QTA`](#qta) [`QTE`](#qte) [`QTR`](#qtr) [`QTT`](#qtt) [`SECT`](#sect) [`SECTD`](#sectd) [`TTAG`](#ttag) [`TTAGS`](#ttags)
@@ -669,6 +671,42 @@ Find and replace a substring across selected text.
 - **Menu**: med.cuix Menu: Text & Attributes; med.cuix Menu: Text & Attributes > Find & Replace Txt
 - **Related**: [`CT`](#ct) [`ACX`](#acx)
 
+### DBDELETE
+
+Erase a ductbank (2D, 3D solids, BOM records) and restore its reference route (MED conduit data back, or a plain polyline back to its layer).
+
+- **Source**: `Support\MEDDuctbank.lsp` (dialog: `MedDuctbankForm` in `MED-DotNet.dll`)
+- **Prompts / options**: pick any part of the bank
+- **Menu**: None found (type it)
+- **Related**: [`DUCTBANK`](#ductbank) [`DBEDIT`](#dbedit) [`DBLIST`](#dblist) [`DBDELETE`](#dbdelete) [`DBSEED`](#dbseed) [`MEDMAKE3D`](#medmake3d). Full guide: [ductbank.md](ductbank.md)
+
+### DBEDIT
+
+Reopen a ductbank in the Ductbank dialog with its stored settings; Rebuild erases it and regenerates it in place with the same bank ID.
+
+- **Source**: `Support\MEDDuctbank.lsp` (dialog: `MedDuctbankForm` in `MED-DotNet.dll`)
+- **Prompts / options**: pick any part of the bank, then the dialog
+- **Menu**: None found (type it)
+- **Related**: [`DUCTBANK`](#ductbank) [`DBEDIT`](#dbedit) [`DBLIST`](#dblist) [`DBDELETE`](#dbdelete) [`DBSEED`](#dbseed) [`MEDMAKE3D`](#medmake3d). Full guide: [ductbank.md](ductbank.md)
+
+### DBLIST
+
+List a ductbank: positions, tags, sizes, lengths, elbows, spacer stations, stub-up material / angle / encasement per end, concrete at bends, route profile, 3D solid count.
+
+- **Source**: `Support\MEDDuctbank.lsp` (dialog: `MedDuctbankForm` in `MED-DotNet.dll`)
+- **Prompts / options**: pick any part of the bank
+- **Menu**: None found (type it)
+- **Related**: [`DUCTBANK`](#ductbank) [`DBEDIT`](#dbedit) [`DBLIST`](#dblist) [`DBDELETE`](#dbdelete) [`DBSEED`](#dbseed) [`MEDMAKE3D`](#medmake3d). Full guide: [ductbank.md](ductbank.md)
+
+### DBSEED
+
+Add the ductbank catalog codes to MEDType (idempotent; `Data\seed\ductbank_medtype.csv`).
+
+- **Source**: `Support\MEDDuctbank.lsp` (dialog: `MedDuctbankForm` in `MED-DotNet.dll`)
+- **Prompts / options**: none
+- **Menu**: None found (type it)
+- **Related**: [`DUCTBANK`](#ductbank) [`DBEDIT`](#dbedit) [`DBLIST`](#dblist) [`DBDELETE`](#dbdelete) [`DBSEED`](#dbseed) [`MEDMAKE3D`](#medmake3d). Full guide: [ductbank.md](ductbank.md)
+
 ### DD
 
 DDEDIT for TEXT/ATTDEF/MTEXT, DDATTE for INSERT.
@@ -724,6 +762,33 @@ DCL detail picker by MEDType group; inserts the block with MED_EQUIP xdata.
 - **Menu**: med.cuix Menu: Details; med.cuix Menu: Details > Details...
 - **Related**: [`LTG`](#ltg) [`GND`](#gnd) [`PWR`](#pwr) [`DETAG`](#detag)
 - Image: TODO
+
+### DUCTBANK
+
+Build an encased ductbank from one MED conduit or a plain 3D polyline route: plan conduits, elbows, stub-ups (90 or 45 deg, PVC-coated RGS default), spacers, concrete envelope with stub-up turn-ups (chamfered at bends), sections 1-1 / 2-2, BOM records and optional 3D solids on `3DMEDModel-Ductbank`. 3D models are approximations for layout and coordination only; verify all dimensions against manufacturer data.
+
+- **Source**: `Support\MEDDuctbank.lsp` (dialog: `MedDuctbankForm` in `MED-DotNet.dll`)
+- **Prompts / options**: pick the reference route, then the Ductbank dialog (Tag / Size / Type per position, Check, OK). Falls back to `-DUCTBANK` when the dialog is unavailable.
+- **Menu**: None found (type it)
+- **Related**: [`DUCTBANK`](#ductbank) [`DBEDIT`](#dbedit) [`DBLIST`](#dblist) [`DBDELETE`](#dbdelete) [`DBSEED`](#dbseed) [`MEDMAKE3D`](#medmake3d). Full guide: [ductbank.md](ductbank.md)
+
+### -DUCTBANK
+
+DUCTBANK at the command line (no dialog).
+
+- **Source**: `Support\MEDDuctbank.lsp` (dialog: `MedDuctbankForm` in `MED-DotNet.dll`)
+- **Prompts / options**: `-DUCTBANK` prompts, then the Tag / Size / Type / Options loop
+- **Menu**: None found (type it)
+- **Related**: [`DUCTBANK`](#ductbank) [`DBEDIT`](#dbedit) [`DBLIST`](#dblist) [`DBDELETE`](#dbdelete) [`DBSEED`](#dbseed) [`MEDMAKE3D`](#medmake3d). Full guide: [ductbank.md](ductbank.md)
+
+### -DBEDIT
+
+DBEDIT at the command line.
+
+- **Source**: `Support\MEDDuctbank.lsp` (dialog: `MedDuctbankForm` in `MED-DotNet.dll`)
+- **Prompts / options**: pick the bank, then the `-DUCTBANK` prompts
+- **Menu**: None found (type it)
+- **Related**: [`DUCTBANK`](#ductbank) [`DBEDIT`](#dbedit) [`DBLIST`](#dblist) [`DBDELETE`](#dbdelete) [`DBSEED`](#dbseed) [`MEDMAKE3D`](#medmake3d). Full guide: [ductbank.md](ductbank.md)
 
 ### EC
 

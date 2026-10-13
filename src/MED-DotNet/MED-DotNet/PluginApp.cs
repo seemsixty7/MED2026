@@ -33,6 +33,9 @@ namespace MEDDotNet
                 // MED ribbon: show MED Main + the current mode tab (default Plan); re-applied when the ribbon is (re)built.
                 try { MedRibbonMode.Startup(); }
                 catch (System.Exception ex) { MedDebug.Warn("startup: ribbon mode", ex); }
+
+                // Optional registration (bundle only, asked once, modeless, never blocks MED)
+                MedRegistration.StartupPrompt();
             }
             catch (System.Exception ex) { MedAppStore.LogStartup("Initialize", ex); }
         }

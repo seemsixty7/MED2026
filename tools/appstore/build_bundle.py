@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Assemble MED2026.bundle (Autodesk App Store / Autoloader) from this repo.
 
-Usage: python3 tools/appstore/build_bundle.py <MED-DotNet.dll> <outdir> [--ribbon]
+Usage: python3 tools/appstore/build_bundle.py <MED-DotNet.dll> <outdir> [--ribbon] [--version V] [--dwg DIR] [--dwg3d DIR]
 Repo Support/ files are copied, never modified. ACAD.LSP and the classic
 installer/profile helpers are NOT shipped (no profile/registry/TRUSTEDPATHS edits).
 """
@@ -19,6 +19,8 @@ SKIP = {"acad.lsp", "acad.pgp", "med2026-profilesetup.lsp", "csharpadd.lsp",
         "med-dotnet.dll", "medribbon.cuix", "med.cuix", "med.dll"}
 
 def version():
+    for i,a in enumerate(sys.argv):
+        if a == "--version": return sys.argv[i+1]
     for l in open(os.path.join(SUP, "MED.version.txt")):
         if l.startswith("version="): return l.split("=", 1)[1].strip()
 
@@ -99,6 +101,9 @@ def main():
         p = os.path.join(SUP, f)
         if os.path.isfile(p) and f.lower() not in SKIP:
             shutil.copy2(p, os.path.join(c, "Support", f))
+    open(os.path.join(c, "Support", "MED.version.txt"), "w", newline="\r\n").write(
+        "version=%s\nbuild_date=%s\ngit=%s\nchannel=appstore\n" % (ver, __import__("datetime").date.today().isoformat(),
+        subprocess.run(["git", "-C", REPO, "rev-parse", "--short", "HEAD"], capture_output=True, text=True).stdout.strip()))
     open(os.path.join(c, "Support", "MEDBundle.flag"), "w").write("MED2026 App Store bundle " + ver + "\n")
     open(os.path.join(c, "Support", "MED2026-Bundle.lsp"), "w", newline="\r\n").write(
         ';; MED2026 App Store bundle loader (replaces ACAD.LSP; per document).\n'
@@ -116,8 +121,15 @@ def main():
     if ribbon:
         shutil.copy2(os.path.join(SUP, "MEDRibbon.cuix"), os.path.join(c, "Support"))
     shutil.copy2(os.path.join(REPO, "Data", "MED.db"), os.path.join(c, "Data", "MED.db"))
-    open(os.path.join(c, "Dwg", "README.txt"), "w").write(
-        "MED block library (Dwg) goes here. Not in the git repo at 0925a; copy C:\\MED2026\\Dwg contents before packaging.\n")
+    def opt(k):
+        return sys.argv[sys.argv.index(k) + 1] if k in sys.argv else None
+    if opt("--dwg"):
+        shutil.rmtree(os.path.join(c, "Dwg")); shutil.copytree(opt("--dwg"), os.path.join(c, "Dwg"))
+    else:
+        open(os.path.join(c, "Dwg", "README.txt"), "w").write(
+            "MED block library (Dwg) goes here (gitignored; pass --dwg <dir>).\n")
+    if opt("--dwg3d"):  # MED3DLIB looks in Contents\Dwg3D (dll dir\..\Dwg3D)
+        shutil.copytree(opt("--dwg3d"), os.path.join(c, "Dwg3D"))
     subprocess.check_call([sys.executable, os.path.join(HERE, "make_icons.py"), os.path.join(c, "Resources")])
     shutil.copy2(os.path.join(REPO, "LICENSE"), os.path.join(c, "Resources", "LICENSE.txt"))
 

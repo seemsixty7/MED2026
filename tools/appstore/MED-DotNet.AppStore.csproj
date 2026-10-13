@@ -21,6 +21,12 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="WindowsBase" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="PresentationCore" />
+    <Reference Include="System.Xaml" />
     <Reference Include="System.Data.SQLite">
       <HintPath>../../Support/System.Data.SQLite.dll</HintPath>
       <Private>false</Private>

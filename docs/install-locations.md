@@ -24,9 +24,19 @@ MED2026 ships two ways. Pick one per PC; do not install both on the same machine
 
 ## What updates replace and what they keep
 
-**Setup (full install, or re-running it)** replaces everything under `C:\MED2026\Support`, `Dwg`, `Dwg3D` and `Data\seed`. It also replaces `Data\MED.db` and `Support\med.spc`, so back them up first. It keeps `Project.dat` and `MEDDataBaseSettings.dat`, and keeps an existing `Dwg3D\Dwg3DCatalog.db`.
+**Setup (full install, or re-running it)** is a new install. If any of these already exist, Setup **renames** them first to `<name>.bak-YYYYMMDD-HHMMSS` and then installs fresh copies: `Data\MED.db`, `Support\med.spc`, `ACAD.PGP`, `QKEY.lsp`, `MOTOR.DAT`, `medblck.dat` and `setup.add`. Nothing is overwritten silently. The renamed files are listed in a message at the end of Setup and in `C:\MED2026\install-backups.log` (and the Setup log). Copy a `.bak-` file back over the new one to keep your old catalog or settings. Setup keeps `Project.dat` and `MEDDataBaseSettings.dat` (it only creates them if missing) and keeps an existing `Dwg3D\Dwg3DCatalog.db`. Program files under `Support`, `Dwg`, `Dwg3D` and `Data\seed` are replaced.
 
-**Patch** replaces the program LISP, menus, DLLs and seed CSVs. It never touches `MED.db`, `med.spc`, `ACAD.PGP`, `Project.dat`, `MEDDataBaseSettings.dat` or the AutoCAD profile. New catalog rows reach an existing `MED.db` through `DBSEED` and the OD seed that MED-DotNet runs at load.
+**Patch** replaces the program LISP, menus, DLLs and seed CSVs. It never ships or overwrites `MED.db`, and never touches `med.spc`, `ACAD.PGP`, `Project.dat`, `MEDDataBaseSettings.dat` or the AutoCAD profile.
+
+## Database updates (Setup/Patch installs)
+
+Database changes never come from copying a new `MED.db` over yours. They come from MED-DotNet's update path when AutoCAD loads MED:
+
+1. **Backup first.** The first time a new MED version opens a SQLite `MED.db`, it copies it to `MED.db.bak-YYYYMMDD-HHMMSS` next to the original before changing anything (a `MED.db.medver` file records the version). SQL Server databases are not file-copied; back them up in SQL Server first.
+2. **Schema check.** Missing optional `MEDType` columns are added. A missing core table (`MEDType`, `MEDUsers`, `MEDProject`) is reported, not created.
+3. **Idempotent seeds.** Missing duct bank `MEDType` rows are added and blank descriptions filled (the `DBSEED` data); the OD, conduit body and `MEDUsers.LastProject` updates run as before. Rows you added or edited are never changed.
+
+`MEDDBUPDATE` runs the same steps on demand, always makes a fresh backup, and reports what it did. `DBSEED` still works as before.
 
 **App Store update** replaces the whole `MED2026.bundle` folder; uninstalling removes it. `%APPDATA%\MooreDesign\MED2026` is never replaced or deleted, so the database, `med.spc`, `Project.dat` and the flags carry over. Missing per-user files are recreated and never overwritten. On every start MED-DotNet adds any missing ductbank `MEDType` rows (the `DBSEED` data) to the per-user `MED.db` and fills a blank description, without prompting.
 

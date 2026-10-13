@@ -104,6 +104,25 @@ namespace MEDDotNet
             }
         }
 
+        /// <summary>Full path of the SQLite database file, or null for SQL Server / unparsable.</summary>
+        internal static string SqliteDatabasePath()
+        {
+            try
+            {
+                if (!IsSqlite)
+                    return null;
+                SQLiteConnectionStringBuilder b = new SQLiteConnectionStringBuilder(ReadConnectString());
+                string ds = b.DataSource;
+                if (string.IsNullOrWhiteSpace(ds))
+                    return null;
+                return Path.GetFullPath(Environment.ExpandEnvironmentVariables(ds.Trim().Trim('"')));
+            }
+            catch (System.Exception)
+            {
+                return null;
+            }
+        }
+
         static DbConnection GetConnection()
         {
             string cs = ReadConnectString();

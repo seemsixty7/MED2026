@@ -84,6 +84,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ProcessSQL.cs" />
+    <Compile Include="MedDbUpdate.cs" />
     <Compile Include="MedDebug.cs" />
     <Compile Include="PluginApp.cs" />
     <Compile Include="MedRibbonMode.cs" />

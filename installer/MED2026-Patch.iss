@@ -7,7 +7,8 @@
 ; RULE: Patch never ships or overwrites Data\MED.db. DB changes come only from MED-DotNet's update path
 ; (MedDbUpdate: backup MED.db.bak-<stamp> on first load of a new version, schema check, ductbank seed;
 ; MEDDBUPDATE on demand) and the idempotent seeds (MedODSeed, DBSEED).
-; PrivilegesRequired=lowest ? may fail to write C:\MED2026 if that folder is admin-owned.
+; ; Admin: the App Store bundle lives in ProgramData (and C:\MED2026 is usually not user-writable).
+PrivilegesRequired=admin ? may fail to write C:\MED2026 if that folder is admin-owned.
 ; Opt-in registration: reuse Support\MED.registration.json when present (skip wizard page).
 ; Guards: Support update requires an existing MED install ({app}\Support\MED-DotNet.dll or
 ;   MED.version.txt); warns (default No) before downgrading a newer installed version.
@@ -25,6 +26,8 @@
 #ifndef MedDwg3DCatalog
   #define MedDwg3DCatalog "Dwg3D\Dwg3DCatalog.db"
 #endif
+; App Store bundle payload: compile with /DMedBundleDir="<dir containing MED2026.bundle>" (build_bundle.py
+; output). Without it the Patch only updates C:\MED2026-style installs.
 #define MedRegisterUrl "https://mooredesign.net/.netlify/functions/med-register"
 
 [Setup]
@@ -71,9 +74,11 @@ Name: "lib3d"; Description: "MED 3D block library (Dwg3D, MED3DLIB palette)"; Ty
 [Files]
 ; Whole Support folder into {app}\Support when writable (was a hand-picked list; menus, ribbon,
 ; icons and new LISP changed in 1005a). Never med.spc (site config), ACAD.PGP (site aliases),
+; QKEY.lsp, MOTOR.DAT, medblck.dat, setup.add (user-editable: [Code] MedUserFiles installs them only if missing,
+; else drops <name>.new),
 ; machine .dat files, the registration JSON or backups. MED.version.txt is written in [Code].
 Source: "Support\*"; DestDir: "{app}\Support"; Flags: ignoreversion; Components: support; Check: MedSupportWritable; \
-    Excludes: "med.spc,med.spc.*,ACAD.PGP,MEDDataBaseSettings.dat,MEDDataBaseSettings.example.dat,Project.dat,MED.registration.json,MED.version.txt,*.bak,*.bak-*,*.bak*,acad.rx,MEDMain.odcl,TODO-MEDMainDialogs-CSharpUI.txt,MEDMainDialogs-RedoWithCSharp.lsp,TESTICONONEINCHa.bmp"
+    Excludes: "med.spc,med.spc.*,ACAD.PGP,QKEY.lsp,MOTOR.DAT,medblck.dat,setup.add,MEDDataBaseSettings.dat,MEDDataBaseSettings.example.dat,Project.dat,MED.registration.json,MED.version.txt,*.bak,*.bak-*,*.bak*,acad.rx,MEDMain.odcl,TODO-MEDMainDialogs-CSharpUI.txt,MEDMainDialogs-RedoWithCSharp.lsp,TESTICONONEINCHa.bmp"
 ; OD / conduit body seed CSVs only (never Data\MED.db / MEDRegistrations.db, never Support\med.spc).
 Source: "Data\seed\*.csv"; DestDir: "{app}\Data\seed"; Flags: ignoreversion; Components: support; Check: MedDataSeedWritable
 ; Blocks the 1005a menu fixes restored (Dwg\ is gitignored; taken from the working tree). Only added
@@ -95,6 +100,22 @@ Source: "Dwg3D\*.dwg"; DestDir: "{app}\Dwg3D"; Flags: ignoreversion; Components:
 Source: "{#MedDwg3DCatalog}"; DestDir: "{app}\Dwg3D"; DestName: "Dwg3DCatalog.db"; Flags: onlyifdoesntexist; Components: lib3d; Check: MedAppWritable
 #endif
 Source: "installer\Register-MEDInstall.ps1"; Flags: dontcopy
+; User-editable files: staged in {tmp}; [Code] MedUserFiles installs each only if missing, else writes <name>.new
+; when the shipped copy differs. Never overwritten. Targets: {app}\Support (classic) and
+; %APPDATA%\MooreDesign\MED2026\Support (App Store bundle).
+Source: "Support\med.spc";     DestDir: "{tmp}\meduser"; Flags: deleteafterinstall; Components: support
+Source: "Support\ACAD.PGP";    DestDir: "{tmp}\meduser"; Flags: deleteafterinstall; Components: support
+Source: "Support\QKEY.lsp";    DestDir: "{tmp}\meduser"; Flags: deleteafterinstall; Components: support
+Source: "Support\MOTOR.DAT";   DestDir: "{tmp}\meduser"; Flags: deleteafterinstall; Components: support
+Source: "Support\medblck.dat"; DestDir: "{tmp}\meduser"; Flags: deleteafterinstall; Components: support
+Source: "Support\setup.add";   DestDir: "{tmp}\meduser"; Flags: deleteafterinstall; Components: support
+#ifdef MedBundleDir
+; App Store bundle (ProgramData\Autodesk\ApplicationPlugins\MED2026.bundle): program files only.
+; The bundle's starter Data\MED.db is never touched; the per-user MED.db is not in the bundle at all.
+Source: "{#MedBundleDir}\MED2026.bundle\*"; DestDir: "{commonappdata}\Autodesk\ApplicationPlugins\MED2026.bundle"; \
+    Flags: ignoreversion recursesubdirs createallsubdirs; Components: support; Check: MedBundleFound; \
+    Excludes: "\Contents\Data\MED.db"
+#endif
 
 ; Always try Navis per-user AppData (writable without admin).
 Source: "installer\staging\Navis\MEDPropertiesPlugin\MEDPropertiesPlugin.dll"; DestDir: "{userappdata}\Autodesk\Navisworks Manage 2024\Plugins\MEDPropertiesPlugin"; Flags: ignoreversion; Components: navis; Check: NavisManage2024Found
@@ -307,6 +328,81 @@ begin
   Result := MedSupportWritable and ProbeSupportWritable(ExpandConstant('{app}\Data'));
 end;
 
+function MedBundleDir: String;
+begin
+  Result := ExpandConstant('{commonappdata}\Autodesk\ApplicationPlugins\MED2026.bundle');
+end;
+
+function MedBundleUserSupport: String;
+begin
+  Result := ExpandConstant('{userappdata}\MooreDesign\MED2026\Support');
+end;
+
+(* App Store bundle install = the bundle folder in ProgramData (per-user APPDATA may not exist yet). *)
+function MedBundleFound: Boolean;
+begin
+  Result := FileExists(MedBundleDir + '\PackageContents.xml') and DirExists(MedBundleDir + '\Contents');
+end;
+
+var
+  MedNotApplied: String;
+
+(* One user-editable file: install if missing; if the user's copy differs, drop <name>.new beside it. *)
+procedure MedUserFile(const Name, DestDir: String);
+var
+  Src, Dst: String;
+begin
+  Src := ExpandConstant('{tmp}\meduser\') + Name;
+  Dst := DestDir + '\' + Name;
+  if not FileExists(Src) then
+    exit;
+  if not FileExists(Dst) then
+  begin
+    if FileCopy(Src, Dst, True) then
+      Log('MED patch: installed missing ' + Dst)
+    else
+      Log('MED patch: could not install ' + Dst);
+  end
+  else if GetSHA1OfFile(Src) <> GetSHA1OfFile(Dst) then
+  begin
+    if FileCopy(Src, Dst + '.new', False) then
+    begin
+      Log('MED patch: NOT applied (user copy kept): ' + Dst + ' ; new version saved as ' + Dst + '.new');
+      MedNotApplied := MedNotApplied + Dst + '.new' + #13#10;
+    end;
+  end
+  else
+    Log('MED patch: unchanged ' + Dst);
+end;
+
+procedure MedUserFiles;
+var
+  D, Stamp: String;
+begin
+  MedNotApplied := '';
+  if IsValidMedInstall(ExpandConstant('{app}')) and MedSupportWritable then
+  begin
+    D := ExpandConstant('{app}\Support');
+    MedUserFile('med.spc', D); MedUserFile('ACAD.PGP', D); MedUserFile('QKEY.lsp', D);
+    MedUserFile('MOTOR.DAT', D); MedUserFile('medblck.dat', D); MedUserFile('setup.add', D);
+  end;
+  (* Bundle: only when first run already created the per-user folder (otherwise first run seeds it). *)
+  D := MedBundleUserSupport;
+  if MedBundleFound and DirExists(D) then
+  begin
+    MedUserFile('med.spc', D); MedUserFile('QKEY.lsp', D); MedUserFile('MOTOR.DAT', D);
+    MedUserFile('medblck.dat', D); MedUserFile('setup.add', D);
+  end;
+  if MedNotApplied <> '' then
+  begin
+    Stamp := GetDateTimeString('yyyy-mm-dd hh:nn:ss', '-', ':') + ' Patch {#MyAppVersion}: updates NOT applied (merge by hand):' + #13#10;
+    if IsValidMedInstall(ExpandConstant('{app}')) and MedSupportWritable then
+      SaveStringToFile(ExpandConstant('{app}\patch-updates.log'), Stamp + MedNotApplied, True);
+    if DirExists(ExpandConstant('{userappdata}\MooreDesign\MED2026')) then
+      SaveStringToFile(ExpandConstant('{userappdata}\MooreDesign\MED2026\patch-updates.log'), Stamp + MedNotApplied, True);
+  end;
+end;
+
 procedure WriteVersionFilePatch;
 var
   P, Contents: String;
@@ -351,13 +447,15 @@ begin
   if not WizardIsComponentSelected('support') then
     exit;
   AppDir := ExpandConstant('{app}');
-  if IsValidMedInstall(AppDir) then
+  Log('MED patch: classic install at ' + AppDir + ': ' + IntToStr(Ord(IsValidMedInstall(AppDir))) +
+      '; App Store bundle at ' + MedBundleDir + ': ' + IntToStr(Ord(MedBundleFound)));
+  if IsValidMedInstall(AppDir) or MedBundleFound then
     exit;
-  Log('MED patch: no MED2026 install at ' + AppDir +
-      ' (missing Support\MED-DotNet.dll and Support\MED.version.txt); blocking Support update.');
+  Log('MED patch: no MED2026 install found (classic or App Store bundle); exiting.');
   SuppressibleMsgBox(
-    'No MED2026 installation found at' + #13#10 + AppDir + #13#10#13#10 +
-    'Run the full MED2026-Setup first, or browse to your MED2026 folder.' + #13#10#13#10 +
+    'No MED2026 installation found.' + #13#10#13#10 +
+    'Checked:' + #13#10 + '  ' + AppDir + #13#10 + '  ' + MedBundleDir + ' (App Store)' + #13#10#13#10 +
+    'Install MED2026 first (Setup or the Autodesk App Store), or browse to your MED2026 folder.' + #13#10#13#10 +
     '(To install only the Navisworks plugin, choose "Navisworks plugin only".)',
     mbError, MB_OK, IDOK);
   Result := False;
@@ -373,6 +471,8 @@ begin
   if not WizardIsComponentSelected('support') then
     exit;
   AppDir := ExpandConstant('{app}');
+  if not IsValidMedInstall(AppDir) then
+    exit;
   Installed := ReadInstalledMedVersion(AppDir);
   if Installed = '' then
   begin
@@ -417,7 +517,7 @@ begin
       exit;
     end;
     SupportDir := ExpandConstant('{app}\Support');
-    if WizardIsComponentSelected('support') and (not MedSupportWritable) then
+    if WizardIsComponentSelected('support') and IsValidMedInstall(ExpandConstant('{app}')) and (not MedSupportWritable) then
     begin
       SuppressibleMsgBox(
         'Cannot write to:' + #13#10 + SupportDir + #13#10#13#10 +
@@ -443,6 +543,8 @@ begin
   begin
     if WizardIsComponentSelected('support') and MedSupportWritable then
       WriteVersionFilePatch;
+    if WizardIsComponentSelected('support') then
+      MedUserFiles;
     { Registration update even if only navis selected, when Support is writable enough for JSON }
     if MedSupportWritable or MedRegHaveExisting then
       MedHandleRegistrationPostInstall('patch');
@@ -453,6 +555,11 @@ procedure CurPageChanged(CurPageID: Integer);
 begin
   if CurPageID = wpFinished then
   begin
+    if MedNotApplied <> '' then
+      WizardForm.FinishedLabel.Caption :=
+        WizardForm.FinishedLabel.Caption + #13#10#13#10 +
+        'Your own copies of these files were kept. The new versions were saved beside them as .new ' +
+        'for you to merge (also listed in patch-updates.log):' + #13#10 + MedNotApplied;
     if WarnedUnwritable and (not MedSupportWritable) then
       WizardForm.FinishedLabel.Caption :=
         WizardForm.FinishedLabel.Caption + #13#10#13#10 +

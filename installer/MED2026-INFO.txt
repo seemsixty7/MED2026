@@ -1,4 +1,4 @@
-MED2026 2026.0.1005a
+MED2026 2026.0.1013a
 ====================
 
 Release status: WORK IN PROGRESS (pre-release). Features and documentation are
@@ -10,7 +10,8 @@ MED 3D models are approximations, not copies of manufacturer specifications;
 users must verify all dimensions.
 
 This applies to the conduit body / fitting solids made by MEDMAKE3D and to the
-blocks in the MED 3D block library (MED3DLIB).
+blocks in the MED 3D block library (MED3DLIB), and to the ductbank envelope /
+spacer solids made by DUCTBANK.
 
 What this installer does
 ------------------------

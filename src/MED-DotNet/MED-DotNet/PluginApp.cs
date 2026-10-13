@@ -10,27 +10,31 @@ namespace MEDDotNet
     {
         public void Initialize()
         {
-            // App Store bundle: seed %APPDATA%\MooreDesign\MED2026 before anything reads settings.
-            try { MedAppStore.EnsureFirstRun(); }
-            catch (System.Exception) { }
+            try
+            {
+                // App Store bundle: seed %APPDATA%\MooreDesign\MED2026 before anything reads settings.
+                try { MedAppStore.EnsureFirstRun(); }
+                catch (System.Exception ex) { MedAppStore.LogStartup("first-run setup", ex); }
 
-            Document doc = Application.DocumentManager.MdiActiveDocument;
-            if (doc != null)
-                doc.Editor.WriteMessage("\nMED-DotNet loaded. CABLE / CABLEPALETTE for cables, MEDCHG / MEDPROPERTIES for entity xdata, MEDSETTINGS for defaults, MED3DLIB for the 3D block library, MEDCHG-CLASSIC for the old DCL, ProcessSQLStatementNET for SQL, MEDDEBUG for debug mode"
-                    + (MedDebug.Enabled ? " (debug is " + MedDebug.Level + ", log " + MedDebug.LogPath + ")." : "."));
-            MedDebug.Startup();
+                Document doc = Application.DocumentManager.MdiActiveDocument;
+                if (doc != null)
+                    doc.Editor.WriteMessage("\nMED-DotNet loaded. CABLE / CABLEPALETTE for cables, MEDCHG / MEDPROPERTIES for entity xdata, MEDSETTINGS for defaults, MED3DLIB for the 3D block library, MEDCHG-CLASSIC for the old DCL, ProcessSQLStatementNET for SQL, MEDDEBUG for debug mode"
+                        + (MedDebug.Enabled ? " (debug is " + MedDebug.Level + ", log " + MedDebug.LogPath + ")." : "."));
+                MedDebug.Startup();
 
-            // Idempotent MEDUsers.LastProject migration + restore _MEDPROJECT from LastProject.
-            try { MedUserProject.EnsureReady(true); }
-            catch (System.Exception ex) { MedDebug.Warn("startup: MEDUsers.LastProject", ex); }
+                // Idempotent MEDUsers.LastProject migration + restore _MEDPROJECT from LastProject.
+                try { MedUserProject.EnsureReady(true); }
+                catch (System.Exception ex) { MedDebug.Warn("startup: MEDUsers.LastProject", ex); }
 
-            // Idempotent OD data: MEDConduitOD table + CABLE USER3 (OD in) from Data\seed\*.csv.
-            try { MedODSeed.EnsureReady(); }
-            catch (System.Exception ex) { MedDebug.Warn("startup: OD seed", ex); }
+                // Idempotent OD data: MEDConduitOD table + CABLE USER3 (OD in) from Data\seed\*.csv.
+                try { MedODSeed.EnsureReady(); }
+                catch (System.Exception ex) { MedDebug.Warn("startup: OD seed", ex); }
 
-            // MED ribbon: show MED Main + the current mode tab (default Plan); re-applied when the ribbon is (re)built.
-            try { MedRibbonMode.Startup(); }
-            catch (System.Exception ex) { MedDebug.Warn("startup: ribbon mode", ex); }
+                // MED ribbon: show MED Main + the current mode tab (default Plan); re-applied when the ribbon is (re)built.
+                try { MedRibbonMode.Startup(); }
+                catch (System.Exception ex) { MedDebug.Warn("startup: ribbon mode", ex); }
+            }
+            catch (System.Exception ex) { MedAppStore.LogStartup("Initialize", ex); }
         }
 
         public void Terminate()

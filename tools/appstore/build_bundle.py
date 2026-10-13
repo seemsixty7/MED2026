@@ -16,7 +16,9 @@ RT = 'OS="Win64" Platform="AutoCAD*" SeriesMin="R23.1" SeriesMax="R24.3"'
 
 SKIP = {"acad.lsp", "acad.pgp", "med2026-profilesetup.lsp", "csharpadd.lsp",
         "meddatabasesettings.example.dat", "manifest.csv", "readme.txt",
-        "med-dotnet.dll", "medribbon.cuix", "med.cuix", "med.dll"}
+        "med-dotnet.dll", "medribbon.cuix", "med.cuix", "med.dll",
+        # DLLs ship once, in Contents\Win64 (duplicates in Support were redundant)
+        "system.data.sqlite.dll", "sqlite.interop.dll", "med3dlib.dll"}
 
 def version():
     for i,a in enumerate(sys.argv):
@@ -132,6 +134,13 @@ def main():
         shutil.copytree(opt("--dwg3d"), os.path.join(c, "Dwg3D"))
     subprocess.check_call([sys.executable, os.path.join(HERE, "make_icons.py"), os.path.join(c, "Resources")])
     shutil.copy2(os.path.join(REPO, "LICENSE"), os.path.join(c, "Resources", "LICENSE.txt"))
+    # HelpFile must be a LOCAL file: AutoCAD's AppLoader balloon does FileInfo(HelpFile), and a URL
+    # throws NotSupportedException inside acad (fatal e0434352 on startup, seen in 1013a).
+    open(os.path.join(c, "Resources", "MED2026-Help.html"), "w", newline="\r\n").write(
+        '<!doctype html><html><head><meta charset="utf-8"><title>MED2026 Help</title>'
+        '<meta http-equiv="refresh" content="0; url=https://mooredesign.net/"></head>'
+        '<body><p>MED2026 by Moore Design. Help: <a href="https://mooredesign.net/">mooredesign.net</a>. '
+        'Privacy: <a href="https://mooredesign.net/privacy/">mooredesign.net/privacy</a>.</p></body></html>\n')
 
     ribbon_xml = ('''    <ComponentEntry AppName="MED2026Ribbon" Version="%s" ModuleName="./Contents/Support/MEDRibbon.cuix" AppDescription="MED ribbon (partial menu)" AppType="CuiX" />\n''' % ver) if ribbon else ""
     xml = f'''<?xml version="1.0" encoding="utf-8"?>
@@ -144,7 +153,7 @@ def main():
   FriendlyVersion="{ver}"
   Author="Moore Design"
   Icon="./Contents/Resources/MED2026-icon-200.png"
-  HelpFile="https://mooredesign.net/"
+  HelpFile="./Contents/Resources/MED2026-Help.html"
   OnlineDocumentation="https://mooredesign.net/"
   ProductCode="{PRODUCT_CODE}"
   UpgradeCode="{UPGRADE_CODE}"

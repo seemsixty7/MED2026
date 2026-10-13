@@ -51,10 +51,14 @@ namespace MEDDotNet
 
         private static void OnItemInitialized(object sender, RibbonItemEventArgs e)
         {
-            if (ComponentManager.Ribbon == null) return;
-            ComponentManager.ItemInitialized -= OnItemInitialized;
-            _waitingForRibbon = false;
-            QueueApply(false);
+            try
+            {
+                if (ComponentManager.Ribbon == null) return;
+                ComponentManager.ItemInitialized -= OnItemInitialized;
+                _waitingForRibbon = false;
+                QueueApply(false);
+            }
+            catch (System.Exception ex) { MedAppStore.LogStartup("ribbon ItemInitialized", ex); }
         }
 
         private static void HookEvents()
@@ -64,7 +68,7 @@ namespace MEDDotNet
             AcApp.SystemVariableChanged += OnSysVarChanged;
             DocumentCollection dm = AcApp.DocumentManager;
             foreach (Document d in dm) HookDoc(d);
-            dm.DocumentCreated += (s, e) => { if (e.Document != null) HookDoc(e.Document); };
+            dm.DocumentCreated += (s, e) => { try { if (e.Document != null) HookDoc(e.Document); } catch (System.Exception ex) { MedAppStore.LogStartup("DocumentCreated", ex); } };
         }
 
         private static void HookDoc(Document d)
@@ -74,17 +78,25 @@ namespace MEDDotNet
 
         private static void OnSysVarChanged(object sender, Autodesk.AutoCAD.ApplicationServices.SystemVariableChangedEventArgs e)
         {
-            if (string.Equals(e.Name, "WSCURRENT", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(e.Name, "RIBBONSTATE", StringComparison.OrdinalIgnoreCase))
-                QueueApply(false);
+            try
+            {
+                if (string.Equals(e.Name, "WSCURRENT", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(e.Name, "RIBBONSTATE", StringComparison.OrdinalIgnoreCase))
+                    QueueApply(false);
+            }
+            catch (System.Exception ex) { MedAppStore.LogStartup("SystemVariableChanged", ex); }
         }
 
         private static void OnCommandEnded(object sender, CommandEventArgs e)
         {
-            string c = (e.GlobalCommandName ?? "").ToUpperInvariant();
-            if (c == "CUILOAD" || c == "CUIUNLOAD" || c == "MENULOAD" || c == "MENUUNLOAD" || c == "CUI"
-                || c == "MENU" || c == "RIBBON" || c == "WORKSPACE" || c == "WSCURRENT" || c == "CUIIMPORT")
-                QueueApply(false);
+            try
+            {
+                string c = (e.GlobalCommandName ?? "").ToUpperInvariant();
+                if (c == "CUILOAD" || c == "CUIUNLOAD" || c == "MENULOAD" || c == "MENUUNLOAD" || c == "CUI"
+                    || c == "MENU" || c == "RIBBON" || c == "WORKSPACE" || c == "WSCURRENT" || c == "CUIIMPORT")
+                    QueueApply(false);
+            }
+            catch (System.Exception ex) { MedAppStore.LogStartup("CommandEnded", ex); }
         }
 
         // ------------------------------------------------------------ apply
@@ -98,7 +110,7 @@ namespace MEDDotNet
 
         private static void OnIdleOnce(object sender, EventArgs e)
         {
-            AcApp.Idle -= OnIdleOnce;
+            try { AcApp.Idle -= OnIdleOnce; } catch { }
             _idleQueued = false;
             bool act = _activateOnIdle;
             _activateOnIdle = false;
@@ -107,7 +119,7 @@ namespace MEDDotNet
                 if (ComponentManager.Ribbon == null) { WaitForRibbon(); return; }
                 Apply(act);
             }
-            catch (System.Exception ex) { MedDebug.Warn("ribbon mode apply", ex); }
+            catch (System.Exception ex) { MedDebug.Warn("ribbon mode apply", ex); MedAppStore.LogStartup("ribbon mode apply", ex); }
         }
 
         private static bool Matches(RibbonTab t, string uid, string title)

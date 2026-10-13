@@ -119,6 +119,25 @@ namespace MEDDotNet
             }
         }
 
+        /// <summary>Logs a startup/event exception to %APPDATA%\MooreDesign\MED2026\MED-startup.log and the command line. Never throws.</summary>
+        public static void LogStartup(string where, System.Exception ex)
+        {
+            try
+            {
+                Directory.CreateDirectory(UserRoot);
+                File.AppendAllText(Path.Combine(UserRoot, "MED-startup.log"),
+                    DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " [" + where + "] " + ex + Environment.NewLine);
+            }
+            catch { }
+            try
+            {
+                Document doc = Application.DocumentManager.MdiActiveDocument;
+                if (doc != null)
+                    doc.Editor.WriteMessage("\nMED2026: " + where + " failed (" + ex.Message + "). Details: " + Path.Combine(UserRoot, "MED-startup.log"));
+            }
+            catch { }
+        }
+
         static void CopyIfMissing(string src, string dst)
         {
             try

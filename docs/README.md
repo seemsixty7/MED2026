@@ -10,6 +10,7 @@ Author: Clint Moore, PMP. Consulting: [mooredesign.net](https://mooredesign.net)
 
 - [What MED is](overview.md) — xdata vs catalog vs BOM
 - [Install](install.md)
+- [Install methods and file locations](install-locations.md) — Setup/Patch vs App Store bundle, what updates keep, `MEDFIRSTRUN`, `MEDREGISTER`
 - [Database](database.md)
 - [Drawing setup](setup.md) — `SETUP`, scale sets
 - [Commands](commands.md) — full index, grouped like the 2012 guide

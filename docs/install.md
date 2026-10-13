@@ -2,6 +2,8 @@
 
 Default directory: `C:\MED2026`.
 
+Setup/Patch vs the Autodesk App Store bundle, and where each keeps its files: [install-locations.md](install-locations.md).
+
 After files are in place, see [overview.md](overview.md) and [setup.md](setup.md) for what MED is and how to scale a drawing.
 
 The shipped `MED-DotNet.dll` is .NET Framework 4.7.2, built against AutoCAD 2020 references. That covers AutoCAD **2020–2024**. AutoCAD **2025/2026** need a separate .NET 8 build (not in this tree yet). Native ObjectARX is also later, as per-year rebuilds.

@@ -123,6 +123,7 @@
     <Compile Include="Dwg3DLib\Dwg3DLibDb.cs" />
     <Compile Include="Dwg3DLib\Dwg3DLibInsert.cs" />
     <Compile Include="Dwg3DLib\Dwg3DLibSettings.cs" />
+    <Compile Include="Dwg3DLib\Med3DNotice.cs" />
     <Compile Include="Dwg3DLib\Dwg3DScanner.cs" />
     <Compile Include="Dwg3DLib\Dwg3DThumbnail.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

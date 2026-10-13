@@ -101,9 +101,8 @@
     (progn
       (setq ok (MED-BundleSeed))
       (MED-BundleProfile)
-      ;; ductbank FITTING descriptions (DBSEED data, no prompt) via MED-DotNet; the DLL also runs it each start
-      (if (member (type MED-SeedMedType) '(EXRXSUBR SUBR USUBR EXSUBR))
-        (vl-catch-all-apply 'MED-SeedMedType nil))
+      ;; MED.db updates (backup, schema check, ductbank MEDType seed) are MED-DotNet's MedDbUpdate path:
+      ;; it runs at every DLL load; MEDDBUPDATE runs it on demand.
       (if ok
         (progn
           (if (setq h (open (MED-Dir "flag") "w"))

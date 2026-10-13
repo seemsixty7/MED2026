@@ -114,7 +114,10 @@ def main():
         shutil.copy2(os.path.join(SUP, "MEDRibbon.cuix"), os.path.join(c, "Support"))
     shutil.copy2(os.path.join(REPO, "Data", "MED.db"), os.path.join(c, "Data", "MED.db"))
     os.makedirs(os.path.join(c, "Data", "seed"), exist_ok=True)  # first-run MEDType seed (DBSEED data)
-    shutil.copy2(os.path.join(REPO, "Data", "seed", "ductbank_medtype.csv"), os.path.join(c, "Data", "seed"))
+    # All seed csvs (MedDbUpdate ductbank + MedODSeed OD data); MedODSeed.FindSeedDir finds Contents\Data\seed.
+    for f in sorted(os.listdir(os.path.join(REPO, "Data", "seed"))):
+        if f.lower().endswith(".csv"):
+            shutil.copy2(os.path.join(REPO, "Data", "seed", f), os.path.join(c, "Data", "seed"))
     def opt(k):
         return sys.argv[sys.argv.index(k) + 1] if k in sys.argv else None
     if opt("--dwg"):

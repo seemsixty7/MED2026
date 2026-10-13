@@ -11,25 +11,30 @@ namespace MEDDotNet
 {
     public static partial class MedRegistration
     {
-        /// <summary>Form body for the Netlify "med-leads" form. test=true prefixes the name with "TEST - ".</summary>
+        static string J(string v)
+        {
+            var sb = new StringBuilder("\"");
+            foreach (char c in v ?? "")
+            {
+                if (c == '"' || c == '\\') sb.Append('\\').Append(c);
+                else if (c < ' ') sb.Append("\\u").Append(((int)c).ToString("x4"));
+                else sb.Append(c);
+            }
+            return sb.Append('"').ToString();
+        }
+
+        /// <summary>JSON body for the med-register function (same endpoint as Setup). test=true prefixes the name with "TEST - ".</summary>
         public static string BuildBody(string name, string email, string company, bool wantUpdates, bool test, string ver)
         {
-            var sb = new StringBuilder();
-            Action<string, string> add = (k, v) =>
-            {
-                if (sb.Length > 0) sb.Append('&');
-                sb.Append(Uri.EscapeDataString(k)).Append('=').Append(Uri.EscapeDataString(v ?? ""));
-            };
-            add("form-name", FormName);
-            add("bot-field", "");
-            add("name", test ? "TEST - " + name : name);
-            add("email", email);
-            add("company", company);
-            if (wantUpdates) add("want_updates", "yes");
-            // Not declared on the live form yet: Netlify keeps them only once the site form adds these inputs.
-            add("source", "appstore-bundle");
-            add("version", ver);
-            return sb.ToString();
+            return "{\"name\":" + J(test ? "TEST - " + name : name)
+                + ",\"email\":" + J(email)
+                + ",\"company\":" + J(company)
+                + ",\"want_updates\":" + (wantUpdates ? "true" : "false")
+                + ",\"install_type\":\"appstore\""
+                + ",\"channel\":\"appstore\""
+                + ",\"version\":" + J(ver)
+                + ",\"timestamp\":" + J(DateTime.UtcNow.ToString("o"))
+                + "}";
         }
 
         /// <summary>Background POST; any failure (offline, timeout, HTTP error) is only logged.</summary>
@@ -44,7 +49,7 @@ namespace MEDDotNet
                     ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
                     var req = (HttpWebRequest)WebRequest.Create(FormUrl);
                     req.Method = "POST";
-                    req.ContentType = "application/x-www-form-urlencoded";
+                    req.ContentType = "application/json";
                     req.Timeout = 15000;
                     req.AllowAutoRedirect = false;
                     req.UserAgent = "MED2026/" + ver + " (AutoCAD App Store bundle)";

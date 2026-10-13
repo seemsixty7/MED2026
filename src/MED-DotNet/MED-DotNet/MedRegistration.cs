@@ -18,8 +18,8 @@ namespace MEDDotNet
     /// </summary>
     public static partial class MedRegistration
     {
-        const string FormUrl = "https://mooredesign.net/";
-        const string FormName = "med-leads";
+        // Same endpoint as Setup/Patch (installer/Register-MEDInstall.ps1); install_type tells them apart.
+        const string FormUrl = "https://mooredesign.net/.netlify/functions/med-register";
         static string RegisteredFlag { get { return Path.Combine(MedAppStore.UserRoot, "Registered.flag"); } }
         static string SkippedFlag { get { return Path.Combine(MedAppStore.UserRoot, "RegisterSkipped.flag"); } }
         static Form _open;

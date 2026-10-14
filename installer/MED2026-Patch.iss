@@ -50,6 +50,8 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 SourceDir=..
 UninstallDisplayName={#MyAppName}
+; Bundle-only machines: no uninstaller and no C:\MED2026 folder (the App Store owns the bundle).
+Uninstallable=MedClassicInstall
 SetupLogging=yes
 DirExistsWarning=no
 UsePreviousAppDir=yes
@@ -348,6 +350,24 @@ end;
 var
   MedNotApplied: String;
 
+function MedClassicInstall: Boolean;
+begin
+  Result := IsValidMedInstall(ExpandConstant('{app}'));
+end;
+
+(* Same text ignoring CR, so a CRLF vs LF checkout of the same file is not reported as a user edit. *)
+function MedSameText(const A, B: String): Boolean;
+var
+  SA, SB: AnsiString;
+begin
+  Result := False;
+  if not LoadStringFromFile(A, SA) then exit;
+  if not LoadStringFromFile(B, SB) then exit;
+  StringChangeEx(SA, #13, '', True);
+  StringChangeEx(SB, #13, '', True);
+  Result := SA = SB;
+end;
+
 (* One user-editable file: install if missing; if the user's copy differs, drop <name>.new beside it. *)
 procedure MedUserFile(const Name, DestDir: String);
 var
@@ -359,14 +379,14 @@ begin
     exit;
   if not FileExists(Dst) then
   begin
-    if FileCopy(Src, Dst, True) then
+    if CopyFile(Src, Dst, True) then
       Log('MED patch: installed missing ' + Dst)
     else
       Log('MED patch: could not install ' + Dst);
   end
-  else if GetSHA1OfFile(Src) <> GetSHA1OfFile(Dst) then
+  else if (GetSHA1OfFile(Src) <> GetSHA1OfFile(Dst)) and not MedSameText(Src, Dst) then
   begin
-    if FileCopy(Src, Dst + '.new', False) then
+    if CopyFile(Src, Dst + '.new', False) then
     begin
       Log('MED patch: NOT applied (user copy kept): ' + Dst + ' ; new version saved as ' + Dst + '.new');
       MedNotApplied := MedNotApplied + Dst + '.new' + #13#10;
@@ -546,6 +566,9 @@ begin
       WriteVersionFilePatch;
     if WizardIsComponentSelected('support') then
       MedUserFiles;
+    (* Inno creates {app} up front; on a bundle-only machine leave no empty C:\MED2026 behind. *)
+    if not MedClassicInstall then
+      RemoveDir(ExpandConstant('{app}'));
     { Registration update even if only navis selected, when Support is writable enough for JSON }
     if MedSupportWritable or MedRegHaveExisting then
       MedHandleRegistrationPostInstall('patch');

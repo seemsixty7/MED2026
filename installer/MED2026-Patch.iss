@@ -358,11 +358,14 @@ end;
 (* Same text ignoring CR, so a CRLF vs LF checkout of the same file is not reported as a user edit. *)
 function MedSameText(const A, B: String): Boolean;
 var
-  SA, SB: AnsiString;
+  RA, RB: AnsiString;
+  SA, SB: String;
 begin
   Result := False;
-  if not LoadStringFromFile(A, SA) then exit;
-  if not LoadStringFromFile(B, SB) then exit;
+  if not LoadStringFromFile(A, RA) then exit;
+  if not LoadStringFromFile(B, RB) then exit;
+  SA := String(RA);
+  SB := String(RB);
   StringChangeEx(SA, #13, '', True);
   StringChangeEx(SB, #13, '', True);
   Result := SA = SB;

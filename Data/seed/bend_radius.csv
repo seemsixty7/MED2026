@@ -1,147 +1,130 @@
 ConduitCode,ConduitDesc,TradeSize,TradeSizeDec,BendClass,Radius_in,Source,Verified,Notes
 1,Rigid Steel Conduit,1/2,0.5,Standard,4,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column One Shot and Full Shoe Benders; per NEC 344.24 RMC",1,
-1,Rigid Steel Conduit,1/2,0.5,LongRadius,,,0,"no published source yet, Clint to fill"
+1,Rigid Steel Conduit,1/2,0.5,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 1,Rigid Steel Conduit,3/4,0.75,Standard,4.5,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column One Shot and Full Shoe Benders; per NEC 344.24 RMC",1,
-1,Rigid Steel Conduit,3/4,0.75,LongRadius,,,0,"no published source yet, Clint to fill"
+1,Rigid Steel Conduit,3/4,0.75,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 1,Rigid Steel Conduit,1,1,Standard,5.75,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column One Shot and Full Shoe Benders; per NEC 344.24 RMC",1,
-1,Rigid Steel Conduit,1,1,LongRadius,,,0,"no published source yet, Clint to fill"
+1,Rigid Steel Conduit,1,1,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 1,Rigid Steel Conduit,1-1/4,1.25,Standard,7.25,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column One Shot and Full Shoe Benders; per NEC 344.24 RMC",1,
-1,Rigid Steel Conduit,1-1/4,1.25,LongRadius,,,0,"no published source yet, Clint to fill"
+1,Rigid Steel Conduit,1-1/4,1.25,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 1,Rigid Steel Conduit,1-1/2,1.5,Standard,8.25,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column One Shot and Full Shoe Benders; per NEC 344.24 RMC",1,
-1,Rigid Steel Conduit,1-1/2,1.5,LongRadius,,,0,"no published source yet, Clint to fill"
+1,Rigid Steel Conduit,1-1/2,1.5,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 1,Rigid Steel Conduit,2,2,Standard,9.5,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column One Shot and Full Shoe Benders; per NEC 344.24 RMC",1,
-1,Rigid Steel Conduit,2,2,LongRadius,,,0,"no published source yet, Clint to fill"
+1,Rigid Steel Conduit,2,2,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 1,Rigid Steel Conduit,2-1/2,2.5,Standard,10.5,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column One Shot and Full Shoe Benders; per NEC 344.24 RMC",1,
-1,Rigid Steel Conduit,2-1/2,2.5,LongRadius,,,0,"no published source yet, Clint to fill"
+1,Rigid Steel Conduit,2-1/2,2.5,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 1,Rigid Steel Conduit,3,3,Standard,13,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column One Shot and Full Shoe Benders; per NEC 344.24 RMC",1,
-1,Rigid Steel Conduit,3,3,LongRadius,,,0,"no published source yet, Clint to fill"
+1,Rigid Steel Conduit,3,3,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 1,Rigid Steel Conduit,3-1/2,3.5,Standard,15,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column One Shot and Full Shoe Benders; per NEC 344.24 RMC",1,
-1,Rigid Steel Conduit,3-1/2,3.5,LongRadius,,,0,"no published source yet, Clint to fill"
+1,Rigid Steel Conduit,3-1/2,3.5,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 1,Rigid Steel Conduit,4,4,Standard,16,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column One Shot and Full Shoe Benders; per NEC 344.24 RMC",1,
-1,Rigid Steel Conduit,4,4,LongRadius,,,0,"no published source yet, Clint to fill"
+1,Rigid Steel Conduit,4,4,LongRadius,36,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 1,Rigid Steel Conduit,5,5,Standard,24,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column One Shot and Full Shoe Benders; per NEC 344.24 RMC",1,
-1,Rigid Steel Conduit,5,5,LongRadius,,,0,"no published source yet, Clint to fill"
+1,Rigid Steel Conduit,5,5,LongRadius,36,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 1,Rigid Steel Conduit,6,6,Standard,30,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column One Shot and Full Shoe Benders; per NEC 344.24 RMC",1,
-1,Rigid Steel Conduit,6,6,LongRadius,,,0,"no published source yet, Clint to fill"
+1,Rigid Steel Conduit,6,6,LongRadius,36,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 2,Plastic Coated Rigid Steel Conduit,1/2,0.5,Standard,4,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column One Shot and Full Shoe Benders; per NEC 344.24 RMC (PVC-coated RMC)",1,
-2,Plastic Coated Rigid Steel Conduit,1/2,0.5,LongRadius,,,0,"no published source yet, Clint to fill"
+2,Plastic Coated Rigid Steel Conduit,1/2,0.5,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 2,Plastic Coated Rigid Steel Conduit,3/4,0.75,Standard,4.5,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column One Shot and Full Shoe Benders; per NEC 344.24 RMC (PVC-coated RMC)",1,
-2,Plastic Coated Rigid Steel Conduit,3/4,0.75,LongRadius,,,0,"no published source yet, Clint to fill"
+2,Plastic Coated Rigid Steel Conduit,3/4,0.75,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 2,Plastic Coated Rigid Steel Conduit,1,1,Standard,5.75,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column One Shot and Full Shoe Benders; per NEC 344.24 RMC (PVC-coated RMC)",1,
-2,Plastic Coated Rigid Steel Conduit,1,1,LongRadius,,,0,"no published source yet, Clint to fill"
+2,Plastic Coated Rigid Steel Conduit,1,1,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 2,Plastic Coated Rigid Steel Conduit,1-1/4,1.25,Standard,7.25,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column One Shot and Full Shoe Benders; per NEC 344.24 RMC (PVC-coated RMC)",1,
-2,Plastic Coated Rigid Steel Conduit,1-1/4,1.25,LongRadius,,,0,"no published source yet, Clint to fill"
+2,Plastic Coated Rigid Steel Conduit,1-1/4,1.25,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 2,Plastic Coated Rigid Steel Conduit,1-1/2,1.5,Standard,8.25,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column One Shot and Full Shoe Benders; per NEC 344.24 RMC (PVC-coated RMC)",1,
-2,Plastic Coated Rigid Steel Conduit,1-1/2,1.5,LongRadius,,,0,"no published source yet, Clint to fill"
+2,Plastic Coated Rigid Steel Conduit,1-1/2,1.5,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 2,Plastic Coated Rigid Steel Conduit,2,2,Standard,9.5,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column One Shot and Full Shoe Benders; per NEC 344.24 RMC (PVC-coated RMC)",1,
-2,Plastic Coated Rigid Steel Conduit,2,2,LongRadius,,,0,"no published source yet, Clint to fill"
+2,Plastic Coated Rigid Steel Conduit,2,2,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 2,Plastic Coated Rigid Steel Conduit,2-1/2,2.5,Standard,10.5,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column One Shot and Full Shoe Benders; per NEC 344.24 RMC (PVC-coated RMC)",1,
-2,Plastic Coated Rigid Steel Conduit,2-1/2,2.5,LongRadius,,,0,"no published source yet, Clint to fill"
+2,Plastic Coated Rigid Steel Conduit,2-1/2,2.5,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 2,Plastic Coated Rigid Steel Conduit,3,3,Standard,13,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column One Shot and Full Shoe Benders; per NEC 344.24 RMC (PVC-coated RMC)",1,
-2,Plastic Coated Rigid Steel Conduit,3,3,LongRadius,,,0,"no published source yet, Clint to fill"
+2,Plastic Coated Rigid Steel Conduit,3,3,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 2,Plastic Coated Rigid Steel Conduit,3-1/2,3.5,Standard,15,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column One Shot and Full Shoe Benders; per NEC 344.24 RMC (PVC-coated RMC)",1,
-2,Plastic Coated Rigid Steel Conduit,3-1/2,3.5,LongRadius,,,0,"no published source yet, Clint to fill"
+2,Plastic Coated Rigid Steel Conduit,3-1/2,3.5,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 2,Plastic Coated Rigid Steel Conduit,4,4,Standard,16,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column One Shot and Full Shoe Benders; per NEC 344.24 RMC (PVC-coated RMC)",1,
-2,Plastic Coated Rigid Steel Conduit,4,4,LongRadius,,,0,"no published source yet, Clint to fill"
+2,Plastic Coated Rigid Steel Conduit,4,4,LongRadius,36,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 2,Plastic Coated Rigid Steel Conduit,5,5,Standard,24,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column One Shot and Full Shoe Benders; per NEC 344.24 RMC (PVC-coated RMC)",1,
-2,Plastic Coated Rigid Steel Conduit,5,5,LongRadius,,,0,"no published source yet, Clint to fill"
+2,Plastic Coated Rigid Steel Conduit,5,5,LongRadius,36,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 2,Plastic Coated Rigid Steel Conduit,6,6,Standard,30,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column One Shot and Full Shoe Benders; per NEC 344.24 RMC (PVC-coated RMC)",1,
-2,Plastic Coated Rigid Steel Conduit,6,6,LongRadius,,,0,"no published source yet, Clint to fill"
+2,Plastic Coated Rigid Steel Conduit,6,6,LongRadius,36,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 3,Rigid Non-Metalic Conduit,1/2,0.5,Standard,4,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column Other Bends; per NEC 352.24 PVC",1,
-3,Rigid Non-Metalic Conduit,1/2,0.5,LongRadius,,,0,"no published source yet, Clint to fill"
+3,Rigid Non-Metalic Conduit,1/2,0.5,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 3,Rigid Non-Metalic Conduit,3/4,0.75,Standard,5,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column Other Bends; per NEC 352.24 PVC",1,
-3,Rigid Non-Metalic Conduit,3/4,0.75,LongRadius,,,0,"no published source yet, Clint to fill"
+3,Rigid Non-Metalic Conduit,3/4,0.75,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 3,Rigid Non-Metalic Conduit,1,1,Standard,6,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column Other Bends; per NEC 352.24 PVC",1,
-3,Rigid Non-Metalic Conduit,1,1,LongRadius,,,0,"no published source yet, Clint to fill"
+3,Rigid Non-Metalic Conduit,1,1,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 3,Rigid Non-Metalic Conduit,1-1/4,1.25,Standard,8,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column Other Bends; per NEC 352.24 PVC",1,
-3,Rigid Non-Metalic Conduit,1-1/4,1.25,LongRadius,,,0,"no published source yet, Clint to fill"
+3,Rigid Non-Metalic Conduit,1-1/4,1.25,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 3,Rigid Non-Metalic Conduit,1-1/2,1.5,Standard,10,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column Other Bends; per NEC 352.24 PVC",1,
-3,Rigid Non-Metalic Conduit,1-1/2,1.5,LongRadius,,,0,"no published source yet, Clint to fill"
+3,Rigid Non-Metalic Conduit,1-1/2,1.5,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 3,Rigid Non-Metalic Conduit,2,2,Standard,12,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column Other Bends; per NEC 352.24 PVC",1,
-3,Rigid Non-Metalic Conduit,2,2,LongRadius,,,0,"no published source yet, Clint to fill"
+3,Rigid Non-Metalic Conduit,2,2,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 3,Rigid Non-Metalic Conduit,2-1/2,2.5,Standard,15,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column Other Bends; per NEC 352.24 PVC",1,
-3,Rigid Non-Metalic Conduit,2-1/2,2.5,LongRadius,,,0,"no published source yet, Clint to fill"
+3,Rigid Non-Metalic Conduit,2-1/2,2.5,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 3,Rigid Non-Metalic Conduit,3,3,Standard,18,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column Other Bends; per NEC 352.24 PVC",1,
-3,Rigid Non-Metalic Conduit,3,3,LongRadius,,,0,"no published source yet, Clint to fill"
+3,Rigid Non-Metalic Conduit,3,3,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 3,Rigid Non-Metalic Conduit,3-1/2,3.5,Standard,21,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column Other Bends; per NEC 352.24 PVC",1,
-3,Rigid Non-Metalic Conduit,3-1/2,3.5,LongRadius,,,0,"no published source yet, Clint to fill"
+3,Rigid Non-Metalic Conduit,3-1/2,3.5,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 3,Rigid Non-Metalic Conduit,4,4,Standard,24,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column Other Bends; per NEC 352.24 PVC",1,
-3,Rigid Non-Metalic Conduit,4,4,LongRadius,,,0,"no published source yet, Clint to fill"
+3,Rigid Non-Metalic Conduit,4,4,LongRadius,36,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 3,Rigid Non-Metalic Conduit,5,5,Standard,30,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column Other Bends; per NEC 352.24 PVC",1,
-3,Rigid Non-Metalic Conduit,5,5,LongRadius,,,0,"no published source yet, Clint to fill"
+3,Rigid Non-Metalic Conduit,5,5,LongRadius,36,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 3,Rigid Non-Metalic Conduit,6,6,Standard,36,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column Other Bends; per NEC 352.24 PVC",1,
-3,Rigid Non-Metalic Conduit,6,6,LongRadius,,,0,"no published source yet, Clint to fill"
+3,Rigid Non-Metalic Conduit,6,6,LongRadius,36,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 4,Electrical Metalic Tubing,1/2,0.5,Standard,4,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column One Shot and Full Shoe Benders; per NEC 358.24 EMT",1,
-4,Electrical Metalic Tubing,1/2,0.5,LongRadius,,,0,"no published source yet, Clint to fill"
+4,Electrical Metalic Tubing,1/2,0.5,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 4,Electrical Metalic Tubing,3/4,0.75,Standard,4.5,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column One Shot and Full Shoe Benders; per NEC 358.24 EMT",1,
-4,Electrical Metalic Tubing,3/4,0.75,LongRadius,,,0,"no published source yet, Clint to fill"
+4,Electrical Metalic Tubing,3/4,0.75,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 4,Electrical Metalic Tubing,1,1,Standard,5.75,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column One Shot and Full Shoe Benders; per NEC 358.24 EMT",1,
-4,Electrical Metalic Tubing,1,1,LongRadius,,,0,"no published source yet, Clint to fill"
+4,Electrical Metalic Tubing,1,1,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 4,Electrical Metalic Tubing,1-1/4,1.25,Standard,7.25,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column One Shot and Full Shoe Benders; per NEC 358.24 EMT",1,
-4,Electrical Metalic Tubing,1-1/4,1.25,LongRadius,,,0,"no published source yet, Clint to fill"
+4,Electrical Metalic Tubing,1-1/4,1.25,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 4,Electrical Metalic Tubing,1-1/2,1.5,Standard,8.25,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column One Shot and Full Shoe Benders; per NEC 358.24 EMT",1,
-4,Electrical Metalic Tubing,1-1/2,1.5,LongRadius,,,0,"no published source yet, Clint to fill"
+4,Electrical Metalic Tubing,1-1/2,1.5,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 4,Electrical Metalic Tubing,2,2,Standard,9.5,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column One Shot and Full Shoe Benders; per NEC 358.24 EMT",1,
-4,Electrical Metalic Tubing,2,2,LongRadius,,,0,"no published source yet, Clint to fill"
+4,Electrical Metalic Tubing,2,2,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 4,Electrical Metalic Tubing,2-1/2,2.5,Standard,10.5,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column One Shot and Full Shoe Benders; per NEC 358.24 EMT",1,
-4,Electrical Metalic Tubing,2-1/2,2.5,LongRadius,,,0,"no published source yet, Clint to fill"
+4,Electrical Metalic Tubing,2-1/2,2.5,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 4,Electrical Metalic Tubing,3,3,Standard,13,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column One Shot and Full Shoe Benders; per NEC 358.24 EMT",1,
-4,Electrical Metalic Tubing,3,3,LongRadius,,,0,"no published source yet, Clint to fill"
+4,Electrical Metalic Tubing,3,3,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 4,Electrical Metalic Tubing,3-1/2,3.5,Standard,15,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column One Shot and Full Shoe Benders; per NEC 358.24 EMT",1,
-4,Electrical Metalic Tubing,3-1/2,3.5,LongRadius,,,0,"no published source yet, Clint to fill"
+4,Electrical Metalic Tubing,3-1/2,3.5,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 4,Electrical Metalic Tubing,4,4,Standard,16,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column One Shot and Full Shoe Benders; per NEC 358.24 EMT",1,
-4,Electrical Metalic Tubing,4,4,LongRadius,,,0,"no published source yet, Clint to fill"
-5,Electrical Non-Metalic Tubing,1/2,0.5,Standard,4,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column Other Bends; per NEC 362.24 ENT",0,"Table 2 column assumed (Other Bends), Clint to verify"
-5,Electrical Non-Metalic Tubing,1/2,0.5,LongRadius,,,0,"no published source yet, Clint to fill"
-5,Electrical Non-Metalic Tubing,3/4,0.75,Standard,5,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column Other Bends; per NEC 362.24 ENT",0,"Table 2 column assumed (Other Bends), Clint to verify"
-5,Electrical Non-Metalic Tubing,3/4,0.75,LongRadius,,,0,"no published source yet, Clint to fill"
-5,Electrical Non-Metalic Tubing,1,1,Standard,6,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column Other Bends; per NEC 362.24 ENT",0,"Table 2 column assumed (Other Bends), Clint to verify"
-5,Electrical Non-Metalic Tubing,1,1,LongRadius,,,0,"no published source yet, Clint to fill"
-5,Electrical Non-Metalic Tubing,1-1/4,1.25,Standard,8,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column Other Bends; per NEC 362.24 ENT",0,"Table 2 column assumed (Other Bends), Clint to verify"
-5,Electrical Non-Metalic Tubing,1-1/4,1.25,LongRadius,,,0,"no published source yet, Clint to fill"
-5,Electrical Non-Metalic Tubing,1-1/2,1.5,Standard,10,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column Other Bends; per NEC 362.24 ENT",0,"Table 2 column assumed (Other Bends), Clint to verify"
-5,Electrical Non-Metalic Tubing,1-1/2,1.5,LongRadius,,,0,"no published source yet, Clint to fill"
-5,Electrical Non-Metalic Tubing,2,2,Standard,12,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column Other Bends; per NEC 362.24 ENT",0,"Table 2 column assumed (Other Bends), Clint to verify"
-5,Electrical Non-Metalic Tubing,2,2,LongRadius,,,0,"no published source yet, Clint to fill"
+4,Electrical Metalic Tubing,4,4,LongRadius,36,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
+5,Electrical Non-Metalic Tubing,1/2,0.5,N/A,,Clint 2026-10-22,1,"flexible - bend to fit; M3D uses the drawn route, no auto bend radius"
+5,Electrical Non-Metalic Tubing,3/4,0.75,N/A,,Clint 2026-10-22,1,"flexible - bend to fit; M3D uses the drawn route, no auto bend radius"
+5,Electrical Non-Metalic Tubing,1,1,N/A,,Clint 2026-10-22,1,"flexible - bend to fit; M3D uses the drawn route, no auto bend radius"
+5,Electrical Non-Metalic Tubing,1-1/4,1.25,N/A,,Clint 2026-10-22,1,"flexible - bend to fit; M3D uses the drawn route, no auto bend radius"
+5,Electrical Non-Metalic Tubing,1-1/2,1.5,N/A,,Clint 2026-10-22,1,"flexible - bend to fit; M3D uses the drawn route, no auto bend radius"
+5,Electrical Non-Metalic Tubing,2,2,N/A,,Clint 2026-10-22,1,"flexible - bend to fit; M3D uses the drawn route, no auto bend radius"
 6,Intermediate Metal Conduit,1/2,0.5,Standard,4,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column One Shot and Full Shoe Benders; per NEC 342.24 IMC",1,
-6,Intermediate Metal Conduit,1/2,0.5,LongRadius,,,0,"no published source yet, Clint to fill"
+6,Intermediate Metal Conduit,1/2,0.5,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 6,Intermediate Metal Conduit,3/4,0.75,Standard,4.5,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column One Shot and Full Shoe Benders; per NEC 342.24 IMC",1,
-6,Intermediate Metal Conduit,3/4,0.75,LongRadius,,,0,"no published source yet, Clint to fill"
+6,Intermediate Metal Conduit,3/4,0.75,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 6,Intermediate Metal Conduit,1,1,Standard,5.75,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column One Shot and Full Shoe Benders; per NEC 342.24 IMC",1,
-6,Intermediate Metal Conduit,1,1,LongRadius,,,0,"no published source yet, Clint to fill"
+6,Intermediate Metal Conduit,1,1,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 6,Intermediate Metal Conduit,1-1/4,1.25,Standard,7.25,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column One Shot and Full Shoe Benders; per NEC 342.24 IMC",1,
-6,Intermediate Metal Conduit,1-1/4,1.25,LongRadius,,,0,"no published source yet, Clint to fill"
+6,Intermediate Metal Conduit,1-1/4,1.25,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 6,Intermediate Metal Conduit,1-1/2,1.5,Standard,8.25,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column One Shot and Full Shoe Benders; per NEC 342.24 IMC",1,
-6,Intermediate Metal Conduit,1-1/2,1.5,LongRadius,,,0,"no published source yet, Clint to fill"
+6,Intermediate Metal Conduit,1-1/2,1.5,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 6,Intermediate Metal Conduit,2,2,Standard,9.5,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column One Shot and Full Shoe Benders; per NEC 342.24 IMC",1,
-6,Intermediate Metal Conduit,2,2,LongRadius,,,0,"no published source yet, Clint to fill"
+6,Intermediate Metal Conduit,2,2,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 6,Intermediate Metal Conduit,2-1/2,2.5,Standard,10.5,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column One Shot and Full Shoe Benders; per NEC 342.24 IMC",1,
-6,Intermediate Metal Conduit,2-1/2,2.5,LongRadius,,,0,"no published source yet, Clint to fill"
+6,Intermediate Metal Conduit,2-1/2,2.5,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 6,Intermediate Metal Conduit,3,3,Standard,13,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column One Shot and Full Shoe Benders; per NEC 342.24 IMC",1,
-6,Intermediate Metal Conduit,3,3,LongRadius,,,0,"no published source yet, Clint to fill"
+6,Intermediate Metal Conduit,3,3,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 6,Intermediate Metal Conduit,3-1/2,3.5,Standard,15,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column One Shot and Full Shoe Benders; per NEC 342.24 IMC",1,
-6,Intermediate Metal Conduit,3-1/2,3.5,LongRadius,,,0,"no published source yet, Clint to fill"
+6,Intermediate Metal Conduit,3-1/2,3.5,LongRadius,24,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
 6,Intermediate Metal Conduit,4,4,Standard,16,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column One Shot and Full Shoe Benders; per NEC 342.24 IMC",1,
-6,Intermediate Metal Conduit,4,4,LongRadius,,,0,"no published source yet, Clint to fill"
-7,Plastic Coated Flexable Metalic Conduit,3/8,0.375,Standard,3.55,5 x OD (OD from MEDConduitOD),0,"rule of thumb, Clint to verify"
-7,Plastic Coated Flexable Metalic Conduit,3/8,0.375,LongRadius,,,0,"no published source yet, Clint to fill"
-7,Plastic Coated Flexable Metalic Conduit,1/2,0.5,Standard,4,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column Other Bends; per NEC 350.24 LFMC",0,"Table 2 column assumed (Other Bends), Clint to verify"
-7,Plastic Coated Flexable Metalic Conduit,1/2,0.5,LongRadius,,,0,"no published source yet, Clint to fill"
-7,Plastic Coated Flexable Metalic Conduit,3/4,0.75,Standard,5,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column Other Bends; per NEC 350.24 LFMC",0,"Table 2 column assumed (Other Bends), Clint to verify"
-7,Plastic Coated Flexable Metalic Conduit,3/4,0.75,LongRadius,,,0,"no published source yet, Clint to fill"
-7,Plastic Coated Flexable Metalic Conduit,1,1,Standard,6,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column Other Bends; per NEC 350.24 LFMC",0,"Table 2 column assumed (Other Bends), Clint to verify"
-7,Plastic Coated Flexable Metalic Conduit,1,1,LongRadius,,,0,"no published source yet, Clint to fill"
-7,Plastic Coated Flexable Metalic Conduit,1-1/4,1.25,Standard,8,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column Other Bends; per NEC 350.24 LFMC",0,"Table 2 column assumed (Other Bends), Clint to verify"
-7,Plastic Coated Flexable Metalic Conduit,1-1/4,1.25,LongRadius,,,0,"no published source yet, Clint to fill"
-7,Plastic Coated Flexable Metalic Conduit,1-1/2,1.5,Standard,10,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column Other Bends; per NEC 350.24 LFMC",0,"Table 2 column assumed (Other Bends), Clint to verify"
-7,Plastic Coated Flexable Metalic Conduit,1-1/2,1.5,LongRadius,,,0,"no published source yet, Clint to fill"
-7,Plastic Coated Flexable Metalic Conduit,2,2,Standard,12,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column Other Bends; per NEC 350.24 LFMC",0,"Table 2 column assumed (Other Bends), Clint to verify"
-7,Plastic Coated Flexable Metalic Conduit,2,2,LongRadius,,,0,"no published source yet, Clint to fill"
-7,Plastic Coated Flexable Metalic Conduit,2-1/2,2.5,Standard,15,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column Other Bends; per NEC 350.24 LFMC",0,"Table 2 column assumed (Other Bends), Clint to verify"
-7,Plastic Coated Flexable Metalic Conduit,2-1/2,2.5,LongRadius,,,0,"no published source yet, Clint to fill"
-7,Plastic Coated Flexable Metalic Conduit,3,3,Standard,18,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column Other Bends; per NEC 350.24 LFMC",0,"Table 2 column assumed (Other Bends), Clint to verify"
-7,Plastic Coated Flexable Metalic Conduit,3,3,LongRadius,,,0,"no published source yet, Clint to fill"
-7,Plastic Coated Flexable Metalic Conduit,3-1/2,3.5,Standard,21,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column Other Bends; per NEC 350.24 LFMC",0,"Table 2 column assumed (Other Bends), Clint to verify"
-7,Plastic Coated Flexable Metalic Conduit,3-1/2,3.5,LongRadius,,,0,"no published source yet, Clint to fill"
-7,Plastic Coated Flexable Metalic Conduit,4,4,Standard,24,"NFPA 70 (NEC 2017-2023) Chapter 9 Table 2, Radius of Conduit and Tubing Bends (minimum, to centerline), column Other Bends; per NEC 350.24 LFMC",0,"Table 2 column assumed (Other Bends), Clint to verify"
-7,Plastic Coated Flexable Metalic Conduit,4,4,LongRadius,,,0,"no published source yet, Clint to fill"
+6,Intermediate Metal Conduit,4,4,LongRadius,36,Clint 2026-10-22,1,"Long options 24/36/48 (typically underground); default by size: 24 under 4in, 36 at 4in and up"
+7,Plastic Coated Flexable Metalic Conduit,3/8,0.375,N/A,,Clint 2026-10-22,1,"flexible - bend to fit; M3D uses the drawn route, no auto bend radius"
+7,Plastic Coated Flexable Metalic Conduit,1/2,0.5,N/A,,Clint 2026-10-22,1,"flexible - bend to fit; M3D uses the drawn route, no auto bend radius"
+7,Plastic Coated Flexable Metalic Conduit,3/4,0.75,N/A,,Clint 2026-10-22,1,"flexible - bend to fit; M3D uses the drawn route, no auto bend radius"
+7,Plastic Coated Flexable Metalic Conduit,1,1,N/A,,Clint 2026-10-22,1,"flexible - bend to fit; M3D uses the drawn route, no auto bend radius"
+7,Plastic Coated Flexable Metalic Conduit,1-1/4,1.25,N/A,,Clint 2026-10-22,1,"flexible - bend to fit; M3D uses the drawn route, no auto bend radius"
+7,Plastic Coated Flexable Metalic Conduit,1-1/2,1.5,N/A,,Clint 2026-10-22,1,"flexible - bend to fit; M3D uses the drawn route, no auto bend radius"
+7,Plastic Coated Flexable Metalic Conduit,2,2,N/A,,Clint 2026-10-22,1,"flexible - bend to fit; M3D uses the drawn route, no auto bend radius"
+7,Plastic Coated Flexable Metalic Conduit,2-1/2,2.5,N/A,,Clint 2026-10-22,1,"flexible - bend to fit; M3D uses the drawn route, no auto bend radius"
+7,Plastic Coated Flexable Metalic Conduit,3,3,N/A,,Clint 2026-10-22,1,"flexible - bend to fit; M3D uses the drawn route, no auto bend radius"
+7,Plastic Coated Flexable Metalic Conduit,3-1/2,3.5,N/A,,Clint 2026-10-22,1,"flexible - bend to fit; M3D uses the drawn route, no auto bend radius"
+7,Plastic Coated Flexable Metalic Conduit,4,4,N/A,,Clint 2026-10-22,1,"flexible - bend to fit; M3D uses the drawn route, no auto bend radius"

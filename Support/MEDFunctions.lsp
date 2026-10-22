@@ -3135,6 +3135,7 @@
                                (if *MED-BEND-R* (strcat " <" (rtos *MED-BEND-R*) ">") "") ": ")))
       (if r (setq *MED-BEND-R* r))
       (if (not *MED-BEND-R*) (setq *MED-BEND-CLASS* "Standard"))))
+  (if (and (= *MED-BEND-CLASS* "Long") med-bend-ask-long) (setq *MED-BEND-R* (med-bend-ask-long)))
   *MED-BEND-CLASS*)
 
 (defun med-route-redraw (pts / l)

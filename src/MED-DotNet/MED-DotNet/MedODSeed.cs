@@ -207,6 +207,18 @@ namespace MEDDotNet
                         ProcessSQL.AddParam(cmd, "@n", notes.Length == 0 ? (object)DBNull.Value : Trunc(notes, 200));
                         cmd.ExecuteNonQuery();
                     }
+                    if (string.Equals(bc, "N/A", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // flexible (bend to fit, Clint 2026-10-22): no auto radius for this code/size
+                        using (DbCommand del = conn.CreateCommand())
+                        {
+                            del.Transaction = tx;
+                            del.CommandText = "DELETE FROM MEDBendRadius WHERE ConduitCode = @c AND TradeSize = @t AND BendClass <> 'N/A'";
+                            ProcessSQL.AddParam(del, "@c", code);
+                            ProcessSQL.AddParam(del, "@t", ts);
+                            del.ExecuteNonQuery();
+                        }
+                    }
                     if (rad != DBNull.Value)
                     {
                         using (DbCommand upd = conn.CreateCommand())

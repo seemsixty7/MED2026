@@ -3,7 +3,8 @@
 ;;; One standard block, MED_NODE, placed at route vertices. Everything about the node
 ;;; lives in XData under the MED_NODE app, written in the standard MED Data format
 ;;; (1002 "{", 1000 "KEY______=value" strings, 1002 "}") used by bld_app / bld_fitting:
-;;;   NODE_ID__=  stable node id (N + handle of the INSERT when it was first tagged)
+;;; The node ID is NOT stored: it is the live AutoCAD handle of the INSERT. On extraction the
+;;; unique key is drawing name + handle (med-node-key-of); a copied node gets a new handle.
 ;;;   NODE_KIND=  VERTEX | JUNCTION | ENDPOINT | INTERSECTION
 ;;;   NODE_SYS_=  CONDUIT | TRAY | CABLE
 ;;;   NODE_CONN=  one connected segment, "runhandle#segment" (one record per connection, N of them)
@@ -12,6 +13,8 @@
 ;;;               field bend from MEDBendRadius, counted as conduit length.
 ;;; The node does NOT carry MED_FITTING xdata, so the BOM never counts a bare node.
 ;;; A later "set fitting" command only has to call med-node-set-fitting.
+;;; The block is visible (circle + cross) with a POINT at its insertion, so STRETCH / MOVE that
+;;; take the route vertex also take the node. No reactors. MEDNODEAUDIT finds nodes left behind.
 (princ "\rLoading MEDNode...")
 
 (setq *MED-NODE-APP* "MED_NODE" *MED-NODE-BLOCK* "MED_NODE" *MED-NODE-LAYER* "MED_NODE")
@@ -31,15 +34,30 @@
       (entmake '((0 . "CIRCLE") (8 . "0") (62 . 0) (10 0.0 0.0 0.0) (40 . 1.0)))
       (entmake '((0 . "LINE") (8 . "0") (62 . 0) (10 -1.0 0.0 0.0) (11 1.0 0.0 0.0)))
       (entmake '((0 . "LINE") (8 . "0") (62 . 0) (10 0.0 -1.0 0.0) (11 0.0 1.0 0.0)))
-      (entmake '((0 . "ENDBLK")))))
+      (entmake '((0 . "POINT") (8 . "0") (62 . 0) (10 0.0 0.0 0.0)))
+      (entmake '((0 . "ENDBLK"))))
+    (med-node-block-point))
   *MED-NODE-BLOCK*)
+
+;; older MED_NODE definitions (before the POINT): add the insertion POINT once
+(defun med-node-block-point (/ e has)
+  (setq e (cdr (assoc -2 (tblsearch "BLOCK" *MED-NODE-BLOCK*))))
+  (while e (if (= (cdr (assoc 0 (entget e))) "POINT") (setq has T)) (setq e (entnext e)))
+  (if (not has)
+    (progn (vl-load-com)
+      (vl-catch-all-apply 'vla-AddPoint
+        (list (vla-item (vla-get-Blocks (vla-get-ActiveDocument (vlax-get-acad-object))) *MED-NODE-BLOCK*)
+              (vlax-3d-point '(0.0 0.0 0.0)))))))
+
+;; node id = live handle; extraction key = drawing name + handle
+(defun med-node-id (e) (cdr (assoc 5 (entget e))))
+(defun med-node-key-of (n) (strcat (getvar "DWGNAME") "|" (cdr (assoc "ID" n))))
 
 (defun med-node-key (s k) (if (= (substr s 1 (strlen k)) k) (substr s (1+ (strlen k)))))
 
 ;; node alist -> MED Data xdata list
 (defun med-node-build-xd (n / xd)
   (setq xd (list *MED-NODE-APP* (cons 1002 "{")
-                 (cons 1000 (strcat "NODE_ID__=" (cdr (assoc "ID" n))))
                  (cons 1000 (strcat "NODE_KIND=" (cdr (assoc "KIND" n))))
                  (cons 1000 (strcat "NODE_SYS_=" (cdr (assoc "SYS" n))))))
   (foreach h (cdr (assoc "CONN" n)) (setq xd (append xd (list (cons 1000 (strcat "NODE_CONN=" h))))))
@@ -48,25 +66,23 @@
                    (cons 1000 (strcat "#ITEMSIZE=" (cond ((cdr (assoc "SIZE" n))) (""))))
                    (cons 1002 "}"))))
 
-;; MED_NODE INSERT -> ("ID" "KIND" "SYS" ("CONN" h ...) "TAG" "CODE" "SIZE" "FITTING" "ENT"); nil if not a node
+;; MED_NODE INSERT -> ("ID"(=handle) "KIND" "SYS" ("CONN" h ...) "TAG" "CODE" "SIZE" "FITTING" "ENT"); nil if not a node
 (defun med-node-read (e / ed xd n conn v)
   (setq ed (entget e (list *MED-NODE-APP*)))
   (if (and (= (cdr (assoc 0 ed)) "INSERT") (setq xd (assoc -3 ed)) (setq xd (cdr (assoc *MED-NODE-APP* (cdr xd)))))
     (progn
       (foreach r xd
         (if (= (car r) 1000)
-          (cond ((setq v (med-node-key (cdr r) "NODE_ID__=")) (setq n (cons (cons "ID" v) n)))
-                ((setq v (med-node-key (cdr r) "NODE_KIND=")) (setq n (cons (cons "KIND" v) n)))
+          (cond ((setq v (med-node-key (cdr r) "NODE_KIND=")) (setq n (cons (cons "KIND" v) n)))
                 ((setq v (med-node-key (cdr r) "NODE_SYS_=")) (setq n (cons (cons "SYS" v) n)))
                 ((setq v (med-node-key (cdr r) "NODE_CONN=")) (setq conn (cons v conn)))
                 ((setq v (med-node-key (cdr r) "ITEM_TAG_=")) (setq n (cons (cons "TAG" v) n)))
                 ((setq v (med-node-key (cdr r) "#ITEMCODE=")) (setq n (cons (cons "CODE" v) n)))
                 ((setq v (med-node-key (cdr r) "#ITEMSIZE=")) (setq n (cons (cons "SIZE" v) n))))))
-      (append (list (cons "ENT" e) (cons "PT" (cdr (assoc 10 ed))) (cons "CONN" (reverse conn))
+      (append (list (cons "ENT" e) (cons "ID" (med-node-id e)) (cons "PT" (cdr (assoc 10 ed))) (cons "CONN" (reverse conn))
                     (cons "FITTING" (med-node-fitting-of n)))
               n))))
 
-;; fitting assignment string, nil = none (standard field bend)
 ;; fitting assignment string, nil = none (standard field bend)
 (defun med-node-fitting-of (n / c z tg)
   (setq c (cond ((cdr (assoc "CODE" n))) ("")) z (cond ((cdr (assoc "SIZE" n))) ("")) tg (cond ((cdr (assoc "TAG" n))) ("")))
@@ -131,8 +147,7 @@
       (entmake (list '(0 . "INSERT") (cons 2 *MED-NODE-BLOCK*) (cons 8 *MED-NODE-LAYER*) (cons 10 pt)
                      (cons 41 s) (cons 42 s) (cons 43 s)))
       (setq ne (entlast))
-      (med-node-write ne (list (cons "ID" (strcat "N" (cdr (assoc 5 (entget ne)))))
-                               (cons "KIND" (med-node-kind (length ids) end)) (cons "SYS" (med-node-sys e))
+      (med-node-write ne (list (cons "KIND" (med-node-kind (length ids) end)) (cons "SYS" (med-node-sys e))
                                (cons "CONN" ids)))
       ne)))
 
@@ -175,6 +190,82 @@
           (progn (med-node-tag e best (med-node-ids-at e bi (length pts)) (or (= bi 0) (= bi (1- (length pts)))))
                  (princ (strcat "\nNode at " (rtos (car best) 2 2) "," (rtos (cadr best) 2 2) "," (rtos (caddr best) 2 2))))
           (princ "\nNot a route.")))))
+  (princ))
+
+;;; ------------------------------------------------------------ MEDNODEAUDIT
+;; live run entity for a "handle#seg" connection, nil when the handle is gone/erased
+(defun med-node-conn-ent (c / h e)
+  (setq h (substr c 1 (cond ((vl-string-search "#" c)) ((strlen c)))))
+  (if (and (setq e (handent h)) (entget e)) e))
+
+;; nearest vertex (WCS) of the node's live connected runs, nil if none
+(defun med-node-nearest-vertex (n / pt best bd d e)
+  (setq pt (cdr (assoc "PT" n)))
+  (foreach c (cdr (assoc "CONN" n))
+    (if (setq e (med-node-conn-ent c))
+      (foreach v (med-node-verts e)
+        (if (or (null bd) (< (setq d (distance pt v)) bd)) (setq best v bd (distance pt v))))))
+  best)
+
+;; orphans: ((node reason) ...). Reason: dead handle(s), or not on any connected run's vertex.
+(defun med-node-audit (/ r dead v pt)
+  (foreach n (med-node-all)
+    (setq dead nil pt (cdr (assoc "PT" n)))
+    (foreach c (cdr (assoc "CONN" n)) (if (not (med-node-conn-ent c)) (setq dead (cons c dead))))
+    (setq v (med-node-nearest-vertex n))
+    (cond
+      ((null (cdr (assoc "CONN" n))) (setq r (cons (list n "no connections") r)))
+      (dead (setq r (cons (list n (strcat "deleted route " (car dead))) r)))
+      ((or (null v) (> (distance pt v) *MED-NODE-TOL*))
+        (setq r (cons (list n (strcat "off vertex by " (if v (rtos (distance pt v) 2 3) "?"))) r)))))
+  (reverse r))
+
+;; move a node onto the nearest vertex of its live runs; drops dead connections. T if moved/fixed.
+(defun med-node-snap (n / e v ed cn)
+  (setq e (cdr (assoc "ENT" n)))
+  (if (setq v (med-node-nearest-vertex n))
+    (progn
+      (setq ed (entget e) ed (subst (cons 10 v) (assoc 10 ed) ed))
+      (entmod ed)
+      (foreach c (cdr (assoc "CONN" n)) (if (med-node-conn-ent c) (setq cn (cons c cn))))
+      (setq cn (reverse cn)
+            n (subst (cons "CONN" cn) (assoc "CONN" n) n)
+            n (subst (cons "KIND" (med-node-kind (length cn) (= (length cn) 1))) (assoc "KIND" n) n))
+      (med-node-write e n)
+      (entupd e) T)))
+
+(defun c:MEDNODEAUDIT (/ orph op ss n)
+  (setq orph (med-node-audit))
+  (princ (strcat "\nMEDNODEAUDIT: " (itoa (length (med-node-all))) " node(s), " (itoa (length orph)) " orphaned."))
+  (foreach o orph
+    (setq n (car o))
+    (princ (strcat "\n  " (med-node-key-of n) " at " (rtos (car (cdr (assoc "PT" n))) 2 2) ","
+                   (rtos (cadr (cdr (assoc "PT" n))) 2 2) "," (rtos (caddr (cdr (assoc "PT" n))) 2 2)
+                   " - " (cadr o))))
+  (if orph
+    (progn
+      (setq ss (ssadd))
+      (foreach o orph (ssadd (cdr (assoc "ENT" (car o))) ss))
+      (initget "Zoom Snap Delete eXit")
+      (setq op (cond ((getkword "\nOrphans [Zoom/Snap to nearest vertex/Delete/eXit] <eXit>: ")) ("eXit")))
+      (cond
+        ((= op "Zoom")
+          (foreach o orph
+            (setq n (car o))
+            (command "_.ZOOM" "_C" (trans (cdr (assoc "PT" n)) 0 1) (* 20.0 (med-node-size)))
+            (redraw (cdr (assoc "ENT" n)) 3)
+            (getstring (strcat "\n" (med-node-key-of n) ": " (cadr o) " - Enter for next: "))
+            (redraw (cdr (assoc "ENT" n)) 4))
+          (sssetfirst nil ss))
+        ((= op "Snap")
+          (setq n 0)
+          (foreach o orph (if (med-node-snap (car o)) (setq n (1+ n))))
+          (princ (strcat "\n" (itoa n) " node(s) snapped back; " (itoa (- (length orph) n)) " have no live route (use Delete).")))
+        ((= op "Delete")
+          (initget "Yes No")
+          (if (= (getkword (strcat "\nDelete " (itoa (length orph)) " orphaned node(s)? [Yes/No] <No>: ")) "Yes")
+            (progn (foreach o orph (entdel (cdr (assoc "ENT" (car o)))))
+                   (princ (strcat "\n" (itoa (length orph)) " node(s) deleted."))))))))
   (princ))
 
 ;;; exporter side: annotate a M3D/C3D plan's corners with the nodes on them.

@@ -186,7 +186,7 @@
             (setq cls (strcase (substr (cdr g) 7))))
           ((= (car g) 1040) (setq r (cdr g)))))
   (cond ((and (= cls "SPECIFIC") (numberp r) (> r 0.0)) (cons "SPECIFIC" r))
-        ((= cls "LONG") (cons "LONG" nil))
+        ((= cls "LONG") (cons "LONG" (if (and (numberp r) (> r 0.0)) r)))
         (T (cons "STANDARD" nil))))
 
 ;; stamp BEND_DATA on a run (cls "Standard"|"Long"|"Specific", r for Specific)
@@ -194,8 +194,21 @@
   (regapp "BEND_DATA")
   (setq ed (entget ent))
   (entmod (append ed (list (list -3 (append (list "BEND_DATA" (cons 1000 (strcat "CLASS=" (strcase cls))))
-                                            (if (and (= (strcase cls) "SPECIFIC") (numberp r))
+                                            (if (and (member (strcase cls) '("SPECIFIC" "LONG")) (numberp r))
                                               (list (cons 1040 (float r))))))))))
+
+;; Long radius choice (Clint 2026-10-22): 24 / 36 / 48, typically underground.
+;; Auto (nil) = by size from the underground split (24 under 4", 36 at 4" and up).
+(defun med-bend-ask-long ( / k)
+  (initget "24 36 48 Auto")
+  (setq k (getkword "\nLong radius [24/36/48/Auto by size] <Auto>: "))
+  (if (member k '("24" "36" "48")) (atof k)))
+
+;; flexible conduit (ENT, LFMC ...) = bend to fit: no auto bend radius, the drawn path is used
+(if (not *MED3D-FLEX-CODES*) (setq *MED3D-FLEX-CODES* '(5 7)))   ; 5 ENT, 7 PC flexible metallic (LFMC)
+(defun med3d-flex-p (ent kind / xd code)
+  (and (= kind "CONDUIT") _CONDUIT (setq xd (xdataget ent _CONDUIT))
+       (setq code (med3d-num (nth 3 xd))) (member (fix code) *MED3D-FLEX-CODES*)))
 
 ;; underground run: DBANK_DATA on it, or its linetype (entity, else layer) is U_CON's
 (defun med3d-underground-p (ent / ed lt ul)
@@ -219,6 +232,8 @@
     ((and (listp ov) (= (car ov) "FACTOR") (numberp (cdr ov)))
       (cons (* (cdr ov) od) (strcat "session override " (rtos (cdr ov) 2 2) " x OD")))
     ((= (car bc) "SPECIFIC") (cons (float (cdr bc)) "run Specific radius (BEND_DATA)"))
+    ((and (= (car bc) "LONG") (cdr bc)) (cons (float (cdr bc)) (strcat "run Long " (rtos (cdr bc) 2 0) "\" (BEND_DATA)")))
+    ((med3d-flex-p ent kind) (cons (* *MED3D-BEND-FACTOR* od) "flexible - bend to fit, drawn path used (no auto radius)"))
     ((= kind "CABLE")
       (cons (* *MED3D-CABLE-BEND-FACTOR* od) (strcat (rtos *MED3D-CABLE-BEND-FACTOR* 2 1) " x OD cable rule")))
     (T
@@ -770,6 +785,9 @@
     ((progn   ; 3D POLYLINE -> sharp mitered corners (dynamic, read by med3d-plan)
        (setq *MED3D-SHARP* (and (eq *MED3D-SHARP-3D* T) (= (cdr (assoc 0 (entget ent))) "POLYLINE")
                                 (not (nth 2 pd))))
+       (if (med3d-flex-p ent kind)   ; flexible: drawn arcs kept, sharp vertices mitered
+         (progn (setq *MED3D-SHARP* T)
+                (princ (strcat "\nM3D note: run " h " is flexible conduit (bend to fit) - follows the drawn vertices; fillet the route for bends."))))
        nil))
     ((progn
        (setq rr (med3d-run-radius ent kind od))
@@ -1811,6 +1829,7 @@
       (if (not k) (setq k "Standard"))
       (if (= k "Specific")
         (progn (initget 7) (setq r (getdist "\nSpecific bend radius (to centerline): "))))
+      (if (= k "Long") (setq r (med-bend-ask-long)))
       (setq i 0)
       (repeat (sslength ss) (med-bend-stamp (ssname ss i) k r) (setq i (1+ i)))
       (princ (strcat "\n" (itoa (sslength ss)) " run(s) set to " k

@@ -959,12 +959,14 @@
 (defun medcb-begin ( / doc)
   (setq doc (medcb-doc))
   (vla-StartUndoMark doc)
+  (if med-snap-off (med-snap-off)) ; OSMODE 0 + 3DOSMODE off while blocks are built
   (setq *MEDCB-OLDERR* *error*)
   (defun *error* (msg)
     (if (not (wcmatch (strcase msg) "*CANCEL*,*QUIT*,*BREAK*")) (princ (strcat "\nMED3DFittings error: " msg)))
     (medcb-end)
     (princ)))
 (defun medcb-end ()
+  (if med-snap-restore (med-snap-restore))
   (vl-catch-all-apply 'vla-EndUndoMark (list (medcb-doc)))
   (if *MEDCB-OLDERR* (setq *error* *MEDCB-OLDERR* *MEDCB-OLDERR* nil)))
 

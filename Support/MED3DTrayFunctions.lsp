@@ -469,6 +469,7 @@
 	(setq m3dOldOsmode (getvar "OSMODE")
 	      m3dOldError *error*)
 	(defun *error* ( msg )
+	  (if med-snap-restore (med-snap-restore))
 	  (if m3dOldOsmode (setvar "OSMODE" m3dOldOsmode))
 	  (setq *error* m3dOldError)
 	  (if (and msg (/= msg "") (not (wcmatch (strcase msg t) "*break*,*cancel*,*exit*")))
@@ -477,6 +478,7 @@
 	  (princ)
 	)
 	(setvar "OSMODE" 0)
+	(if med-snap-off (med-snap-off)) ; 3DOSMODE off for the export too
 	(smlayer _MED3DTRAY)
 	(command "vpoint" "1,1,1")
 	(initget "3DS Dwg Layer")
@@ -522,6 +524,7 @@
     )
   )
 
+	(if med-snap-restore (med-snap-restore))
 	(setvar "OSMODE" m3dOldOsmode)
 	(setq *error* m3dOldError)
 	(if med3d-disclaimer (med3d-disclaimer))

@@ -1103,14 +1103,16 @@
         *MED3D-CABLEOD-PRELOADED* nil
         *MED3D-STAMPKIND* nil)
   (defun *error* (msg)
-    (med3d-end)
+    (if med-snap-restore (med-snap-restore)) (med3d-end)
     (if (and msg (/= msg "") (not (wcmatch (strcase msg T) "*break*,*cancel*,*exit*")))
       (princ (strcat "\n" *MED3D-TAG* ": " msg)))
     (princ))
   (setvar "OSMODE" 0)
+  (if med-snap-off (med-snap-off)) ; 3DOSMODE off too (3D osnaps break the solid builds)
   (setvar "CMDECHO" 0))
 
 (defun med3d-end ()
+  (if med-snap-restore (med-snap-restore))
   (if *MED3D-OLD*
     (progn
       (setvar "OSMODE" (nth 0 *MED3D-OLD*))

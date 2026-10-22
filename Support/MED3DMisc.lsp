@@ -12,6 +12,7 @@
 	)
 	(if JBoxStartPoint
 		(progn
+			(if med-snap-off (med-snap-off)) ; snaps off for the pline/extrude/union build only (the picks above keep the user's osnaps)
 			(setq JBoxHeight (getreal "\nJBox Height: ")
 				  JBoxWidth  (getreal "\nJBox Width: ")
 				  JBoxDepth  (getreal "\nJBox Depth: ")
@@ -36,6 +37,7 @@
 			(command "extrude" "l" "" (- JboxHeight (* MED_JboxDoorOffset 2.0)))
 			(setq DoorEnt (entlast))
 			(command "union" BoxEnt DoorEnt "")
+			(if med-snap-restore (med-snap-restore))
 			;(setvar "ELEVATION" CurrElev)
 		)
 	)

@@ -180,6 +180,7 @@
             oldosm (getvar "OSMODE"))
       (setvar "CMDECHO" 0)
       (setvar "OSMODE" 0)
+      (if med-snap-off (med-snap-off))
       (if (not mtpt) (setq mtpt (getpoint "\nStart Point: ")))
       (if mtpt
         (progn
@@ -235,6 +236,7 @@
         )
       )
       (setvar "CMDECHO" oldcmd)
+      (if med-snap-restore (med-snap-restore))
       (setvar "OSMODE" oldosm)
       T
     )

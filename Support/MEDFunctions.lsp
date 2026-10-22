@@ -3079,3 +3079,23 @@
 
 
 
+
+;;; ------------------------------------------------------------ 3D snap guard
+;; 3D export / generate commands call (med-snap-off) before building and (med-snap-restore)
+;; on exit and in their *error* handlers. OSMODE -> 0 and 3DOSMODE gets its off bit (1),
+;; which keeps the user's chosen 3D snap modes for when they turn it back on.
+;; The first med-snap-off saves the originals; a nested call does not overwrite them, and
+;; a run that was cut off without a restore is healed by the next command's restore.
+(defun med-snap-off ( / os3)
+  (if (not *MED-SNAP-SAVED*)
+    (setq *MED-SNAP-SAVED* (list (getvar "OSMODE") (getvar "3DOSMODE"))))
+  (setvar "OSMODE" 0)
+  (if (setq os3 (getvar "3DOSMODE")) (setvar "3DOSMODE" (logior os3 1)))
+  (princ))
+(defun med-snap-restore ()
+  (if *MED-SNAP-SAVED*
+    (progn
+      (setvar "OSMODE" (car *MED-SNAP-SAVED*))
+      (if (cadr *MED-SNAP-SAVED*) (setvar "3DOSMODE" (cadr *MED-SNAP-SAVED*)))
+      (setq *MED-SNAP-SAVED* nil)))
+  (princ))

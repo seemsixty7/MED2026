@@ -3099,3 +3099,85 @@
       (if (cadr *MED-SNAP-SAVED*) (setvar "3DOSMODE" (cadr *MED-SNAP-SAVED*)))
       (setq *MED-SNAP-SAVED* nil)))
   (princ))
+
+;;; ------------------------------------------------------------ 2D / 3D routing
+;; CONDUIT / CABLE / RUN3DCABLE route picker. Mode [Auto/2D/3D] (remembered in
+;; *MED-ROUTE-MODE* for the session). Points are picked with a rubber band; Elev sets a
+;; rise (+ up / - down, from the last point's Z) for the next point; a point picked on
+;; the ELEVATION plane stays at the last point's Z (so a route stays up after a rise);
+;; a Z given another way (x,y,z typed, .XY filter, 3D osnap) is used as given. Auto: every point at one UCS Z -> 2D PLINE (callers keep their fillet step),
+;; any Z differs -> 3DPOLY (sharp corners, no fillet; M3D / C3D miter the solid).
+;; 2D forces a PLINE at the start point's Z; 3D always makes a 3DPOLY.
+;; Returns (ename is3d) or nil (fewer than 2 points). Snaps are off only while the
+;; entity is drawn from the picked points (picks keep the user's running osnaps).
+(if (not (member *MED-ROUTE-MODE* '("Auto" "2D" "3D"))) (setq *MED-ROUTE-MODE* "Auto"))
+
+(defun med-route-ask-mode ( / k)
+  (initget "Auto 2D 3D")
+  (setq k (getkword (strcat "\nRoute mode [Auto/2D/3D] <" *MED-ROUTE-MODE* ">: ")))
+  (if k (setq *MED-ROUTE-MODE* k))
+  *MED-ROUTE-MODE*)
+
+(defun med-route-redraw (pts / l)
+  (redraw)
+  (setq l (car pts))
+  (foreach p (cdr pts) (grdraw p l -1 1) (setq l p)))
+
+;; pts in the current UCS, start first
+(defun med-route-get-pts (startmsg mode / pts p r rise done kw)
+  (setq kw (if (= mode "2D") "Undo" "Elev Undo"))
+  (if (/= mode "2D") (initget 0 "Elev"))
+  (setq p (getpoint startmsg))
+  (while (= p "Elev")       ; Elev at the start point: absolute Z
+    (setq r (getreal "\nZ (elevation) of the start point: "))
+    (initget 0 "Elev")
+    (setq p (getpoint "\nPick start point (Z is replaced): "))
+    (if (and r (listp p)) (setq p (list (car p) (cadr p) r))))
+  (if (listp p) (setq pts (list p)))
+  (while (and pts (not done))
+    (initget 0 kw)
+    (setq p (getpoint (car pts)
+                      (strcat "\nPick point"
+                              (if rise (strcat " (rise " (rtos rise) ")") "")
+                              (if (= mode "2D") " [Undo]" " [Elev/Undo]") " <done>: ")))
+    (cond
+      ((null p) (setq done T))
+      ((= p "Elev")
+        (setq r (getreal (strcat "\nRise to the next point (+ up, - down) <"
+                                 (rtos (if rise rise 0.0)) ">: ")))
+        (if r (setq rise (if (equal r 0.0 1e-9) nil r))))
+      ((= p "Undo")
+        (if (cdr pts) (setq pts (cdr pts)) (princ "\nNothing to undo."))
+        (med-route-redraw (reverse pts)))
+      (T
+        ;; Z: rise from the last point; else a Z given explicitly (typed x,y,z / .XY /
+        ;; osnap off the ELEVATION plane) is kept; else the route stays at the last Z
+        (cond
+          (rise (setq p (list (car p) (cadr p) (+ (caddr (car pts)) rise)) rise nil))
+          ((equal (caddr p) (getvar "ELEVATION") 1e-9)
+            (setq p (list (car p) (cadr p) (caddr (car pts))))))
+        (grdraw (car pts) p -1 1)
+        (setq pts (cons p pts)))))
+  (redraw)
+  (reverse pts))
+
+(defun med-route-draw (startmsg mode / pts z0 flat is3d ok)
+  (if (not mode) (setq mode (med-route-ask-mode)))
+  (setq pts (med-route-get-pts startmsg mode))
+  (if (< (length pts) 2)
+    (progn (princ "\nRoute needs at least 2 points.") nil)
+    (progn
+      (setq z0 (caddr (car pts)) flat T)
+      (foreach p pts (if (not (equal (caddr p) z0 1e-6)) (setq flat nil)))
+      (setq is3d (cond ((= mode "3D") T) ((= mode "2D") nil) (T (not flat))))
+      (if (and (= mode "2D") (not flat))
+        (princ "\n2D mode: points flattened to the start point's Z."))
+      (if (not is3d) (setq pts (mapcar '(lambda (p) (list (car p) (cadr p) z0)) pts)))
+      (if med-snap-off (med-snap-off))
+      (command (if is3d "_.3DPOLY" "_.PLINE"))
+      (foreach p pts (command "_non" p))
+      (command "")
+      (if med-snap-restore (med-snap-restore))
+      (if is3d
+        (princ "\n3D route (3DPOLY): sharp corners - fillets don't apply to 3D routes."))
+      (list (entlast) is3d))))

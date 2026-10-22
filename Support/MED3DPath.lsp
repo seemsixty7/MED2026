@@ -24,7 +24,12 @@
 ;;; file, from the new MED3DCON.lsp, and (lisp reactor) just before M3D, C3D,
 ;;; MAKE3DCONDUIT or MAKE3DCABLE starts.
 ;;;
-;;; Paths: LWPOLYLINE, 2D heavy POLYLINE (bulges kept as drawn), 3D POLYLINE.
+;;; Paths: LWPOLYLINE, 2D heavy POLYLINE (bulges kept as drawn), 3D POLYLINE, LINE.
+;;; 3D POLYLINE corners are SHARP (MITER) while *MED3D-SHARP-3D* is T (default, Clint
+;;;   10/22: 3D routes get no bends for now): no fillet, no flag; the solid is one SWEEP
+;;;   along a temp 3DPOLY through the vertices (mitered joints). If that SWEEP fails, the
+;;;   straights are extruded and each miter corner is closed with a sphere of the OD.
+;;;   (setq *MED3D-SHARP-3D* 'OFF) restores the old auto-bends on 3D polylines.
 ;;;   Vertices go to WCS with trans (OCS + elevation). Meshes are skipped.
 ;;; OD: conduit = med_conduit_od (MED_CONDUIT code + trade size);
 ;;;     cable   = MEDType.USER3 for the MED_CABLE code. No OD = run skipped.
@@ -60,7 +65,7 @@
 
 (princ "\rLoading MED3DPath...")
 (vl-load-com)
-(setq *MED3D-VERSION* "2026-10-06 r13 (ductbank elbows, 3DMEDModel- layers)")
+(setq *MED3D-VERSION* "2026-10-22 r14 (3D routes: mitered 3DPOLY corners, LINE paths)")
 ;; 3D model layer convention: entities on layers named <prefix>* stay in the 2D drawing and
 ;; are pulled into MEDMAKE3D / MAKE3DCONDUIT output. med.spc may set it; code default here.
 (if (/= (type _MED3DMODELPREFIX) 'STR) (setq _MED3DMODELPREFIX "3DMEDModel-"))
@@ -83,7 +88,8 @@
 ;;; ------------------------------------------------------------------ settings
 (if (not *MED3D-BEND-FACTOR*) (setq *MED3D-BEND-FACTOR* 5.0))  ; conduit R = factor x OD
 (if (not *MED3D-CABLE-BEND-FACTOR*) (setq *MED3D-CABLE-BEND-FACTOR* 7.0))  ; cable R = factor x OD
-(if (not *MED3D-METHOD*) (setq *MED3D-METHOD* "SWEEP"))       ; "SWEEP" or "PIECES"
+(if (not *MED3D-METHOD*) (setq *MED3D-METHOD* "SWEEP"))
+(if (/= *MED3D-SHARP-3D* 'OFF) (setq *MED3D-SHARP-3D* T))   ; 'OFF = old auto-bends on 3D polylines       ; "SWEEP" or "PIECES"
 ;; per-run bend override: list of (handle . override), see med3d-bend-radius
 (if (not (boundp '*MED3D-BEND-OVERRIDES*)) (setq *MED3D-BEND-OVERRIDES* nil))
 ;; Debug output: each run's path, method choice, every piece's planned
@@ -459,7 +465,9 @@
             joints (car fj)
             *MED3D-ENDTRIM* (cadr fj)
             al     (med3d-allocate segs joints closed)
-            stats  (car al)
+            stats  (if *MED3D-SHARP*
+                     (mapcar '(lambda (j s) (if (= (nth 4 j) "C") "MITER" s)) joints (car al))
+                     (car al))
             avails (cadr al)
             rs     (* 0.5 od)
             corners nil
@@ -515,10 +523,12 @@
                                        (med3d-get "ANGLE" ce))
                                  pieces)))
             ((= (med3d-get "STATUS" ce) "FITTING") (setq gaps T))   ; the body fills the gap
+            ((= (med3d-get "STATUS" ce) "MITER"))                  ; sharp 3D corner: swept mitered
             (T (setq pieces (cons (list "S" (med3d-get "VERTEX" ce) rs) pieces)))))
         (setq k (1+ k)))
       (list (cons "SEGS" segs) (cons "CORNERS" corners) (cons "PIECES" (reverse pieces))
             (cons "CLOSED" closed) (cons "OD" od) (cons "R" R)
+            (cons "SHARP" (if (member "MITER" stats) T))
             (cons "GAPS" gaps) (cons "ENDTRIM" *MED3D-ENDTRIM*)
             (cons "FITFLAGS" (nth 2 fj)) (cons "FITHITS" (nth 3 fj))))))
 
@@ -562,6 +572,8 @@
             (setq v (entnext v)))
           (list (reverse pts) (reverse buls) (if is3d nil (med3d-unit nrm))
                 (= 1 (logand flg 1))))))
+    ((= typ "LINE")
+      (list (list (med3d-pt3 (cdr (assoc 10 ed))) (med3d-pt3 (cdr (assoc 11 ed)))) '(0.0 0.0) nil nil))
     (T nil)))
 
 (defun med3d-num (v) (cond ((numberp v) v) ((= (type v) 'STR) (atof v)) (T nil)))
@@ -650,11 +662,11 @@
   nil)
 
 ;; plan for one entity without drawing (for fittings); nil if skipped
-(defun med3d-plan-ent (ent kind / pd od h plan)
+(defun med3d-plan-ent (ent kind / pd od h plan *MED3D-SHARP*)
   (setq h (cdr (assoc 5 (entget ent))))
   (cond
     ((not (setq pd (med3d-read-path ent)))
-      (med3d-skip h kind "not a LWPOLYLINE / 2D / 3D POLYLINE"))
+      (med3d-skip h kind "not a LWPOLYLINE / 2D / 3D POLYLINE / LINE"))
     ((progn
        (med3d-dbg (strcat "run " h " " (cdr (assoc 0 (entget ent)))
                           " flags " (itoa (med3d-dxf 70 (entget ent) 0))
@@ -665,6 +677,10 @@
        nil))
     ((not (setq od (med3d-run-od ent kind)))
       (med3d-skip h kind (strcat "no OD for this " (strcase kind T) " type/size")))
+    ((progn   ; 3D POLYLINE -> sharp mitered corners (dynamic, read by med3d-plan)
+       (setq *MED3D-SHARP* (and (eq *MED3D-SHARP-3D* T) (= (cdr (assoc 0 (entget ent))) "POLYLINE")
+                                (not (nth 2 pd))))
+       nil))
     ((not (setq plan (med3d-plan (nth 0 pd) (nth 1 pd) (nth 2 pd) (nth 3 pd) od kind
                                  (cdr (assoc h *MED3D-BEND-OVERRIDES*)))))
       (med3d-skip h kind "fewer than 2 distinct points"))
@@ -710,6 +726,7 @@
     ((= (med3d-get "STATUS" c) "FITTED")
       (strcat "fits: tangent " (rtos (med3d-get "NEED" c) 2 3) " <= available " (rtos (med3d-get "AVAIL" c) 2 3)))
     ((= (med3d-get "STATUS" c) "KINK") "non-tangent joint at a drawn arc")
+    ((= (med3d-get "STATUS" c) "MITER") "3D route: sharp mitered corner (no bend)")
     ((= (med3d-get "STATUS" c) "FITTING")
       (strcat "conduit body " (med3d-get "FITTING" c) ": sharp, legs cut back to the hub faces"))
     ((> (med3d-get "NEED" c) 1e90) "reversal (run doubles back)")
@@ -1060,15 +1077,65 @@
           (med3d-dbg (strcat "SWEEP solid box " (med3d-bbstr (med3d-bbox (vlax-ename->vla-object sol)))))
           sol)))))
 
+;; SHARP plans (3D routes): SWEEP the OD circle along a temp 3DPOLY through the piece
+;; ends -> one solid with mitered corners. nil (falls back) on gaps / spheres / failure.
+(defun med3d-draw-miter (plan lay / pcs pts p0 tn circ path sol typ ed)
+  (setq pcs (med3d-get "PIECES" plan))
+  (cond
+    ((med3d-get "GAPS" plan) (med3d-dbg "miter: run is cut at a conduit body") nil)
+    ((med3d-has-spheres plan) (med3d-dbg "miter: run has sphere corners") nil)
+    ((vl-some '(lambda (p) (/= (car p) "L")) pcs) (med3d-dbg "miter: run has arcs") nil)
+    (T
+      (setq pts (cons (nth 1 (car pcs)) (mapcar '(lambda (p) (nth 2 p)) pcs)))
+      (if (med3d-get "CLOSED" plan) (setq pts (reverse (cdr (reverse pts)))))
+      (entmake (list '(0 . "POLYLINE") '(100 . "AcDbEntity") (cons 8 lay) '(100 . "AcDb3dPolyline")
+                     '(66 . 1) '(10 0.0 0.0 0.0) (cons 70 (if (med3d-get "CLOSED" plan) 9 8))))
+      (foreach p pts
+        (entmake (list '(0 . "VERTEX") '(100 . "AcDbEntity") (cons 8 lay) '(100 . "AcDbVertex")
+                       '(100 . "AcDb3dPolylineVertex") (cons 10 p) '(70 . 32))))
+      (entmake (list '(0 . "SEQEND") (cons 8 lay)))
+      (setq path (entlast)
+            p0   (car pts)
+            tn   (med3d-unit (med3d-v- (cadr pts) p0)))
+      (entmake (list '(0 . "CIRCLE") (cons 8 lay) (cons 10 (trans p0 0 tn))
+                     (cons 40 (* 0.5 (med3d-get "OD" plan))) (cons 210 tn)))
+      (setq circ (entlast))
+      (command "_.SWEEP" "_MO" "_SO" circ "" path)
+      (if (> (getvar "CMDACTIVE") 0) (command))
+      (setq sol (entlast))
+      (if (entget path) (entdel path))
+      (if (entget circ) (entdel circ))
+      (setq typ (if (and sol (setq ed (entget sol))) (cdr (assoc 0 ed))))
+      (cond
+        ((or (null typ) (eq sol circ) (/= typ "3DSOLID"))
+          (if (and typ (/= typ "3DSOLID") (not (eq sol circ)) (not (eq sol path))) (entdel sol))
+          (med3d-dbg "miter: SWEEP along the 3DPOLY made no solid - falling back") nil)
+        (T
+          (setq ed (entget sol))   ; entmod, not ActiveX: also works in accoreconsole
+          (entmod (subst (cons 8 lay) (assoc 8 ed) ed))
+          (med3d-dbg (strcat "miter: SWEEP solid on " lay))
+          sol)))))
+
+;; fallback for SHARP plans: a sphere at every MITER corner so the pieces have no gaps
+(defun med3d-miter-spheres (plan / pcs)
+  (setq pcs (med3d-get "PIECES" plan))
+  (foreach c (med3d-get "CORNERS" plan)
+    (if (= (med3d-get "STATUS" c) "MITER")
+      (setq pcs (append pcs (list (list "S" (med3d-get "VERTEX" c) (* 0.5 (med3d-get "OD" plan))))))))
+  (subst (cons "PIECES" pcs) (assoc "PIECES" plan) plan))
+
 ;; draw one entity: returns (solid plan) or nil
 (defun med3d-run (ent kind / plan lay sol res extras)
   (if (setq plan (med3d-plan-ent ent kind))
     (progn
       (setq lay (med3d-ensure-layer (med3d-layer-info kind)))
       (med3d-report-flags plan)
-      (if (= (strcase *MED3D-METHOD*) "SWEEP") (setq sol (med3d-draw-sweep plan lay)))
+      (if (med3d-get "SHARP" plan)
+        (setq sol (med3d-draw-miter plan lay))
+        (if (= (strcase *MED3D-METHOD*) "SWEEP") (setq sol (med3d-draw-sweep plan lay))))
       (if (not sol)
-        (setq res (med3d-draw-pieces plan lay) sol (car res) extras (cadr res)))
+        (setq res (med3d-draw-pieces (if (med3d-get "SHARP" plan) (med3d-miter-spheres plan) plan) lay)
+              sol (car res) extras (cadr res)))
       (if (and res (> (caddr res) 0))
         (princ (strcat "\nMED3D: run " (med3d-get "HANDLE" plan) " - "
                        (itoa (caddr res)) " piece(s) failed or would not union.")))
@@ -1122,7 +1189,7 @@
   (princ))
 
 (defun med3d-filter (app)
-  (list '(-4 . "<OR") '(0 . "LWPOLYLINE") '(0 . "POLYLINE") '(-4 . "OR>") (list -3 (list app))))
+  (list '(-4 . "<OR") '(0 . "LWPOLYLINE") '(0 . "POLYLINE") '(0 . "LINE") '(-4 . "OR>") (list -3 (list app))))
 
 ;;; ------------------------------------------------------------------ commands
 ;; kind of a run from its xdata; pref wins when both are present
@@ -1138,7 +1205,7 @@
 (defun med3d-pick (kind tag / ss ok i e k n)
   (med3d-begin tag)
   (princ (strcat "\nSelect MED " (strcase kind T) " runs: "))
-  (if (setq ss (ssget '((-4 . "<OR") (0 . "LWPOLYLINE") (0 . "POLYLINE") (-4 . "OR>"))))
+  (if (setq ss (ssget '((-4 . "<OR") (0 . "LWPOLYLINE") (0 . "POLYLINE") (0 . "LINE") (-4 . "OR>"))))
     (progn
       (setq ok 0 n 0 i 0)
       (repeat (sslength ss)

@@ -25,11 +25,17 @@
 ;;; MAKE3DCONDUIT or MAKE3DCABLE starts.
 ;;;
 ;;; Paths: LWPOLYLINE, 2D heavy POLYLINE (bulges kept as drawn), 3D POLYLINE, LINE.
-;;; 3D POLYLINE corners are SHARP (MITER) while *MED3D-SHARP-3D* is T (default, Clint
-;;;   10/22: 3D routes get no bends for now): no fillet, no flag; the solid is one SWEEP
-;;;   along a temp 3DPOLY through the vertices (mitered joints). If that SWEEP fails, the
-;;;   straights are extruded and each miter corner is closed with a sphere of the OD.
-;;;   (setq *MED3D-SHARP-3D* 'OFF) restores the old auto-bends on 3D polylines.
+;;; 3D POLYLINE corners get calculated BENDS (default, r15): each segment is trimmed by
+;;;   R*tan(theta/2) and a torus bend is built in the plane of the two segments. A segment
+;;;   too short for the tangents at its two ends stops the run (marker on MED_3DFLAG,
+;;;   segment named). Solid: one SWEEP when planar, else each piece SWEEPed (command line,
+;;;   works in accoreconsole) and UNIONed, else ActiveX pieces.
+;;;   (setq *MED3D-SHARP-3D* T) before M3D/C3D gives the r14 sharp mitered corners.
+;;; Bend radius (conduit), first hit wins (source shown in the debug line):
+;;;   session override (*MED3D-BEND-OVERRIDES*) > run Specific radius (BEND_DATA xdata,
+;;;   route Radius option / MEDBENDR) > underground rule (DBANK_DATA or U_CON linetype:
+;;;   24 under 4", 36 at 4" and up) > MEDBendRadius table (LongRadius if the run is Long,
+;;;   else Standard) > *MED3D-BEND-FACTOR* x OD. Cable: Specific, else 7 x OD.
 ;;;   Vertices go to WCS with trans (OCS + elevation). Meshes are skipped.
 ;;; OD: conduit = med_conduit_od (MED_CONDUIT code + trade size);
 ;;;     cable   = MEDType.USER3 for the MED_CABLE code. No OD = run skipped.
@@ -65,7 +71,7 @@
 
 (princ "\rLoading MED3DPath...")
 (vl-load-com)
-(setq *MED3D-VERSION* "2026-10-22 r14 (3D routes: mitered 3DPOLY corners, LINE paths)")
+(setq *MED3D-VERSION* "2026-10-22 r15 (3D routes: calculated bends, MEDBendRadius table)")
 ;; 3D model layer convention: entities on layers named <prefix>* stay in the 2D drawing and
 ;; are pulled into MEDMAKE3D / MAKE3DCONDUIT output. med.spc may set it; code default here.
 (if (/= (type _MED3DMODELPREFIX) 'STR) (setq _MED3DMODELPREFIX "3DMEDModel-"))
@@ -89,7 +95,7 @@
 (if (not *MED3D-BEND-FACTOR*) (setq *MED3D-BEND-FACTOR* 5.0))  ; conduit R = factor x OD
 (if (not *MED3D-CABLE-BEND-FACTOR*) (setq *MED3D-CABLE-BEND-FACTOR* 7.0))  ; cable R = factor x OD
 (if (not *MED3D-METHOD*) (setq *MED3D-METHOD* "SWEEP"))
-(if (/= *MED3D-SHARP-3D* 'OFF) (setq *MED3D-SHARP-3D* T))   ; 'OFF = old auto-bends on 3D polylines       ; "SWEEP" or "PIECES"
+(setq *MED3D-SHARP-3D* 'OFF)   ; bends on 3D polylines; set T after loading for r14 mitered corners
 ;; per-run bend override: list of (handle . override), see med3d-bend-radius
 (if (not (boundp '*MED3D-BEND-OVERRIDES*)) (setq *MED3D-BEND-OVERRIDES* nil))
 ;; Debug output: each run's path, method choice, every piece's planned
@@ -147,6 +153,90 @@
       (* (cdr override) od))
     ((= kind "CABLE") (* *MED3D-CABLE-BEND-FACTOR* od))
     (T (* *MED3D-BEND-FACTOR* od))))
+
+;; MEDBendRadius rows, cached per M3D/C3D: ((code "size") "CLASS" R verified) ...
+(if (not (boundp '*MED3D-BENDR-CACHE*)) (setq *MED3D-BENDR-CACHE* nil))
+(defun med3d-preload-bendr ( / res k s v old)
+  (if (not *MED3D-BENDR-PRELOADED*)
+    (progn
+      (setq *MED3D-BENDR-PRELOADED* T *MED3D-BENDR-CACHE* nil
+            old *MED-SQL-QUIET* *MED-SQL-QUIET* T
+            res (vl-catch-all-apply 'med3d-sql
+                  (list "SELECT ConduitCode, TradeSizeDec, BendClass, Radius_in, Verified FROM MEDBendRadius WHERE Radius_in IS NOT NULL")))
+      (setq *MED-SQL-QUIET* old)
+      (if (and res (not (vl-catch-all-error-p res)) (listp res))
+        (foreach row (cdr res)
+          (setq k (med3d-num (nth 0 row)) s (med3d-num (nth 1 row)) v (med3d-num (nth 3 row)))
+          (if (and k s v (> v 0.0))
+            (setq *MED3D-BENDR-CACHE*
+                   (cons (list (list (fix k) (rtos s 2 4)) (strcase (vl-princ-to-string (nth 2 row)))
+                               (float v) (med3d-num (nth 4 row)))
+                         *MED3D-BENDR-CACHE*)))))
+      (med3d-dbg (strcat "MEDBendRadius: " (itoa (length *MED3D-BENDR-CACHE*)) " row(s) with a radius")))))
+(defun med3d-bendr-row (code size cls / r)
+  (foreach e *MED3D-BENDR-CACHE*
+    (if (and (not r) (equal (car e) (list (fix code) (rtos size 2 4))) (= (cadr e) cls)) (setq r e)))
+  r)
+
+;; run bend class from BEND_DATA xdata: ("STANDARD"|"LONG"|"SPECIFIC" . radius-or-nil)
+(defun med3d-bend-class (ent / xd cls r)
+  (setq xd (cdr (car (cdr (assoc -3 (entget ent '("BEND_DATA")))))))
+  (foreach g xd
+    (cond ((and (= (car g) 1000) (wcmatch (strcase (cdr g)) "CLASS=*"))
+            (setq cls (strcase (substr (cdr g) 7))))
+          ((= (car g) 1040) (setq r (cdr g)))))
+  (cond ((and (= cls "SPECIFIC") (numberp r) (> r 0.0)) (cons "SPECIFIC" r))
+        ((= cls "LONG") (cons "LONG" nil))
+        (T (cons "STANDARD" nil))))
+
+;; stamp BEND_DATA on a run (cls "Standard"|"Long"|"Specific", r for Specific)
+(defun med-bend-stamp (ent cls r / ed)
+  (regapp "BEND_DATA")
+  (setq ed (entget ent))
+  (entmod (append ed (list (list -3 (append (list "BEND_DATA" (cons 1000 (strcat "CLASS=" (strcase cls))))
+                                            (if (and (= (strcase cls) "SPECIFIC") (numberp r))
+                                              (list (cons 1040 (float r))))))))))
+
+;; underground run: DBANK_DATA on it, or its linetype (entity, else layer) is U_CON's
+(defun med3d-underground-p (ent / ed lt ul)
+  (setq ed (entget ent '("DBANK_DATA")))
+  (cond
+    ((assoc -3 ed) T)
+    ((and U_CON dbk-ltype
+          (not (vl-catch-all-error-p (setq ul (vl-catch-all-apply 'dbk-ltype (list U_CON)))))
+          (= (type ul) 'STR))
+      (setq lt (cdr (assoc 6 ed)))
+      (if (or (null lt) (= (strcase lt) "BYLAYER"))
+        (setq lt (cdr (assoc 6 (tblsearch "LAYER" (cdr (assoc 8 ed)))))))
+      (and lt (= (strcase lt) (strcase ul))))))
+
+;; radius for one run: (R . source text)
+(defun med3d-run-radius (ent kind od / h ov bc xd code size row std)
+  (setq h (cdr (assoc 5 (entget ent))) ov (cdr (assoc h *MED3D-BEND-OVERRIDES*))
+        bc (med3d-bend-class ent))
+  (cond
+    ((and (numberp ov) (> ov 0.0)) (cons (float ov) "session override"))
+    ((and (listp ov) (= (car ov) "FACTOR") (numberp (cdr ov)))
+      (cons (* (cdr ov) od) (strcat "session override " (rtos (cdr ov) 2 2) " x OD")))
+    ((= (car bc) "SPECIFIC") (cons (float (cdr bc)) "run Specific radius (BEND_DATA)"))
+    ((= kind "CABLE")
+      (cons (* *MED3D-CABLE-BEND-FACTOR* od) (strcat (rtos *MED3D-CABLE-BEND-FACTOR* 2 1) " x OD cable rule")))
+    (T
+      (setq xd (xdataget ent _CONDUIT)
+            size (if xd (med3d-num (nth 2 xd)))
+            code (if xd (med3d-num (nth 3 xd))))
+      (cond
+        ((and size (> size 0.0) (med3d-underground-p ent))
+          (cons (if (< size 3.999) 24.0 36.0) "underground rule (24 under 4\", 36 at 4\" and up)"))
+        ((and code size (progn (med3d-preload-bendr) T)
+              (setq row (if (= (car bc) "LONG") (med3d-bendr-row code size "LONGRADIUS"))))
+          (cons (nth 2 row) (strcat "MEDBendRadius LongRadius" (if (equal (nth 3 row) 1.0) "" " (unverified)"))))
+        ((and code size (setq row (med3d-bendr-row code size "STANDARD")))
+          (cons (nth 2 row) (strcat "MEDBendRadius Standard"
+                                    (if (= (car bc) "LONG") " (no LongRadius row)" "")
+                                    (if (equal (nth 3 row) 1.0) "" " (unverified)"))))
+        (T (cons (* *MED3D-BEND-FACTOR* od)
+                 (strcat (rtos *MED3D-BEND-FACTOR* 2 1) " x OD fallback (no table row)")))))))
 
 ;;; ------------------------------------------------------------------ segments
 ;; seg: ("L" A B i0 i1) straight | ("A" A B C N th i0 i1) arc, N = unit axis
@@ -662,7 +752,7 @@
   nil)
 
 ;; plan for one entity without drawing (for fittings); nil if skipped
-(defun med3d-plan-ent (ent kind / pd od h plan *MED3D-SHARP*)
+(defun med3d-plan-ent (ent kind / pd od h plan rr short *MED3D-SHARP*)
   (setq h (cdr (assoc 5 (entget ent))))
   (cond
     ((not (setq pd (med3d-read-path ent)))
@@ -681,10 +771,45 @@
        (setq *MED3D-SHARP* (and (eq *MED3D-SHARP-3D* T) (= (cdr (assoc 0 (entget ent))) "POLYLINE")
                                 (not (nth 2 pd))))
        nil))
-    ((not (setq plan (med3d-plan (nth 0 pd) (nth 1 pd) (nth 2 pd) (nth 3 pd) od kind
-                                 (cdr (assoc h *MED3D-BEND-OVERRIDES*)))))
+    ((progn
+       (setq rr (med3d-run-radius ent kind od))
+       (med3d-dbg (strcat "bend R " (rtos (car rr) 2 3) " from " (cdr rr)))
+       nil))
+    ((not (setq plan (med3d-plan (nth 0 pd) (nth 1 pd) (nth 2 pd) (nth 3 pd) od kind (car rr))))
       (med3d-skip h kind "fewer than 2 distinct points"))
-    (T (append (list (cons "HANDLE" h) (cons "KIND" kind) (cons "ENT" ent)) plan))))
+    ((and (not *MED3D-SHARP*) (= (cdr (assoc 0 (entget ent))) "POLYLINE") (not (nth 2 pd))
+          (setq short (med3d-short-3d plan h od)))
+      (med3d-skip h kind short))
+    (T (append (list (cons "HANDLE" h) (cons "KIND" kind) (cons "ENT" ent) (cons "RSOURCE" (cdr rr))) plan))))
+
+;; 3D POLYLINE bend mode: a corner whose tangent does not fit stops the run. Marks each
+;; such vertex on MED_3DFLAG and returns the skip reason (nil when every bend fits).
+(defun med3d-short-3d (plan h od / bad msg c segs k sg a b need)
+  (setq segs (med3d-get "SEGS" plan))
+  (foreach c (med3d-get "CORNERS" plan)
+    (if (and (= (med3d-get "STATUS" c) "FLAGGED") (< (med3d-get "NEED" c) 1e90))
+      (setq bad (cons c bad))))
+  (foreach c (reverse bad)
+    ;; the shorter of the two legs is the one that cannot hold the tangents
+    (setq k nil)
+    (foreach j (list (med3d-get "SEGIN" c) (med3d-get "SEGOUT" c))
+      (if (and j (setq sg (nth j segs)) (= (car sg) "L")
+               (or (null k) (< (distance (nth 1 sg) (nth 2 sg)) (distance (nth 1 (nth k segs)) (nth 2 (nth k segs))))))
+        (setq k j)))
+    (setq need (med3d-get "NEED" c))
+    (if k
+      (setq sg (nth k segs) a (nth 1 sg) b (nth 2 sg)
+            msg (strcat (if msg (strcat msg "; ") "")
+                        "segment " (itoa (1+ k)) " (" (med3d-ptstr a) " -> " (med3d-ptstr b) ")"
+                        " is " (rtos (distance a b) 2 3) " long, bend at vertex "
+                        (itoa (1+ (med3d-get "INDEX" c))) " needs tangent " (rtos need 2 3)
+                        " (R " (rtos (med3d-get "R" plan) 2 3) ")"))
+      (setq msg (strcat (if msg (strcat msg "; ") "") "bend at vertex " (itoa (1+ (med3d-get "INDEX" c)))
+                        " needs tangent " (rtos need 2 3) ", available "
+                        (rtos (max 0.0 (med3d-get "AVAIL" c)) 2 3))))
+    (med3d-flag-at (med3d-get "VERTEX" c) (* 2.0 od)
+                   (strcat "3D SHORT " h " v" (itoa (1+ (med3d-get "INDEX" c))))))
+  (if msg (strcat "3D route segment too short for its bends: " msg " - shorten R (MEDBENDR) or lengthen the segment")))
 
 ;;; -------------------------------------------------------------------- layers
 (defun med3d-layer-info (kind)
@@ -954,7 +1079,7 @@
         sa (atan (- (cadr oa) (cadr oc)) (- (car oa) (car oc))))
   (if (entmake (list '(0 . "ARC") (cons 8 lay) (cons 10 oc) (cons 40 (distance a c))
                      (cons 50 sa) (cons 51 (+ sa th)) (cons 210 nn)))
-    (vlax-ename->vla-object (entlast))))
+    (if ms (vlax-ename->vla-object (entlast)) (entlast))))
 
 (defun med3d-solid-sphere (ms p r / s)
   (setq s (vl-catch-all-apply 'vlax-invoke (list ms 'AddSphere p r)))
@@ -1077,6 +1202,61 @@
           (med3d-dbg (strcat "SWEEP solid box " (med3d-bbstr (med3d-bbox (vlax-ename->vla-object sol)))))
           sol)))))
 
+;; non-planar bent runs: SWEEP the OD circle along each piece (temp LINE / ARC), then
+;; UNION them. Command line only (no ActiveX), so it also runs in accoreconsole.
+(defun med3d-draw-sweep-pieces (plan lay / pcs r sols ok path tn circ sol ss live ed)
+  (setq pcs (med3d-get "PIECES" plan) r (* 0.5 (med3d-get "OD" plan)) ok T)
+  (cond
+    ((med3d-get "GAPS" plan) (med3d-dbg "sweep-pieces: run is cut at a conduit body") nil)
+    ((med3d-has-spheres plan) (med3d-dbg "sweep-pieces: run has sphere corners") nil)
+    (T
+      (foreach p pcs
+        (if ok
+          (progn
+            (if (= (car p) "L")
+              (progn
+                (entmake (list '(0 . "LINE") (cons 8 lay) (cons 10 (nth 1 p)) (cons 11 (nth 2 p))))
+                (setq tn (med3d-unit (med3d-v- (nth 2 p) (nth 1 p)))))
+              (progn
+                (med3d-temp-arc nil (nth 1 p) (nth 3 p) (nth 4 p) (nth 5 p) lay)
+                (setq tn (med3d-unit (med3d-cross (nth 4 p) (med3d-v- (nth 1 p) (nth 3 p)))))))
+            (setq path (entlast))
+            (entmake (list '(0 . "CIRCLE") (cons 8 lay) (cons 10 (trans (nth 1 p) 0 tn))
+                           (cons 40 r) (cons 210 tn)))
+            (setq circ (entlast))
+            (command "_.SWEEP" "_MO" "_SO" circ "" path)
+            (if (> (getvar "CMDACTIVE") 0) (command))
+            (setq sol (entlast))
+            (if (entget path) (entdel path))
+            (if (entget circ) (entdel circ))
+            (if (and sol (not (eq sol circ)) (not (eq sol path)) (setq ed (entget sol))
+                     (= (cdr (assoc 0 ed)) "3DSOLID"))
+              (setq sols (cons sol sols))
+              (progn
+                (if (and sol (not (eq sol circ)) (not (eq sol path)) ed) (entdel sol))
+                (med3d-dbg (strcat "sweep-pieces: piece " (car p) " made no solid"))
+                (setq ok nil))))))
+      (cond
+        ((not ok) (foreach s sols (if (entget s) (entdel s))) nil)
+        (T
+          (if (cdr sols)
+            (progn
+              (setq ss (ssadd))
+              (foreach s sols (ssadd s ss))
+              (command "_.UNION" ss "")
+              (if (> (getvar "CMDACTIVE") 0) (command))))
+          (setq live nil)
+          (foreach s sols (if (entget s) (setq live (cons s live))))
+          (cond
+            ((/= (length live) 1)
+              (med3d-dbg (strcat "sweep-pieces: UNION left " (itoa (length live)) " solids - falling back"))
+              (foreach s live (entdel s)) nil)
+            (T
+              (setq sol (car live) ed (entget sol))
+              (entmod (subst (cons 8 lay) (assoc 8 ed) ed))
+              (med3d-dbg (strcat "method SWEEP-PIECES: " (itoa (length sols)) " piece(s) unioned on " lay))
+              sol)))))))
+
 ;; SHARP plans (3D routes): SWEEP the OD circle along a temp 3DPOLY through the piece
 ;; ends -> one solid with mitered corners. nil (falls back) on gaps / spheres / failure.
 (defun med3d-draw-miter (plan lay / pcs pts p0 tn circ path sol typ ed)
@@ -1132,7 +1312,8 @@
       (med3d-report-flags plan)
       (if (med3d-get "SHARP" plan)
         (setq sol (med3d-draw-miter plan lay))
-        (if (= (strcase *MED3D-METHOD*) "SWEEP") (setq sol (med3d-draw-sweep plan lay))))
+        (if (= (strcase *MED3D-METHOD*) "SWEEP")
+          (setq sol (cond ((med3d-draw-sweep plan lay)) ((med3d-draw-sweep-pieces plan lay))))))
       (if (not sol)
         (setq res (med3d-draw-pieces (if (med3d-get "SHARP" plan) (med3d-miter-spheres plan) plan) lay)
               sol (car res) extras (cadr res)))
@@ -1168,6 +1349,8 @@
         *MED3D-CABLEOD-CACHE* nil
         *MED3D-OD-PRELOADED* nil
         *MED3D-CABLEOD-PRELOADED* nil
+        *MED3D-BENDR-PRELOADED* nil
+        *MED3D-BENDR-CACHE* nil
         *MED3D-STAMPKIND* nil)
   (defun *error* (msg)
     (if med-snap-restore (med-snap-restore)) (med3d-end)
@@ -1602,4 +1785,21 @@
 (med3d-install-reactor)
 (princ (strcat "Done.\nMED3DPath " *MED3D-VERSION*
                " loaded: M3D C3D MAKE3DCONDUIT MAKE3DCABLE MEDMAKE3D MED3DPLAN MED3DVER"))
+(princ)
+
+;; MEDBENDR: set the bend radius class on existing runs (read by M3D / C3D)
+(defun c:MEDBENDR ( / ss k r i)
+  (princ "\nSelect conduit/cable runs: ")
+  (if (setq ss (ssget '((0 . "LWPOLYLINE,POLYLINE,LINE"))))
+    (progn
+      (initget "Standard Long Specific")
+      (setq k (getkword "\nBend radius [Standard/Long/Specific] <Standard>: "))
+      (if (not k) (setq k "Standard"))
+      (if (= k "Specific")
+        (progn (initget 7) (setq r (getdist "\nSpecific bend radius (to centerline): "))))
+      (setq i 0)
+      (repeat (sslength ss) (med-bend-stamp (ssname ss i) k r) (setq i (1+ i)))
+      (princ (strcat "\n" (itoa (sslength ss)) " run(s) set to " k
+                     (if r (strcat " R " (rtos r)) "") " - rebuild with M3D / C3D."))))
+  (princ))
 (princ)

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+- **Calculated bends on 3D routes** (`Support\MED3DPath.lsp` r15). M3D/C3D on a 3DPOLY conduit trims each segment by R*tan(theta/2) and sweeps a torus bend in the plane of the two segments. A segment too short for its bends skips the run, puts a `3D SHORT` marker on MED_3DFLAG and reports the segment. `*MED3D-SHARP-3D*` still exists (default OFF = bends; T = old mitered corners).
+- **MEDBendRadius table** (SQLite + SQL Server, seeded by MED-DotNet from `Data\seed\bend_radius.csv`). Standard radii from NEC Chapter 9 Table 2 (RMC/IMC/EMT one-shot column, PVC other-bends column); LongRadius rows left blank for Clint to fill. Unsourced sizes use 5 x OD, Verified=0.
+- Radius lookup per run: Specific (CONDUIT Radius option, BEND_DATA xdata) > underground 24/36 > table > 5 x OD; the source is printed in the M3D dbg line. `MEDBENDR` shows the radius for the picked run.
 ## 2026.0.1013a - 2026-10-13 (WORK IN PROGRESS pre-release)
 
 MED 3D models are approximations, not copies of manufacturer specifications; users must verify all dimensions.

@@ -132,3 +132,7 @@ Seed values ship in `Data\seed\conduit_body_dims.csv` (341 rows; sources in `con
 Browse with [MEDSHOWBOM](medshowbom.md). The 2012 `SHOW` dialog was a flat list with no summary. MED2026 adds type filters, project filter, summarize-by type/code/size, clipboard, and CSV. Qty for conduit / cable / tray in the table is inches; the dialog reports feet (`raw / 12`). Equipment and fittings are each.
 
 Run `BOM` again after you change the drawing. Stale `MEDProject` rows are not your DWG.
+
+## MEDBendRadius
+
+Bend radius per conduit type / trade size / class. Columns: ConduitCode, TradeSize, BendClass (Standard/Long), Radius_in (NULL = not known), Source, Verified, Note. Created and seeded by MED-DotNet on both SQLite and SQL Server (only missing rows are inserted, only NULL radii are filled; back up SQL Server first). Seed: `Data\seed\bend_radius.csv`. Rows with Verified=0 are a rule of thumb or an assumed NEC column - verify before use.

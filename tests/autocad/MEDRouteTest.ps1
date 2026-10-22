@@ -1,6 +1,6 @@
 # MEDRouteTest.ps1 - headless CONDUIT / CABLE 2D-3D routing test (accoreconsole 2024).
 # Case 1: old CONDUIT steps (PLINE + fillet; the old pause loop can't be scripted) vs new CONDUIT in Auto, flat points -> same filleted LWPOLYLINE.
-# Case 2: CONDUIT Auto with an Elev rise -> 3DPOLY, no fillet; M3D solid with mitered corners.
+# Case 2: CONDUIT Auto with an Elev rise -> 3DPOLY, no fillet; M3D solid with calculated bends (r15; see MEDBendTest.ps1).
 # Case 3: LINE with MED_CONDUIT xdata -> solid.  Case 4: CABLE 3D mode (remembered) + RUN3DCABLE.
 param([string]$Accore = "C:\Program Files\Autodesk\AutoCAD 2024\accoreconsole.exe")
 $repo = (Resolve-Path "$PSScriptRoot\..\..").Path; $fw = $repo.Replace('\', '/')

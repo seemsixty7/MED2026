@@ -30,6 +30,7 @@ namespace MEDDotNet
         public const string CableSeedFile = "cable_od_sources.csv";
         public const string ConduitBodySeedFile = "conduit_body_dims.csv";
         public const string FittingBodyKeySeedFile = "fitting_body_keys.csv";
+        public const string BendRadiusSeedFile = "bend_radius.csv";
 
         public static void EnsureReady()
         {
@@ -41,6 +42,7 @@ namespace MEDDotNet
                 {
                     EnsureConduitOdTable();
                     EnsureConduitBodyTable();
+                    EnsureBendRadiusTable();
                     string dir = FindSeedDir();
                     if (dir != null)
                     {
@@ -48,6 +50,7 @@ namespace MEDDotNet
                         SeedCableOd(Path.Combine(dir, CableSeedFile));
                         SeedConduitBody(Path.Combine(dir, ConduitBodySeedFile));
                         SeedFittingBodyKeys(Path.Combine(dir, FittingBodyKeySeedFile));
+                        SeedBendRadius(Path.Combine(dir, BendRadiusSeedFile));
                     }
                     _done = true;
                 }
@@ -120,6 +123,109 @@ namespace MEDDotNet
                         + "CONSTRAINT PK_MEDConduitBody PRIMARY KEY (Form, Shape, TradeSize))";
                 }
                 cmd.ExecuteNonQuery();
+            }
+        }
+
+        /// <summary>Conduit bend radius (inches, to centerline) per conduit code + trade size + class
+        /// (Standard / LongRadius), read by MED3DPath.lsp med3d-bend-radius. Verified = 1 only for
+        /// rows with a published source.</summary>
+        public static void EnsureBendRadiusTable()
+        {
+            using (DbConnection conn = ProcessSQL.OpenConnection())
+            using (DbCommand cmd = conn.CreateCommand())
+            {
+                if (ProcessSQL.IsSqlite)
+                {
+                    cmd.CommandText =
+                        "CREATE TABLE IF NOT EXISTS MEDBendRadius ("
+                        + "ConduitCode INTEGER NOT NULL, ConduitDesc TEXT, TradeSize TEXT NOT NULL, "
+                        + "TradeSizeDec REAL, BendClass TEXT NOT NULL, Radius_in REAL, Source TEXT, "
+                        + "Verified INTEGER DEFAULT 0, Notes TEXT, "
+                        + "PRIMARY KEY (ConduitCode, TradeSize, BendClass))";
+                }
+                else
+                {
+                    cmd.CommandText =
+                        "IF OBJECT_ID(N'dbo.MEDBendRadius', N'U') IS NULL "
+                        + "CREATE TABLE dbo.MEDBendRadius ("
+                        + "ConduitCode int NOT NULL, ConduitDesc nvarchar(100) NULL, TradeSize nvarchar(10) NOT NULL, "
+                        + "TradeSizeDec float NULL, BendClass nvarchar(20) NOT NULL, Radius_in float NULL, "
+                        + "Source nvarchar(400) NULL, Verified int NULL DEFAULT 0, Notes nvarchar(200) NULL, "
+                        + "CONSTRAINT PK_MEDBendRadius PRIMARY KEY (ConduitCode, TradeSize, BendClass))";
+                }
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        /// <summary>Insert missing MEDBendRadius rows; a NULL Radius_in is filled from the seed,
+        /// a user-entered radius is never overwritten.</summary>
+        static void SeedBendRadius(string path)
+        {
+            if (!File.Exists(path))
+                return;
+            List<string[]> rows = ReadCsv(path);
+            if (rows.Count < 2)
+                return;
+            Dictionary<string, int> map = HeaderMap(rows[0]);
+            bool sqlite = ProcessSQL.IsSqlite;
+            using (DbConnection conn = ProcessSQL.OpenConnection())
+            using (DbTransaction tx = conn.BeginTransaction())
+            {
+                for (int i = 1; i < rows.Count; i++)
+                {
+                    string[] r = rows[i];
+                    int code;
+                    if (!int.TryParse(Get(r, map, "ConduitCode"), NumberStyles.Integer, CultureInfo.InvariantCulture, out code))
+                        continue;
+                    string ts = Get(r, map, "TradeSize");
+                    string bc = Get(r, map, "BendClass");
+                    if (ts.Length == 0 || bc.Length == 0)
+                        continue;
+                    object rad = Num(Get(r, map, "Radius_in"));
+                    string src = Get(r, map, "Source");
+                    string notes = Get(r, map, "Notes");
+                    int ver;
+                    int.TryParse(Get(r, map, "Verified"), NumberStyles.Integer, CultureInfo.InvariantCulture, out ver);
+                    using (DbCommand cmd = conn.CreateCommand())
+                    {
+                        cmd.Transaction = tx;
+                        string cols = "ConduitCode, ConduitDesc, TradeSize, TradeSizeDec, BendClass, Radius_in, Source, Verified, Notes";
+                        string vals = "@c, @d, @t, @td, @b, @r, @s, @v, @n";
+                        cmd.CommandText = sqlite
+                            ? "INSERT OR IGNORE INTO MEDBendRadius (" + cols + ") VALUES (" + vals + ")"
+                            : "IF NOT EXISTS (SELECT 1 FROM MEDBendRadius WHERE ConduitCode = @c AND TradeSize = @t AND BendClass = @b) "
+                              + "INSERT INTO MEDBendRadius (" + cols + ") VALUES (" + vals + ")";
+                        ProcessSQL.AddParam(cmd, "@c", code);
+                        string desc = Get(r, map, "ConduitDesc");
+                        ProcessSQL.AddParam(cmd, "@d", desc.Length == 0 ? (object)DBNull.Value : Trunc(desc, 100));
+                        ProcessSQL.AddParam(cmd, "@t", Trunc(ts, 10));
+                        ProcessSQL.AddParam(cmd, "@td", Num(Get(r, map, "TradeSizeDec")));
+                        ProcessSQL.AddParam(cmd, "@b", Trunc(bc, 20));
+                        ProcessSQL.AddParam(cmd, "@r", rad);
+                        ProcessSQL.AddParam(cmd, "@s", src.Length == 0 ? (object)DBNull.Value : Trunc(src, 400));
+                        ProcessSQL.AddParam(cmd, "@v", ver);
+                        ProcessSQL.AddParam(cmd, "@n", notes.Length == 0 ? (object)DBNull.Value : Trunc(notes, 200));
+                        cmd.ExecuteNonQuery();
+                    }
+                    if (rad != DBNull.Value)
+                    {
+                        using (DbCommand upd = conn.CreateCommand())
+                        {
+                            upd.Transaction = tx;
+                            upd.CommandText = "UPDATE MEDBendRadius SET Radius_in = @r, Source = @s, Verified = @v, Notes = @n "
+                                + "WHERE ConduitCode = @c AND TradeSize = @t AND BendClass = @b AND Radius_in IS NULL";
+                            ProcessSQL.AddParam(upd, "@r", rad);
+                            ProcessSQL.AddParam(upd, "@s", src.Length == 0 ? (object)DBNull.Value : Trunc(src, 400));
+                            ProcessSQL.AddParam(upd, "@v", ver);
+                            ProcessSQL.AddParam(upd, "@n", notes.Length == 0 ? (object)DBNull.Value : Trunc(notes, 200));
+                            ProcessSQL.AddParam(upd, "@c", code);
+                            ProcessSQL.AddParam(upd, "@t", ts);
+                            ProcessSQL.AddParam(upd, "@b", bc);
+                            upd.ExecuteNonQuery();
+                        }
+                    }
+                }
+                tx.Commit();
             }
         }
 

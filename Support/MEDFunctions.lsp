@@ -3106,17 +3106,36 @@
 ;; rise (+ up / - down, from the last point's Z) for the next point; a point picked on
 ;; the ELEVATION plane stays at the last point's Z (so a route stays up after a rise);
 ;; a Z given another way (x,y,z typed, .XY filter, 3D osnap) is used as given. Auto: every point at one UCS Z -> 2D PLINE (callers keep their fillet step),
-;; any Z differs -> 3DPOLY (sharp corners, no fillet; M3D / C3D miter the solid).
+;; any Z differs -> 3DPOLY (no fillet step; M3D / C3D calculate the bends).
+;; Radius sets the bend class stamped on new runs (BEND_DATA, read by M3D / C3D).
 ;; 2D forces a PLINE at the start point's Z; 3D always makes a 3DPOLY.
 ;; Returns (ename is3d) or nil (fewer than 2 points). Snaps are off only while the
 ;; entity is drawn from the picked points (picks keep the user's running osnaps).
 (if (not (member *MED-ROUTE-MODE* '("Auto" "2D" "3D"))) (setq *MED-ROUTE-MODE* "Auto"))
 
+(if (not (member *MED-BEND-CLASS* '("Standard" "Long" "Specific"))) (setq *MED-BEND-CLASS* "Standard"))
+
 (defun med-route-ask-mode ( / k)
-  (initget "Auto 2D 3D")
-  (setq k (getkword (strcat "\nRoute mode [Auto/2D/3D] <" *MED-ROUTE-MODE* ">: ")))
+  (while (progn
+           (initget "Auto 2D 3D Radius")
+           (setq k (getkword (strcat "\nRoute mode [Auto/2D/3D/Radius] <" *MED-ROUTE-MODE* ">: ")))
+           (= k "Radius"))
+    (med-route-ask-radius))
   (if k (setq *MED-ROUTE-MODE* k))
   *MED-ROUTE-MODE*)
+
+(defun med-route-ask-radius ( / k r)
+  (initget "Standard Long Specific")
+  (setq k (getkword (strcat "\nBend radius [Standard/Long/Specific] <" *MED-BEND-CLASS* ">: ")))
+  (if k (setq *MED-BEND-CLASS* k))
+  (if (= *MED-BEND-CLASS* "Specific")
+    (progn
+      (initget 6)
+      (setq r (getdist (strcat "\nSpecific bend radius (to centerline)"
+                               (if *MED-BEND-R* (strcat " <" (rtos *MED-BEND-R*) ">") "") ": ")))
+      (if r (setq *MED-BEND-R* r))
+      (if (not *MED-BEND-R*) (setq *MED-BEND-CLASS* "Standard"))))
+  *MED-BEND-CLASS*)
 
 (defun med-route-redraw (pts / l)
   (redraw)
@@ -3178,6 +3197,8 @@
       (foreach p pts (command "_non" p))
       (command "")
       (if med-snap-restore (med-snap-restore))
+      (if (and med-bend-stamp (/= *MED-BEND-CLASS* "Standard"))
+        (med-bend-stamp (entlast) *MED-BEND-CLASS* *MED-BEND-R*))
       (if is3d
-        (princ "\n3D route (3DPOLY): sharp corners - fillets don't apply to 3D routes."))
+        (princ "\n3D route (3DPOLY): no fillet step - M3D/C3D calculate the bends at each corner."))
       (list (entlast) is3d))))

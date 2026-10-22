@@ -12,6 +12,7 @@ Copy-Item "$PSScriptRoot\MEDRouteTest.lsp" "$d\rt.lsp" -Force
 Copy-Item "$PSScriptRoot\MEDBendTest.lsp" "$d\bt.lsp" -Force
 $scr = @"
 (setvar "SECURELOAD" 0)
+(if (not _CONDUIT) (load "$fw/Support/MEDCore.lsp"))
 (load "$fw/Support/MEDFunctions.lsp")
 (load "$dd/rt.lsp")
 (load "$fw/Support/medcon.lsp")

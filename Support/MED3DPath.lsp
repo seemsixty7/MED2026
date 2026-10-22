@@ -780,7 +780,21 @@
     ((and (not *MED3D-SHARP*) (= (cdr (assoc 0 (entget ent))) "POLYLINE") (not (nth 2 pd))
           (setq short (med3d-short-3d plan h od)))
       (med3d-skip h kind short))
-    (T (append (list (cons "HANDLE" h) (cons "KIND" kind) (cons "ENT" ent) (cons "RSOURCE" (cdr rr))) plan))))
+    (T (append (list (cons "HANDLE" h) (cons "KIND" kind) (cons "ENT" ent) (cons "RSOURCE" (cdr rr))
+                     (cons "NODES" (med3d-plan-nodes plan)))
+               plan))))
+
+;; MEDNODE nodes on this run's corners (MEDNode.lsp). Dispatch point for node fittings:
+;; no fitting = standard field bend (MEDBendRadius), counted as conduit length - the plan is
+;; unchanged. A node with a fitting assigned is reported; fitting geometry is not built yet.
+(defun med3d-plan-nodes (plan / nl)
+  (if (and med-node-plan-nodes (not (vl-catch-all-error-p (setq nl (vl-catch-all-apply 'med-node-plan-nodes (list plan))))))
+    (progn
+      (foreach n nl
+        (med3d-dbg (strcat "node " (cadr n) " at vertex " (itoa (1+ (car n))) ": "
+                           (if (caddr n) (strcat "fitting " (caddr n) " assigned - not modelled yet, drawn as a bend")
+                                         "no fitting - standard field bend (conduit length)"))))
+      nl)))
 
 ;; 3D POLYLINE bend mode: a corner whose tangent does not fit stops the run. Marks each
 ;; such vertex on MED_3DFLAG and returns the skip reason (nil when every bend fits).

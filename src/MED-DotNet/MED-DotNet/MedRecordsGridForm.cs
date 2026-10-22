@@ -44,7 +44,7 @@ namespace MEDDotNet
             _grid = new DataGridView();
             _grid.Dock = DockStyle.Fill;
             _grid.AllowUserToAddRows = _ids.Count == 1;
-            _grid.AllowUserToDeleteRows = true;
+            _grid.AllowUserToDeleteRows = false; // Delete button / Del key -> DeleteSelectedRecords (MED data only)
             _grid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             _grid.RowHeadersVisible = true;
             _grid.SelectionMode = DataGridViewSelectionMode.CellSelect;
@@ -110,6 +110,12 @@ namespace MEDDotNet
             _showBtn.Location = new Point(8, 10);
             _showBtn.Click += delegate { ShowCurrent(true); };
 
+            Button delBtn = new Button();
+            delBtn.Text = "Delete record(s)";
+            delBtn.Width = 110;
+            delBtn.Location = new Point(116, 10);
+            delBtn.Click += delegate { DeleteSelectedRecords(); };
+
             Button ok = new Button();
             ok.Text = "OK";
             ok.DialogResult = DialogResult.OK;
@@ -121,11 +127,12 @@ namespace MEDDotNet
 
             _status = new Label();
             _status.AutoSize = true;
-            _status.Location = new Point(116, 16);
+            _status.Location = new Point(234, 16);
             string addHint = _ids.Count == 1 ? " Click the blank row to add a record." : " Add record is off for multi-entity. Edit one entity to add.";
             _status.Text = records.Count + " record(s) / " + _ids.Count + " entit" + (_ids.Count == 1 ? "y" : "ies") + ". Ctrl+C/V, Ctrl+D fill down." + addHint;
 
             bottom.Controls.Add(_showBtn);
+            bottom.Controls.Add(delBtn);
             bottom.Controls.Add(_status);
             bottom.Controls.Add(ok);
             bottom.Controls.Add(cancel);
@@ -143,6 +150,7 @@ namespace MEDDotNet
             menu.Items.Add("Fill down", null, delegate { FillDown(); });
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add("Show entity", null, delegate { ShowCurrent(true); });
+            menu.Items.Add("Delete record(s)", null, delegate { DeleteSelectedRecords(); });
             _grid.ContextMenuStrip = menu;
 
             Controls.Add(_grid);
@@ -458,6 +466,11 @@ namespace MEDDotNet
                 FillDown();
                 return true;
             }
+            if (keyData == Keys.Delete && !_grid.IsCurrentCellInEditMode && _grid.Focused)
+            {
+                DeleteSelectedRecords();
+                return true;
+            }
             if (keyData == (Keys.Control | Keys.C))
             {
                 CopyCells();
@@ -465,6 +478,38 @@ namespace MEDDotNet
             }
             return base.ProcessCmdKey(ref msg, keyData);
         }
+
+        // Clint: delete removes ONLY the selected MED data record(s); the drawing entity is never erased.
+        // Rows leave the grid now; OK rewrites each entity's MED XData from the remaining rows.
+        void DeleteSelectedRecords()
+        {
+            List<DataGridViewRow> rows = new List<DataGridViewRow>();
+            foreach (DataGridViewCell c in _grid.SelectedCells)
+                if (c.OwningRow != null && !c.OwningRow.IsNewRow && !rows.Contains(c.OwningRow))
+                    rows.Add(c.OwningRow);
+            foreach (DataGridViewRow row in _grid.SelectedRows)
+                if (!row.IsNewRow && !rows.Contains(row))
+                    rows.Add(row);
+            if (rows.Count == 0 && _grid.CurrentRow != null && !_grid.CurrentRow.IsNewRow)
+                rows.Add(_grid.CurrentRow);
+            if (rows.Count == 0)
+                return;
+            string msg = "Delete " + rows.Count + " MED data record(s)?\n\nOnly the MED data is removed. The drawing entities are NOT deleted.\nApplied when you click OK (Cancel discards).";
+            if (MessageBox.Show(this, msg, "MED Records", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) != DialogResult.Yes)
+                return;
+            if (_grid.IsCurrentCellInEditMode)
+                _grid.EndEdit();
+            foreach (DataGridViewRow row in rows)
+                _grid.Rows.Remove(row);
+            _deleted += rows.Count;
+            int left = 0;
+            foreach (DataGridViewRow row in _grid.Rows)
+                if (!row.IsNewRow)
+                    left++;
+            _status.Text = _deleted + " record(s) marked for delete, " + left + " left. Click OK to apply; entities are kept.";
+        }
+
+        int _deleted;
 
         void CopyCells()
         {

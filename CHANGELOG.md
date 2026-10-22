@@ -3,6 +3,8 @@
 ## Unreleased
 
 ### Added
+- MED Records grid (MEDRECORDS / MEDXDEDIT, the MEDCHG palette's multi-edit) now has a "Delete record(s)" button, a right-click menu item and the Del key. It asks Yes/No with the count, then removes only the selected MED data records. The drawing entities are never erased. The change applies on OK.
+- Classic MEDCHG Delete was verified to remove only the selected record and keep the entity's other records of the same type (new test tests/autocad/MEDChgDeleteTest.ps1). No code change was needed.
 - MEDNODEAUDIT now steps through the orphans one at a time. It prints the count first, then zooms to each orphan, draws the MED Records find/show yellow box, and prompts `Orphan i of n: reason [Snap/Delete/Next/eXit]`. It ends with `snapped X, deleted Y, skipped Z`. The box is cleared after each step and on exit or Esc.
 - MED-DotNet: the find/show halo was moved into `MedHalo` and exposed to LISP as `MED-HALO-SHOW` / `MED-HALO-CLEAR`.
 - **Calculated bends on 3D routes** (`Support\MED3DPath.lsp` r15). M3D/C3D on a 3DPOLY conduit trims each segment by R*tan(theta/2) and sweeps a torus bend in the plane of the two segments. A segment too short for its bends skips the run, puts a `3D SHORT` marker on MED_3DFLAG and reports the segment. `*MED3D-SHARP-3D*` still exists (default OFF = bends; T = old mitered corners).

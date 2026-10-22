@@ -26,11 +26,12 @@ The format is the same one `bld_app` / `bld_fitting` use: `1002 "{"`, then `1000
 ## Nodes move with their vertex (Clint 2026-10-22)
 - The node is a visible block with its insertion on the vertex, so STRETCH (crossing over the vertex) and MOVE (route + node selected) take the node with the vertex. No reactors, no hidden helper entities.
 - Edits that do not take the node (grip-dragging a vertex, MOVE of the route alone, erasing a route) leave it behind. `MEDNODEAUDIT` finds those.
-- **`MEDNODEAUDIT`** lists orphaned nodes: no connections, a `NODE_CONN` handle that is deleted, or not on a vertex of its connected runs within `*MED-NODE-TOL*`. It then offers:
-  - `Zoom`: zooms to and highlights each in turn, then leaves them selected
-  - `Snap`: moves each onto the nearest vertex of its live runs and drops dead connections
-  - `Delete`: erases them, after a Yes/No confirmation
-
+- **`MEDNODEAUDIT`** finds orphaned nodes: no connections, a `NODE_CONN` handle that is deleted, or not on a vertex of its connected runs within `*MED-NODE-TOL*`.
+  - It prints the count first: `MEDNODEAUDIT: 5 orphaned node(s) found (of 23 nodes).`, or `No orphaned nodes found (23 nodes checked).`
+  - It then steps through them. Each one is zoomed to and boxed in yellow, using the same highlight as the MED Records find/show (`MedHalo` in MED-DotNet, via `MED-HALO-SHOW` / `MED-HALO-CLEAR`). The prompt is `Orphan 2 of 5: <reason> (dwg|handle) [Snap/Delete/Next/eXit] <Next>`.
+  - `Snap` moves the node onto the nearest vertex of its live runs and drops dead connections. `Delete` erases it after Yes/No. `Next` skips it.
+  - The box is a transient (or grvecs without the DLL), never a drawing entity. It is cleared after every step and on exit or Esc, and the original view is restored.
+  - The command closes with `snapped X, deleted Y, skipped Z`.
 ## Rules
 - **No fitting (the default) on a 2-connection conduit node:** the node is a standard field bend. Its radius comes from MEDBendRadius (Specific > Long 24/36/48 on the run > underground > table > 5×OD), and the bend counts as conduit length, not as a fitting.
 - **The exporters:** `med3d-plan-ent` (M3D, C3D, MAKE3DCONDUIT/CABLE, MEDMAKE3D conduit stage) calls `med3d-plan-nodes`.

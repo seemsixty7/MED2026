@@ -3,6 +3,8 @@
 ## Unreleased
 
 ### Added
+- MEDNODEAUDIT now steps through the orphans one at a time. It prints the count first, then zooms to each orphan, draws the MED Records find/show yellow box, and prompts `Orphan i of n: reason [Snap/Delete/Next/eXit]`. It ends with `snapped X, deleted Y, skipped Z`. The box is cleared after each step and on exit or Esc.
+- MED-DotNet: the find/show halo was moved into `MedHalo` and exposed to LISP as `MED-HALO-SHOW` / `MED-HALO-CLEAR`.
 - **Calculated bends on 3D routes** (`Support\MED3DPath.lsp` r15). M3D/C3D on a 3DPOLY conduit trims each segment by R*tan(theta/2) and sweeps a torus bend in the plane of the two segments. A segment too short for its bends skips the run, puts a `3D SHORT` marker on MED_3DFLAG and reports the segment. `*MED3D-SHARP-3D*` still exists (default OFF = bends; T = old mitered corners).
 - **MEDBendRadius table** (SQLite + SQL Server, seeded by MED-DotNet from `Data\seed\bend_radius.csv`). Standard radii from NEC Chapter 9 Table 2 (RMC/IMC/EMT one-shot column, PVC other-bends column); LongRadius rows default 24 (under 4") / 36 (4" and up), Source 'Clint 2026-10-22'; the Long prompt offers 24/36/48/Auto. Flexible ENT/LFMC (codes 5, 7) = bend to fit: N/A rows, M3D follows the drawn route and prints a note. Unsourced sizes use 5 x OD, Verified=0.
 - Radius lookup per run: Specific (CONDUIT Radius option, BEND_DATA xdata) > underground 24/36 > table > 5 x OD; the source is printed in the M3D dbg line. `MEDBENDR` shows the radius for the picked run.

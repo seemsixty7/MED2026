@@ -16,12 +16,10 @@ namespace MEDDotNet
         readonly List<ObjectId> _ids;
         readonly ObjectId[] _originalPick;
         readonly ViewTableRecord _originalView;
-        readonly IntegerCollection _haloVports = new IntegerCollection();
         DataGridView _grid;
         Label _status;
         ObjectId _highlighted = ObjectId.Null;
         Button _showBtn;
-        Drawable _halo;
 
         public MedRecordsGridForm(List<ObjectId> ids, List<MedRecord> records)
         {
@@ -441,92 +439,12 @@ namespace MEDDotNet
             _highlighted = ObjectId.Null;
         }
 
-        void ClearHalo()
-        {
-            if (_halo == null)
-                return;
-            try
-            {
-                TransientManager.CurrentTransientManager.EraseTransient(_halo, _haloVports);
-            }
-            catch (System.Exception)
-            {
-            }
-            try { _halo.Dispose(); } catch (System.Exception) { }
-            _halo = null;
-        }
+        // The yellow halo + zoom live in MedHalo so other commands (MEDNODEAUDIT) use the same look.
+        void ClearHalo() { MedHalo.Clear(); }
 
-        void DrawHalo(Entity ent)
-        {
-            ClearHalo();
-            if (ent == null)
-                return;
-            Extents3d ext;
-            try { ext = ent.GeometricExtents; }
-            catch (System.Exception) { return; }
-            double w = ext.MaxPoint.X - ext.MinPoint.X;
-            double h = ext.MaxPoint.Y - ext.MinPoint.Y;
-            double span = Math.Max(w, h);
-            if (span < 1e-8)
-                span = 1.0;
-            double pad = span * 0.15;
-            double thick = span * 0.04;
-            if (thick < 0.01)
-                thick = 0.01;
-            double minx = ext.MinPoint.X - pad;
-            double miny = ext.MinPoint.Y - pad;
-            double maxx = ext.MaxPoint.X + pad;
-            double maxy = ext.MaxPoint.Y + pad;
-            Autodesk.AutoCAD.DatabaseServices.Polyline pl = new Autodesk.AutoCAD.DatabaseServices.Polyline();
-            pl.AddVertexAt(0, new Point2d(minx, miny), 0, thick, thick);
-            pl.AddVertexAt(1, new Point2d(maxx, miny), 0, thick, thick);
-            pl.AddVertexAt(2, new Point2d(maxx, maxy), 0, thick, thick);
-            pl.AddVertexAt(3, new Point2d(minx, maxy), 0, thick, thick);
-            pl.Closed = true;
-            pl.ColorIndex = 2;
-            pl.Elevation = ext.MinPoint.Z;
-            try
-            {
-                TransientManager.CurrentTransientManager.AddTransient(
-                    pl, TransientDrawingMode.DirectTopmost, 128, _haloVports);
-                _halo = pl;
-            }
-            catch (System.Exception)
-            {
-                pl.Dispose();
-            }
-        }
+        void DrawHalo(Entity ent) { MedHalo.Draw(ent); }
 
-        static void ZoomTo(Editor ed, Entity ent)
-        {
-            try
-            {
-                Extents3d ext = ent.GeometricExtents;
-                ext.TransformBy(ed.CurrentUserCoordinateSystem.Inverse());
-                ViewTableRecord view = ed.GetCurrentView();
-                double w = ext.MaxPoint.X - ext.MinPoint.X;
-                double h = ext.MaxPoint.Y - ext.MinPoint.Y;
-                if (w < 1e-8) w = 1;
-                if (h < 1e-8) h = 1;
-                // Previous pad was 1.4; 0.5x magnification is twice the view size (2.8).
-                // Keep the current view aspect so a long conduit does not fill the screen on one axis.
-                const double pad = 2.8;
-                double needW = w * pad;
-                double needH = h * pad;
-                double aspect = view.Height > 1e-8 ? view.Width / view.Height : 1.0;
-                if (needW / needH > aspect)
-                    needH = needW / aspect;
-                else
-                    needW = needH * aspect;
-                view.Width = needW;
-                view.Height = needH;
-                view.CenterPoint = new Point2d((ext.MinPoint.X + ext.MaxPoint.X) / 2.0, (ext.MinPoint.Y + ext.MaxPoint.Y) / 2.0);
-                ed.SetCurrentView(view);
-            }
-            catch (System.Exception)
-            {
-            }
-        }
+        static void ZoomTo(Editor ed, Entity ent) { MedHalo.ZoomTo(ed, ent); }
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
@@ -733,6 +651,137 @@ namespace MEDDotNet
                 tr.Commit();
             }
             doc.Editor.WriteMessage("\nMED Records: wrote {0} record(s) on {1} entit{2}.", records.Count, ids.Count, ids.Count == 1 ? "y" : "ies");
+        }
+    }
+
+    /// <summary>Yellow halo (transient, never in the drawing) + zoom used by the MED Records find/show.
+    /// Shared with LISP: (MED-HALO-SHOW ename [zoom]) and (MED-HALO-CLEAR).</summary>
+    public static class MedHalo
+    {
+        static readonly IntegerCollection _haloVports = new IntegerCollection();
+        static Drawable _halo;
+
+        public static void Clear()
+        {
+            if (_halo == null)
+                return;
+            try
+            {
+                TransientManager.CurrentTransientManager.EraseTransient(_halo, _haloVports);
+            }
+            catch (System.Exception)
+            {
+            }
+            try { _halo.Dispose(); } catch (System.Exception) { }
+            _halo = null;
+        }
+
+        public static void Draw(Entity ent)
+        {
+            Clear();
+            if (ent == null)
+                return;
+            Extents3d ext;
+            try { ext = ent.GeometricExtents; }
+            catch (System.Exception) { return; }
+            double w = ext.MaxPoint.X - ext.MinPoint.X;
+            double h = ext.MaxPoint.Y - ext.MinPoint.Y;
+            double span = Math.Max(w, h);
+            if (span < 1e-8)
+                span = 1.0;
+            double pad = span * 0.15;
+            double thick = span * 0.04;
+            if (thick < 0.01)
+                thick = 0.01;
+            double minx = ext.MinPoint.X - pad;
+            double miny = ext.MinPoint.Y - pad;
+            double maxx = ext.MaxPoint.X + pad;
+            double maxy = ext.MaxPoint.Y + pad;
+            Autodesk.AutoCAD.DatabaseServices.Polyline pl = new Autodesk.AutoCAD.DatabaseServices.Polyline();
+            pl.AddVertexAt(0, new Point2d(minx, miny), 0, thick, thick);
+            pl.AddVertexAt(1, new Point2d(maxx, miny), 0, thick, thick);
+            pl.AddVertexAt(2, new Point2d(maxx, maxy), 0, thick, thick);
+            pl.AddVertexAt(3, new Point2d(minx, maxy), 0, thick, thick);
+            pl.Closed = true;
+            pl.ColorIndex = 2;
+            pl.Elevation = ext.MinPoint.Z;
+            try
+            {
+                TransientManager.CurrentTransientManager.AddTransient(
+                    pl, TransientDrawingMode.DirectTopmost, 128, _haloVports);
+                _halo = pl;
+            }
+            catch (System.Exception)
+            {
+                pl.Dispose();
+            }
+        }
+
+        public static void ZoomTo(Editor ed, Entity ent)
+        {
+            try
+            {
+                Extents3d ext = ent.GeometricExtents;
+                ext.TransformBy(ed.CurrentUserCoordinateSystem.Inverse());
+                ViewTableRecord view = ed.GetCurrentView();
+                double w = ext.MaxPoint.X - ext.MinPoint.X;
+                double h = ext.MaxPoint.Y - ext.MinPoint.Y;
+                if (w < 1e-8) w = 1;
+                if (h < 1e-8) h = 1;
+                // Previous pad was 1.4; 0.5x magnification is twice the view size (2.8).
+                // Keep the current view aspect so a long conduit does not fill the screen on one axis.
+                const double pad = 2.8;
+                double needW = w * pad;
+                double needH = h * pad;
+                double aspect = view.Height > 1e-8 ? view.Width / view.Height : 1.0;
+                if (needW / needH > aspect)
+                    needH = needW / aspect;
+                else
+                    needW = needH * aspect;
+                view.Width = needW;
+                view.Height = needH;
+                view.CenterPoint = new Point2d((ext.MinPoint.X + ext.MaxPoint.X) / 2.0, (ext.MinPoint.Y + ext.MaxPoint.Y) / 2.0);
+                ed.SetCurrentView(view);
+            }
+            catch (System.Exception)
+            {
+            }
+        }
+
+        [Autodesk.AutoCAD.Runtime.LispFunction("MED-HALO-SHOW")]
+        public static object LispShow(ResultBuffer args)
+        {
+            Clear();
+            Document doc = AcadApp.DocumentManager.MdiActiveDocument;
+            if (doc == null || args == null) return null;
+            TypedValue[] a = args.AsArray();
+            if (a.Length == 0 || !(a[0].Value is ObjectId)) return null;
+            ObjectId id = (ObjectId)a[0].Value;
+            bool zoom = a.Length > 1 && a[1].TypeCode != (int)Autodesk.AutoCAD.Runtime.LispDataType.Nil;
+            try
+            {
+                using (Transaction tr = doc.Database.TransactionManager.StartTransaction())
+                {
+                    Entity ent = tr.GetObject(id, OpenMode.ForRead, false) as Entity;
+                    if (ent != null)
+                    {
+                        if (zoom) ZoomTo(doc.Editor, ent);
+                        Draw(ent);
+                    }
+                    tr.Commit();
+                }
+                try { doc.Editor.UpdateScreen(); } catch (System.Exception) { }
+                return _halo != null ? (object)true : null;
+            }
+            catch (System.Exception) { Clear(); return null; }
+        }
+
+        [Autodesk.AutoCAD.Runtime.LispFunction("MED-HALO-CLEAR")]
+        public static object LispClear(ResultBuffer args)
+        {
+            Clear();
+            try { Document doc = AcadApp.DocumentManager.MdiActiveDocument; if (doc != null) doc.Editor.UpdateScreen(); } catch (System.Exception) { }
+            return true;
         }
     }
 }

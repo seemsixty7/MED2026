@@ -234,38 +234,71 @@
       (med-node-write e n)
       (entupd e) T)))
 
-(defun c:MEDNODEAUDIT (/ orph op ss n)
-  (setq orph (med-node-audit))
-  (princ (strcat "\nMEDNODEAUDIT: " (itoa (length (med-node-all))) " node(s), " (itoa (length orph)) " orphaned."))
-  (foreach o orph
-    (setq n (car o))
-    (princ (strcat "\n  " (med-node-key-of n) " at " (rtos (car (cdr (assoc "PT" n))) 2 2) ","
-                   (rtos (cadr (cdr (assoc "PT" n))) 2 2) "," (rtos (caddr (cdr (assoc "PT" n))) 2 2)
-                   " - " (cadr o))))
-  (if orph
+;; Yellow halo = the MED Records find/show highlight (MedHalo in MED-DotNet: transient yellow
+;; box, pad 15% of the item's size, zoom 2.8x). Never added to the drawing. Without the DLL
+;; (core console / old DLL) the same box is drawn with grvecs, cleared by REDRAW.
+(defun med-node-halo-show (e / ed c s span pad mn mx k th v)
+  (med-node-halo-clear)
+  (if (and MED-HALO-SHOW (not (vl-catch-all-error-p (setq v (vl-catch-all-apply 'MED-HALO-SHOW (list e T))))) v)
+    T
     (progn
-      (setq ss (ssadd))
-      (foreach o orph (ssadd (cdr (assoc "ENT" (car o))) ss))
-      (initget "Zoom Snap Delete eXit")
-      (setq op (cond ((getkword "\nOrphans [Zoom/Snap to nearest vertex/Delete/eXit] <eXit>: ")) ("eXit")))
-      (cond
-        ((= op "Zoom")
-          (foreach o orph
-            (setq n (car o))
-            (command "_.ZOOM" "_C" (trans (cdr (assoc "PT" n)) 0 1) (* 20.0 (med-node-size)))
-            (redraw (cdr (assoc "ENT" n)) 3)
-            (getstring (strcat "\n" (med-node-key-of n) ": " (cadr o) " - Enter for next: "))
-            (redraw (cdr (assoc "ENT" n)) 4))
-          (sssetfirst nil ss))
-        ((= op "Snap")
-          (setq n 0)
-          (foreach o orph (if (med-node-snap (car o)) (setq n (1+ n))))
-          (princ (strcat "\n" (itoa n) " node(s) snapped back; " (itoa (- (length orph) n)) " have no live route (use Delete).")))
-        ((= op "Delete")
-          (initget "Yes No")
-          (if (= (getkword (strcat "\nDelete " (itoa (length orph)) " orphaned node(s)? [Yes/No] <No>: ")) "Yes")
-            (progn (foreach o orph (entdel (cdr (assoc "ENT" (car o)))))
-                   (princ (strcat "\n" (itoa (length orph)) " node(s) deleted."))))))))
+      (setq ed (entget e) c (cdr (assoc 10 ed)) s (abs (cond ((cdr (assoc 41 ed))) (1.0)))
+            span (* 2.0 s) pad (* span 0.15) th (max 0.01 (* span 0.04)))
+      (command "_.ZOOM" "_C" (trans c 0 1) (* span 2.8))
+      (setq k 0.0)
+      (while (<= k th)
+        (setq mn (list (- (car c) s pad k) (- (cadr c) s pad k)) mx (list (+ (car c) s pad k) (+ (cadr c) s pad k)))
+        (grvecs (list 2 (trans mn 0 1) (trans (list (car mx) (cadr mn)) 0 1)
+                      2 (trans (list (car mx) (cadr mn)) 0 1) (trans mx 0 1)
+                      2 (trans mx 0 1) (trans (list (car mn) (cadr mx)) 0 1)
+                      2 (trans (list (car mn) (cadr mx)) 0 1) (trans mn 0 1)))
+        (setq k (+ k (/ th 4.0))))
+      (setq *MED-NODE-HALO* T)
+      nil)))
+
+(defun med-node-halo-clear ()
+  (if MED-HALO-CLEAR (vl-catch-all-apply 'MED-HALO-CLEAR nil))
+  (if *MED-NODE-HALO* (progn (redraw) (setq *MED-NODE-HALO* nil)))
+  (princ))
+
+(defun c:MEDNODEAUDIT (/ all orph n tot i op nsnap ndel nskip done vc vs *error* med-node-audit-end)
+  (defun med-node-audit-end ()
+    (med-node-halo-clear)
+    (if vc (command "_.ZOOM" "_C" vc vs))
+    (if orph (princ (strcat "\nMEDNODEAUDIT done: snapped " (itoa nsnap) ", deleted " (itoa ndel)
+                            ", skipped " (itoa (- tot nsnap ndel)) "."))))
+  (defun *error* (msg)
+    (med-node-audit-end)
+    (if (not (wcmatch (strcase msg) "*CANCEL*,*QUIT*,*EXIT*")) (princ (strcat "\nError: " msg)))
+    (princ))
+  (setq all (med-node-all) orph (med-node-audit) tot (length orph) nsnap 0 ndel 0 i 0)
+  (if (null orph)
+    (princ (strcat "\nMEDNODEAUDIT: No orphaned nodes found (" (itoa (length all)) " nodes checked)."))
+    (progn
+      (princ (strcat "\nMEDNODEAUDIT: " (itoa tot) " orphaned node(s) found (of " (itoa (length all)) " nodes)."))
+      (setq vc (getvar "VIEWCTR") vs (getvar "VIEWSIZE"))
+      (foreach o orph
+        (if (not done)
+          (progn
+            (setq i (1+ i) n (car o))
+            (med-node-halo-show (cdr (assoc "ENT" n)))
+            (initget "Snap Delete Next eXit")
+            (setq op (cond ((getkword (strcat "\nOrphan " (itoa i) " of " (itoa tot) ": " (cadr o)
+                                              " (" (med-node-key-of n) ") [Snap/Delete/Next/eXit] <Next>: ")))
+                           ("Next")))
+            (cond
+              ((= op "Snap")
+                (if (med-node-snap n)
+                  (progn (setq nsnap (1+ nsnap)) (princ "\n  Snapped to the nearest vertex."))
+                  (princ "\n  No live route to snap to (use Delete) - skipped.")))
+              ((= op "Delete")
+                (initget "Yes No")
+                (if (= (getkword "\n  Delete this node? [Yes/No] <No>: ") "Yes")
+                  (progn (entdel (cdr (assoc "ENT" n))) (setq ndel (1+ ndel)) (princ "\n  Deleted."))
+                  (princ "\n  Kept - skipped.")))
+              ((= op "eXit") (setq done T)))
+            (med-node-halo-clear))))
+      (med-node-audit-end)))
   (princ))
 
 ;;; exporter side: annotate a M3D/C3D plan's corners with the nodes on them.

@@ -51,6 +51,12 @@ $scr = @"
 (command "_.MOVE" nt-ss "" '(10.0 0.0 0.0) '(0.0 0.0 0.0))
 (setq nt-ed (entget nt-n)) (entmod (subst (cons 10 '(100125.0 2003.0 48.0)) (assoc 10 nt-ed) nt-ed))
 (foreach o (med-node-audit) (princ (strcat "\n[RT] orphan " (med-node-key-of (car o)) " - " (cadr o))))
+(setq hel (entlast))
+(med-node-halo-show (cdr (assoc "ENT" (car (car (med-node-audit))))))
+(med-node-halo-clear)
+(princ (strcat "\n[RT] halo junk " (if (eq hel (entlast)) "none" "LEFT") " DLL halo " (if MED-HALO-SHOW "yes" "no")))
+MEDNODEAUDIT
+N
 (foreach o (med-node-audit) (med-node-snap (car o)))
 (princ (strcat "\n[RT] after snap audit " (itoa (length (med-node-audit))) " node at " (vl-princ-to-string (cdr (assoc 10 (entget nt-n))))))
 (entdel nt-l)

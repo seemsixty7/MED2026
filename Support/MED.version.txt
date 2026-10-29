@@ -1,4 +1,4 @@
-version=2026.0.1029a
+version=2026.0.1029b
 build_date=2026-10-29
 git=32e23e5
 channel=full

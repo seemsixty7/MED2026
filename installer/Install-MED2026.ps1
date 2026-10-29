@@ -1,4 +1,4 @@
-# MED2026 post-setup. Called by Inno as the logged-in user (visible for diagnosis),
+﻿# MED2026 post-setup. Called by Inno as the logged-in user (visible for diagnosis),
 # or run directly for a no-Inno test install.
 # 0924d: -LiteralPath for <<Unnamed Profile>> (Core 0916f) so TRUSTEDPATHS/Support stick.
 # 0924e: -SkipCopy for Inno unpack path; no runhidden; pause-on-error like Core 0916j.
@@ -99,7 +99,10 @@ function Get-BestCloneSource([string]$profilesRoot) {
     return $best
 }
 
-function Set-MedProfilePaths([string]$dest, [string]$supportDstLocal, [string]$stockAcadPath) {
+function Set-MedProfilePaths([string]$dest, [string]$supportDstLocal, [string]$stockAcadPath, [string]$dwgDstLocal = "") {
+    if (-not $dwgDstLocal) { $dwgDstLocal = Join-Path (Split-Path -Parent $supportDstLocal) "Dwg" }
+    $medFirst = @($supportDstLocal, $dwgDstLocal)
+    $medNorm = @($medFirst | ForEach-Object { $_.TrimEnd('\') })
     $general = Join-Path $dest "General"
     $vars = Join-Path $dest "Variables"
     if (-not (Test-Path -LiteralPath $general)) { New-Item -Path $general -Force | Out-Null }
@@ -111,16 +114,16 @@ function Set-MedProfilePaths([string]$dest, [string]$supportDstLocal, [string]$s
         $cur = $stockAcadPath
         Write-Log "Seeded stock AutoCAD support paths into profile (was empty)"
     }
-    $parts = @($cur -split ';' | Where-Object { $_ -and $_.Trim() -and ($_.Trim().TrimEnd('\') -ne $supportDstLocal.TrimEnd('\')) })
-    $newAcad = ((@($supportDstLocal) + $parts) -join ';')
+    $parts = @($cur -split ';' | Where-Object { $_ -and $_.Trim() -and ($medNorm -notcontains $_.Trim().TrimEnd('\')) })
+    $newAcad = (($medFirst + $parts) -join ';')
     New-ItemProperty -LiteralPath $general -Name "ACAD" -Value $newAcad -PropertyType String -Force | Out-Null
 
     $curT = ""
     try { $curT = [string](Get-ItemProperty -LiteralPath $vars -Name "TRUSTEDPATHS" -ErrorAction Stop).TRUSTEDPATHS } catch { $curT = "" }
-    $tparts = @($curT -split ';' | Where-Object { $_ -and $_.Trim() -and ($_.Trim().TrimEnd('\') -ne $supportDstLocal.TrimEnd('\')) })
-    $newTrusted = ((@($supportDstLocal) + $tparts) -join ';')
+    $tparts = @($curT -split ';' | Where-Object { $_ -and $_.Trim() -and ($medNorm -notcontains $_.Trim().TrimEnd('\')) })
+    $newTrusted = (($medFirst + $tparts) -join ';')
     New-ItemProperty -LiteralPath $vars -Name "TRUSTEDPATHS" -Value $newTrusted -PropertyType String -Force | Out-Null
-    Write-Log "Set ACAD/TRUSTEDPATHS on $dest (ACAD len=$($newAcad.Length); TRUSTEDPATHS len=$($newTrusted.Length))"
+    Write-Log "Set ACAD/TRUSTEDPATHS (Support;Dwg first) on $dest (ACAD len=$($newAcad.Length); TRUSTEDPATHS len=$($newTrusted.Length))"
 }
 
 try {
@@ -287,10 +290,10 @@ if (-not $acad) {
         } else {
             Write-Log "Profile MED2026 already exists on $product (will patch paths)"
         }
-        Set-MedProfilePaths $dest $supportDst $stock
+        Set-MedProfilePaths $dest $supportDst $stock $dwgDst
         $acadLen = (Get-ProfileAcadPath $dest).Length
         $tpLen = (Get-ProfileTrustedPaths $dest).Length
-        Write-Log "Patched TRUSTEDPATHS/ACAD for $product (ACAD len=$acadLen; TRUSTEDPATHS len=$tpLen) -> $supportDst"
+        Write-Log "Patched TRUSTEDPATHS/ACAD for $product (ACAD len=$acadLen; TRUSTEDPATHS len=$tpLen) -> $supportDst; $dwgDst"
     }
 
     # Always create user desktop shortcut (single source of truth; Inno [Icons] removed).
@@ -321,7 +324,7 @@ if (-not $acad) {
         }
     }
 
-    Write-Host "MED2026 profile configured OK (ACAD support + TRUSTEDPATHS include $supportDst)." -ForegroundColor Green
+    Write-Host "MED2026 profile configured OK (ACAD support + TRUSTEDPATHS include $supportDst + $dwgDst)." -ForegroundColor Green
 }
 
 # Navisworks MEDProperties plugin -> per-user AppData (this script runs as logged-in user).

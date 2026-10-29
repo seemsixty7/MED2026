@@ -14,9 +14,9 @@
 ;   Classic only: warns (default No) before downgrading a newer installed version.
 
 #define MyAppName "MED2026"
-#define MyAppVersion "2026.0.1029a"
+#define MyAppVersion "2026.0.1029b"
 #define MyAppPublisher "Dewitt Clinton Moore"
-#define MyOutputBase "MED2026-Patch-1029a"
+#define MyOutputBase "MED2026-Patch-1029b"
 #define MedBuildDate "2026-10-29"
 #define MedGitHash "32e23e5"
 ; Optional 3D block library (Dwg3D folder + Dwg3DCatalog.db for the MED3DLIB palette).

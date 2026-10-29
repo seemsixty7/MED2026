@@ -1,8 +1,29 @@
 # Changelog
 
-## Unreleased
+## 2026.0.1029a - 2026-10-29
+
+MED 3D models are approximations, not copies of manufacturer specifications; users must verify all dimensions.
+
+### Highlights
+- **TRAYSWIVEL - Vertical Adjustable Swivel Splice** (`Support\MEDTraySwivel.lsp`). Place a vertical swivel splice between two trays at different elevations: the dynamic Angle follows the bridge tilt, the plates follow the parent tray's orientation, and the 3D plate block (`Dwg3D\3DTrayVerticalAdjSplice.dwg`) lands at the right elevation.
+- **Swivel plates now show up in the BOM.** New catalog item FITTING **367** "Vertical Swivel Splice Plate Pair" (`VSWPLATE`). Swivel centers get a complete 6-field `MED_FITTING` record (Alt = 0); no extra tray record.
+- **Safer 3D export.** MEDMAKE3D / MAKE3DTRAY / MAKE3DCONDUIT will not write over a DWG that is the current drawing, Read Only, locked, or open somewhere else (`.dwl` / `.dwl2` present). You are asked to pick another file; Cancel puts the source drawing back (Undo Back).
 
 ### Added
+- FITTING 367 / VSWPLATE in the shipped `Data\MED.db` and in `Data\seed\ductbank_medtype.csv`, so the MedDbUpdate seed adds it to existing databases (SQLite) the first time 2026.0.1029a opens them. SQL Server shops: add the row (FITTING, 367, "Vertical Swivel Splice Plate Pair", ITEMKEY1 VSWPLATE).
+- MEDMAKE3D Solid Bottom exports the swivel INSERT blocks with the tray.
+- PTRAYOFF: give a distance **or** pick a second tray at the other elevation (the Direction prompt is skipped when you pick).
+- TRAYTEE (traytee-s3): clear MAIN / BRANCH prompts at congested intersections; only breakable 2D MED outlines can be picked; BREAK / OCS echo silenced.
+
+### Changed
+- MEDMAKE3D sets an UNDO Mark and does Undo Back after a successful DWG export, and also on cancel, so the source drawing is left as it was.
+- Swivel detection in 3D uses ITEMCODE 367; real 390 elbows ("Vert. Tray Inside 30 Deg Elbow") build as elbows again.
+
+### Fixed
+- Ladder tray tee and cross 3D at non-zero elevation: rails no longer skew off the outline (rails are built at Z = 0, then moved up with the fitting).
+- Swivel plates were missing from the BOM (incomplete fitting record without ITEM_ALT).
+
+### Includes (from the unreleased 2026-10-22 work)
 - MED Records grid (MEDRECORDS / MEDXDEDIT, the MEDCHG palette's multi-edit) now has a "Delete record(s)" button, a right-click menu item and the Del key. It asks Yes/No with the count, then removes only the selected MED data records. The drawing entities are never erased. The change applies on OK.
 - Classic MEDCHG Delete was verified to remove only the selected record and keep the entity's other records of the same type (new test tests/autocad/MEDChgDeleteTest.ps1). No code change was needed.
 - MEDNODEAUDIT now steps through the orphans one at a time. It prints the count first, then zooms to each orphan, draws the MED Records find/show yellow box, and prompts `Orphan i of n: reason [Snap/Delete/Next/eXit]`. It ends with `snapped X, deleted Y, skipped Z`. The box is cleared after each step and on exit or Esc.

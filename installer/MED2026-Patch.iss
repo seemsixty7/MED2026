@@ -14,11 +14,11 @@
 ;   Classic only: warns (default No) before downgrading a newer installed version.
 
 #define MyAppName "MED2026"
-#define MyAppVersion "2026.0.1013a"
+#define MyAppVersion "2026.0.1029a"
 #define MyAppPublisher "Dewitt Clinton Moore"
-#define MyOutputBase "MED2026-Patch-1013a"
-#define MedBuildDate "2026-10-13"
-#define MedGitHash "7b1d585"
+#define MyOutputBase "MED2026-Patch-1029a"
+#define MedBuildDate "2026-10-29"
+#define MedGitHash "32e23e5"
 ; Optional 3D block library (Dwg3D folder + Dwg3DCatalog.db for the MED3DLIB palette).
 ; Off by default: compile with /DMedWithDwg3D to include it. Dwg3D\ is gitignored, so it is
 ; taken from the working tree. /DMedDwg3DCatalog="<path>" points at a catalog copy to ship

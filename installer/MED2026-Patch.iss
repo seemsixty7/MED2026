@@ -97,6 +97,7 @@ Source: "Dwg\EVCXPNDA.DWG"; DestDir: "{app}\Dwg"; Flags: onlyifdoesntexist; Comp
 Source: "Dwg\EVCXPNDB.DWG"; DestDir: "{app}\Dwg"; Flags: onlyifdoesntexist; Components: support; Check: MedDwgWritable
 Source: "Dwg\VMVSTANE.DWG"; DestDir: "{app}\Dwg"; Flags: onlyifdoesntexist; Components: support; Check: MedDwgWritable
 Source: "Dwg\EYS29B.DWG"; DestDir: "{app}\Dwg"; Flags: onlyifdoesntexist; Components: support; Check: MedDwgWritable
+Source: "Dwg\3DTrayVerticalAdjSplice.dwg"; DestDir: "{app}\Dwg"; Flags: ignoreversion; Components: support; Check: MedDwgWritable
 #ifdef MedWithDwg3D
 ; 3D block library ({app}\Dwg3D, created if missing). Keep a user-edited catalog.
 Source: "Dwg3D\*.dwg"; DestDir: "{app}\Dwg3D"; Flags: ignoreversion; Components: lib3d; Check: MedAppWritable

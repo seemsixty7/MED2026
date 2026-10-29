@@ -43,6 +43,7 @@ try {
     git         = $Git
     buildDate   = $BuildDate
     machineName = $env:COMPUTERNAME
+    install_type = "setup"
     timestamp   = (Get-Date).ToString("o")
   }
   $json = $payload | ConvertTo-Json -Compress

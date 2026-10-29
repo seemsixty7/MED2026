@@ -63,7 +63,7 @@ Name: "lib3d"; Description: "MED 3D block library (Dwg3D, MED3DLIB palette)"; Ty
 [Files]
 ; Core Support pack ? do not ship live .dat settings; Create if missing in [Code]
 Source: "Support\*"; DestDir: "{app}\Support"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: core; Excludes: "MEDDataBaseSettings.dat,Project.dat,*.bak,*.bak-*,*.bak*,med.cuix.bak-*,MEDRibbon.cuix.bak-*,acad.rx,MEDMain.odcl,TODO-MEDMainDialogs-CSharpUI.txt,MEDMainDialogs-RedoWithCSharp.lsp,TESTICONONEINCHa.bmp,MEDDataBaseSettings.example.dat,MED.registration.json"
-; Ship catalog MED.db only. NEVER ship Data\MEDRegistrations.db (desktop roster for Jane/Clint).
+; Ship catalog MED.db only (an existing MED.db is renamed .bak-<stamp> first in [Code] MedBackupUserData). NEVER ship Data\MEDRegistrations.db (desktop roster for Jane/Clint).
 Source: "Data\MED.db"; DestDir: "{app}\Data"; Flags: ignoreversion; Components: core
 Source: "Data\README.txt"; DestDir: "{app}\Data"; Flags: ignoreversion; Components: core
 ; OD seed data (conduit OD table + cable OD for MEDType.USER3). MED-DotNet applies blanks-only at load.
@@ -172,6 +172,54 @@ begin
   SaveStringToFile(P, Contents, False);
 end;
 
+(* Full Setup = new install. Existing user data it would overwrite is RENAMED first
+   (<name>.bak-YYYYMMDD-HHMMSS), never overwritten silently. Logged to install-backups.log in the
+   install folder and to the Setup log, and listed in a message at the end (not in silent mode). *)
+var
+  MedRenamed: String;
+
+procedure MedBackupIfExists(const RelPath: String; const Stamp: String);
+var
+  Src, Dst: String;
+begin
+  Src := ExpandConstant('{app}\') + RelPath;
+  if FileExists(Src) then
+  begin
+    Dst := Src + '.bak-' + Stamp;
+    if RenameFile(Src, Dst) then
+    begin
+      Log('MED backup: renamed ' + Src + ' -> ' + Dst);
+      MedRenamed := MedRenamed + RelPath + '  ->  ' + ExtractFileName(Dst) + #13#10;
+    end
+    else
+    begin
+      Log('MED backup: could not rename ' + Src);
+      MsgBox('Setup could not rename the existing file:' + #13#10 + Src + #13#10#13#10 +
+        'Close AutoCAD and anything using it, then run Setup again.', mbCriticalError, MB_OK);
+      Abort;
+    end;
+  end;
+end;
+
+procedure MedBackupUserData;
+var
+  Stamp: String;
+begin
+  MedRenamed := '';
+  Stamp := GetDateTimeString('yyyymmdd-hhnnss', #0, #0);
+  (* Files Setup ships that users or MED edit. Project.dat / MEDDataBaseSettings.dat are never shipped (kept). *)
+  MedBackupIfExists('Data\MED.db', Stamp);
+  MedBackupIfExists('Support\med.spc', Stamp);
+  MedBackupIfExists('Support\ACAD.PGP', Stamp);
+  MedBackupIfExists('Support\QKEY.lsp', Stamp);
+  MedBackupIfExists('Support\MOTOR.DAT', Stamp);
+  MedBackupIfExists('Support\medblck.dat', Stamp);
+  MedBackupIfExists('Support\setup.add', Stamp);
+  if MedRenamed <> '' then
+    SaveStringToFile(ExpandConstant('{app}\install-backups.log'),
+      GetDateTimeString('yyyy-mm-dd hh:nn:ss', '-', ':') + ' Setup {#MyAppVersion} renamed:' + #13#10 + MedRenamed, True);
+end;
+
 procedure InitializeWizard;
 begin
   MedCreateRegistrationPage;
@@ -200,12 +248,18 @@ end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
 begin
+  if CurStep = ssInstall then
+    MedBackupUserData;
   if CurStep = ssPostInstall then
   begin
     WriteSqliteSettings;
     WriteProjectDat;
     WriteVersionFile('full');
     MedHandleRegistrationPostInstall('full');
+    if (MedRenamed <> '') and (not WizardSilent) then
+      MsgBox('Setup installs a fresh MED. Your existing files were renamed, not deleted:' + #13#10#13#10 +
+        MedRenamed + #13#10 + 'They are in ' + ExpandConstant('{app}') + ' (list in install-backups.log).' + #13#10 +
+        'To keep your old catalog or settings, copy them back over the new files.', mbInformation, MB_OK);
   end;
 end;
 

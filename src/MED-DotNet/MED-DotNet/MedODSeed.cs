@@ -310,7 +310,7 @@ namespace MEDDotNet
         }
 
         /// <summary>Data\seed next to the SQLite DB, else {app}\Data\seed relative to Support\MED-DotNet.dll.</summary>
-        static string FindSeedDir()
+        internal static string FindSeedDir()
         {
             List<string> candidates = new List<string>();
             string dataDir = ProcessSQL.SqliteDataDirectory();

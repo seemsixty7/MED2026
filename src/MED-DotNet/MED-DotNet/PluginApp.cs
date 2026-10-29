@@ -16,6 +16,10 @@ namespace MEDDotNet
                     + (MedDebug.Enabled ? " (debug is " + MedDebug.Level + ", log " + MedDebug.LogPath + ")." : "."));
             MedDebug.Startup();
 
+            // DB update path: back up MED.db once per new MED-DotNet version, schema check, ductbank MEDType seed.
+            try { MedDbUpdate.EnsureReady(); }
+            catch (System.Exception ex) { MedDebug.Warn("startup: DB update", ex); }
+
             // Idempotent MEDUsers.LastProject migration + restore _MEDPROJECT from LastProject.
             try { MedUserProject.EnsureReady(true); }
             catch (System.Exception ex) { MedDebug.Warn("startup: MEDUsers.LastProject", ex); }

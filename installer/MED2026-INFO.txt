@@ -1,8 +1,8 @@
-MED2026 2026.0.1013a
+MED2026 2026.0.1029a
 ====================
 
-Release status: WORK IN PROGRESS (pre-release). Features and documentation are
-still being reviewed. Test this build before rolling it out to production seats.
+Release status: release (the User Guide is still a draft). New in 1029a:
+TRAYSWIVEL vertical swivel splice + BOM item 367, safer 3D export. Test this build before rolling it out to production seats.
 
 IMPORTANT - 3D models
 ---------------------

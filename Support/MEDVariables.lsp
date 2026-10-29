@@ -53,6 +53,10 @@
 (setq _TRRAD 24.0)
 ;;;Cable Tray Default Flange Setting
 (setq _TRAYFLANGE 1.5)
+;;;3D Tray Segment Length (MEDMAKE3D ladder/rung stock piece, 240 = 20 ft)
+(if (not (numberp _TRAYSEGLEN)) (setq _TRAYSEGLEN 240.0))
+;;;3D Tray Bottom for MEDMAKE3D: "SOLID" (Solid Bottom, default) or "RUNGS" (ladder)
+(if (not (member _TRAY3DBOTTOM (list "SOLID" "RUNGS"))) (setq _TRAY3DBOTTOM "SOLID"))
 ;;;Cable Tray Material Thickness
 (setq MED_TRAY_MATERIALWIDTH 0.125)
 

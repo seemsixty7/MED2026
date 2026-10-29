@@ -237,6 +237,7 @@
 	(cond 
 		((= CommandName "C:TRAY")
 			(smlayer _MEDCENLAY)
+			(med_force_2d_wireframe)
 		)
 	)
 )
@@ -338,11 +339,11 @@
           _ZFLAG nil
     )
     (if OCSData
-    	(setq OCSTrue (princ "\nOCSTrue")
+    	(setq OCSTrue "OCSTrue"
     		  twoten (cons 210 OCSData)
     		  plin (append plin (list twoten))
     	)
-    	(setq OCSFalse (princ "\nOCSFalse")
+    	(setq OCSFalse "OCSFalse"
     		  twoten (cons 210 (MEDGetCurrentOCS))
     	      plin (append plin (list twoten))
     	)
@@ -1055,14 +1056,53 @@
   (entmod endata)
 )
 
+;;; traytee-s3 2026-10-28  breakable-outline picker + silent BREAK
+;;; Returns (ename ucs-point-on-curve) or nil. Only LINE/LWPOLYLINE/POLYLINE/ARC;
+;;; prefers the picked MAIN/BRANCH tray, then any MED-xdata outline, then nearest curve.
+(defun med_brk_ent (pt / tol ss i e d cp dd best bestd rank brank own)
+  (setq tol (max 0.01 (/ (* 4.0 (getvar "VIEWSIZE")) (cadr (getvar "SCREENSIZE"))))
+        ss  (ssget "_C" (list (- (car pt) tol) (- (cadr pt) tol))
+                        (list (+ (car pt) tol) (+ (cadr pt) tol))
+                   '((0 . "LINE,LWPOLYLINE,POLYLINE,ARC")))
+        i 0 brank 99)
+  (if ss
+    (while (< i (sslength ss))
+      (setq e (ssname ss i) i (1+ i) d (entget e (list "*")))
+      (if (and (not (member (cdr (assoc 0 d)) '("3DSOLID" "REGION" "BODY" "MESH")))
+               (or (/= (cdr (assoc 0 d)) "POLYLINE")              ; skip 3D/mesh polylines
+                   (zerop (logand (cdr (assoc 70 d)) (+ 8 16 64))))
+               (not (vl-catch-all-error-p
+                      (setq cp (vl-catch-all-apply (function vlax-curve-getClosestPointTo)
+                                 (list e (trans pt 1 0) T)))))
+               cp)
+        (progn
+          (setq cp (trans cp 0 1)
+                dd (distance (list (car cp) (cadr cp)) (list (car pt) (cadr pt)))
+                own (if medts_resolve (medts_resolve e))
+                rank (cond ((and MEDTS_MAIN own (or (eq own MEDTS_MAIN) (eq own MEDTS_BRANCH))) 0)
+                           ((assoc -3 d) 1)
+                           (MEDTS_MAIN 3)        ; foreign curve at a picked junction: last resort
+                           (T 2)))
+          (if (or (< rank brank) (and (= rank brank) (< dd bestd)))
+            (setq best (list e (list (car cp) (cadr cp) (caddr cp))) bestd dd brank rank))))))
+  best
+)
+
 (defun break_out (bo_bk_ang bo_bk_pt bo_bk_dist bo_tray_flag)
   (setq b_pt (polar bo_bk_pt bo_bk_ang bo_bk_dist))
-  (if (setq tmp_ent (nentselp "\n" b_pt))
+  ;; traytee-s3 2026-10-28: pick only a breakable 2D MED outline (never 3DSOLID etc.)
+  (if (setq tmp_ent (med_brk_ent b_pt))
      (progn
         (if bo_tray_flag
           (traychck b_pt)
           (dblchck b_pt)
         )
+        (if (not (entget (car tmp_ent)))          ; picked rail erased by traychck -> re-pick
+          (setq tmp_ent (med_brk_ent b_pt)))
+     )
+  )
+  (if tmp_ent
+     (progn
         (setq lentmrk(entlast))
         (while lentmrk
             (setq lentbk lentmrk
@@ -1070,12 +1110,18 @@
             )
         )
         (setq lentmrk lentbk)
-        (setq tmp_ent (car tmp_ent))
+        (setq bo_sel tmp_ent tmp_ent (car tmp_ent))
         (if (eq lentmrk tmp_ent)
 	  (setq islastent T)
 	  (setq islastent nil)
 	)
-        (command "break" b_pt bo_bk_pt)
+        (setq bo_osm (getvar "OSMODE")    ; traytee-s1: BREAK without running osnaps
+              bo_ce  (getvar "CMDECHO"))  ; traytee-s3: silence BREAK / OCSTrue echo
+        (setvar "OSMODE" 0)
+        (setvar "CMDECHO" 0)
+        (command "_.BREAK" bo_sel "_non" bo_bk_pt) ; traytee-s2: explicit entity
+        (setvar "OSMODE" bo_osm)
+        (setvar "CMDECHO" bo_ce)
        (setq tdet DETDATA)
         (if DETDATA
           (progn
@@ -2785,6 +2831,20 @@
 )
 
 
+;; Force 2D Wireframe before tray placement. Shaded/Conceptual/Realistic visual
+;; styles break the zero-size ssget picks MED uses to find MED_TRAY centerlines
+;; (TRAY90 etc. fall through to the angle prompt, no trim/TRAYFIX). Not restored.
+;; Use vl-cmdf — (vl-catch-all-apply 'command ...) errors: bad order function: COMMAND
+(defun med_force_2d_wireframe ( / oldecho)
+   (setq oldecho (getvar "CMDECHO"))
+   (setvar "CMDECHO" 0)
+   (or (vl-cmdf "._VSCURRENT" "_2dwireframe")
+       (vl-cmdf "._SHADEMODE" "_2")
+   )
+   (setvar "CMDECHO" oldecho)
+   (princ)
+)
+
 (defun med_cur_set(func_name)
    (setvar "ATTREQ" 1)
    ;(setq MakeEdDes(savevars))
@@ -2803,6 +2863,9 @@
                                  (getvar "FILLETRAD")
                                  (getvar "HIGHLIGHT")
                                  (getvar "PICKBOX")
+                                 (getvar "ELEVATION")   ; 10  traytee-s1 2026-10-28
+                                 (getvar "SORTENTS")    ; 11
+                                 (getvar "CMDECHO")     ; 12
                           )
         )
         (setq olderr *error*
@@ -2828,24 +2891,47 @@
      )
      (setq MED_ERR_CNT (1+ MED_ERR_CNT))
    )
+   (if (wcmatch (strcase func_name) "*TRAY*,*CHAN*") (med_force_2d_wireframe))
+)
+;; traytee-s1 2026-10-28: restore every saved sysvar (not only DIM*/TR*), no COMMAND
+;; inside *error* (AutoCAD rejects it there), and clear MED_ERROR so the NEXT MED command
+;; re-arms its own *error* (before this, only the first command per session was trapped).
+(defun med_rv (nm idx / v)
+  (if (and MED_SYSVARS (setq v (nth idx MED_SYSVARS)))
+    (vl-catch-all-apply (function setvar) (list nm v)))
 )
 (defun med_reset()
-     (command nil nil)
-     (setvar "DIMASZ"    (nth 1 MED_SYSVARS))
-     (if (= (nth 2 MED_SYSVARS) "")
-        (command nil "dim1" "DIMBLK" ".")
-        (command nil "dim1" "DIMBLK" (nth 2 MED_SYSVARS))
+     (if MED_SYSVARS
+       (progn
+         (med_rv "DIMASZ"    1)
+         (if (= (nth 2 MED_SYSVARS) "")
+            (vl-catch-all-apply (function setvar) (list "DIMBLK" "."))
+            (med_rv "DIMBLK" 2)
+         )
+         (med_rv "CELTYPE"   0)
+         (med_rv "CLAYER"    3)
+         (med_rv "OSMODE"    4)
+         (med_rv "ATTDIA"    5)
+         (med_rv "ATTREQ"    6)
+         (med_rv "HIGHLIGHT" 8)
+         (med_rv "PICKBOX"   9)
+         (med_rv "ELEVATION" 10)
+         (med_rv "SORTENTS"  11)
+         (med_rv "CMDECHO"   12)
+       )
      )
      (setq _TRCODE  trap_trcode)
      (setq _TRTYPE  trap_trtype)  
      (setq _TRDEPTH trap_trdepth) 
      (setq _TRSIZE  trap_trsize)  
+     (setq MED_ERROR nil MED_ERR_CNT 0)
      (setq *error* olderr)
 )
 (defun med_ret_ok()
     (if (< MED_ERR_CNT 1)
       (progn
-        (setq *error* olderr)
+        (setq *error* olderr
+              MED_ERROR nil)   ; traytee-s1: re-arm trap for next command
       )
       (progn
         (setq MED_ERR_CNT (1- MED_ERR_CNT))

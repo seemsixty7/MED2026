@@ -496,13 +496,16 @@
       (command "plan" "")
     )
     ((= outputformat "Dwg")
-      (setq 3dsoutfname (getfiled "Select file name for 3Dconduit output" (substr (getvar "dwgname") 1 (- (strlen (getvar "dwgname")) 4)) "dwg" 1))
+      (setq 3dsoutfname (if med3d-pick-writable-dwg (med3d-pick-writable-dwg "Select file name for 3Dconduit output") (getfiled "Select file name for 3Dconduit output" (substr (getvar "dwgname") 1 (- (strlen (getvar "dwgname")) 4)) "dwg" 1)))   ; exlock 2026-10-29
+      (if (not 3dsoutfname)
+        (progn (command "erase" (ssget "X" (list (cons 0 "3dsolid") (cons 8 (nth 0 _MED3Dconduit)))) "") (command "plan" "") (princ "\nMake3dconduit: export cancelled - 3D removed."))
+      (progn
       (if (findfile 3dsoutfname)
 	(command "wblock" 3dsoutfname "y" "")
 	(command "wblock" 3dsoutfname "")
       )
       (command (list 0.0 0.0 0.0) (ssget "X" (list (cons 0 "3dsolid") (cons 8 (nth 0 _MED3Dconduit)))) "")
-      (command "plan" "")
+      (command "plan" "")))   ; exlock 2026-10-29
     )
     ((= outputformat "Layer")
       ;(command "-layer" "off" "*" "" "On" (nth 0 _MED3Dconduit) "")

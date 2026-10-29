@@ -1541,7 +1541,32 @@
 (defun med3d-model-drop-copies (mdl)
   (if (med3d-get "COPIED" mdl) (foreach e (med3d-get "ENTS" mdl) (if (and e (entget e)) (entdel e)))))
 
-(defun med3d-export (kind tag / lay res ok sols fmt fname dbk mdl)
+;; exlock 2026-10-29: pick a DWG export target that can actually be written.
+;; Rejects the active drawing, a target with .dwl/.dwl2 beside it (open in AutoCAD),
+;; a Read Only file, or one that fails an append-open test (locked/open elsewhere).
+;; Re-prompts until a good path or Cancel. Returns the path or nil (cancel).
+(defun med3d-dwg-lock-reason (f / base why fh)
+  (setq base (strcat (vl-filename-directory f) "\\" (vl-filename-base f)))
+  (cond
+    ((= (strcase f) (strcase (strcat (getvar "DWGPREFIX") (getvar "DWGNAME"))))
+      "it is the drawing you are working in")
+    ((or (findfile (strcat base ".dwl")) (findfile (strcat base ".dwl2")))
+      "it is open in AutoCAD (.dwl / .dwl2 lock files beside it)")
+    ((and (findfile f) (= 1 (logand 1 (vl-catch-all-apply 'vla-get-Attributes
+            (list (vla-GetFile (vlax-create-object "Scripting.FileSystemObject") f))))))
+      "it is Read Only")
+    ((and (findfile f) (not (setq fh (open f "a"))))
+      "it is open or locked by another program")
+    (T (if fh (close fh)) nil)))
+(defun med3d-pick-writable-dwg (title / f why)
+  (vl-load-com)
+  (while (and (setq f (getfiled title (getvar "DWGPREFIX") "dwg" 1))
+              (setq why (vl-catch-all-apply 'med3d-dwg-lock-reason (list f)))
+              (not (vl-catch-all-error-p why)))
+    (alert (strcat "Cannot write 3D export to:\n" f "\n\nbecause " why ".\n\nClose it / clear Read Only, or pick another file.")))
+  f)
+
+(defun med3d-export (kind tag/ lay res ok sols fmt fname dbk mdl)
   (med3d-begin tag)
   (setq *MED3D-LAST-PLANS* nil
         lay (med3d-ensure-layer (med3d-layer-info kind)))
@@ -1566,7 +1591,8 @@
   (cond
     ((not sols) (princ "\nNo solids to export."))
     ((= fmt "Dwg")
-      (setq fname (getfiled (strcat "Select file name for " tag " output") (getvar "DWGPREFIX") "dwg" 1))
+      (med3d-undo-mark)   ; exlock 2026-10-29: Back after write or cancel
+      (setq fname (med3d-pick-writable-dwg (strcat "Select file name for " tag " output")))
       (if fname
         (progn
           (if (findfile fname)
@@ -1575,7 +1601,9 @@
           (command "0,0,0" sols "")
           (command "_.PLAN" "")
           (if (findfile fname) (MEDRebuildMedPropsJsonBeside fname)))
-        (if mdl (med3d-model-drop-copies mdl))))
+        (progn (if mdl (med3d-model-drop-copies mdl))
+               (princ (strcat "\n" tag ": export cancelled."))))
+      (med3d-undo-back))   ; exlock 2026-10-29
     (T
       (prompt "\nUse the PLAN command to return to plan view.")
       (MEDRebuildMedPropsJsonBeside nil)))
@@ -1616,8 +1644,34 @@
 ;; conduit (cut back at the bodies), then the body blocks, then cable via
 ;; med3d-path-build-all; one [Dwg/Layer] prompt; one combined DWG +
 ;; one .medprops.json sidecar (Dwg) or solids left in place (Layer).
+;; 2026-10-29 undomark: UNDO Mark at MEDMAKE3D start; after a successful Dwg export
+;; UNDO Back to it, so the source 2D drawing drops the 3D solids, swivel / rung /
+;; fitting block defs and stamps made by this run (they live in the exported DWG).
+;; Layer output, no file chosen, cancel or error: no Back (3D stays; the mark is
+;; left so a manual UNDO Back can still remove the run). Skipped when UNDOCTL has
+;; undo off, "One" mode, or an UNDO group already open.
+(defun med3d-undo-mark ( / u)
+  (setq u (getvar "UNDOCTL"))
+  (setq *MED3D-UNDOMARK*
+;; undomark2 2026-10-29: COMMAND is not a function - never pass it to apply /
+;; vl-catch-all-apply ("bad order function: COMMAND"); call it directly.
+    (if (and (= 1 (logand u 1)) (= 0 (logand u 2)) (= 0 (logand u 8)))
+      (progn
+        (while (> (getvar "CMDACTIVE") 0) (command ""))
+        (command "._UNDO" "_Mark")
+        T)))
+  (if (not *MED3D-UNDOMARK*) (princ "\nMEDMAKE3D: UNDO mark not set (UNDOCTL) - 3D will stay in this drawing.")))
+(defun med3d-undo-back ()
+  (if *MED3D-UNDOMARK*
+    (progn
+      (setq *MED3D-UNDOMARK* nil)
+      (while (> (getvar "CMDACTIVE") 0) (command ""))
+      (command "._UNDO" "_Back")
+      (princ "\nMEDMAKE3D: drawing restored to command start (3D, blocks and data are in the exported DWG)."))))
+
 (defun med3d-make3d-all ( / fmt tray traysols fitsols bodies con cb cab skips flagged all ss fname n dbk mdl)
   (med3d-begin "MEDMAKE3D")
+  (med3d-undo-mark)   ; undomark 2026-10-29
   (setq *MED3D-LAST-PLANS* nil *MED3D-STAGE-ERRORS* nil)
   (med3d-clear-flags)
   (if _MED3DTRAY (vl-catch-all-apply 'smlayer (list _MED3DTRAY)))   ; as MAKE3DTRAY
@@ -1632,8 +1686,8 @@
     ((not med3d-tray-build)
       (setq *MED3D-STAGE-ERRORS*
              (cons (list "-" "TRAY" "MED3DTrayFunctions.lsp not loaded - tray stage skipped") *MED3D-STAGE-ERRORS*)))
-    ((setq tray (med3d-stage "TRAY" 'med3d-tray-build nil)))
-    (T (vl-catch-all-apply 'command (list "_.UCS" "_W"))))   ; tray failed part-way: back to World
+    ((setq tray (med3d-stage "TRAY" (if med3d-tray-build-style 'med3d-tray-build-style 'med3d-tray-build) nil)))
+    (T (if (> (getvar "CMDACTIVE") 0) (command)) (command "_.UCS" "_W")))   ; sbfix: no apply of COMMAND   ; tray failed part-way: back to World
   (setq traysols (med3d-live (nth 0 tray)) fitsols (med3d-live (nth 1 tray)))
   (med3d-dbg (strcat "MEDMAKE3D tray stage: " (itoa (length traysols)) " tray, "
                      (itoa (length fitsols)) " fitting solid(s)"))
@@ -1670,7 +1724,7 @@
   (cond
     ((not ss) (princ "\nMEDMAKE3D: no solids created - nothing to export."))
     ((= fmt "Dwg")
-      (setq fname (getfiled "Select file name for MEDMAKE3D output" (getvar "DWGPREFIX") "dwg" 1))
+      (setq fname (med3d-pick-writable-dwg "Select file name for MEDMAKE3D output"))   ; exlock 2026-10-29
       (if fname
         (progn
           (if (findfile fname)
@@ -1681,7 +1735,7 @@
           ;; one sidecar beside the combined DWG (handles are in that file)
           (if (findfile fname) (MEDRebuildMedPropsJsonBeside fname)))
         (progn (if mdl (med3d-model-drop-copies mdl))
-               (princ "\nMEDMAKE3D: no file chosen - solids left in the drawing."))))
+               (princ "\nMEDMAKE3D: export cancelled - undoing back."))))
     (T
       (prompt "\nUse the PLAN command to return to plan view.")
       (MEDRebuildMedPropsJsonBeside nil)))
@@ -1689,7 +1743,10 @@
   (if mdl (med3d-model-restore mdl))
   ;; summary
   (princ "\nMEDMAKE3D summary:")
-  (med3d-summary-line "Tray          : " (length traysols) "solid(s)")
+  (med3d-summary-line "Tray          : " (length traysols)
+    (if (and med3d-tray-rungs-p (med3d-tray-rungs-p))
+      (strcat "ladder piece(s) (Rungs, " (rtos (med3d-tray-seglen) 2 2) " segment)")
+      "solid(s) (Solid Bottom)"))
   (med3d-summary-line "Tray fittings : " (length fitsols) "solid(s)")
   (med3d-summary-line "Conduit       : " (length (med3d-get "SOLIDS" con))
     (strcat "solid(s) from " (itoa (if con (med3d-get "OK" con) 0)) " of "
@@ -1728,6 +1785,9 @@
                     ", model " (itoa (if mdl (med3d-get "COUNT" mdl) 0))
                     ", flagged " (itoa flagged) ", skipped " (itoa (length skips))))))
   (if ss (med3d-disclaimer))
+  ;; undomark 2026-10-29: Back only when the export DWG was written
+  ;; exlock 2026-10-29: also Back on cancel (no file chosen)
+  (if (and ss (= fmt "Dwg")) (med3d-undo-back) (setq *MED3D-UNDOMARK* nil))
   (med3d-end))
 
 (defun med3d-make3d-all-cmd () (med3d-make3d-all))

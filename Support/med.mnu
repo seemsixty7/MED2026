@@ -243,7 +243,7 @@ ID_MEDMAIN     [MED Main]
 ***POP3
 **POP3TRAY
                [Cable Tray]
-               [3D Tray Out]^C^CMAKE3DTRAY 
+               [3D Tray Out]^C^CMEDMAKE3D 
                [->Set Size]
                  [Width- ]
                  [   6"   ](setq _TRSIZE  6.0) 
@@ -748,7 +748,7 @@ ID__8          [_Flyout("Conduit GUA Fittings", ICON9169.bmp, ICON_24_BLANK, _Ot
 
 **MED_TRAY
 ID_MED_TRAY [_Toolbar("Cable Tray", _Floating, _Show, 400, 130, 1)]
-TRAY_3DTRAYOUT [_Button("Export Tray to 3D Model", "TRAY_3DTRAYOUT", "TRAY_3DTRAYOUT_32")]^C^CMAKE3DTRAY 
+TRAY_3DTRAYOUT [_Button("Export Tray to 3D Model", "TRAY_3DTRAYOUT", "TRAY_3DTRAYOUT_32")]^C^CMEDMAKE3D 
 ID__0          [_Flyout("Trayszfly", ICON8467.bmp, ICON_32_BLANK, _OtherIcon, MED.TRAY_SIZE)]
 ID__5          [_Flyout("Tray Depth", ICON5724.bmp, ICON_24_BLANK, _OtherIcon, MED.TRAY_DEPTH)]
 ID__13         [_Flyout("Tray Radius", ICON1478.bmp, ICON_24_BLANK, _OtherIcon, MED.TRAY_RADIUS)]

@@ -162,6 +162,7 @@
 (defun MEDMTray90( tr_vert trfitcd / tr_data intpt tr_ss srtent bul tr_size
                    tr_dpth tr_tag troff br_len br_tr_list genang
                    tpt pt1 pt2 pt3 pt4 pt5 pt6 pt7 pt8)
+  (med_force_2d_wireframe)
   (if _CHANTEE
      (setq trsize _CHANSIZE
            trdpth _CHANDEPTH
@@ -409,6 +410,7 @@
 		                                     tr_size tr_dpth tr_tag troff br_len bul tpt1 tcen tpt2 pt1 pt2 tpt
 		                                     pt3 pt4 pt5 pt6 pt7 pt8 prpt1 prpt1a prpt2 prpt2a mlist tvar
 		      )
+  (med_force_2d_wireframe)
   (if tr_dat_lst
    (setq trsize (nth 0 tr_dat_lst)
          trdpth (nth 1 tr_dat_lst)
@@ -534,6 +536,7 @@
                     tpt pt1 pt2 pt3 pt4 pt5 pt6 pt7 pt8 pt9 pt10 
                     mlist xdlist)
   (med_cur_set "c:traytee")
+  (medts_begin "TRAYTEE")
   (if _CHANTEE
      (setq trfitcd (+ _CHANFITST 16)
            trprsz _CHANSIZE
@@ -564,8 +567,9 @@
   )
   (if tr_data
     (progn
+      (medts_prepick intpt tr_ss T)
       (traychck intpt)
-      (setq tr_data (get_tray_data tr_ss)
+      (setq tr_data (get_tray_data (medts_data_ss tr_ss))
             tr_size (nth 0 tr_data)
             tr_dpth (nth 3 tr_data)
             tr_tag  (nth 1 tr_data)
@@ -574,7 +578,7 @@
             ;trflng  (nth 10 tr_data)
             br_len  (* _PLOTSCALE (+ _TRRAD troff _TRTANFAC))
             br_tr_list (list br_len br_len 0.0 br_len 3)
-            genang (tray_brk_rot intpt br_tr_list)
+            genang (medts_brk_rot intpt br_tr_list)
       )
     )
     (progn
@@ -645,6 +649,7 @@
   (xdatadd (entlast) xdlist)
   (setvar "SORTENTS" srtent)
   (setvar "ELEVATION" trayteeelev)
+  (medts_end)
   (med_ret_ok)
   (princ)
 )
@@ -654,6 +659,7 @@
                       tpt pt1 pt2 pt3 pt4 pt5 pt6 pt7 pt8 pt9 pt10
                       pt11 pt12 pt13 pt14 pt15 pt16 mlist xdlist)
   (med_cur_set "c:traycross")
+  (medts_begin "TRAYCROSS")
   (if _CHANTEE
      (setq trfitcd (+ _CHANFITST 19)
            trprsz  _CHANSIZE
@@ -683,8 +689,9 @@
   )
   (if tr_data
     (progn
+      (medts_prepick intpt tr_ss nil)
       (traychck intpt)
-      (setq tr_data (get_tray_data tr_ss)
+      (setq tr_data (get_tray_data (medts_data_ss tr_ss))
             tr_size (nth 0 tr_data)
             tr_dpth (nth 3 tr_data)
             tr_tag  (nth 1 tr_data)
@@ -693,7 +700,7 @@
             ;trflng  (nth 10 tr_data)
             br_len  (* _PLOTSCALE (+ _TRRAD troff _TRTANFAC))
             br_tr_list (list br_len br_len br_len br_len 1)
-            genang (tray_brk_rot intpt br_tr_list)
+            genang (medts_brk_rot intpt br_tr_list)
       )
     )
     (progn
@@ -782,6 +789,7 @@
   (xdatadd (entlast) xdlist)
   (setvar "SORTENTS" srtent)
   (setvar "ELEVATION" traycrosselev)
+  (medts_end)
   (med_ret_ok)
   (princ)
 )
@@ -910,6 +918,7 @@
 )
 
 (defun traylrre( reang fittcode / tr_data)
+  (med_force_2d_wireframe)
   (setq intpt(getpoint "\nSelect insertion point: ")
 	traylrreelev (getvar "ELEVATION")
   )
@@ -1030,6 +1039,52 @@
   (setvar "ELEVATION" mtrayelev)
 )
 
+;;; 2026-10-27 UCS fix (rev c): before TRAYFIX rebuilds, switch to the
+;;; picked object's UCS (UCS Object), then shift the origin back to the WCS
+;;; origin along that plane so the stored OCS elevation (code 38) still matches
+;;; ELEVATION. Flat (0,0,1) and World-vertical (0,-1,0) objects use World,
+;;; which is how they already worked. No-op in World for those objects.
+;;; MEDTrayFixUCSEnd restores the user's UCS.
+(defun MEDTrayFixUCSBegin (ment / n210 ce worldplanar)
+  (setq MEDTrayFixUCSSet nil
+        n210 (cdr (assoc 210 (entget ment)))
+        worldplanar (or (null n210)
+                        (equal n210 '(0.0 0.0 1.0) 1e-9)
+                        (equal n210 '(0.0 -1.0 0.0) 1e-9))
+  )
+  (if (not (and worldplanar (= (getvar "WORLDUCS") 1)))
+    (progn
+      (setq ce (getvar "CMDECHO"))
+      (setvar "CMDECHO" 0)
+      (if (tblsearch "UCS" "MEDFixTmp")
+        (command "_.UCS" "_NA" "_D" "MEDFixTmp")
+      )
+      (command "_.UCS" "_NA" "_S" "MEDFixTmp")
+      (if worldplanar
+        (command "_.UCS" "_W")
+        (progn
+          (command "_.UCS" "_OB" ment)
+          (command "_.UCS" "_O" (trans '(0.0 0.0 0.0) 0 1))
+        )
+      )
+      (setvar "CMDECHO" ce)
+      (setq MEDTrayFixUCSSet T)
+    )
+  )
+)
+(defun MEDTrayFixUCSEnd ( / ce)
+  (if MEDTrayFixUCSSet
+    (progn
+      (setq ce (getvar "CMDECHO"))
+      (setvar "CMDECHO" 0)
+      (command "_.UCS" "_NA" "_R" "MEDFixTmp")
+      (command "_.UCS" "_NA" "_D" "MEDFixTmp")
+      (setvar "CMDECHO" ce)
+      (setq MEDTrayFixUCSSet nil)
+    )
+  )
+)
+
 (defun c:trayfix()
   (setq trayfixent (entsel "\nSelect Tray to fix:"))
   (if trayfixent
@@ -1038,6 +1093,7 @@
 	    trayfixentdata (entget trayfixent)
 	    trayfixelev (getvar "ELEVATION")
       )
+      (MEDTrayFixUCSBegin trayfixent)
       (setvar "ELEVATION" (dxf 38 trayfixentdata))
       (setq trayentdata (xdataget trayfixent _TRAY))
       (if trayentdata
@@ -1054,6 +1110,7 @@
 	      (chg_tray_pl_wdth (entlast) _TRPLWIDTH)
 	   )
       )
+      (MEDTrayFixUCSEnd)
       (setvar "ELEVATION" trayfixelev)
     )
     (princ "Nothing Selected!")
@@ -1061,10 +1118,56 @@
   (princ)
 )
 
+;;; 2026-10-27 UCS fix: return the opposite end of a picked tray pline in the
+;;; CURRENT UCS (2D, like opposite_tray_endpt). LWPOLYLINE vertices are OCS, so
+;;; they are run through trans with the entity. Identical result in World UCS.
+(defun MEDTrayOppEndUCS (ment pickpt / mdata mpts p1 p2)
+  (setq mdata (entget ment))
+  (if (= (cdr (assoc 0 mdata)) "LWPOLYLINE")
+    (progn
+      (setq mpts (car (bld_lw_ptlist ment))
+            p1 (cdr (car mpts))
+            p2 (cdr (last mpts))
+            p1 (trans (list (car p1) (cadr p1) (cdr (assoc 38 mdata))) ment 1)
+            p2 (trans (list (car p2) (cadr p2) (cdr (assoc 38 mdata))) ment 1)
+      )
+      (if (< (distance (list (car p1) (cadr p1)) (list (car pickpt) (cadr pickpt)))
+             (distance (list (car p2) (cadr p2)) (list (car pickpt) (cadr pickpt))))
+        (list (car p2) (cadr p2))
+        (list (car p1) (cadr p1))
+      )
+    )
+    (opposite_tray_endpt ment pickpt)
+  )
+)
+
+;;; 2026-10-27 UCS fix: entities built with raw entmake from UCS-style
+;;; coordinates land relative to World. Move them into the current UCS.
+;;; No-op when the current UCS is World.
+(defun MEDXformEntToUCS (ment / ux uy uz uo)
+  (if (and ment (= (getvar "WORLDUCS") 0))
+    (progn
+      (vl-load-com)
+      (setq ux (trans '(1.0 0.0 0.0) 1 0 T)
+            uy (trans '(0.0 1.0 0.0) 1 0 T)
+            uz (trans '(0.0 0.0 1.0) 1 0 T)
+            uo (trans '(0.0 0.0 0.0) 1 0)
+      )
+      (vla-TransformBy (vlax-ename->vla-object ment)
+        (vlax-tmatrix
+          (list (list (car ux) (car uy) (car uz) (car uo))
+                (list (cadr ux) (cadr uy) (cadr uz) (cadr uo))
+                (list (caddr ux) (caddr uy) (caddr uz) (caddr uo))
+                '(0.0 0.0 0.0 1.0))))
+    )
+  )
+  ment
+)
+
 (defun c:trayoff()
    (setq en1 (entsel "\nSelect First Entity: ")
          e1pt1 (osnap (cadr en1) "END")
-         e1pt2 (opposite_tray_endpt (car en1) e1pt1)
+         e1pt2 (MEDTrayOppEndUCS (car en1) e1pt1)
          disty (getpoint e1pt1 "\nDistance of Offset: ")
          angdir(angle e1pt1 disty)
          disty (distance disty e1pt1)
@@ -1174,14 +1277,39 @@
    (setq _ANGPOL nil)
 )
 
+;;; ptrayoff-tray 2026-10-29: PTRAYOFF may pre-set *MED-PTRAYOFF-DIR*
+;;; ("Up"/"Down") from a second-tray pick. One-shot: consumed and cleared
+;;; here so TRAYOFF / later calls always get the normal Direction prompt.
+(defun MEDPtrayoffDir ( / d)
+  (if *MED-PTRAYOFF-DIR*
+    (setq d *MED-PTRAYOFF-DIR* *MED-PTRAYOFF-DIR* nil)
+    (progn
+      (initget "Up Down")
+      (setq d (getkword "Direction Up/Down <Down>:"))
+    )
+  )
+  d
+)
+
+;;; ptrayoff-tray 2026-10-29: current-UCS Z of a picked tray, nearest end to pick.
+(defun MEDPtrayoffTrayZ (sel / ent pt ed z)
+  (setq ent (car sel)
+        pt  (osnap (cadr sel) "END"))
+  (cond
+    (pt (caddr pt))
+    ((and ent (setq ed (entget ent)) (= (cdr (assoc 0 ed)) "LWPOLYLINE"))
+       (caddr (trans (list 0.0 0.0 (cdr (assoc 38 ed))) ent 1)))
+    (T nil)
+  )
+)
+
 (defun trayoffitt(angmult htrcode hchcode vitrcode votrcode vichcode vochcode / rtlist)
   (setq incang (* PI angmult))
   (if _VERTICALTRAY
    (progn
     (if _CHANTEE
       (progn
-	(initget "Up Down")
-	(setq voffdiroption (getkword "Direction Up/Down <Down>:"))
+	(setq voffdiroption (MEDPtrayoffDir))
 	(if (or (not voffdiroption) (= voffdiroption "Down"))
 	  (setq degfit1 (+ _TRFITVSTR vochcode)
                 degfit2 (+ _TRFITVSTR vichcode)
@@ -1192,8 +1320,7 @@
 	)
       )
       (progn
-        (initget "Up Down")
-	(setq voffdiroption (getkword "Direction Up/Down <Down>:"))
+        (setq voffdiroption (MEDPtrayoffDir))
 	(if (or (not voffdiroption) (= voffdiroption "Down"))
 	  (setq degfit1 (+ _TRFITVSTR votrcode)
                 degfit2 (+ _TRFITVSTR vitrcode)
@@ -1301,9 +1428,12 @@
 		  YAxispoint (polar StartPoint (+ TrayGenAngle (* PI 0.5)) 1.0)
 	)
 	
+	(setq WStartPoint (trans StartPoint 1 0)
+		  WEndPoint   (trans EndPoint 1 0)
+	)
 	(command "UCS" "N" "3P" Startpoint EndPoint YAxispoint)
-	(setq TrayPoint1 (trans StartPoint StartingOCS 1)
-		  TrayPoint2 (trans EndPoint StartingOCS 1)
+	(setq TrayPoint1 (trans WStartPoint 0 1)
+		  TrayPoint2 (trans WEndPoint 0 1)
 	)
     (setvar "ELEVATION" 0.0)
 	(smlayer _MEDCENLAY)
@@ -1393,7 +1523,7 @@
   (setq CurrentElevation (getvar "ELEVATION"))
   (setvar "ELEVATION" 0.0)
   (maketray mlist nil _MEDCENLAY)
-  (setq FitEnt (entlast))
+  (setq FitEnt (MEDXformEntToUCS (entlast)))
   (setvar "ELEVATION" CurrentElevation)
   (command "move" FitEnt "" (list 0.0 0.0 (* -1.0 TrayOffset)) (list (car StartPoint) (cadr StartPoint) (getvar "ELEVATION")))
   (command "rotate" Fitent "" startPoint (angtos TrayGenAngle 0 4))
@@ -1402,6 +1532,7 @@
         ReturnPoint (cdr (nth 0 (reverse FitEntPts)))
         ReturnPoint (append ReturnPoint (list (dxf 38 FitEntData)))
         ReturnPoint (trans ReturnPoint (dxf 210 (entget fitent)) 0)
+        ReturnPoint (trans ReturnPoint 0 1)
   )
   (setq _ZFLAG nil)
   (setq xdlist (bld_fitting (+ TrayFitCode _TRFITTADD) TraySize TrayTag 0.0 TrayDepth (nth 3 Tray_data)))
@@ -1432,14 +1563,17 @@
                )
   )
   (maketray mlist T nil)
+  (MEDXformEntToUCS (entlast))
   (chg_tray_pl_wdth (entlast) _TRPLWIDTH)
   (setq mlist (list pt5 pt6))
   (setq CR_LAYER (nth 0 _MEDTRAY))
   (pmake mlist nil)
+  (MEDXformEntToUCS (entlast))
   (chg_tray_pl_wdth (entlast) _TRPLWIDTH)
   (setq mlist (list pt2 pt3 pt5 pt6))
   (setq CR_LAYER (nth 0 _MEDTRAY))
   (pmake mlist T)
+  (MEDXformEntToUCS (entlast))
   (chg_tray_pl_wdth (entlast) _TR_X_WIDTH)
   (chg_ent_ltype (entlast) TR_DNLTYPE)
   returnPoint
@@ -1482,13 +1616,35 @@
 )
 
 
-(defun c:ptrayoff()
+;;; ptrayoff-tray 2026-10-29: "Offset distance or [Tray]:" - number/point = old
+;;; distance mode (Direction still asked); Tray = pick 2nd-elev tray, disty=|Z2-Z1|,
+;;; Up/Down from sign, no Direction prompt.
+(defun c:ptrayoff( / en2 z2 dz)
+   (setq *MED-PTRAYOFF-DIR* nil disty nil)
    (setq en1 (entsel "\nSelect First Entity: ")
          e1pt1 (osnap (cadr en1) "END")
-         e1pt2 (opposite_tray_endpt (car en1) e1pt1)
-         disty (getdist e1pt1 "\nDistance of Offset: ")
+         e1pt2 (MEDTrayOppEndUCS (car en1) e1pt1)
          troffss (ssadd (car en1))
          tr_data (get_tray_data troffss)
+   )
+   (while (not disty)
+     (initget 6 "Tray")
+     (setq disty (getdist e1pt1 "\nOffset distance or [Tray]: "))
+     (cond
+       ((= disty "Tray")
+          (setq disty nil
+                en2 (entsel "\nSelect second elevation tray: "))
+          (cond
+            ((not en2) (princ "\nNothing selected."))
+            ((not (setq z2 (MEDPtrayoffTrayZ en2))) (princ "\nCould not read elevation of that tray."))
+            ((< (abs (setq dz (- z2 (caddr e1pt1)))) 1e-6) (princ "\nSecond tray is at the same elevation."))
+            (T (setq disty (abs dz)
+                     *MED-PTRAYOFF-DIR* (if (> dz 0) "Up" "Down"))
+               (princ (strcat "\nOffset " (rtos disty) " " *MED-PTRAYOFF-DIR*)))
+          )
+       )
+       ((not disty) (princ "\nEnter a distance or T for Tray."))
+     )
    )
    (setq orgelev (getvar "ELEVATION"))
    (setvar "ELEVATION" (caddr e1pt1))
@@ -1588,7 +1744,8 @@
    (setvar "ELEVATION" orgelev)
    (setq _MEDTAG offtag)
    (MEDSetTrayValues MedCurrentTraySettings)
-   (setq _ANGPOL nil)
+   (setq _ANGPOL nil *MED-PTRAYOFF-DIR* nil)
+   (princ)
 )
 
 (defun c:trayteere( / tr_data intpt tr_ss bul srtent trfitcd tr_size
@@ -1596,6 +1753,7 @@
                     tpt pt1 pt2 pt3 pt4 pt5 pt6 pt7 pt8 pt9 pt10 
                     mlist xdlist)
   (med_cur_set "c:trayteeretrayrere")
+  (medts_begin "TRAYTEERE")
   (if _CHANTEE
      (setq trfitcd (+ _CHANFITST 16)
            trprsz _CHANSIZE
@@ -1625,8 +1783,9 @@
   )
   (if tr_data
     (progn
+      (medts_prepick intpt tr_ss T)
       (traychck intpt)
-      (setq tr_data (get_tray_data tr_ss)
+      (setq tr_data (get_tray_data (medts_data_ss tr_ss))
             tr_size (nth 0 tr_data)
             tr_dpth (nth 3 tr_data)
             tr_tag  (nth 1 tr_data)
@@ -1634,7 +1793,7 @@
             trflng  (nth 10 tr_data)
             br_len  (* _PLOTSCALE (+ _TRRAD troff _TRTANFAC))
             br_tr_list (list br_len br_len 0.0 br_len 3)
-            genang (tray_brk_rot intpt br_tr_list)
+            genang (medts_brk_rot intpt br_tr_list)
 	)    
     )
     (progn
@@ -1719,6 +1878,7 @@
   (xdatadd (entlast) xdlist)
   (setvar "SORTENTS" srtent)
   (setvar "ELEVATION" trayteeelev)
+  (medts_end)
   (med_ret_ok)
   (princ)
 )
@@ -1780,11 +1940,11 @@
           _ZFLAG nil
     )
     (if OCSData
-    	(setq OCSTrue (princ "\nOCSTrue")
+    	(setq OCSTrue "OCSTrue"
     		  twoten (cons 210 OCSData)
     		  plin (append plin (list twoten))
     	)
-    	(setq OCSFalse (princ "\nOCSFalse")
+    	(setq OCSFalse "OCSFalse"
     		  twoten (cons 210 (MEDGetCurrentOCS))
     	      plin (append plin (list twoten))
     	)
@@ -1924,4 +2084,157 @@
    (med_ret_ok)
    (princ)
 )
-(princ "Done.")
+;;; ======================================================================
+;;; traytee-s3 2026-10-28  congested prompts + silent OCS/BREAK
+;;; traytee-s1 2026-10-28  TRAYTEE / TRAYCROSS / TRAYTEERE safety + explicit picks
+;;;  - UNDO group per command; Escape or any error -> UNDO End + UNDO 1 (drawing rolls
+;;;    back, deleted outlines come back) and med_reset restores PICKBOX/OSMODE/ELEVATION/
+;;;    SORTENTS/CMDECHO.
+;;;  - If trays running in 2+ directions are under the pick point (a real intersection),
+;;;    prompt "Select MAIN run tray" (+ "Select BRANCH tray" for tees). Fitting angle comes
+;;;    from the main segment direction, branch side from the branch entity. No MID osnap /
+;;;    4.5" probe guessing in that case. One tray under the point -> old one-point mode.
+;;; ======================================================================
+(vl-load-com)
+(setq MEDTS_UNDO nil MEDTS_MAIN nil MEDTS_BRANCH nil MEDTS_NAME nil MEDTS_OLDERR nil)
+
+(defun medts_begin (nm)
+  (setq MEDTS_NAME nm MEDTS_MAIN nil MEDTS_BRANCH nil
+        MEDTS_OLDERR *error*)
+  (command "_.UNDO" "_BEgin")
+  (setq MEDTS_UNDO T)
+  (defun *error* (msg)
+    (if MEDTS_UNDO
+      (progn
+        (setq MEDTS_UNDO nil)
+        (command-s "_.UNDO" "_End")
+        (command-s "_.UNDO" "1")
+      )
+    )
+    (setq MEDTS_MAIN nil MEDTS_BRANCH nil _CHANTEE nil)
+    (med_reset)                       ; restores sysvars, re-arms MED_ERROR, *error* <- olderr
+    (if (and msg (not (wcmatch (strcase msg) "*CANCEL*,*QUIT*,*EXIT*")))
+      (prompt (strcat "\n" MEDTS_NAME " failed: " msg))
+    )
+    (prompt (strcat "\n" MEDTS_NAME " cancelled - drawing rolled back, PICKBOX/OSMODE/ELEVATION restored."))
+    (princ)
+  )
+)
+
+(defun medts_end ()
+  (if MEDTS_UNDO (progn (command "_.UNDO" "_End") (setq MEDTS_UNDO nil)))
+  (setq MEDTS_MAIN nil MEDTS_BRANCH nil)
+  (if MED_SYSVARS (progn (med_rv "PICKBOX" 9) (med_rv "OSMODE" 4)))
+)
+
+;; MED tray entity? (_TRAY or _FITTING xdata)
+(defun medts_is_tray (e)
+  (and e (or (xdataget e _TRAY) (xdataget e _FITTING)))
+)
+
+;; picked outline (no xdata) -> owning tray via its _DOUBLE pair handle
+(defun medts_resolve (e / h ss i x d)
+  (cond
+    ((medts_is_tray e) e)
+    ((and e _DOUBLE (setq h (cdr (assoc 5 (entget e))))
+          (setq ss (ssget "_X" (list (list -3 (list _DOUBLE))))))
+       (setq i 0)
+       (while (and (not x) (< i (sslength ss)))
+         (setq d (xdataget (ssname ss i) _DOUBLE))
+         (if (and d (= (strcase (nth 1 d)) (strcase h))) (setq x (ssname ss i)))
+         (setq i (1+ i)))
+       (if (medts_is_tray x) x))
+  )
+)
+
+;; direction (0..PI) of a curve at the point nearest pt
+(defun medts_dir (e pt / cp p d)
+  (if (and (not (vl-catch-all-error-p
+                  (setq cp (vl-catch-all-apply (function vlax-curve-getClosestPointTo)
+                                               (list e (trans pt 1 0))))))
+           cp
+           (setq p (vlax-curve-getParamAtPoint e cp))
+           (setq d (vlax-curve-getFirstDeriv e p)))
+    (rem (+ (angle '(0 0 0) (list (car d) (cadr d) 0.0)) (* 2 PI)) PI)
+  )
+)
+
+;; list of distinct tray directions under pt
+(defun medts_dirs (ss pt / i e a lst)
+  (setq i 0)
+  (if ss
+    (while (< i (sslength ss))
+      (setq e (ssname ss i) i (1+ i))
+      (if (and (medts_is_tray e) (setq a (medts_dir e pt))
+               (not (vl-some (function (lambda (b) (or (< (abs (- a b)) 0.02)
+                                                        (> (abs (- a b)) (- PI 0.02)))))
+                             lst)))
+        (setq lst (cons a lst)))))
+  lst
+)
+
+(defun medts_pick (msg / s e)
+  (while (not e)
+    (setq s (entsel msg))
+    (if (not s) (exit))                      ; Enter/Escape -> *error* -> rollback
+    (if (not (setq e (medts_resolve (car s))))
+      (prompt "\n  Not a MED tray - pick the tray run.")))
+  e
+)
+
+;; Called before traychck. Two+ directions under pt -> explicit MAIN (+BRANCH) picks.
+(defun medts_prepick (pt ss needbr)
+  (setq MEDTS_MAIN nil MEDTS_BRANCH nil)
+  (if (> (length (medts_dirs ss pt)) 1)
+    (progn
+      (prompt "\n  Area congested - make sure which tray entities you pick.")
+      (setq MEDTS_MAIN (medts_pick "\nSelect MAIN run tray carefully: "))
+      (if needbr
+        (progn
+          (setq MEDTS_BRANCH (medts_pick "\nSelect BRANCH tray carefully (not the main run): "))
+          (while (eq MEDTS_BRANCH MEDTS_MAIN)
+            (prompt "\n  That is the MAIN run - pick the BRANCH tray.")
+            (setq MEDTS_BRANCH (medts_pick "\nSelect BRANCH tray carefully (not the main run): ")))))
+    )
+  )
+  MEDTS_MAIN
+)
+
+;; size/tag from MAIN when picked, else old largest-in-set
+(defun medts_data_ss (ss)
+  (if (and MEDTS_MAIN (entget MEDTS_MAIN)) (ssadd MEDTS_MAIN) ss)
+)
+
+(defun medts_far (e pt / a b)
+  (setq a (vlax-curve-getStartPoint e) b (vlax-curve-getEndPoint e)
+        pt (trans pt 1 0))
+  (if (> (distance (list (car a) (cadr a)) (list (car pt) (cadr pt)))
+         (distance (list (car b) (cadr b)) (list (car pt) (cadr pt))))
+    a b)
+)
+
+;; replaces tray_brk_rot in TRAYTEE/TRAYCROSS/TRAYTEERE
+(defun medts_brk_rot (pt bl / osm ma ga far v ang)
+  (setq osm (getvar "OSMODE"))
+  (setvar "OSMODE" 0)
+  (if (and MEDTS_MAIN (/= _USERROT 1) (setq ma (medts_dir MEDTS_MAIN pt)))
+    (progn
+      (if MEDTS_BRANCH
+        (progn                                   ; tee: genang = branch direction
+          (setq far (trans (medts_far MEDTS_BRANCH pt) 0 1)
+                ga  (+ ma (* 0.5 PI))
+                v   (list (- (car far) (car pt)) (- (cadr far) (cadr pt))))
+          (if (< (+ (* (car v) (cos ga)) (* (cadr v) (sin ga))) 0.0)
+            (setq ga (- ma (* 0.5 PI))))
+          (setq ang ga))
+        (setq ang ma))                           ; cross: main axis
+      (med_brk_out ang pt (list (nth 0 bl) (nth 1 bl) (nth 2 bl) (nth 3 bl)) T)
+    )
+    (setq ang (tray_brk_rot pt bl))              ; one tray: original one-point logic
+  )
+  (setvar "OSMODE" osm)
+  ang
+)
+(princ "\nMED Traytee traytee-s3 2026-10-28 loaded (congested MAIN/BRANCH prompts; OCS/BREAK quiet).")
+
+(princ "Done. traytee-s3 2026-10-28")

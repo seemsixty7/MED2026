@@ -332,14 +332,14 @@
 
 (defun tray_brk_rot (br_pt br_bldata)
 
-  (setq br_data   (entget (car (nentselp "\n" br_pt)))
+  (setq br_data   (if (setq br_ns (nentselp "\n" br_pt)) (entget (car br_ns))) ; traytee-s1 nil guard
         br_d1     (nth 0 br_bldata)
         br_d2     (nth 1 br_bldata)
         br_d3     (nth 2 br_bldata)
         br_d4     (nth 3 br_bldata)
         rt_spec   (nth 4 br_bldata)
         br_list   (list br_d1 br_d2 br_d3 br_d4)
-        bl_sz     4.5
+        bl_sz     (* 4.5 (if (numberp _PLOTSCALE) _PLOTSCALE 1.0)) ; traytee-s1 scale-aware probe
         pckbx     (getvar "PICKBOX")
   )
   (setvar "PICKBOX" 0)
@@ -456,8 +456,10 @@
 ; a double line conduit found at the point specified by ckpt
 
 (defun traychck ( ckpt); / dblnum dblcnt dblent dbldata dblinfo condata dblsz dbllett)
+  ;; traytee-s1 2026-10-28: nil-safe (nothing under point -> no-op). Erases here are
+  ;; inside the caller's UNDO group, so Escape/fail rolls the outlines back.
   (setq trayss  (ssget "C" ckpt ckpt)
-        trsslen (sslength trayss)
+        trsslen (if trayss (sslength trayss) 0)
         trcnt   0
         TR_MAIN (ssadd)
   )

@@ -20,6 +20,8 @@ namespace MEDDotNet
         TextBox _trayTan;
         TextBox _trayFlange;
         CheckBox _vertTray;
+        TextBox _traySegLen;
+        ComboBox _trayBottom;
         bool _loading;
 
         public MedSettingsControl()
@@ -100,6 +102,15 @@ namespace MEDDotNet
             _vertTray = MakeCheck();
             _vertTray.CheckStateChanged += VertTrayChanged;
             AddRow(t, "Vertical Tray", _vertTray);
+            _traySegLen = MakeText();
+            _traySegLen.Validated += TraySegLenValidated;
+            _traySegLen.KeyDown += TextKeyDown;
+            AddRow(t, "Segment Length", _traySegLen);
+            _trayBottom = MakeCombo();
+            _trayBottom.Items.Add("Solid Bottom");
+            _trayBottom.Items.Add("Rungs");
+            _trayBottom.SelectedIndexChanged += TrayBottomChanged;
+            AddRow(t, "Bottom", _trayBottom);
             tray.Controls.Add(t);
 
             AddGroup(root, general);
@@ -241,6 +252,12 @@ namespace MEDDotNet
                 _trayFlange.Text = MedLisp.FormatNum(fl.HasValue ? fl.Value : 1.5);
 
                 _vertTray.Checked = MedLisp.GetLispTrue("_VERTICALTRAY");
+
+                double? seg = MedLisp.GetReal("_TRAYSEGLEN");
+                _traySegLen.Text = MedLisp.FormatNum(seg.HasValue && seg.Value > 0 ? seg.Value : 240.0);
+
+                string bottom = (MedLisp.GetString("_TRAY3DBOTTOM", "SOLID") ?? "SOLID").Trim().ToUpperInvariant();
+                _trayBottom.SelectedIndex = bottom.StartsWith("RUNG") ? 1 : 0;
             }
             catch (System.Exception)
             {
@@ -491,6 +508,34 @@ namespace MEDDotNet
                 return;
             bool on = _vertTray.Checked;
             MedLisp.Run(delegate { MedLisp.SetBool("_VERTICALTRAY", on); });
+        }
+
+        void TraySegLenValidated(object sender, EventArgs e)
+        {
+            if (_loading)
+                return;
+            double d;
+            if (!MedLisp.TryParseNum(_traySegLen.Text, out d) || d <= 0)
+            {
+                double? cur = null;
+                MedLisp.Run(delegate { cur = MedLisp.GetReal("_TRAYSEGLEN"); });
+                _loading = true;
+                _traySegLen.Text = MedLisp.FormatNum(cur.HasValue && cur.Value > 0 ? cur.Value : 240.0);
+                _loading = false;
+                return;
+            }
+            _loading = true;
+            _traySegLen.Text = MedLisp.FormatNum(d);
+            _loading = false;
+            MedLisp.Run(delegate { MedLisp.SetReal("_TRAYSEGLEN", d); });
+        }
+
+        void TrayBottomChanged(object sender, EventArgs e)
+        {
+            if (_loading)
+                return;
+            string v = _trayBottom.SelectedIndex == 1 ? "RUNGS" : "SOLID";
+            MedLisp.Run(delegate { MedLisp.SetString("_TRAY3DBOTTOM", v); });
         }
     }
 }

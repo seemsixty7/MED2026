@@ -1,8 +1,42 @@
-(princ "\rLoading MED3DTrayFunctions...")
+(princ "\rLoading MED3DTrayFunctions (sbfix 2026-10-28)...")
 ;(setq MED_TRAY_MATERIALWIDTH 0.125) ; Aluminum Tray
 ;(setq MED_TRAY_MATERIALWIDTH 0.25) ; Fiberglass Tray
 ;(setq MED_TRAY_TYPEOVERRIDE (list 0.0 1.5 1.5));Use this to set tray forced to Fiberglass Tray Shifts base up and uses C Frames on both sides
 (setq MED_TRAY_RUNGSPACING 9.0) ; Planning to use this for Adding Rungs
+
+;;; ---- Flange resolution (shared by every 3D tray/fitting/ladder rail builder) ----
+;;; Rails fall into the thin no-lip web profile whenever |flange| < 2*t.
+;;; Entities whose stored #ITEMFLNG is missing/0 (fittings default it to 0.0 in
+;;; bld_fitting; older runs never got one) therefore came out as flat sheets.
+;;; MED_TRAY_DEFAULTFLANGE (default _TRAYFLANGE, else 1.5) is used instead.
+;;; Set MED_TRAY_DEFAULTFLANGE to 0.0 to get the old flat-web behavior back.
+;;; MED_TRAY_FLANGEDEBUG T prints what each rail used.
+(if (not MED_TRAY_DEFAULTFLANGE)
+  (setq MED_TRAY_DEFAULTFLANGE (if (and (numberp _TRAYFLANGE) (/= _TRAYFLANGE 0.0)) _TRAYFLANGE 1.5)))
+(defun MED3D-rawFlange (ent app / ed xd v)
+  ;; Reads "#ITEMFLNG=" straight from xdata (no positional index).
+  (if (and ent (setq ed (entget ent (list app))) (setq xd (assoc -3 ed)))
+    (foreach pr (cdr (car (cdr xd)))
+      (if (and (= (car pr) 1000) (= (type (cdr pr)) 'STR)
+               (= (substr (cdr pr) 1 10) "#ITEMFLNG="))
+        (setq v (atof (substr (cdr pr) 11))))))
+  v)
+(defun MED3D-effFlange (f / mt)
+  (setq mt (if (numberp MED_TRAY_MATERIALWIDTH) MED_TRAY_MATERIALWIDTH 0.125))
+  (cond ((and (numberp f) (>= (abs f) (* 2.0 mt))) f)
+        ((and (numberp MED_TRAY_DEFAULTFLANGE) (>= (abs MED_TRAY_DEFAULTFLANGE) (* 2.0 mt)))
+         MED_TRAY_DEFAULTFLANGE)
+        ((numberp f) f)
+        (T 0.0)))
+(defun MED3D-flangeFor (ent app posval / raw f)
+  (setq raw (MED3D-rawFlange ent app)
+        f   (MED3D-effFlange (if raw raw posval)))
+  (if MED_TRAY_FLANGEDEBUG
+    (princ (strcat "\nMED3D flange " (if ent (cdr (assoc 5 (entget ent))) "?")
+                   " stored=" (if raw (rtos raw 2 3) "nil")
+                   " pos=" (if (numberp posval) (rtos posval 2 3) "nil")
+                   " used=" (rtos f 2 3))))
+  f)
 
 (defun MEDDraw3DTray (TrayDataList UCSData / TrayPoint1 TrayPoint2 TrayWidth TrayDepth TrayFlange TrayBaseEnt TrayFlangeEnt1 TrayFlangeEnt2) ; List includes StartPoint EndPoint Width Depth Flange
 	(setq TrayPoint1 (nth 0 TrayDataList)
@@ -45,7 +79,7 @@
 						  TrayEntityPoint2
 			             (nth 2 TrayMEDData) ; Width
 			             (nth 5 TrayMEDData) ; Depth
-			             (nth 7 TrayMEDData) ; FlangeSize
+			             (MED3D-flangeFor TrayEntity _TRAY (nth 7 TrayMEDData)) ; FlangeSize
 			       )
 					TrayUCSData
 	  )
@@ -94,7 +128,7 @@
 		  TrayPoint2 (nth 1 MB3DTF_TrayData)
 		  TrayWidth  (nth 2 MB3DTF_TrayData)
 		  TrayDepth  (nth 3 MB3DTF_TrayData)
-		  TrayFlange (nth 4 MB3DTF_TrayData)
+		  TrayFlange (MED3D-effFlange (nth 4 MB3DTF_TrayData))
 		 ; UCSPoint1 (trans TrayPoint1 UCSData 0)
 		 ; UCSPoint2 (trans TrayPoint2 UCSData 0)
 		 ; UCSPoint3 (polar UCSPoint1 (+ (angle UCSPoint1 UCSPoint2) (* PI 0.5)) 1.0)
@@ -143,7 +177,7 @@
 		  TrayPoint2 (nth 1 MB3DTF_TrayData)
 		  TrayWidth  (nth 2 MB3DTF_TrayData)
 		  TrayDepth  (nth 3 MB3DTF_TrayData)
-		  TrayFlange (nth 4 MB3DTF_TrayData)
+		  TrayFlange (MED3D-effFlange (nth 4 MB3DTF_TrayData))
 		 ; UCSPoint1 (trans TrayPoint1 UCSData 0)
 		 ; UCSPoint2 (trans TrayPoint2 UCSData 0)
 		 ; UCSPoint3 (polar UCSPoint1 (+ (angle UCSPoint1 UCSPoint2) (* PI 0.5)) 1.0)
@@ -197,7 +231,7 @@
 		  TrayPoint2 (nth 1 MB3DTF_TrayData)
 		  TrayWidth  (nth 2 MB3DTF_TrayData)
 		  TrayDepth  (nth 3 MB3DTF_TrayData)
-		  TrayFlange (nth 4 MB3DTF_TrayData)
+		  TrayFlange (MED3D-effFlange (nth 4 MB3DTF_TrayData))
 		  TrayLength (distance TrayPoint1 TrayPoint2)
 		  TrayAngle  (angle TrayPoint1 TrayPoint2)
 		  TrayBasePoint1 (polar TrayPoint1 (+ TrayAngle (* MB3DTF_FlipValue PI 0.5)) (* TrayWidth 0.5))
@@ -242,7 +276,7 @@
 		  TrayPoint2 (nth 1 MB3DTF_TrayData)
 		  TrayWidth  (nth 2 MB3DTF_TrayData)
 		  TrayDepth  (nth 3 MB3DTF_TrayData)
-		  TrayFlange (nth 4 MB3DTF_TrayData)
+		  TrayFlange (MED3D-effFlange (nth 4 MB3DTF_TrayData))
 		  TrayLength (distance TrayPoint1 TrayPoint2)
 		  TrayAngle  (angle TrayPoint1 TrayPoint2)
 		  TrayBasePoint1 (polar TrayPoint1 (+ TrayAngle (* MB3DTF_FlipValue PI 0.5)) (* TrayWidth 0.5))
@@ -322,7 +356,7 @@
 			             	nil
 			             (nth 2 TrayMEDData) ; Width
 			             (nth 5 TrayMEDData) ; Depth
-			             (nth 6 TrayMEDData) ; FlangeSize
+			             (MED3D-flangeFor TrayEntity _FITTING (nth 6 TrayMEDData)) ; FlangeSize
 			       )
 		           TrayEntity
 	)
@@ -383,21 +417,37 @@
      (setq TrayReturnEntity (entlast))
 )
 
-(defun MEDSet3DTrayLayer(trayentity)
-	(setq trayentityLayer (dxf 8 (entget trayentity))
-		  traydesc (substr trayentityLayer 10)
-		  trayLayer (strcat "MEDTRAY" traydesc)
-		  3dtraylayername (strcat "MED_3DTRAY-" traydesc)
-	)
-	(if (not (tblsearch "layer" 3DTrayLayerName))
-		(progn
-			(setq NewLayColor (MEDGetLayerColor TrayLayer)
-		          NewLayData (list 3dTrayLayerName NewLayColor "Continuous" nil)
-		    )
-		    (medsmlayer newlaydata)
-		)
-		(setvar "CLAYER" 3DtrayLayerName)
-	)
+(defun MEDSet3DTrayLayer(trayentity / trayentityLayer traydesc trayLayer 3dtraylayername
+                                         NewLayColor NewLayData col)
+	;; Swivel centers sit on MED Center layer, not MED_TRAY-*, so the old
+	;; substr->MEDTRAY* color lookup threw Automation Error. Key not found and
+	;; aborted the whole MEDMAKE3D tray stage.
+	;; swivel fix: resolve MEDTRAY* parent near the fitting (or fitting's own MEDTRAY* layer),
+	;; then the normal MED_3DTRAY-{desc} path. Unresolved -> bare _MED3DTRAY (old). Never color-lookup MEDCENTER*.
+	(setq trayentityLayer (dxf 8 (entget trayentity)))
+	(if (and (boundp (quote MEDIsTraySwivelFit)) (MEDIsTraySwivelFit trayentity))
+	  (if (not (wcmatch (strcase trayentityLayer) "MED_TRAY*,MEDTRAY*"))
+	    (setq trayentityLayer
+	      (if (boundp (quote medsw_parent_tray_layer))
+	        (vl-catch-all-apply (function (lambda ( / p) (setq p (car (medsw_wpts trayentity))) (medsw_parent_tray_layer p))))
+	        nil))))
+	(if (or (null trayentityLayer) (vl-catch-all-error-p trayentityLayer)
+	        (not (wcmatch (strcase trayentityLayer) "MED_TRAY*,MEDTRAY*")))
+	  (if (and (boundp (quote _MED3DTRAY)) _MED3DTRAY) (progn (smlayer _MED3DTRAY) (princ)))
+	  (progn
+	    (setq traydesc (substr trayentityLayer 10)
+	          trayLayer (strcat "MEDTRAY" traydesc)
+	          3dtraylayername (strcat "MED_3DTRAY-" traydesc))
+	    (if (not (tblsearch "layer" 3DTrayLayerName))
+	      (progn
+	        (setq col (vl-catch-all-apply (function MEDGetLayerColor) (list TrayLayer))
+	              NewLayColor (cond
+	                            ((vl-catch-all-error-p col) 2)
+	                            ((not col) 2)
+	                            (T col))
+	              NewLayData (list 3dTrayLayerName NewLayColor "Continuous" nil))
+	        (medsmlayer newlaydata))
+	      (setvar "CLAYER" 3DtrayLayerName))))
 )
 	
 	
@@ -416,6 +466,7 @@
 ;; then resets the UCS to World. No prompts, no sysvar handling (callers do that).
 ;; Returns (tray-solids fitting-solids skipped); skipped = ((handle kind reason) ...)
 (defun med3d-tray-build ( / mark new traysols fitsols skipped)
+	(MEDEnsureTraySwivelLoaded)
 	(setq 3douttray (ssget "x" (list (list -3 (list "MED_TRAY")))))
 	(if 3douttray
 	  (progn
@@ -444,15 +495,14 @@
 	     	 (setq trayent (ssname 3douttray trayoutcnt)
 	     	       mark    (entlast))
 	     	 ;; block fittings (conduit bodies, couplings ...) are not tray outlines:
-	     	 ;; MEDMAKE3D handles them in its conduit body stage (MED3DFittings.lsp).
-	     	 ;; Ductbank elbows (DBANK_DATA) carry MED_FITTING on a 2D arc polyline but are
-	     	 ;; conduit elbows, not tray fitting outlines: skip them too.
-	     	 (if (and (/= (cdr (assoc 0 (entget trayent))) "INSERT")
-	     	          (not (assoc -3 (entget trayent (list "DBANK_DATA")))))
+	     	 ;; MEDMAKE3D handles them in its conduit body stage (MED3DFittings.lsp)
+	     	 (if (/= (cdr (assoc 0 (entget trayent))) "INSERT")
 	     	   (progn
 	     	     (MEDSet3DTrayLayer trayent)
 	     	     (MEDConvertTrayFittingsTo3D trayent)
-	     	     (if (setq new (MEDNew3DSolidsAfter mark))
+	     	     ;; 2026-10-29 swexport: collect 3DSOLID + INSERT so swivel plate blocks
+	     	     ;; (3DTrayVerticalAdjSplice) reach the MEDMAKE3D export, same as Rungs.
+	     	     (if (setq new (MEDNew3DEntsAfter mark))
 	     	       (setq fitsols (append fitsols new))
 	     	       (setq skipped (cons (list (cdr (assoc 5 (entget trayent))) "FITTING"
 	     	                                 "no solid created (not an elbow / tee / cross / reducer outline)") skipped)))))
@@ -460,7 +510,10 @@
 	     )
 	   )
 	 )
-	(command "UCS" "")
+	;; 2026-10-28 sbfix: COMMAND may not be apply-ed (vl-catch-all-apply 'command ...)
+	;; -> "bad order function: COMMAND". Call it directly, as the Rungs path does.
+	(if (> (getvar "CMDACTIVE") 0) (command))
+	(command "_.UCS" "_W")
 	(list traysols fitsols (reverse skipped))
 )
 
@@ -469,7 +522,6 @@
 	(setq m3dOldOsmode (getvar "OSMODE")
 	      m3dOldError *error*)
 	(defun *error* ( msg )
-	  (if med-snap-restore (med-snap-restore))
 	  (if m3dOldOsmode (setvar "OSMODE" m3dOldOsmode))
 	  (setq *error* m3dOldError)
 	  (if (and msg (/= msg "") (not (wcmatch (strcase msg t) "*break*,*cancel*,*exit*")))
@@ -478,7 +530,6 @@
 	  (princ)
 	)
 	(setvar "OSMODE" 0)
-	(if med-snap-off (med-snap-off)) ; 3DOSMODE off for the export too
 	(smlayer _MED3DTRAY)
 	(command "vpoint" "1,1,1")
 	(initget "3DS Dwg Layer")
@@ -503,7 +554,10 @@
     ;;testing default path as the drawing prefix
     ;(setq 3dsoutfname (getfiled "Select file name for 3Dtray output" (substr (getvar "dwgname") 1 (- (strlen (getvar "dwgname")) 4)) "dwg" 1))
     ((= outputformat "Dwg")
-      (setq 3dsoutfname (getfiled "Select file name for 3Dtray output" (getvar "dwgprefix") "dwg" 1))
+      (setq 3dsoutfname (if med3d-pick-writable-dwg (med3d-pick-writable-dwg "Select file name for 3Dtray output") (getfiled "Select file name for 3Dtray output" (getvar "dwgprefix") "dwg" 1)))   ; exlock 2026-10-29
+      (if (not 3dsoutfname)
+        (progn (command "erase" (ssget "X" (list (cons 0 "3dsolid") (cons 8 (nth 0 _MED3DTRAY)))) "") (command "plan" "") (princ "\nMake3dtray: export cancelled - 3D removed."))
+      (progn
       (if (findfile 3dsoutfname)
 	(command "wblock" 3dsoutfname "y" "")
 	(command "wblock" 3dsoutfname "")
@@ -515,6 +569,7 @@
       (if (and 3dsoutfname (findfile 3dsoutfname))
         (MEDRebuildMedPropsJsonBeside 3dsoutfname)
       )
+      ))   ; exlock 2026-10-29
     )
     ((= outputformat "Layer")
       ;(command "-layer" "off" "*" "" "On" (nth 0 _MED3DTRAY) "")
@@ -524,12 +579,25 @@
     )
   )
 
-	(if med-snap-restore (med-snap-restore))
 	(setvar "OSMODE" m3dOldOsmode)
 	(setq *error* m3dOldError)
-	(if med3d-disclaimer (med3d-disclaimer))
 	(princ)
 
+)
+
+;; Tray swivel = ITEMCODE 390 (*MEDSW-FITCODE*). Check CODE before any geometry
+;; (2-pt centers otherwise fall into LR-reducer extrude and bomb).
+(defun MEDIsTraySwivelFit (ent / xd code) ; swxdata2 2026-10-29: 367 (390 is a real VINELBOW)
+  (setq xd (xdataget ent _FITTING)
+        code (if xd (nth 3 xd) nil))
+  (and code
+       (= code (if (boundp (quote *MEDSW-FITCODE*)) *MEDSW-FITCODE* 367)))
+)
+
+(defun MEDEnsureTraySwivelLoaded ( / )
+  (if (not (boundp (quote MEDConvertTraySwivelTo3D)))
+    (vl-catch-all-apply (function load) (list "MEDTraySwivel")))
+  (boundp (quote MEDConvertTraySwivelTo3D))
 )
 
 (defun MEDConvertTrayFittingsTo3D (trayfitent)
@@ -546,6 +614,12 @@
   (setvar "ELEVATION" (dxf 38 trayfitentdata))
   
   (cond
+    ;; FIRST: swivel by ITEMCODE — never send these to elbow/reducer extrude
+    ((MEDIsTraySwivelFit trayfitent)
+       (if (MEDEnsureTraySwivelLoaded)
+         (MEDConvertTraySwivelTo3D trayfitent)
+         (princ "\n  Swivel fitting: load MEDTraySwivel.lsp (Support path)."))
+    )
     ((= (length fitptlist) 4)
     		(MEDConvertTrayElbowTo3D trayfitent)
     )
@@ -666,7 +740,7 @@
 			             nil
 			             (nth 2 TrayMEDData) ; Width
 			             (nth 5 TrayMEDData) ; Depth
-			             (nth 6 TrayMEDData) ; FlangeSize
+			             (MED3D-flangeFor TrayEntity _FITTING (nth 6 TrayMEDData)) ; FlangeSize
 			       )
 		           TrayEntity
 	)
@@ -681,7 +755,7 @@
 		  TrayPoint2 (nth 1 MB3DTF_TrayData)
 		  TrayWidth  (nth 2 MB3DTF_TrayData)
 		  TrayDepth  (nth 3 MB3DTF_TrayData)
-		  TrayFlange (nth 4 MB3DTF_TrayData)
+		  TrayFlange (MED3D-effFlange (nth 4 MB3DTF_TrayData))
 		  TrayLength (distance TrayPoint1 TrayPoint2)
 		  TrayAngle  (angle TrayPoint1 TrayPoint2)
 		  TrayBasePoint1 (polar TrayPoint1 (+ TrayAngle (* MB3DTF_FlipValue PI 0.5)) (* TrayWidth 0.5))
@@ -744,7 +818,7 @@
 		  TrayAngle  (angle TrayPoint1 TrayPoint2)
 		  tandist 7.0
 	      apt1 (polar TrayPoint1 (- TrayAngle (* PI 0.5)) (* 0.5 (* _PLOTSCALE TrayWidth)))
-	      apt2 (polar TrayPoint2 (+ TrayAngle (* PI 0.5)) (* 0.5 (* _PLOTSCALE TrayWidth)))
+	      apt2 (polar TrayPoint1 (+ TrayAngle (* PI 0.5)) (* 0.5 (* _PLOTSCALE TrayWidth))) ; was TrayPoint2: rail path doubled back, EXTRUDE failed
 	      apt3 (polar apt1 TrayAngle (* _PLOTSCALE tandist))
 	      apt4 (polar apt2 TrayAngle (* _PLOTSCALE tandist))
 	      bpt1 (polar TrayPoint2 (+ TrayAngle (* PI 0.5)) (* 0.5 (* _PLOTSCALE TrayAltWidth)))
@@ -757,10 +831,12 @@
 		  TempTrayCenter (MEDmaketray mlist nil nil (MEDGetCurrentOCS))
 		  TempTrayCenter (entlast)
 		  TrayFlangeEnt1 (MEDBuild3DTrayFlangeFromEntity TrayDataList 1.0 TempTrayCenter)
+		  TempTrayCenter (if (entget TempTrayCenter) (entdel TempTrayCenter))
 		  mlist (list (list apt1 nil) (list apt3 nil) (list bpt4 nil) (list bpt2 nil))   
 		  TempTrayCenter (MEDmaketray mlist nil nil (MEDGetCurrentOCS))
 		  TempTrayCenter (entlast)
 		  TrayFlangeEnt2 (MEDBuild3DTrayFlangeFromEntity TrayDataList -1.0 TempTrayCenter)
+		  TempTrayCenter (if (entget TempTrayCenter) (entdel TempTrayCenter))
     )
     (command "union" TrayBaseEnt TrayFlangeEnt1 TrayFlangeEnt2 "")
 )
@@ -814,11 +890,13 @@
 		  TempTrayCenter (entlast)
 		  TrayDataList (list TrayPoint1 OtherPoint2 TrayWidth TrayDepth TrayFlange)
 		  TrayFlangeEnt1 (MEDBuild3DTrayFlangeFromEntity TrayDataList (* 1.0 DirectionFactor) TempTrayCenter)
+		  TempTrayCenter (if (entget TempTrayCenter) (entdel TempTrayCenter))
 		  t5 Trayangle
 		  mlist (list (list apt3 nil) (list apt4 nil) (list apt5 nil) (list apt6 nil))   
 		  TempTrayCenter (MEDmaketray mlist nil nil (MEDGetCurrentOCS))
 		  TempTrayCenter (entlast)
 		  TrayFlangeEnt2 (MEDBuild3DTrayFlangeFromEntity TrayDataList (* -1.0 DirectionFactor) TempTrayCenter)
+		  TempTrayCenter (if (entget TempTrayCenter) (entdel TempTrayCenter))
     )
     (command "union" TrayBaseEnt TrayFlangeEnt1 TrayFlangeEnt2 "")
 )   
@@ -839,7 +917,7 @@
 			             nil
 			             (nth 2 TrayMEDData) ; Width
 			             (nth 5 TrayMEDData) ; Depth
-			             (nth 6 TrayMEDData) ; FlangeSize
+			             (MED3D-flangeFor TrayEntity _FITTING (nth 6 TrayMEDData)) ; FlangeSize
 			       )
 		           TrayEntity
 	)
@@ -865,7 +943,7 @@
 			             nil
 			             (nth 2 TrayMEDData) ; Width
 			             (nth 5 TrayMEDData) ; Depth
-			             (nth 6 TrayMEDData) ; FlangeSize
+			             (MED3D-flangeFor TrayEntity _FITTING (nth 6 TrayMEDData)) ; FlangeSize
 			       )
 		           TrayEntity
 	)
@@ -875,5 +953,78 @@
 	Tray3DEnt
 )
       	  
+;; !! 2026-10-28 GUARD (t848u): this file carries the Solid/Rungs toggle
+;; !! (med3d-tray-build-style / med3d-ladder-build). When shipping MEDTraySwivel,
+;; !! do NOT replace this file or MED3DLadderTray.lsp from a pre-rungs / pre-UCS
+;; !! snapshot. Ship only these two live Support files or MERGE. MD5s: Jane/Bean/MED3D-CHECK.txt
+;; !! MEDTraySwivel.lsp is also soft-loaded below (not a reason to replace this file from a swivel-only ship).
+;; Open-bottom ladder tray (Make3DLadderTray) - separate file, soft-load.
+;; Kept out of MEDCore; loads whenever MED3DTrayFunctions loads (Support path).
+(if (findfile "MED3DLadderTray.lsp")
+  (if (vl-catch-all-error-p (vl-catch-all-apply (quote load) (list "MED3DLadderTray.lsp")))
+    (princ "\nMED3DLadderTray.lsp failed to load; APPLOAD it to see the error."))
+  (princ "\nMED3DLadderTray.lsp not on support path."))
+;; Tray swivel (TRAYSWIVEL + MEDConvertTraySwivelTo3D) - soft-load with tray functions.
+(if (findfile "MEDTraySwivel.lsp")
+  (if (vl-catch-all-error-p (vl-catch-all-apply (quote load) (list "MEDTraySwivel.lsp")))
+    (princ "\nMEDTraySwivel.lsp failed to load; APPLOAD it to see the error."))
+  (princ "\nMEDTraySwivel.lsp not on support path."))
+;; ---- MEDMAKE3D tray style (MED Properties > Tray: Tray Bottom / Tray Segment Length)
+;; _TRAY3DBOTTOM "SOLID" (default) | "RUNGS";  _TRAYSEGLEN real, default 240.0
+(defun med3d-tray-rungs-p ()
+  (and (= (type _TRAY3DBOTTOM) 'STR) (wcmatch (strcase _TRAY3DBOTTOM) "RUNG*")))
+(defun med3d-tray-seglen ()
+  (cond ((and (numberp _TRAYSEGLEN) (> _TRAYSEGLEN 0.0)) (float _TRAYSEGLEN))
+        ((and (numberp MED_TRAY_SEGLEN) (> MED_TRAY_SEGLEN 0.0)) (float MED_TRAY_SEGLEN))
+        (T 240.0)))
+(defun MEDNew3DEntsAfter (mark / e out typ)
+  (setq e (if mark (entnext mark) (entnext)))
+  (while e
+    (setq typ (cdr (assoc 0 (entget e))))
+    (if (member typ (list "3DSOLID" "INSERT")) (setq out (cons e out)))
+    (setq e (entnext e)))
+  (reverse out))
+;; Ladder (rung) worker for MEDMAKE3D: same return shape as med3d-tray-build
+;; (tray-ents fitting-ents skipped). Pieces are block INSERTs (MED3DLadderTray.lsp).
+(defun med3d-ladder-build ( / ss i ent mark new traysols fitsols skipped seglen basemat oldatt oldexp olddel oldelev)
+  (if (not MED3DL-doTray)
+    (vl-catch-all-apply 'load (list "MED3DLadderTray.lsp")))
+  (if (not MED3DL-doTray)
+    (progn (princ "\nMEDMAKE3D: MED3DLadderTray.lsp not loaded - using solid bottom tray.")
+           (med3d-tray-build))
+    (progn
+      (setq seglen (med3d-tray-seglen)
+            MED_TRAY_SEGLEN seglen
+            basemat MED_TRAY_MATERIALWIDTH
+            oldatt (getvar "ATTREQ") oldexp (getvar "EXPERT") olddel (getvar "DELOBJ") oldelev (getvar "ELEVATION"))
+      (setvar "ATTREQ" 0) (setvar "EXPERT" 5) (setvar "DELOBJ" 1)
+      (if (setq ss (ssget "_X" (list (list -3 (list "MED_TRAY")))))
+        (progn (setq i 0)
+          (while (< i (sslength ss))
+            (setq ent (ssname ss i) mark (entlast))
+            (vl-catch-all-apply 'MED3DL-doTray (list ent seglen))
+            (if (setq new (MEDNew3DEntsAfter mark))
+              (setq traysols (append traysols new))
+              (setq skipped (cons (list (cdr (assoc 5 (entget ent))) "TRAY" "no ladder piece created") skipped)))
+            (setq i (1+ i)))))
+      (if (setq ss (ssget "_X" (list (list -3 (list "MED_FITTING")))))
+        (progn (setq i 0)
+          (while (< i (sslength ss))
+            (setq ent (ssname ss i) mark (entlast))
+            (if (/= (cdr (assoc 0 (entget ent))) "INSERT")
+              (progn
+                (vl-catch-all-apply 'MED3DL-doFitting (list ent))
+                (if (setq new (MEDNew3DEntsAfter mark))
+                  (setq fitsols (append fitsols new))
+                  (setq skipped (cons (list (cdr (assoc 5 (entget ent))) "FITTING"
+                                            "no ladder fitting created") skipped)))))
+            (setq i (1+ i)))))
+      (if basemat (setq MED_TRAY_MATERIALWIDTH basemat))
+      (setvar "ATTREQ" oldatt) (setvar "EXPERT" oldexp) (setvar "DELOBJ" olddel) (setvar "ELEVATION" oldelev)
+      (command "._UCS" "_World")
+      (list traysols fitsols (reverse skipped)))))
+;; MEDMAKE3D tray stage entry: Solid Bottom (default) or Rungs per _TRAY3DBOTTOM
+(defun med3d-tray-build-style ()
+  (if (med3d-tray-rungs-p) (med3d-ladder-build) (med3d-tray-build)))
 (princ "Done.")
 

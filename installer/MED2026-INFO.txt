@@ -2,6 +2,7 @@ MED2026 2026.0.1029c
 ====================
 
 Release status: release (the User Guide is still a draft). New in 1029c:
+Patch installs without admin; DUCTBANK works on a plain route (missing OD tables are created quietly). Also from 1029a/b: Dwg on ACAD/TRUSTEDPATHS,
 TRAYSWIVEL vertical swivel splice + BOM item 367, safer 3D export. Test this build before rolling it out to production seats.
 
 IMPORTANT - 3D models

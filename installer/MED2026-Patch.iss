@@ -19,7 +19,7 @@
 #define MyAppPublisher "Dewitt Clinton Moore"
 #define MyOutputBase "MED2026-Patch-1029c"
 #define MedBuildDate "2026-10-30"
-#define MedGitHash "32e23e5"
+#define MedGitHash "6f6793a"
 ; Optional 3D block library (Dwg3D folder + Dwg3DCatalog.db for the MED3DLIB palette).
 ; Off by default: compile with /DMedWithDwg3D to include it. Dwg3D\ is gitignored, so it is
 ; taken from the working tree. /DMedDwg3DCatalog="<path>" points at a catalog copy to ship

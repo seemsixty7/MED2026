@@ -1,7 +1,7 @@
-MED2026 2026.0.1029a
+MED2026 2026.0.1029c
 ====================
 
-Release status: release (the User Guide is still a draft). New in 1029a:
+Release status: release (the User Guide is still a draft). New in 1029c:
 TRAYSWIVEL vertical swivel splice + BOM item 367, safer 3D export. Test this build before rolling it out to production seats.
 
 IMPORTANT - 3D models

@@ -262,6 +262,25 @@ namespace MEDDotNet
             }
             catch (System.Exception ex)
             {
+                // Runtime OD tables (MEDConduitOD / MEDConduitBody / MEDBendRadius) are created by
+                // MedODSeed at plugin load. If that failed (DB not reachable yet, other DB in
+                // MEDDataBaseSettings.dat, etc.) create/seed them now and retry the query once.
+                if (IsMissingSeedTable(ex))
+                {
+                    if (!_seedRetried)
+                    {
+                        _seedRetried = true;
+                        MedODSeed.EnsureReady();
+                        if (conn != null) { try { conn.Close(); conn.Dispose(); } catch { } conn = null; }
+                        return ProcessSQLStatementNet(resbufin);
+                    }
+                    if (!_seedMissingReported)
+                    {
+                        _seedMissingReported = true;
+                        MedDebug.Error("SQL (OD tables missing and could not be created; using fallback ODs; check CREATE TABLE rights on the MED database)", ex, query);
+                    }
+                    return null;
+                }
                 MedDebug.Error("SQL", ex, query);
                 return null;
             }
@@ -274,6 +293,24 @@ namespace MEDDotNet
                     conn.Dispose();
                 }
             }
+        }
+
+        static bool _seedRetried;
+        static bool _seedMissingReported;
+
+        static bool IsMissingSeedTable(System.Exception ex)
+        {
+            for (System.Exception e = ex; e != null; e = e.InnerException)
+            {
+                string m = e.Message ?? "";
+                bool missing = m.IndexOf("Invalid object name", StringComparison.OrdinalIgnoreCase) >= 0
+                            || m.IndexOf("no such table", StringComparison.OrdinalIgnoreCase) >= 0;
+                if (missing && (m.IndexOf("MEDConduitOD", StringComparison.OrdinalIgnoreCase) >= 0
+                             || m.IndexOf("MEDConduitBody", StringComparison.OrdinalIgnoreCase) >= 0
+                             || m.IndexOf("MEDBendRadius", StringComparison.OrdinalIgnoreCase) >= 0))
+                    return true;
+            }
+            return false;
         }
 
         static TypedValue TypedFromCell(DataRow dr, int i)

@@ -7,17 +7,18 @@
 ; RULE: Patch never ships or overwrites Data\MED.db. DB changes come only from MED-DotNet's update path
 ; (MedDbUpdate: backup MED.db.bak-<stamp> on first load of a new version, schema check, ductbank seed;
 ; MEDDBUPDATE on demand) and the idempotent seeds (MedODSeed, DBSEED).
-; PrivilegesRequired=admin: the App Store bundle lives in ProgramData (and C:\MED2026 may be admin-owned).
+; PrivilegesRequired=lowest (house rule: Patch never needs admin). Admin-only targets (ProgramData App Store bundle,
+;   admin-owned C:\MED2026) are skipped with a notice; run full Setup as admin for those.
 ; Opt-in registration: reuse Support\MED.registration.json when present (skip wizard page).
 ; Guards: needs an existing MED install: {app}\Support\MED-DotNet.dll or MED.version.txt (classic) or
 ;   ProgramData\Autodesk\ApplicationPlugins\MED2026.bundle\PackageContents.xml (App Store); otherwise exits.
 ;   Classic only: warns (default No) before downgrading a newer installed version.
 
 #define MyAppName "MED2026"
-#define MyAppVersion "2026.0.1029b"
+#define MyAppVersion "2026.0.1029c"
 #define MyAppPublisher "Dewitt Clinton Moore"
-#define MyOutputBase "MED2026-Patch-1029b"
-#define MedBuildDate "2026-10-29"
+#define MyOutputBase "MED2026-Patch-1029c"
+#define MedBuildDate "2026-10-30"
 #define MedGitHash "32e23e5"
 ; Optional 3D block library (Dwg3D folder + Dwg3DCatalog.db for the MED3DLIB palette).
 ; Off by default: compile with /DMedWithDwg3D to include it. Dwg3D\ is gitignored, so it is
@@ -44,8 +45,9 @@ OutputBaseFilename={#MyOutputBase}
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
-; Admin: the App Store bundle lives in ProgramData (and C:\MED2026 may be admin-owned).
-PrivilegesRequired=admin
+; No admin (house rule). Per-user uninstall entry (HKCU). Admin-owned targets are skipped via write probes.
+PrivilegesRequired=lowest
+PrivilegesRequiredOverridesAllowed=commandline
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 SourceDir=..
@@ -117,7 +119,7 @@ Source: "Support\setup.add";   DestDir: "{tmp}\meduser"; Flags: deleteafterinsta
 ; App Store bundle (ProgramData\Autodesk\ApplicationPlugins\MED2026.bundle): program files only.
 ; The bundle's starter Data\MED.db is never touched; the per-user MED.db is not in the bundle at all.
 Source: "{#MedBundleDir}\MED2026.bundle\*"; DestDir: "{commonappdata}\Autodesk\ApplicationPlugins\MED2026.bundle"; \
-    Flags: ignoreversion recursesubdirs createallsubdirs; Components: support; Check: MedBundleFound; \
+    Flags: ignoreversion recursesubdirs createallsubdirs; Components: support; Check: MedBundleWritable; \
     Excludes: "\Contents\Data\MED.db"
 #endif
 
@@ -346,6 +348,12 @@ end;
 function MedBundleFound: Boolean;
 begin
   Result := FileExists(MedBundleDir + '\PackageContents.xml') and DirExists(MedBundleDir + '\Contents');
+end;
+
+(* Bundle files are only copied when ProgramData bundle is writable (non-admin usually not). *)
+function MedBundleWritable: Boolean;
+begin
+  Result := MedBundleFound and ProbeSupportWritable(MedBundleDir + '\Contents');
 end;
 
 var

@@ -1,5 +1,7 @@
-MED2026 Patch installer - 2026.0.1013a (WORK IN PROGRESS)
-=========================================================
+MED2026 Patch installer - 2026.0.1029c
+======================================
+
+No administrator rights needed (PrivilegesRequired=lowest): run it as yourself, no UAC prompt.
 
 IMPORTANT: MED 3D models are approximations, not copies of manufacturer
 specifications; users must verify all dimensions.

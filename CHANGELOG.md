@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026.0.1029c - 2026-10-30
+
+### Changed
+- **Patch no longer needs admin / UAC.** `MED2026-Patch.iss`: `PrivilegesRequired=lowest`. The ProgramData App Store bundle copy is skipped when not writable; uninstall entry is per-user (HKCU). The Patch does not run Install-MED2026.ps1 / Set-MedProfilePaths.
+
+### Fixed
+- **DUCTBANK on a plain route with no MED data.** MED-DotNet now creates/seeds missing `MEDConduitOD` / `MEDConduitBody` / `MEDBendRadius` tables and retries the query once; if they still can't be created it falls back to built-in ODs quietly instead of logging dozens of SQL errors.
+
+### Includes
+- Everything in 2026.0.1029b (`C:\MED2026\Dwg` on ACAD + TRUSTEDPATHS from Setup) and 1029a (TRAYSWIVEL etc.).
 ## 2026.0.1029a - 2026-10-29
 
 MED 3D models are approximations, not copies of manufacturer specifications; users must verify all dimensions.
